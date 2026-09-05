@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Become a Creator – Outly</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="styles.css">
+
+</head>
+<body>
+  <div class="bgfx" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+
+  <!-- NAV -->
+  <header class="nav">
+    <div class="container nav__inner">
+      <a class="brand" href="index.html" aria-label="Outly home">
+        <img src="./assets/transperent-logo.png" alt="Outly logo">
+      </a>
+
+      <nav class="nav__links" aria-label="Primary">
+        <a href="index.html#how">How it works</a>
+        <a href="index.html#features">Features</a>
+        <a href="index.html#preview">Preview</a>
+        <a href="index.html#waitlist">Waitlist</a>
+      </nav>
+
+      <div class="nav__cta">
+        <a class="btn" href="Creator.html" data-cta="creator">For creators</a>
+        <a class="btn btn--primary btn--ring" href="#waitlist">Join the waitlist</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="creator-wrapper">
+
+  <!-- STEP 1 -->
+  <div class="step active" data-step="1">
+    <h2>Business information</h2>
+    <p class="hint">The registration information can be changed within 3 months once approved</p>
+
+    <input type="text" placeholder="Legal business name" id="businessName">
+    <input type="text" placeholder="Business type">
+    <input type="text" placeholder="Business address">
+    <input type="text" placeholder="City">
+    <input type="text" placeholder="Business licence ID">
+
+    <button type="button" class="btn primary" onclick="nextStep()">Continue</button>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="step" data-step="2">
+    <h2>Contact person</h2>
+
+    <input type="text" placeholder="Full name">
+    <input type="text" placeholder="Role / Position">
+    <input type="email" placeholder="Email address">
+    <input type="tel" placeholder="Phone number">
+
+    <button type="button" class="btn secondary" onclick="prevStep()">Back</button>
+    <button type="button" class="btn primary" onclick="nextStep()">Continue</button>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="step" data-step="3">
+    <h2>Verify business</h2>
+
+    <label class="upload-box">
+      <input type="file" multiple>
+      <span>+</span>
+    </label>
+
+    <ul class="upload-info">
+      <li>Business license</li>
+      <li>Proof of ownership or authorization</li>
+      <li>Tax identification number</li>
+      <li>Bank account proof</li>
+    </ul>
+
+    <button type="button" class="btn secondary" onclick="prevStep()">Back</button>
+    <button type="button" class="btn primary" onclick="submitCreator()">Submit Application</button>
+  </div>
+
+</div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container footer__top">
+      <div class="footer__social">
+        <a class="social" href="https://www.instagram.com/outly.si/" target="_blank" rel="noopener" aria-label="Instagram">
+          <!-- Instagram -->
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path fill="currentColor" d="M7.5 2h9A5.5 5.5 0 0 1 22 7.5v9A5.5 5.5 0 0 1 16.5 22h-9A5.5 5.5 0 0 1 2 16.5v-9A5.5 5.5 0 0 1 7.5 2Zm9 2h-9A3.5 3.5 0 0 0 4 7.5v9A3.5 3.5 0 0 0 7.5 20h9A3.5 3.5 0 0 0 20 16.5v-9A3.5 3.5 0 0 0 16.5 4ZM12 7a5 5 0 1 1 0 10a5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6a3 3 0 0 0 0-6Zm5.3-2.2a1 1 0 1 1 0 2a1 1 0 0 1 0-2Z"/>
+          </svg>
+          Instagram
+        </a>
+
+        <a class="social" href="#" aria-label="TikTok">
+          <!-- TikTok (simple) -->
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path fill="currentColor" d="M16 2c.3 2.2 1.6 3.8 4 4v4c-1.7.1-3.2-.4-4-1v7.2c0 3.2-2.6 5.8-5.8 5.8S4.4 19.4 4.4 16.2s2.6-5.8 5.8-5.8c.4 0 .8 0 1.2.1v3.9c-.3-.1-.6-.2-1-.2c-1.2 0-2.2 1-2.2 2.2s1 2.2 2.2 2.2s2.2-1 2.2-2.2V2h3.4Z"/>
+          </svg>
+          TikTok
+        </a>
+      </div>
+
+      <div class="footer__brand">
+        <img src="./assets/transperent-logo.png" alt="Outly logo">
+        <div>
+          <p>Nightlife discovery, simplified.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="container footer__cols">
+      <div class="footerCol">
+        <h4>Product</h4>
+        <a href="#how">How it works</a>
+        <a href="#features">Features</a>
+        <a href="#preview">Preview</a>
+      </div>
+
+      <div class="footerCol">
+        <h4>Creators</h4>
+        <a href="#features" data-features="creator">Creator tools</a>
+        <a href="#waitlist" id="footerCreatorLink">Become a creator</a>
+        <a href="#waitlist">Partnerships</a>
+      </div>
+
+      <div class="footerCol">
+        <h4>Company</h4>
+        <a href="#waitlist">Contact</a>
+        <a href="#waitlist">Support</a>
+        <a href="#waitlist">Privacy</a>
+      </div>
+    </div>
+
+    <div class="container footer__bottom">
+      <span>© <span id="year"></span> Outly. All rights reserved.</span>
+    </div>
+  </footer>
+
+  <script src="creator.js" defer></script>
+</body>
+</html>
