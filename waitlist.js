@@ -12,8 +12,9 @@
   /* ---------------------------------------------------------------
      Konstante
   ---------------------------------------------------------------- */
-  const FETCH_LIMIT   = 12;      // koliko prijav preberemo iz baze
+  const FETCH_LIMIT   = 25;      // koliko prijav preberemo iz baze (seznam se scrolla)
   const MOBILE_MQ     = window.matchMedia("(max-width: 600px)");
+  const DESKTOP_MQ    = window.matchMedia("(min-width: 981px)");
   const POLL_MS       = 15000;   // fallback osveževanje, če realtime ne steče
   const CLOCK_MS      = 60000;   // osveževanje relativnih časov ("2m ago")
 
@@ -31,6 +32,9 @@
   const labelEl  = document.getElementById("waitlistLabel");
   const moreEl   = document.getElementById("waitlistMore");
   const liveEl   = document.getElementById("waitlistLive");
+  const formBox  = document.querySelector(".waitlist__form");
+  const copyBox  = document.querySelector(".waitlist__copy");
+  const gridBox  = document.querySelector(".waitlist");
 
   if (!form) return;
 
@@ -50,10 +54,45 @@
   /* ---------------------------------------------------------------
      Pomožne funkcije
   ---------------------------------------------------------------- */
-  // Na telefonu prikažemo krajši seznam, da ne nastane neskončen scroll.
+  // Na telefonu prikažemo malo krajši seznam; višino omeji CSS (scroll območje).
   function visibleLimit() {
-    return MOBILE_MQ.matches ? 8 : FETCH_LIMIT;
+    return MOBILE_MQ.matches ? 15 : FETCH_LIMIT;
   }
+
+  /* Na desktopu panel s seznamom spodaj poravnamo s formo.
+     Sam CSS tega ne zmore: mreža brez določene višine se vedno razteza po
+     vsebini seznama (tudi `1fr` se v takem primeru obnaša kot max-content).
+
+     Postavitev na desktopu:
+        vrstica 1 = besedilo            (višina copyBox)
+        razmik    = row-gap mreže
+        vrstica 2 = margin panela + panel
+        forma     = sega čez obe vrstici
+
+     Da se spodnja robova ujameta, mora veljati:
+        višina forme = copy + gap + margin + višina panela
+     Iz tega neposredno izračunamo višino panela — brez merjenja panela
+     samega, zato ni povratne zanke in ni potrebe po večkratnem popravljanju. */
+  function alignPanelToForm() {
+    if (!panel || !formBox || !copyBox || !gridBox || panel.hidden) return;
+
+    if (!DESKTOP_MQ.matches) {
+      panel.style.height = "";                     // na telefonu višino ureja CSS
+      return;
+    }
+
+    const gs     = getComputedStyle(gridBox);
+    const gap    = parseFloat(gs.rowGap) || 0;
+    const mt     = parseFloat(getComputedStyle(panel).marginTop) || 0;
+    const formH  = formBox.getBoundingClientRect().height;
+    const copyH  = copyBox.getBoundingClientRect().height;
+
+    const next = Math.max(150, Math.round(formH - copyH - gap - mt));
+    if (Math.abs(parseFloat(panel.style.height) - next) < 1) return;
+    panel.style.height = next + "px";
+  }
+
+  const onLayoutChange = () => alignPanelToForm();
 
   function setMsg(text, kind) {
     if (!msg) return;
@@ -100,6 +139,8 @@
     if (countEl) countEl.textContent = total.toLocaleString("en-US");
     if (labelEl) labelEl.textContent = total === 1 ? "person is already in" : "people are already in";
 
+    const keepScroll = listEl.scrollTop;
+
     listEl.innerHTML = "";
     rows.slice(0, visibleLimit()).forEach((row) => {
       const li = document.createElement("li");
@@ -116,6 +157,9 @@
       listEl.appendChild(li);
     });
 
+    // Ob novi prijavi pokažemo vrh seznama, sicer ostanemo, kjer je bil uporabnik.
+    listEl.scrollTop = (newIds && newIds.size) ? 0 : keepScroll;
+
     const rest = total - Math.min(rows.length, visibleLimit());
     if (moreEl) {
       if (rest > 0) {
@@ -127,6 +171,7 @@
     }
 
     if (panel) panel.hidden = false;
+    alignPanelToForm();
   }
 
   function refreshClock() {
@@ -302,6 +347,16 @@
     const onMq = () => render();
     if (MOBILE_MQ.addEventListener) MOBILE_MQ.addEventListener("change", onMq);
     else MOBILE_MQ.addListener(onMq);
+
+    // Poravnava panela s formo: ob spremembi širine okna in kadar forma
+    // spremeni višino (npr. ko se pod gumbom izpiše sporočilo).
+    window.addEventListener("resize", onLayoutChange);
+    window.addEventListener("orientationchange", onLayoutChange);
+    if (DESKTOP_MQ.addEventListener) DESKTOP_MQ.addEventListener("change", onLayoutChange);
+    else DESKTOP_MQ.addListener(onLayoutChange);
+    if (window.ResizeObserver && formBox) {
+      new ResizeObserver(onLayoutChange).observe(formBox);
+    }
 
     // Po vrnitvi na zavihek osveži takoj (realtime je med sleepom lahko padel).
     document.addEventListener("visibilitychange", () => {
