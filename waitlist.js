@@ -21,6 +21,17 @@
   // Enaka validacija kot CHECK constraint v bazi.
   const EMAIL_RE = /^[^@\s]+@[^@\s.]+\.[^@\s]+$/;
 
+  // Pogoste tipkarske napake v domeni. Baza jih ne more ujeti (gmial.com
+  // je čisto veljavna oblika), zato uporabnika opozorimo takoj.
+  const TYPOS = {
+    "gmial.com": "gmail.com",   "gmai.com": "gmail.com",   "gmail.co": "gmail.com",
+    "gmail.con": "gmail.com",   "gmaill.com": "gmail.com", "gnail.com": "gmail.com",
+    "gmail.cm": "gmail.com",    "gamil.com": "gmail.com",  "hotmial.com": "hotmail.com",
+    "hotmail.co": "hotmail.com","outlok.com": "outlook.com","outloook.com": "outlook.com",
+    "yahooo.com": "yahoo.com",  "yaho.com": "yahoo.com",   "iclod.com": "icloud.com",
+    "icloud.co": "icloud.com",  "sioll.net": "siol.net",   "gmx.co": "gmx.com"
+  };
+
   /* ---------------------------------------------------------------
      DOM
   ---------------------------------------------------------------- */
@@ -255,6 +266,31 @@
   /* ---------------------------------------------------------------
      Oddaja forme
   ---------------------------------------------------------------- */
+  /* Rezervni način: neposreden vpis v tabelo, kot je delovalo pred
+     uvedbo potrditvenih mailov. Uporabi se samo, če funkcije v bazi ni. */
+  async function joinBrezPotrditve(email, isUser, isCreator) {
+    const { error } = await client.from("waitlist_signups").insert({
+      email,
+      is_user: isUser || !isCreator,
+      is_creator: isCreator
+    });
+
+    if (error && error.code === "23505") {
+      setMsg("This email is already on the waitlist — you're all set.", "ok");
+    } else if (error) {
+      console.warn("[waitlist] insert error:", error);
+      setMsg("Something went wrong. Please try again in a moment.", "error");
+      return;
+    } else {
+      const type = isCreator && isUser ? "user + creator" : isCreator ? "creator" : "user";
+      setMsg(`Thanks! You're on the waitlist as a ${type}. We'll email you at ${email}.`, "ok");
+    }
+
+    form.reset();
+    form.elements.type_user.checked = true;
+    loadList();
+  }
+
   async function onSubmit(e) {
     e.preventDefault();
     if (sending) return;
@@ -278,17 +314,25 @@
       return;
     }
 
+    const domain = email.split("@")[1];
+    if (TYPOS[domain]) {
+      setMsg(`Did you mean @${TYPOS[domain]}? Fix it or submit again to keep it.`, "error");
+      delete TYPOS[domain];          // ob drugi oddaji ne vztrajamo
+      emailInput.focus();
+      return;
+    }
+
     sending = true;
     if (submitBtn) {
       submitBtn.disabled = true;
-      submitBtn.textContent = "Joining…";
+      submitBtn.textContent = "Sending…";
     }
     setMsg("");
 
-    const { error } = await client.from("waitlist_signups").insert({
-      email,
-      is_user: isUser || !isCreator,   // vsaj ena vloga mora biti označena
-      is_creator: isCreator
+    const { data: status, error } = await client.rpc("join_waitlist", {
+      p_email: email,
+      p_is_user: isUser || !isCreator,   // vsaj ena vloga mora biti označena
+      p_is_creator: isCreator
     });
 
     sending = false;
@@ -298,30 +342,52 @@
     }
 
     if (error) {
-      if (error.code === "23505") {
-        setMsg("This email is already on the waitlist — you're all set.", "ok");
-        form.reset();
-        form.elements.type_user.checked = true;
-      } else if (error.code === "23514") {
-        setMsg("Please enter a valid email address.", "error");
-      } else {
-        console.warn("[waitlist] insert error:", error);
-        setMsg("Something went wrong. Please try again in a moment.", "error");
+      // Če migracija `supabase-schema-2-confirm.sql` še ni pognana, funkcije
+      // v bazi ni. V tem primeru pademo nazaj na prvotni način (vpis brez
+      // potrditvenega maila), da se prijave nikoli ne zlomijo — ne glede na
+      // to, ali je bila prej objavljena stran ali baza.
+      const funkcijeNi =
+        error.code === "PGRST202" ||
+        /could not find the function/i.test(error.message || "");
+
+      if (funkcijeNi) {
+        console.info("[waitlist] join_waitlist še ne obstaja — vpis brez potrditve.");
+        await joinBrezPotrditve(email, isUser, isCreator);
+        return;
       }
+
+      console.warn("[waitlist] join error:", error);
+      setMsg("Something went wrong. Please try again in a moment.", "error");
       return;
     }
 
-    const type = isCreator && isUser ? "user + creator" : isCreator ? "creator" : "user";
-    setMsg(`Thanks! You're on the waitlist as a ${type}. We'll email you at ${email}.`, "ok");
-    form.reset();
-    form.elements.type_user.checked = true;
+    // Prijava se šteje šele, ko uporabnik klikne povezavo v mailu.
+    if (status === "sent" || status === "resent") {
+      setMsg(`Almost there — we sent a confirmation link to ${email}. Tap it and your spot is locked in.`, "ok");
+      form.reset();
+      form.elements.type_user.checked = true;
+    } else if (status === "already_confirmed") {
+      setMsg("You're already on the waitlist — see you at launch.", "ok");
+      form.reset();
+      form.elements.type_user.checked = true;
+    } else if (status === "invalid") {
+      setMsg("Please enter a valid email address.", "error");
+      return;
+    } else if (status === "disposable") {
+      setMsg("Please use a permanent email address — we need to reach you at launch.", "error");
+      return;
+    } else if (status === "busy") {
+      setMsg("We're getting a lot of signups right now. Please try again in a few minutes.", "error");
+      return;
+    } else {
+      setMsg("Something went wrong. Please try again in a moment.", "error");
+      return;
+    }
 
-    // Na mobilnem zapri tipkovnico in pokaži potrditev/seznam.
+    // Na mobilnem zapri tipkovnico, da se vidi sporočilo.
     if (document.activeElement && typeof document.activeElement.blur === "function") {
       document.activeElement.blur();
     }
-
-    loadList();   // takojšen odziv, ne čakamo na realtime event
   }
 
   form.addEventListener("submit", onSubmit);

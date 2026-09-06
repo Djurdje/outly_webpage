@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Confirm your spot – Outly</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="bgfx" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+
+  <!-- NAV -->
+  <header class="nav">
+    <div class="container nav__inner">
+      <a class="brand" href="index.html" aria-label="Outly home">
+        <img src="./assets/transperent-logo.png" alt="Outly logo">
+      </a>
+
+      <div class="nav__cta">
+        <a class="btn" href="Creator.html" data-cta="creator">For creators</a>
+        <a class="btn btn--primary btn--ring" href="index.html#waitlist">Back to Outly</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="confirm">
+    <div class="container">
+      <div class="confirm__card" id="confirmCard">
+        <div class="confirm__icon" id="confirmIcon" aria-hidden="true">
+          <span class="spinner"></span>
+        </div>
+
+        <p class="kicker" id="confirmKicker">WAITLIST</p>
+        <h1 id="confirmTitle">Confirming your spot…</h1>
+        <p class="confirm__text" id="confirmText">One moment while we check your link.</p>
+
+        <div class="confirm__actions" id="confirmActions" hidden>
+          <a class="btn btn--primary btn--ring" href="index.html#waitlist">See the waitlist</a>
+          <a class="btn" href="index.html">Back to home</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container footer__bottom">
+      <span>© <span id="year"></span> Outly. All rights reserved.</span>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js"></script>
+  <script src="./supabase-config.js"></script>
+  <script src="./confirm.js"></script>
+</body>
+</html>

@@ -188,3 +188,56 @@ renderFeatures("user");
    Prijava + realtime seznam sta v ./waitlist.js
    (nastavitve baze: ./supabase-config.js)
 ---------------------------- */
+
+/* ---------------------------
+   PREVIEW: pikice pod horizontalnim carouselom
+   Carousel sam je čisti CSS (scroll-snap); tu dodamo samo indikator,
+   ki pove, katera slika je na vrsti. Na desktopu je skrit s CSS-om.
+---------------------------- */
+(() => {
+  const track = document.querySelector(".preview");
+  if (!track) return;
+
+  const shots = Array.from(track.querySelectorAll(".shot"));
+  if (shots.length < 2) return;
+
+  const dots = document.createElement("div");
+  dots.className = "preview__dots";
+
+  shots.forEach((shot, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.setAttribute("aria-label", `Show screen ${i + 1} of ${shots.length}`);
+    b.addEventListener("click", () => {
+      shot.scrollIntoView({ inline: "start", block: "nearest", behavior: "smooth" });
+    });
+    dots.appendChild(b);
+  });
+  track.after(dots);
+
+  // Označi kartico, ki je najbližje sredini vidnega dela carousela.
+  let ticking = 0;
+  function sync() {
+    ticking = 0;
+    const box = track.getBoundingClientRect();
+    const mid = box.left + box.width / 2;
+
+    let best = 0;
+    let bestDist = Infinity;
+    shots.forEach((s, i) => {
+      const r = s.getBoundingClientRect();
+      const d = Math.abs(r.left + r.width / 2 - mid);
+      if (d < bestDist) { bestDist = d; best = i; }
+    });
+
+    Array.from(dots.children).forEach((d, i) => {
+      d.classList.toggle("is-active", i === best);
+    });
+  }
+
+  track.addEventListener("scroll", () => {
+    if (!ticking) ticking = requestAnimationFrame(sync);
+  }, { passive: true });
+  window.addEventListener("resize", sync);
+  sync();
+})();

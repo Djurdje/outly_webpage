@@ -1302,3 +1302,200 @@
   .person__time { font-size: 10px; }
   .people__count strong { font-size: 18px; }
 }
+
+/* =========================================================
+   PREVIEW — horizontalni carousel na telefonu/tablici (dodano)
+   Trije visoki posnetki zaslona so navpično ~1800px scrolla;
+   vodoravno s snapom je na iPhonu bistveno bolj pregledno.
+   ========================================================= */
+
+.preview__dots { display: none; }
+
+@media (max-width: 980px) {
+  .preview {
+    display: flex;
+    grid-template-columns: none;      /* razveljavi mrežo iz osnovnega stila */
+    gap: 14px;
+
+    /* Od roba do roba zaslona, da carousel ne izgleda stisnjen v okvir.
+       Notranji padding poskrbi, da se prva/zadnja kartica ne dotikata roba,
+       in hkrati upošteva safe-area (notch v ležečem načinu). */
+    margin-inline: calc(50% - 50vw);
+    padding-inline: max(20px, env(safe-area-inset-left))
+                    max(20px, env(safe-area-inset-right));
+
+    overflow-x: auto;
+    overscroll-behavior-x: contain;   /* swipe ne sproži "nazaj" v Safariju */
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline-start: max(20px, env(safe-area-inset-left));
+    -webkit-overflow-scrolling: touch;
+
+    scrollbar-width: none;            /* drsnik skrijemo, snap je dovolj jasen */
+  }
+  .preview::-webkit-scrollbar { display: none; }
+
+  .shot {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+    /* <figure> ima privzeti margin 1em 40px — v carouselu bi to dalo
+       94px vrzel namesto našega gapa, zato ga tu ničlamo. */
+    margin: 0;
+    padding: 12px;
+    border-radius: 30px;
+    animation: none;                  /* lebdenje + snap = tresenje pri swipeu */
+  }
+
+  /* Višino vodi zaslon, ne širina — tako kartica nikoli ne preraste ekrana,
+     v ležečem načinu pa se sama zmanjša. Širina sledi razmerju slike. */
+  .shot img {
+    height: min(62svh, 560px);
+    width: auto;
+    margin-inline: auto;
+    border-radius: 22px;
+  }
+
+  .shot figcaption {
+    text-align: center;
+    padding: 10px 8px 4px;
+  }
+
+  /* Pikice pod carouselom */
+  .preview__dots {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+  }
+  .preview__dots button {
+    position: relative;
+    width: 8px;
+    height: 8px;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,.18);
+    background: rgba(255,255,255,.14);
+    cursor: pointer;
+    transition: .28s var(--ease);
+  }
+  /* Nevidno povečan tap target (~40px), da pikica ni prezahtevna za zadetek */
+  .preview__dots button::before {
+    content: "";
+    position: absolute;
+    inset: -16px;
+  }
+  .preview__dots button.is-active {
+    width: 22px;
+    border-radius: 999px;
+    background: var(--accent);
+    border-color: rgba(76,118,255,.55);
+  }
+}
+
+@media (max-width: 980px) and (prefers-reduced-motion: reduce) {
+  .preview { scroll-behavior: auto; }
+}
+
+/* =========================================================
+   CONFIRM — potrditvena stran iz maila (confirm.html)
+   ========================================================= */
+
+.confirm {
+  min-height: 62svh;
+  display: flex;
+  align-items: center;
+  padding: 48px 0 64px;
+}
+
+.confirm__card {
+  position: relative;
+  max-width: 560px;
+  margin: 0 auto;
+  text-align: center;
+  border-radius: var(--radius2);
+  border: 1px solid rgba(255,255,255,.10);
+  background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+  box-shadow: var(--shadow);
+  padding: 34px 26px 30px;
+  overflow: hidden;
+}
+.confirm__card::before {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  background:
+    radial-gradient(520px 360px at 50% 0%, rgba(76,118,255,.18), transparent 62%);
+  pointer-events: none;
+}
+.confirm__card > * { position: relative; }
+
+.confirm__card h1 {
+  font-size: clamp(24px, 5.2vw, 34px);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin: 0 0 12px;
+}
+.confirm__text {
+  color: rgba(255,255,255,.72);
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 0 auto;
+  max-width: 42ch;
+}
+
+/* Ikona stanja */
+.confirm__icon {
+  width: 62px;
+  height: 62px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+  color: rgba(255,255,255,.6);
+}
+.is-ok .confirm__icon {
+  color: #6BD98A;
+  border-color: rgba(107,217,138,.32);
+  background: rgba(107,217,138,.10);
+}
+.is-error .confirm__icon {
+  color: #FF9B9B;
+  border-color: rgba(255,155,155,.30);
+  background: rgba(255,155,155,.09);
+}
+
+.spinner {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.18);
+  border-top-color: var(--accent);
+  animation: spin 0.9s linear infinite;
+}
+
+.confirm__actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 26px;
+}
+.confirm__actions[hidden] { display: none; }
+.confirm__actions .btn { min-height: 48px; }
+
+@media (max-width: 700px) {
+  .confirm { padding: 32px 0 48px; }
+  .confirm__card {
+    padding: 28px 20px 26px;
+    padding-left:  max(20px, env(safe-area-inset-left));
+    padding-right: max(20px, env(safe-area-inset-right));
+  }
+  .confirm__actions { flex-direction: column; }
+  .confirm__actions .btn { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 2.4s; }
+}
