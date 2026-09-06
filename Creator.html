@@ -39,11 +39,13 @@
     <h2>Business information</h2>
     <p class="hint">The registration information can be changed within 3 months once approved</p>
 
-    <input type="text" placeholder="Legal business name" id="businessName">
-    <input type="text" placeholder="Business type">
-    <input type="text" placeholder="Business address">
-    <input type="text" placeholder="City">
-    <input type="text" placeholder="Business licence ID">
+    <input type="text" placeholder="Legal business name" id="businessName" autocomplete="organization">
+    <input type="text" placeholder="Business type" id="businessType">
+    <input type="text" placeholder="Business address" id="businessAddress" autocomplete="street-address">
+    <input type="text" placeholder="City" id="city" autocomplete="address-level2">
+    <input type="text" placeholder="Business licence ID" id="licenceId">
+
+    <p class="formMsg step-msg" aria-live="polite"></p>
 
     <button type="button" class="btn primary" onclick="nextStep()">Continue</button>
   </div>
@@ -52,10 +54,12 @@
   <div class="step" data-step="2">
     <h2>Contact person</h2>
 
-    <input type="text" placeholder="Full name">
-    <input type="text" placeholder="Role / Position">
-    <input type="email" placeholder="Email address">
-    <input type="tel" placeholder="Phone number">
+    <input type="text" placeholder="Full name" id="contactName" autocomplete="name">
+    <input type="text" placeholder="Role / Position" id="contactRole" autocomplete="organization-title">
+    <input type="email" placeholder="Email address" id="contactEmail" autocomplete="email">
+    <input type="tel" placeholder="Phone number" id="contactPhone" autocomplete="tel">
+
+    <p class="formMsg step-msg" aria-live="polite"></p>
 
     <button type="button" class="btn secondary" onclick="prevStep()">Back</button>
     <button type="button" class="btn primary" onclick="nextStep()">Continue</button>
@@ -63,27 +67,26 @@
 
   <!-- STEP 3 -->
   <div class="step" data-step="3">
-    <h2>Verify business</h2>
+    <h2>Review &amp; submit</h2>
+    <p class="hint">Check your details before sending. We reply to the email address below.</p>
 
-    <label class="upload-box">
-      <input type="file" multiple>
-      <span>+</span>
-    </label>
+    <ul class="review" id="reviewList"></ul>
 
-    <ul class="upload-info">
-      <li>Business license</li>
-      <li>Proof of ownership or authorization</li>
-      <li>Tax identification number</li>
-      <li>Bank account proof</li>
-    </ul>
+    <p class="hint">
+      Documents come later. If we need your business licence, proof of ownership, tax number or
+      bank details, we will ask for them in our reply &mdash; please don&rsquo;t send them before
+      we ask.
+    </p>
 
     <p class="hint">
       By submitting, you agree that we process the business and contact details you provide in
       order to review your application. See our <a href="privacy.html">Privacy Policy</a>.
     </p>
 
+    <p class="formMsg step-msg" aria-live="polite"></p>
+
     <button type="button" class="btn secondary" onclick="prevStep()">Back</button>
-    <button type="button" class="btn primary" onclick="submitCreator()">Submit Application</button>
+    <button type="button" class="btn primary" id="creatorSubmit" onclick="submitCreator()">Submit application</button>
   </div>
 
 </div>
@@ -145,6 +148,8 @@
     </div>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js"></script>
+  <script src="./supabase-config.js"></script>
   <script src="creator.js" defer></script>
   <script>
     document.getElementById("year").textContent = new Date().getFullYear();
