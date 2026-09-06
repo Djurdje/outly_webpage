@@ -54,6 +54,7 @@ declare
   v_from  text;
   v_site  text;
   v_team  text;
+  v_to    jsonb;
   v_html  text;
 begin
   select * into r from public.creator_applications where id = p_id;
@@ -71,6 +72,16 @@ begin
 
   v_site := rtrim(v_site, '/');
   v_team := coalesce(v_team, v_from);
+
+  -- team_email je lahko seznam naslovov, ločenih z vejico
+  select jsonb_agg(jsonb_build_object('email', lower(btrim(e))))
+    into v_to
+    from unnest(string_to_array(v_team, ',')) as e
+   where btrim(e) <> '';
+
+  if v_to is null then
+    v_to := jsonb_build_array(jsonb_build_object('email', v_from));
+  end if;
 
   -- --- obvestilo ekipi -------------------------------------------------
   v_html :=
@@ -93,7 +104,7 @@ begin
     headers := jsonb_build_object('api-key', v_key, 'content-type', 'application/json', 'accept', 'application/json'),
     body    := jsonb_build_object(
                  'sender',      jsonb_build_object('name', 'Outly', 'email', v_from),
-                 'to',          jsonb_build_array(jsonb_build_object('email', v_team)),
+                 'to',          v_to,
                  'replyTo',     jsonb_build_object('email', r.email),
                  'subject',     'Creator application: ' || r.business_name,
                  'htmlContent', v_html
@@ -220,8 +231,10 @@ grant execute on function public.submit_creator_application(text,text,text,text,
 --  (če vrstice ni, gredo na isti naslov kot pošiljatelj)
 --
 --      insert into public.app_secrets (key, value)
---      values ('team_email', 'luka@outly.si')
+--      values ('team_email', 'luka@outly.si,fedja@outly.si')
 --      on conflict (key) do update set value = excluded.value;
+--
+--  Naslovov je lahko več, ločeni z vejico — obvestilo dobijo vsi.
 --
 --  Pregled prijav:
 --      select created_at, business_name, city, contact_name, email, phone, status
