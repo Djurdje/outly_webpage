@@ -1516,3 +1516,70 @@
   text-decoration: none;
 }
 .creatorLine a:hover{ text-decoration: underline; }
+
+/* =====================================================
+   Pravna stran (privacy.html)
+   ===================================================== */
+.legal{
+  max-width: 780px;
+  padding: 8px 0 24px;
+}
+.legal h1{
+  margin: 6px 0 6px;
+  font-size: clamp(28px, 4vw, 40px);
+  line-height: 1.15;
+  letter-spacing: -.02em;
+}
+.legal h2{
+  margin: 34px 0 10px;
+  font-size: 17px;
+  letter-spacing: -.01em;
+  color: var(--text);
+}
+.legal p,
+.legal li{
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.7;
+}
+.legal p{ margin: 0 0 12px; }
+.legal ul{
+  margin: 0 0 14px;
+  padding-left: 20px;
+}
+.legal li{ margin: 0 0 6px; }
+.legal strong{ color: var(--text); font-weight: 800; }
+.legal a{
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.legal a:hover{ text-decoration: none; }
+.legal__meta{
+  margin: 0 0 22px !important;
+  font-size: 13px !important;
+  color: rgba(255,255,255,.45) !important;
+}
+.legal__lead{
+  padding: 16px 18px;
+  margin: 0 0 8px !important;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(0,0,0,.22);
+  color: rgba(255,255,255,.72) !important;
+}
+.legal__back{
+  margin-top: 34px !important;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+.legal .mono{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  color: var(--text);
+}
+
+@media (max-width: 600px){
+  .legal h2{ margin-top: 28px; }
+  .legal p, .legal li{ font-size: 14px; }
+}

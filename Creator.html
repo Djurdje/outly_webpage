@@ -27,7 +27,7 @@
 
       <div class="nav__cta">
         <a class="btn" href="Creator.html" data-cta="creator">For creators</a>
-        <a class="btn btn--primary btn--ring" href="#waitlist">Join the waitlist</a>
+        <a class="btn btn--primary btn--ring" href="index.html#waitlist">Join the waitlist</a>
       </div>
     </div>
   </header>
@@ -77,6 +77,11 @@
       <li>Bank account proof</li>
     </ul>
 
+    <p class="hint">
+      By submitting, you agree that we process the business and contact details you provide in
+      order to review your application. See our <a href="privacy.html">Privacy Policy</a>.
+    </p>
+
     <button type="button" class="btn secondary" onclick="prevStep()">Back</button>
     <button type="button" class="btn primary" onclick="submitCreator()">Submit Application</button>
   </div>
@@ -115,23 +120,23 @@
     <div class="container footer__cols">
       <div class="footerCol">
         <h4>Product</h4>
-        <a href="#how">How it works</a>
-        <a href="#features">Features</a>
-        <a href="#preview">Preview</a>
+        <a href="index.html#how">How it works</a>
+        <a href="index.html#features">Features</a>
+        <a href="index.html#preview">Preview</a>
       </div>
 
       <div class="footerCol">
         <h4>Creators</h4>
-        <a href="#features" data-features="creator">Creator tools</a>
-        <a href="#waitlist" id="footerCreatorLink">Become a creator</a>
-        <a href="#waitlist">Partnerships</a>
+        <a href="Creator.html">Creator tools</a>
+        <a href="Creator.html">Become a creator</a>
+        <a href="mailto:luka@outly.si">Partnerships</a>
       </div>
 
       <div class="footerCol">
         <h4>Company</h4>
-        <a href="#waitlist">Contact</a>
-        <a href="#waitlist">Support</a>
-        <a href="#waitlist">Privacy</a>
+        <a href="mailto:luka@outly.si">Contact</a>
+        <a href="mailto:luka@outly.si">Support</a>
+        <a href="privacy.html">Privacy</a>
       </div>
     </div>
 
@@ -141,5 +146,8 @@
   </footer>
 
   <script src="creator.js" defer></script>
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
 </body>
 </html>
