@@ -287,7 +287,6 @@
     }
 
     form.reset();
-    form.elements.type_user.checked = true;
     loadList();
   }
 
@@ -296,8 +295,9 @@
     if (sending) return;
 
     const email     = (emailInput.value || "").trim().toLowerCase();
-    const isUser    = form.elements.type_user.checked;
-    const isCreator = form.elements.type_creator.checked;
+    // Creatorji imajo svoj postopek na Creator.html; ta forma je samo za uporabnike.
+    const isUser    = true;
+    const isCreator = false;
 
     if (!EMAIL_RE.test(email) || email.length > 254) {
       setMsg("Please enter a valid email address.", "error");
@@ -310,7 +310,6 @@
       const type = isCreator && isUser ? "user + creator" : isCreator ? "creator" : "user";
       setMsg(`Thanks! You're on the waitlist as a ${type}. We'll email you at ${email}.`, "ok");
       form.reset();
-      form.elements.type_user.checked = true;
       return;
     }
 
@@ -365,11 +364,9 @@
     if (status === "sent" || status === "resent") {
       setMsg(`Almost there — we sent a confirmation link to ${email}. Tap it and your spot is locked in.`, "ok");
       form.reset();
-      form.elements.type_user.checked = true;
     } else if (status === "already_confirmed") {
       setMsg("You're already on the waitlist — see you at launch.", "ok");
       form.reset();
-      form.elements.type_user.checked = true;
     } else if (status === "invalid") {
       setMsg("Please enter a valid email address.", "error");
       return;

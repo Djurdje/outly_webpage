@@ -1499,3 +1499,20 @@
 @media (prefers-reduced-motion: reduce) {
   .spinner { animation-duration: 2.4s; }
 }
+
+/* Waitlist: povezava na postopek za creatorje */
+.waitlist__form button[type="submit"]{ margin-top: 12px; }
+.creatorLine{
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  color: rgba(255,255,255,.55);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.creatorLine a{
+  color: var(--accent);
+  font-weight: 800;
+  text-decoration: none;
+}
+.creatorLine a:hover{ text-decoration: underline; }

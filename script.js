@@ -126,7 +126,6 @@ buyBtn?.addEventListener("click", () => {
 const featuresGrid = document.getElementById("featuresGrid");
 const creatorCta = document.getElementById("creatorCta");
 const toggleBtns = Array.from(document.querySelectorAll(".toggle__btn"));
-const creatorCheck = document.getElementById("creatorCheck");
 
 const FEATURES = {
   user: [
@@ -170,14 +169,6 @@ function setFeaturesMode(mode){
 
 toggleBtns.forEach(b => {
   b.addEventListener("click", () => setFeaturesMode(b.dataset.mode));
-});
-
-// Creator CTA: pre-check creator on waitlist
-document.getElementById("becomeCreatorBtn")?.addEventListener("click", () => {
-  if(creatorCheck) creatorCheck.checked = true;
-});
-document.getElementById("footerCreatorLink")?.addEventListener("click", () => {
-  if(creatorCheck) creatorCheck.checked = true;
 });
 
 // init
