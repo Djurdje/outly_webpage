@@ -135,14 +135,14 @@ const FEATURES = {
     { title: "In your area", desc: "Instant options around you (tourists & locals)." },
     { title: "Tickets & entry", desc: "Buy tickets fast and keep everything in one place." },
     { title: "Save & share", desc: "Favorites + share plans with friends." },
-    { title: "Map view (soon)", desc: "See nightlife hotspots at a glance." }
+    { title: "Map view", desc: "See nightlife hotspots at a glance." }
   ],
   creator: [
     { title: "Event publishing", desc: "Post events fast and keep them updated." },
     { title: "Audience targeting", desc: "Reach people who actually like your vibe." },
-    { title: "Ticketing (optional)", desc: "Sell tickets and manage capacity." },
+    { title: "Ticketing", desc: "Sell tickets and manage capacity." },
     { title: "Analytics dashboard", desc: "Track performance, revenue, and trends." },
-    { title: "Promotions (soon)", desc: "Boost visibility for key nights." },
+    { title: "Promotions", desc: "Boost visibility for key nights." },
     { title: "Creator profile", desc: "Build credibility with reviews and history." }
   ]
 };
