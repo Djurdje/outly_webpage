@@ -61,6 +61,7 @@
   let total    = 0;      // skupno število prijav
   let pollId   = null;
   let sending  = false;
+  let lastEmail = "";   // naslov iz zadnje uspesne oddaje (za "poslji znova")
 
   /* ---------------------------------------------------------------
      Pomožne funkcije
@@ -290,6 +291,129 @@
     loadList();
   }
 
+  /* ---------------------------------------------------------------
+     "Check your inbox" — korak po uspesni oddaji
+     ---------------------------------------------------------------
+     Brez klika v potrditvenem mailu prijava ne steje in se na seznamu
+     ne pokaze. Ljudje na to pozabijo, zato obrazec po oddaji zamenjamo
+     s to plosco in ponudimo gumb naravnost v njihov predal.
+  ---------------------------------------------------------------- */
+  const checkBox    = document.getElementById("checkMail");
+  const checkAddr   = document.getElementById("checkMailAddr");
+  const checkOpen   = document.getElementById("checkMailOpen");
+  const checkBack   = document.getElementById("checkMailBack");
+  const checkResend = document.getElementById("checkMailResend");
+  const checkNote   = document.getElementById("checkMailNote");
+  const fieldEl     = form.querySelector(".field");
+  const fineEl      = form.querySelector(".fineprint");
+  const creatorEl   = form.querySelector(".creatorLine");
+
+  // Znani spletni predali. Za neznano domeno gumba ne pokazemo —
+  // ugibana povezava bi peljala v prazno.
+  const INBOXES = {
+    "gmail.com":       ["Gmail",        "https://mail.google.com/mail/u/0/#search/from%3A%40outly.si+in%3Aanywhere"],
+    "googlemail.com":  ["Gmail",        "https://mail.google.com/mail/u/0/#search/from%3A%40outly.si+in%3Aanywhere"],
+    "outlook.com":     ["Outlook",      "https://outlook.live.com/mail/0/"],
+    "hotmail.com":     ["Outlook",      "https://outlook.live.com/mail/0/"],
+    "live.com":        ["Outlook",      "https://outlook.live.com/mail/0/"],
+    "msn.com":         ["Outlook",      "https://outlook.live.com/mail/0/"],
+    "yahoo.com":       ["Yahoo Mail",   "https://mail.yahoo.com/"],
+    "icloud.com":      ["iCloud Mail",  "https://www.icloud.com/mail"],
+    "me.com":          ["iCloud Mail",  "https://www.icloud.com/mail"],
+    "mac.com":         ["iCloud Mail",  "https://www.icloud.com/mail"],
+    "proton.me":       ["Proton Mail",  "https://mail.proton.me/u/0/inbox"],
+    "protonmail.com":  ["Proton Mail",  "https://mail.proton.me/u/0/inbox"],
+    "pm.me":           ["Proton Mail",  "https://mail.proton.me/u/0/inbox"],
+    "gmx.com":         ["GMX",          "https://www.gmx.com/"],
+    "gmx.net":         ["GMX",          "https://www.gmx.net/"],
+    "siol.net":        ["Siol webmail", "https://webmail.siol.net/"],
+    "t-2.net":         ["T-2 webmail",  "https://webmail.t-2.net/"],
+    "arnes.si":        ["Arnes webmail","https://webmail.arnes.si/"],
+    "guest.arnes.si":  ["Arnes webmail","https://webmail.arnes.si/"],
+    "student.arnes.si":["Arnes webmail","https://webmail.arnes.si/"]
+  };
+
+  function inboxFor(email) {
+    return INBOXES[(email.split("@")[1] || "").toLowerCase()] || null;
+  }
+
+  function setNote(txt) {
+    if (checkNote) checkNote.textContent = txt || "";
+  }
+
+  function showCheckMail(email) {
+    // Ce je v obtoku se stara razlicica strani brez te plosce,
+    // pademo nazaj na navadno sporocilo pod gumbom.
+    if (!checkBox) {
+      setMsg("Almost there — we sent a confirmation link to " + email +
+             ". Tap it and your spot is locked in.", "ok");
+      form.reset();
+      return;
+    }
+
+    lastEmail = email;
+    if (checkAddr) checkAddr.textContent = email;
+
+    const inbox = inboxFor(email);
+    if (checkOpen) {
+      if (inbox) {
+        checkOpen.href = inbox[1];
+        checkOpen.textContent = "Open " + inbox[0];
+        checkOpen.hidden = false;
+      } else {
+        checkOpen.hidden = true;      // neznana domena: brez gumba
+      }
+    }
+
+    setMsg("");
+    setNote("");
+    [fieldEl, submitBtn, fineEl, creatorEl].forEach((el) => { if (el) el.hidden = true; });
+    checkBox.hidden = false;
+    alignPanelToForm();
+  }
+
+  function hideCheckMail() {
+    if (!checkBox) return;
+    checkBox.hidden = true;
+    [fieldEl, submitBtn, fineEl, creatorEl].forEach((el) => { if (el) el.hidden = false; });
+    form.reset();
+    setMsg("");
+    setNote("");
+    if (emailInput) emailInput.focus();
+    alignPanelToForm();
+  }
+
+  if (checkBack) checkBack.addEventListener("click", hideCheckMail);
+
+  if (checkResend) {
+    checkResend.addEventListener("click", async () => {
+      if (!client || !lastEmail || sending) return;
+
+      sending = true;
+      checkResend.disabled = true;
+      setNote("Sending…");
+
+      const { data: st, error: err } = await client.rpc("join_waitlist", {
+        p_email: lastEmail, p_is_user: true, p_is_creator: false
+      });
+
+      sending = false;
+      checkResend.disabled = false;
+
+      if (err) {
+        setNote("Couldn't send it just now — try again in a minute.");
+        return;
+      }
+      if (st === "already_confirmed") {
+        hideCheckMail();
+        setMsg("You're already on the waitlist — see you at launch.", "ok");
+        return;
+      }
+      // Baza istemu naslovu ne poslje novega maila pogosteje kot na 2 minuti.
+      setNote("On its way — give it a minute, and check spam too.");
+    });
+  }
+
   async function onSubmit(e) {
     e.preventDefault();
     if (sending) return;
@@ -362,8 +486,7 @@
 
     // Prijava se šteje šele, ko uporabnik klikne povezavo v mailu.
     if (status === "sent" || status === "resent") {
-      setMsg(`Almost there — we sent a confirmation link to ${email}. Tap it and your spot is locked in.`, "ok");
-      form.reset();
+      showCheckMail(email);
     } else if (status === "already_confirmed") {
       setMsg("You're already on the waitlist — see you at launch.", "ok");
       form.reset();

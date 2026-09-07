@@ -1636,3 +1636,101 @@
   .creator-wrapper .review li{ flex-direction: column; gap: 2px; }
   .creator-wrapper .review__k{ flex: none; }
 }
+
+/* =========================================================
+   "Check your inbox" — korak po oddaji waitlist obrazca
+   ========================================================= */
+[hidden] { display: none !important; }
+
+.checkmail {
+  text-align: center;
+  padding: 4px 2px 2px;
+  animation: checkmailIn .28s var(--ease) both;
+}
+@keyframes checkmailIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.checkmail__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  margin-bottom: 14px;
+  border-radius: 50%;
+  color: var(--accent);
+  background: rgba(76,118,255,.14);
+  border: 1px solid rgba(76,118,255,.32);
+  box-shadow: 0 0 0 6px rgba(76,118,255,.06);
+}
+
+.checkmail .kicker { margin: 0 0 8px; }
+
+.checkmail__title {
+  margin: 0 0 10px;
+  font-size: 22px;
+  line-height: 1.2;
+  letter-spacing: -.02em;
+  font-weight: 800;
+}
+
+.checkmail__text {
+  margin: 0 auto 18px;
+  max-width: 38ch;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.checkmail__text strong {
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.checkmail__warn {
+  display: block;
+  margin-top: 6px;
+  color: #FFD37A;
+  font-weight: 700;
+}
+
+.checkmail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+.checkmail__actions .btn { min-height: 46px; }
+
+.checkmail__hint {
+  margin: 18px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  color: rgba(255,255,255,.55);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.linklike {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--accent);
+  font-weight: 800;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.linklike[disabled] { opacity: .6; cursor: progress; }
+
+.checkmail__note {
+  display: block;
+  margin-top: 6px;
+  color: #9DD5A6;
+}
+
+@media (max-width: 600px) {
+  .checkmail__actions { flex-direction: column; }
+  .checkmail__actions .btn { width: 100%; justify-content: center; }
+}

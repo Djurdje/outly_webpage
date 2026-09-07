@@ -346,6 +346,33 @@
 
           <p class="formMsg" id="formMsg" aria-live="polite"></p>
 
+          <!-- Po oddaji: brez klika v mailu prijava ne steje, zato
+               uporabnika pripeljemo naravnost do njegovega predala. -->
+          <div class="checkmail" id="checkMail" hidden>
+            <span class="checkmail__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="26" height="26"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M3 7.5A2.5 2.5 0 0 1 5.5 5h13A2.5 2.5 0 0 1 21 7.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 16.5z"/><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="m3.6 6.9 7.3 5.2a2 2 0 0 0 2.2 0l7.3-5.2"/></svg>
+            </span>
+
+            <p class="kicker">ONE LAST STEP</p>
+            <h3 class="checkmail__title">Check your inbox.</h3>
+
+            <p class="checkmail__text">
+              We sent a confirmation link to <strong id="checkMailAddr"></strong>.
+              <b class="checkmail__warn">Your spot is not saved until you tap it.</b>
+            </p>
+
+            <div class="checkmail__actions">
+              <a class="btn btn--primary btn--ring" id="checkMailOpen" href="#" target="_blank" rel="noopener">Open my inbox</a>
+              <button class="btn" type="button" id="checkMailBack">Use another email</button>
+            </div>
+
+            <p class="checkmail__hint">
+              Nothing there? Look in spam or the Promotions tab &mdash; it comes from luka@outly.si.
+              <button type="button" class="linklike" id="checkMailResend">Send it again</button>
+              <span class="checkmail__note" id="checkMailNote" aria-live="polite"></span>
+            </p>
+          </div>
+
           <p class="creatorLine">
             Are you a creator? <a href="Creator.html">Apply here &rarr;</a>
           </p>
