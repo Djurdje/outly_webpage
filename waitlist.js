@@ -311,8 +311,8 @@
   // Znani spletni predali. Za neznano domeno gumba ne pokazemo —
   // ugibana povezava bi peljala v prazno.
   const INBOXES = {
-    "gmail.com":       ["Gmail",        "https://mail.google.com/mail/u/0/#search/from%3A%40outly.si+in%3Aanywhere"],
-    "googlemail.com":  ["Gmail",        "https://mail.google.com/mail/u/0/#search/from%3A%40outly.si+in%3Aanywhere"],
+    "gmail.com":       ["Gmail",        "https://mail.google.com/mail/u/0/#inbox"],
+    "googlemail.com":  ["Gmail",        "https://mail.google.com/mail/u/0/#inbox"],
     "outlook.com":     ["Outlook",      "https://outlook.live.com/mail/0/"],
     "hotmail.com":     ["Outlook",      "https://outlook.live.com/mail/0/"],
     "live.com":        ["Outlook",      "https://outlook.live.com/mail/0/"],
