@@ -54,6 +54,47 @@
 
   const client = window.supabase.createClient(cfg.url, cfg.anonKey);
 
+  // Povabilo: osebna povezava + stevilo potrjenih vabil (referral_status v bazi).
+  // Ce funkcije se ni (shema 9 ni pognana), blok preprosto ostane skrit.
+  async function pokaziVabilo() {
+    const box = document.getElementById("inviteBox");
+    if (!box) return;
+    const { data: st, error: err } = await client.rpc("referral_status", { p_token: token });
+    if (err || !st || !st.ref_code) { if (err) console.info("[confirm] referral_status:", err.message); return; }
+
+    const link  = new URL("./?ref=" + st.ref_code, location.href).href; // dela na outly.si in na podmapi
+    const input = document.getElementById("inviteLink");
+    const copy  = document.getElementById("inviteCopy");
+    const stats = document.getElementById("inviteStats");
+    const wa    = document.getElementById("shareWa");
+    const sms   = document.getElementById("shareSms");
+    const nat   = document.getElementById("shareNative");
+    const besedilo = "Where should we go tonight? Get on the Outly list with me: " + link;
+
+    input.value = link;
+    wa.href  = "https://wa.me/?text=" + encodeURIComponent(besedilo);
+    sms.href = "sms:?&body=" + encodeURIComponent(besedilo);
+
+    const n = Number(st.confirmed_invites || 0), p = Number(st.pending_invites || 0);
+    stats.textContent = n === 0
+      ? (p > 0 ? p + " invited, waiting for them to confirm." : "No invites yet — you could be first.")
+      : n + (n === 1 ? " friend" : " friends") + " joined through your link" + (p > 0 ? " · " + p + " still to confirm" : "") + ".";
+
+    copy.addEventListener("click", async () => {
+      try { await navigator.clipboard.writeText(link); }
+      catch (_) { input.select(); document.execCommand && document.execCommand("copy"); }
+      copy.textContent = "Copied";
+      setTimeout(() => { copy.textContent = "Copy"; }, 1800);
+    });
+    input.addEventListener("focus", () => input.select());
+
+    if (navigator.share) {
+      nat.hidden = false;
+      nat.addEventListener("click", () => navigator.share({ title: "Outly", text: besedilo, url: link }).catch(() => {}));
+    }
+    box.hidden = false;
+  }
+
   client.rpc("confirm_waitlist", { p_token: token }).then(({ data, error }) => {
     if (error) {
       console.warn("[confirm] error:", error);
@@ -65,9 +106,11 @@
     if (data === "ok") {
       show("ok", "YOU'RE IN", "Your spot is confirmed.",
         "Congratulations — you're officially on the Outly waitlist. You'll be among the first in when we launch in your city. Nothing else lands in your inbox until then.");
+      pokaziVabilo();
     } else if (data === "already") {
       show("ok", "ALREADY CONFIRMED", "You're already on the list.",
         "This link was used before, so there's nothing left to do. See you at launch.");
+      pokaziVabilo();
     } else {
       show("error", "LINK PROBLEM", "This link isn't valid.",
         "It may have been mistyped or already replaced by a newer one. Sign up again and we'll send you a fresh link.");

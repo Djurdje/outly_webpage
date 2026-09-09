@@ -21,6 +21,27 @@
   // Enaka validacija kot CHECK constraint v bazi.
   const EMAIL_RE = /^[^@\s]+@[^@\s.]+\.[^@\s]+$/;
 
+  /* ---------------------------------------------------------------
+     Povabilo (?ref=KODA). Kodo si zapomnimo, da velja tudi, ce obiskovalec
+     najprej brska in se prijavi kasneje. Steje jo baza, in to samo, ko
+     povabljeni potrdi e-naslov (supabase-schema-9-referral.sql).
+  ---------------------------------------------------------------- */
+  const REF_KEY = "outly_ref";
+  const REF_RE  = /^[A-Z0-9]{4,12}$/;
+  function shraniRefIzNaslova() {
+    try {
+      const r = (new URLSearchParams(location.search).get("ref") || "").trim().toUpperCase();
+      if (REF_RE.test(r)) localStorage.setItem(REF_KEY, r);
+    } catch (_) { /* zasebni nacin ipd. */ }
+  }
+  function refKoda() {
+    try {
+      const r = (localStorage.getItem(REF_KEY) || "").toUpperCase();
+      return REF_RE.test(r) ? r : null;
+    } catch (_) { return null; }
+  }
+  shraniRefIzNaslova();
+
   // Pogoste tipkarske napake v domeni. Baza jih ne more ujeti (gmial.com
   // je čisto veljavna oblika), zato uporabnika opozorimo takoj.
   const TYPOS = {
@@ -394,7 +415,7 @@
       setNote("Sending…");
 
       const { data: st, error: err } = await client.rpc("join_waitlist", {
-        p_email: lastEmail, p_is_user: true, p_is_creator: false
+        p_email: lastEmail, p_is_user: true, p_is_creator: false, p_ref: refKoda()
       });
 
       sending = false;
@@ -455,7 +476,8 @@
     const { data: status, error } = await client.rpc("join_waitlist", {
       p_email: email,
       p_is_user: isUser || !isCreator,   // vsaj ena vloga mora biti označena
-      p_is_creator: isCreator
+      p_is_creator: isCreator,
+      p_ref: refKoda()                   // koda povabitelja, ce je prisel prek povezave
     });
 
     sending = false;

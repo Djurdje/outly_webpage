@@ -40,6 +40,21 @@
         <h1 id="confirmTitle">Confirming your spot…</h1>
         <p class="confirm__text" id="confirmText">One moment while we check your link.</p>
 
+        <div class="invite" id="inviteBox" hidden>
+          <p class="kicker">BRING YOUR CREW</p>
+          <p class="invite__text">Nights out are better together. Share your link &mdash; everyone who joins through it and confirms counts as your invite.</p>
+          <div class="invite__row">
+            <input class="invite__link" id="inviteLink" type="text" readonly value="" aria-label="Your invite link">
+            <button class="btn btn--primary" id="inviteCopy" type="button">Copy</button>
+          </div>
+          <div class="invite__share">
+            <a class="btn" id="shareWa" href="#" target="_blank" rel="noopener">WhatsApp</a>
+            <a class="btn" id="shareSms" href="#">Message</a>
+            <button class="btn" id="shareNative" type="button" hidden>Share&hellip;</button>
+          </div>
+          <p class="invite__stats" id="inviteStats"></p>
+        </div>
+
         <div class="confirm__actions" id="confirmActions" hidden>
           <a class="btn btn--primary btn--ring" href="index.html#waitlist">See the waitlist</a>
           <a class="btn" href="index.html">Back to home</a>

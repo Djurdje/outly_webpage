@@ -1485,8 +1485,40 @@
 .confirm__actions[hidden] { display: none; }
 .confirm__actions .btn { min-height: 48px; }
 
+/* Povabilo prijateljev (confirm.html) */
+.invite {
+  margin: 26px auto 0;
+  max-width: 460px;
+  text-align: left;
+  border-radius: 16px;
+  border: 1px solid rgba(76,118,255,.30);
+  background: rgba(76,118,255,.08);
+  padding: 18px 18px 16px;
+}
+.invite[hidden] { display: none; }
+.invite .kicker { margin: 0 0 6px; }
+.invite__text { margin: 0 0 12px; color: rgba(255,255,255,.72); font-size: 14px; line-height: 1.55; }
+.invite__row { display: flex; gap: 8px; }
+.invite__link {
+  flex: 1; min-width: 0;
+  height: 46px; padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(0,0,0,.35);
+  color: #fff; font: 600 14px/1 Inter, system-ui, sans-serif;
+  text-overflow: ellipsis;
+}
+.invite__row .btn { min-height: 46px; padding-inline: 18px; white-space: nowrap; }
+.invite__share { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.invite__share .btn { min-height: 40px; padding-inline: 14px; font-size: 13px; }
+.invite__share [hidden] { display: none; }
+.invite__stats { margin: 12px 0 0; font-size: 13px; color: var(--accent, #4C76FF); font-weight: 600; }
+.invite__stats:empty { display: none; }
+
 @media (max-width: 700px) {
   .confirm { padding: 32px 0 48px; }
+  .invite__row { flex-direction: column; }
+  .invite__row .btn { width: 100%; }
   .confirm__card {
     padding: 28px 20px 26px;
     padding-left:  max(20px, env(safe-area-inset-left));
