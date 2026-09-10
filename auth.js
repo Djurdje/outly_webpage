@@ -321,6 +321,8 @@
     }
     profile = data || null;
     paintAvatar();
+    // Racun je povezan; morebitna koda povabitelja je porabljena.
+    try { localStorage.removeItem(REF_KEY); } catch (_) {}
   }
 
   function initial() {

@@ -567,6 +567,9 @@
 
     // Prijava se šteje šele, ko uporabnik klikne povezavo v mailu.
     if (status === "sent" || status === "resent") {
+      // Povabitelj je zapisan ob prijavi; kode ne potrebujemo vec.
+      try { localStorage.removeItem(REF_KEY); } catch (_) {}
+      const ib = document.getElementById("invitedBy"); if (ib) ib.hidden = true;
       showCheckMail(email);
     } else if (status === "already_confirmed") {
       setMsg("You're already on the waitlist — see you at launch.", "ok");
@@ -601,7 +604,8 @@
   async function pokaziPovabitelja() {
     const box = document.getElementById("invitedBy");
     const code = refKoda();
-    if (!box || !code || !client) return;
+    // Pasica samo ob prihodu prek linka; shranjena koda se uporabi tiho.
+    if (!box || !code || !client || !REF_IN_URL) return;
 
     const { data: name, error } = await client.rpc("referrer_public", { p_ref: code });
     if (error || !name) {
