@@ -41,6 +41,7 @@
     } catch (_) { return null; }
   }
   shraniRefIzNaslova();
+  const REF_IN_URL = /[?&]ref=/i.test(location.search);
 
   // Pogoste tipkarske napake v domeni. Baza jih ne more ujeti (gmial.com
   // je čisto veljavna oblika), zato uporabnika opozorimo takoj.
@@ -592,6 +593,36 @@
 
   form.addEventListener("submit", onSubmit);
 
+  /* ---------------------------------------------------------------
+     Povabilo: kdo te je povabil (delno zakrito ime iz baze) + skok na formo.
+     Pasica se pokaze, dokler koda velja; ob prihodu prek linka se stran
+     pomakne na waitlisto in postavi kurzor v polje.
+  ---------------------------------------------------------------- */
+  async function pokaziPovabitelja() {
+    const box = document.getElementById("invitedBy");
+    const code = refKoda();
+    if (!box || !code || !client) return;
+
+    const { data: name, error } = await client.rpc("referrer_public", { p_ref: code });
+    if (error || !name) {
+      if (error) console.info("[waitlist] referrer_public:", error.message);
+      return;
+    }
+
+    document.getElementById("invitedByName").textContent = name;
+    document.getElementById("invitedByAvatar").textContent = name.charAt(0).toUpperCase();
+    box.hidden = false;
+    alignPanelToForm();
+
+    if (REF_IN_URL) {
+      const target = document.getElementById("waitlist");
+      setTimeout(() => {
+        if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+        setTimeout(() => { if (emailInput && !MOBILE_MQ.matches) emailInput.focus({ preventScroll: true }); }, 700);
+      }, 250);
+    }
+  }
+
   // "Invite friends": link imajo samo registrirani — prijavljenemu odpre profil
   // z linkom, ostalim prijavo/registracijo (auth.js).
   const inviteBtn = document.getElementById("inviteFriendsBtn");
@@ -618,6 +649,7 @@
     });
 
     loadList().then(subscribe);
+    pokaziPovabitelja();
     setInterval(refreshClock, CLOCK_MS);
 
     // Ob rotaciji / spremembi širine prilagodi dolžino seznama.

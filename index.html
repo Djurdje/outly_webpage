@@ -439,6 +439,13 @@
         </div>
 
         <form class="waitlist__form" id="waitlistForm">
+          <div class="invitedBy" id="invitedBy" hidden>
+            <span class="person__avatar person__avatar--user" id="invitedByAvatar" aria-hidden="true">?</span>
+            <div>
+              <p class="invitedBy__title"><b id="invitedByName">Someone</b> invited you to Outly.</p>
+              <p class="invitedBy__text">Grab your spot below &mdash; they get a point once you confirm your email.</p>
+            </div>
+          </div>
           <label class="field">
             <span>Email</span>
             <input type="email" name="email" placeholder="you@domain.com" required>
