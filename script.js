@@ -13,9 +13,11 @@ document.querySelectorAll('[data-features="creator"]').forEach(el => {
 /* ---------------------------
    HOW IT WORKS: 4-step flow
 ---------------------------- */
-const stepBtns = Array.from(document.querySelectorAll(".step2"));
-const pages = Array.from(document.querySelectorAll(".how2__page"));
-const fill = document.querySelector(".how2__fill");
+// User tok je omejen na #howUser; creator tok (#howCreator) je spodaj posebej.
+const howUser = document.getElementById("howUser") || document;
+const stepBtns = Array.from(howUser.querySelectorAll(".step2"));
+const pages = Array.from(howUser.querySelectorAll(".how2__page"));
+const fill = howUser.querySelector(".how2__fill");
 
 let state = {
   step: 1,
@@ -65,12 +67,12 @@ function setStep(n){
   qrAge.textContent = String(state.age);
 }
 
-document.querySelectorAll("[data-next]").forEach(btn => {
+howUser.querySelectorAll("[data-next]").forEach(btn => {
   btn.addEventListener("click", () => {
     if(state.step < 4) setStep(state.step + 1);
   });
 });
-document.querySelectorAll("[data-prev]").forEach(btn => {
+howUser.querySelectorAll("[data-prev]").forEach(btn => {
   btn.addEventListener("click", () => {
     if(state.step > 1) setStep(state.step - 1);
   });
@@ -81,7 +83,7 @@ stepBtns.forEach(btn => {
 });
 
 // Genres
-const chips = Array.from(document.querySelectorAll(".chip"));
+const chips = Array.from(howUser.querySelectorAll(".genreGrid .chip"));
 chips.forEach(ch => {
   ch.addEventListener("click", () => {
     chips.forEach(c => c.classList.remove("is-selected"));
@@ -121,11 +123,112 @@ buyBtn?.addEventListener("click", () => {
 });
 
 /* ---------------------------
+   HOW IT WORKS: User / Creator preklop + creator tok
+---------------------------- */
+(() => {
+  const grids = { user: document.getElementById("howUser"), creator: document.getElementById("howCreator") };
+  const btns  = Array.from(document.querySelectorAll("[data-howmode]"));
+  const sub   = document.getElementById("howSub");
+  if (!grids.creator || !btns.length) return;
+
+  const SUB = {
+    user:    "Choose a genre, age and location, find an event, buy a ticket and scan your QR code at the door.",
+    creator: "Publish your nights, see sales live, scan tickets at the door and run it all with your team."
+  };
+
+  function setHowMode(mode) {
+    btns.forEach(b => {
+      const on = b.dataset.howmode === mode;
+      b.classList.toggle("is-active", on);
+      b.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    grids.user.hidden    = mode !== "user";
+    grids.creator.hidden = mode !== "creator";
+    if (sub) sub.textContent = SUB[mode];
+  }
+  btns.forEach(b => b.addEventListener("click", () => setHowMode(b.dataset.howmode)));
+  window.setHowMode = setHowMode;
+
+  // Creator tok: isti 4-koracni vzorec kot pri userju.
+  const g      = grids.creator;
+  const sBtns  = Array.from(g.querySelectorAll(".step2"));
+  const sPages = Array.from(g.querySelectorAll(".how2__page"));
+  const sFill  = g.querySelector(".how2__fill");
+  let cur = 1;
+
+  function go(n) {
+    cur = n;
+    sBtns.forEach(b => {
+      const on = b.dataset.step === String(n);
+      b.classList.toggle("is-active", on);
+      b.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    sPages.forEach(p => p.classList.toggle("is-active", p.dataset.page === String(n)));
+    if (sFill) sFill.style.width = ((n / 4) * 100) + "%";
+  }
+  sBtns.forEach(b => b.addEventListener("click", () => go(Number(b.dataset.step))));
+  g.querySelectorAll("[data-next]").forEach(b => b.addEventListener("click", () => { if (cur < 4) go(cur + 1); }));
+  g.querySelectorAll("[data-prev]").forEach(b => b.addEventListener("click", () => { if (cur > 1) go(cur - 1); }));
+
+  // Dashboard: stevilke "zivijo", dokler je korak odprt.
+  const sold = g.querySelector('[data-dash="sold"]');
+  const inEl = g.querySelector('[data-dash="in"]');
+  const rev  = g.querySelector('[data-dash="rev"]');
+  let nSold = 148, nIn = 63;
+  setInterval(() => {
+    if (g.hidden || cur !== 1 || document.hidden) return;
+    if (Math.random() < .6 && nSold < 220) { nSold++; sold.textContent = String(nSold); rev.textContent = (nSold * 12).toLocaleString("sl-SI") + " €"; }
+    if (Math.random() < .5 && nIn < nSold)  { nIn++;  inEl.textContent = String(nIn); }
+  }, 1400);
+
+  // Promocija: boost stikalo vklopi/izklopi znacko.
+  const boost = document.getElementById("boostToggle");
+  const badge = document.getElementById("clubBadge");
+  boost?.addEventListener("change", () => { badge.hidden = !boost.checked; });
+
+  // Skener: prvi sken veljaven, drugi isti zavrnjen, nato nova vstopnica.
+  const box = document.getElementById("scanBox");
+  const scanBtn = document.getElementById("scanBtn");
+  const sTitle = document.getElementById("scanTitle");
+  const sSub = document.getElementById("scanSub");
+  let scans = 0;
+  scanBtn?.addEventListener("click", () => {
+    if (box.dataset.state === "scanning") return;
+    box.dataset.state = "scanning";
+    sTitle.textContent = "Scanning…"; sSub.textContent = "Hold still";
+    setTimeout(() => {
+      scans++;
+      if (scans % 2 === 1) {
+        box.dataset.state = "ok";
+        sTitle.textContent = "Valid — welcome in";
+        sSub.textContent = "Saturday Rave · ticket #" + (1040 + scans);
+        scanBtn.textContent = "Scan the same ticket again";
+      } else {
+        box.dataset.state = "bad";
+        sTitle.textContent = "Already used";
+        sSub.textContent = "This ticket was scanned a moment ago";
+        scanBtn.textContent = "Scan the next ticket";
+      }
+    }, 900);
+  });
+
+  // Ekipa: klik na "Add a teammate" doda vrstico.
+  const add = document.getElementById("teamAdd");
+  add?.addEventListener("click", () => {
+    const li = document.createElement("li");
+    li.className = "team__row is-new";
+    li.innerHTML = '<span class="person__avatar" aria-hidden="true">A</span><span class="team__who"><strong>Ana</strong><small>Door · invited</small></span><span class="team__perm">Scan only</span>';
+    add.before(li);
+    add.hidden = true;
+  });
+})();
+
+/* ---------------------------
    FEATURES: User / Creator toggle
 ---------------------------- */
 const featuresGrid = document.getElementById("featuresGrid");
 const creatorCta = document.getElementById("creatorCta");
-const toggleBtns = Array.from(document.querySelectorAll(".toggle__btn"));
+const toggleBtns = Array.from(document.querySelectorAll("#features .toggle__btn"));
 
 const FEATURES = {
   user: [

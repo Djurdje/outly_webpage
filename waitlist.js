@@ -12,7 +12,7 @@
   /* ---------------------------------------------------------------
      Konstante
   ---------------------------------------------------------------- */
-  const FETCH_LIMIT   = 25;      // koliko prijav preberemo iz baze (seznam se scrolla)
+  const FETCH_LIMIT   = 40;      // velikost ene strani; ob scrollu do dna nalozimo naslednjo (do konca)
   const MOBILE_MQ     = window.matchMedia("(max-width: 600px)");
   const DESKTOP_MQ    = window.matchMedia("(min-width: 981px)");
   const POLL_MS       = 15000;   // fallback osveževanje, če realtime ne steče
@@ -78,18 +78,21 @@
      Stanje
   ---------------------------------------------------------------- */
   let client   = null;
-  let rows     = [];     // zadnjih FETCH_LIMIT maskiranih prijav
+  let rows     = [];     // nalozene prijave (od najnovejse), raste ob scrollu
   let total    = 0;      // skupno število prijav
   let pollId   = null;
   let sending  = false;
+  let loadingMore = false;
+  let allLoaded   = false;
   let lastEmail = "";   // naslov iz zadnje uspesne oddaje (za "poslji znova")
 
   /* ---------------------------------------------------------------
      Pomožne funkcije
   ---------------------------------------------------------------- */
-  // Na telefonu prikažemo malo krajši seznam; višino omeji CSS (scroll območje).
+  // Seznam se scrolla do konca (vse prijave), zato omejitve prikaza ni vec;
+  // funkcija ostaja zaradi klicev spodaj.
   function visibleLimit() {
-    return MOBILE_MQ.matches ? 15 : FETCH_LIMIT;
+    return Infinity;
   }
 
   /* Na desktopu panel s seznamom spodaj poravnamo s formo.
@@ -180,10 +183,12 @@
       li.className = "person";
       if (newIds && newIds.has(row.id)) li.classList.add("is-new");
 
-      const initial = (row.masked_email || "?").charAt(0).toUpperCase();
+      // Registrirani z izbranim imenom se kazejo z imenom, ostali z maskiranim mailom.
+      const label   = row.display_name || row.masked_email || "?";
+      const initial = label.charAt(0).toUpperCase();
       li.innerHTML = `
         <span class="person__avatar" aria-hidden="true">${escapeHtml(initial)}</span>
-        <span class="person__mail">${escapeHtml(row.masked_email)}</span>
+        <span class="person__mail${row.display_name ? " person__mail--name" : ""}">${escapeHtml(label)}</span>
         ${row.is_creator ? '<span class="person__tag">creator</span>' : ""}
         <time class="person__time" datetime="${escapeHtml(row.created_at)}">${relTime(row.created_at)}</time>
       `;
@@ -193,10 +198,11 @@
     // Ob novi prijavi pokažemo vrh seznama, sicer ostanemo, kjer je bil uporabnik.
     listEl.scrollTop = (newIds && newIds.size) ? 0 : keepScroll;
 
-    const rest = total - Math.min(rows.length, visibleLimit());
+    const rest = total - rows.length;
+    allLoaded = rest <= 0;
     if (moreEl) {
       if (rest > 0) {
-        moreEl.textContent = "+ " + rest.toLocaleString("en-US") + (rest === 1 ? " other" : " others");
+        moreEl.textContent = "+ " + rest.toLocaleString("en-US") + (rest === 1 ? " other" : " others") + " — scroll for more";
         moreEl.hidden = false;
       } else {
         moreEl.hidden = true;
@@ -217,15 +223,21 @@
   /* ---------------------------------------------------------------
      Branje iz baze
   ---------------------------------------------------------------- */
+  const COLS = "id, masked_email, display_name, is_creator, created_at";
+
   async function loadList(newIds) {
     if (!client) return;
+
+    // Osvezimo toliko vrstic, kolikor jih je uporabnik ze videl (vsaj eno stran),
+    // da se ob osvezitvi seznam ne skrci nazaj na vrh.
+    const want = Math.max(FETCH_LIMIT, rows.length);
 
     const [listRes, countRes] = await Promise.all([
       client
         .from("waitlist_public")
-        .select("id, masked_email, is_creator, created_at")
+        .select(COLS)
         .order("created_at", { ascending: false })
-        .limit(FETCH_LIMIT),
+        .limit(want),
       client
         .from("waitlist_public")
         .select("id", { count: "exact", head: true })
@@ -239,6 +251,35 @@
     rows  = listRes.data || [];
     total = (countRes && typeof countRes.count === "number") ? countRes.count : rows.length;
     render(newIds);
+  }
+
+  // Naslednja stran (starejse prijave) — kurzor po created_at, da realtime vstavki
+  // na vrhu ne premaknejo strani.
+  async function loadMore() {
+    if (!client || loadingMore || allLoaded || !rows.length) return;
+    loadingMore = true;
+
+    const last = rows[rows.length - 1].created_at;
+    const { data, error } = await client
+      .from("waitlist_public")
+      .select(COLS)
+      .lt("created_at", last)
+      .order("created_at", { ascending: false })
+      .limit(FETCH_LIMIT);
+
+    loadingMore = false;
+    if (error) { console.warn("[waitlist] more error:", error.message); return; }
+
+    if (!data || !data.length) { allLoaded = true; render(); return; }
+    const seen = new Set(rows.map((r) => r.id));
+    data.forEach((r) => { if (!seen.has(r.id)) rows.push(r); });
+    render();
+  }
+
+  if (listEl) {
+    listEl.addEventListener("scroll", () => {
+      if (listEl.scrollTop + listEl.clientHeight >= listEl.scrollHeight - 80) loadMore();
+    }, { passive: true });
   }
 
   /* ---------------------------------------------------------------
@@ -272,6 +313,18 @@
           rows = rows.slice(0, FETCH_LIMIT);
           total += 1;
           render(new Set([row.id]));
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "waitlist_public" },
+        (payload) => {
+          // Uporabnik si je izbral ime: zamenjamo mail z imenom v zivo.
+          const row = payload.new;
+          const i = row ? rows.findIndex((r) => r.id === row.id) : -1;
+          if (i < 0) return;
+          rows[i] = Object.assign({}, rows[i], row);
+          render();
         }
       )
       .subscribe((status) => {
@@ -328,6 +381,7 @@
   const fieldEl     = form.querySelector(".field");
   const fineEl      = form.querySelector(".fineprint");
   const creatorEl   = form.querySelector(".creatorLine");
+  const btnsEl      = form.querySelector(".waitlist__btns");
 
   // Znani spletni predali. Za neznano domeno gumba ne pokazemo —
   // ugibana povezava bi peljala v prazno.
@@ -388,7 +442,7 @@
 
     setMsg("");
     setNote("");
-    [fieldEl, submitBtn, fineEl, creatorEl].forEach((el) => { if (el) el.hidden = true; });
+    [fieldEl, btnsEl || submitBtn, fineEl, creatorEl].forEach((el) => { if (el) el.hidden = true; });
     checkBox.hidden = false;
     alignPanelToForm();
   }
@@ -396,7 +450,7 @@
   function hideCheckMail() {
     if (!checkBox) return;
     checkBox.hidden = true;
-    [fieldEl, submitBtn, fineEl, creatorEl].forEach((el) => { if (el) el.hidden = false; });
+    [fieldEl, btnsEl || submitBtn, fineEl, creatorEl].forEach((el) => { if (el) el.hidden = false; });
     form.reset();
     setMsg("");
     setNote("");
@@ -534,6 +588,16 @@
 
   form.addEventListener("submit", onSubmit);
 
+  // "Invite friends": link imajo samo registrirani — prijavljenemu odpre profil
+  // z linkom, ostalim prijavo/registracijo (auth.js).
+  const inviteBtn = document.getElementById("inviteFriendsBtn");
+  if (inviteBtn) {
+    inviteBtn.addEventListener("click", () => {
+      if (window.OutlyAuth) window.OutlyAuth.open("invite");
+      else setMsg("Create an account to get your invite link.", "error");
+    });
+  }
+
   // Sprotna validacija: skrij napako, ko uporabnik popravlja vnos.
   emailInput?.addEventListener("input", () => {
     if (msg && msg.classList.contains("is-error")) setMsg("");
@@ -544,7 +608,8 @@
   ---------------------------------------------------------------- */
   if (isConfigured()) {
     const cfg = window.OUTLY_SUPABASE;
-    client = window.supabase.createClient(cfg.url, cfg.anonKey, {
+    // Odjemalca ustvari auth.js (deljena seja); brez njega ga naredimo tukaj.
+    client = window.OUTLY_CLIENT || window.supabase.createClient(cfg.url, cfg.anonKey, {
       realtime: { params: { eventsPerSecond: 5 } }
     });
 

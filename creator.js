@@ -201,7 +201,7 @@
   document.addEventListener("DOMContentLoaded", () => {
     const cfg = window.OUTLY_SUPABASE;
     if (cfg && cfg.url && cfg.anonKey && window.supabase) {
-      client = window.supabase.createClient(cfg.url, cfg.anonKey);
+      client = window.OUTLY_CLIENT || window.supabase.createClient(cfg.url, cfg.anonKey);
     } else {
       console.info("[creator] Supabase ni nastavljen — glej supabase-config.js");
     }

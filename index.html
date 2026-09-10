@@ -55,8 +55,12 @@
       </nav>
 
       <div class="nav__cta">
-        <a class="btn" href="Creator.html" data-cta="creator">For creators</a>
-        <a class="btn btn--primary btn--ring" href="#waitlist">Join the waitlist</a>
+        <a class="btn btn--sm" href="Creator.html" data-cta="creator">For creators</a>
+        <a class="btn btn--sm btn--primary btn--ring" href="#waitlist">Join the waitlist</a>
+        <button class="avatarBtn" id="profileBtn" type="button" aria-label="Your profile" aria-haspopup="dialog" aria-expanded="false">
+          <svg class="avatarBtn__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M12 12.2a4.1 4.1 0 1 0 0-8.2 4.1 4.1 0 0 0 0 8.2Zm-7.5 8c.6-3.6 3.7-5.7 7.5-5.7s6.9 2.1 7.5 5.7"/></svg>
+          <span class="avatarBtn__initial" hidden></span>
+        </button>
       </div>
     </div>
   </header>
@@ -95,13 +99,18 @@
         <div>
           <p class="kicker">Plan your night in seconds</p>
           <h2>HOW IT<span class="accent"> WORKS</span>.</h2>
-          <p class="section__sub">
+          <p class="section__sub" id="howSub">
             Choose a genre, age and location, find an event, buy a ticket and scan your QR code at the door.
           </p>
         </div>
+
+        <div class="toggle" role="tablist" aria-label="How it works — user or creator">
+          <button class="toggle__btn is-active" role="tab" aria-selected="true" data-howmode="user">User</button>
+          <button class="toggle__btn" role="tab" aria-selected="false" data-howmode="creator">Creator</button>
+        </div>
       </div>
 
-      <div class="how2__grid">
+      <div class="how2__grid" id="howUser" data-howgrid="user">
         <!-- Steps -->
         <div class="how2__steps" role="tablist" aria-label="How Outly works steps">
           <button class="step2 is-active" role="tab" aria-selected="true" data-step="1">
@@ -267,6 +276,104 @@
           </div>
         </div>
       </div>
+
+      <!-- CREATOR flow -->
+      <div class="how2__grid" id="howCreator" data-howgrid="creator" hidden>
+        <div class="how2__steps" role="tablist" aria-label="How Outly works for creators">
+          <button class="step2 is-active" role="tab" aria-selected="true" data-step="1">
+            <span class="step2__num">01</span>
+            <span class="step2__text"><strong>Dashboard</strong><small>Sales, check-ins and revenue, live.</small></span>
+          </button>
+          <button class="step2" role="tab" aria-selected="false" data-step="2">
+            <span class="step2__num">02</span>
+            <span class="step2__text"><strong>Promote your club</strong><small>Your club page, seen by the right crowd.</small></span>
+          </button>
+          <button class="step2" role="tab" aria-selected="false" data-step="3">
+            <span class="step2__num">03</span>
+            <span class="step2__text"><strong>Scan tickets</strong><small>QR check-in at the door, no hardware.</small></span>
+          </button>
+          <button class="step2" role="tab" aria-selected="false" data-step="4">
+            <span class="step2__num">04</span>
+            <span class="step2__text"><strong>Your team</strong><small>Managers and door staff, each with their own access.</small></span>
+          </button>
+          <div class="how2__progress" aria-hidden="true">
+            <div class="how2__bar"><span class="how2__fill"></span></div>
+          </div>
+        </div>
+
+        <div class="how2__panel">
+          <div class="how2__panelRing" aria-hidden="true"></div>
+
+          <!-- C1 Dashboard -->
+          <div class="how2__page is-active" data-page="1">
+            <h3>Dashboard</h3>
+            <p>Everything about tonight on one screen — updated as tickets sell and people walk in.</p>
+            <div class="dash">
+              <div class="dash__stat"><span>Tickets sold</span><strong data-dash="sold">148</strong><small>of 220</small></div>
+              <div class="dash__stat"><span>Checked in</span><strong data-dash="in">63</strong><small>at the door</small></div>
+              <div class="dash__stat"><span>Revenue</span><strong data-dash="rev">1 776 €</strong><small>tonight</small></div>
+            </div>
+            <div class="dash__chart" aria-hidden="true">
+              <i style="--h:22%"></i><i style="--h:30%"></i><i style="--h:26%"></i><i style="--h:44%"></i><i style="--h:58%"></i><i style="--h:70%"></i><i style="--h:100%"></i>
+            </div>
+            <div class="how2__actions">
+              <div class="hint">Sales by day — this week</div>
+              <button class="btn btn--primary btn--ring" type="button" data-next>Next</button>
+            </div>
+          </div>
+
+          <!-- C2 Promote -->
+          <div class="how2__page" data-page="2">
+            <h3>Promote your club</h3>
+            <p>Your club page is what people see when they pick a genre near them. Keep it fresh, boost key nights.</p>
+            <div class="clubCard">
+              <div class="clubCard__banner"><span class="clubCard__badge" id="clubBadge">Featured tonight</span></div>
+              <div class="clubCard__body">
+                <div class="clubCard__name">Your Club <span class="clubCard__meta">· Ljubljana · 0.8 km</span></div>
+                <div class="clubCard__tags"><span class="chip is-selected">Techno</span><span class="chip">House</span><span class="chip">18+</span></div>
+                <div class="clubCard__event"><strong>Saturday Rave</strong><span>Sat 23:00 · from 12 €</span></div>
+              </div>
+            </div>
+            <div class="how2__actions">
+              <label class="switch"><input type="checkbox" id="boostToggle" checked><span></span> Boost this night</label>
+              <div class="how2__btns"><button class="btn" type="button" data-prev>Back</button><button class="btn btn--primary btn--ring" type="button" data-next>Next</button></div>
+            </div>
+          </div>
+
+          <!-- C3 Scan -->
+          <div class="how2__page" data-page="3">
+            <h3>Scan tickets</h3>
+            <p>Your phone is the scanner. Each QR works once — a second scan is rejected on the spot.</p>
+            <div class="scanBox" id="scanBox" data-state="ready">
+              <div class="scanBox__frame" aria-hidden="true"><i></i></div>
+              <div class="scanBox__result" aria-live="polite">
+                <strong id="scanTitle">Ready to scan</strong>
+                <span id="scanSub">Point the camera at a ticket</span>
+              </div>
+            </div>
+            <div class="how2__actions">
+              <button class="btn" type="button" id="scanBtn">Scan a ticket</button>
+              <div class="how2__btns"><button class="btn" type="button" data-prev>Back</button><button class="btn btn--primary btn--ring" type="button" data-next>Next</button></div>
+            </div>
+          </div>
+
+          <!-- C4 Team -->
+          <div class="how2__page" data-page="4">
+            <h3>Your team</h3>
+            <p>Add the people who run your nights. Everyone gets only what their role needs.</p>
+            <ul class="team">
+              <li class="team__row"><span class="person__avatar" aria-hidden="true">L</span><span class="team__who"><strong>Luka</strong><small>Owner</small></span><span class="team__perm">Everything</span></li>
+              <li class="team__row"><span class="person__avatar" aria-hidden="true">N</span><span class="team__who"><strong>Nina</strong><small>Manager</small></span><span class="team__perm">Events · tickets · stats</span></li>
+              <li class="team__row"><span class="person__avatar" aria-hidden="true">M</span><span class="team__who"><strong>Marko</strong><small>Door</small></span><span class="team__perm">Scan only</span></li>
+              <li class="team__row team__row--add" id="teamAdd"><span class="person__avatar" aria-hidden="true">+</span><span class="team__who"><strong>Add a teammate</strong><small>Invite by email</small></span></li>
+            </ul>
+            <div class="how2__actions">
+              <button class="btn" type="button" data-prev>Back</button>
+              <a class="btn btn--primary btn--ring" href="Creator.html">Apply as a creator</a>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -337,7 +444,10 @@
             <input type="email" name="email" placeholder="you@domain.com" required>
           </label>
 
-          <button class="btn btn--primary btn--ring" type="submit">Join the waitlist</button>
+          <div class="waitlist__btns">
+            <button class="btn btn--primary btn--ring" type="submit">Join the waitlist</button>
+            <button class="btn" type="button" id="inviteFriendsBtn">Invite friends</button>
+          </div>
           <p class="fineprint">
             We store your email address so we can tell you when Outly launches. Nothing else, and
             we never pass it on. Unsubscribe or ask us to delete it at any time &mdash; see our
@@ -460,6 +570,7 @@
   <!-- Waitlist (Supabase) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js"></script>
   <script src="./supabase-config.js"></script>
+  <script src="./auth.js"></script>
   <script src="./waitlist.js"></script>
 </body>
 </html>
