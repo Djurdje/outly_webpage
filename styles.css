@@ -2093,3 +2093,9 @@ body.drawer-open { overflow: hidden; }
 }
 .waitlist__btns { margin-top: 12px; align-items: stretch; }
 .waitlist__form .waitlist__btns button[type="submit"] { margin-top: 0; }
+
+/* Kovanec za točke (slika) in vrstica registriranega v waitlisti */
+.points__coin { width: 48px; height: 48px; border-radius: 0; background: none; box-shadow: none; object-fit: contain; filter: drop-shadow(0 8px 18px rgba(76,118,255,.45)); }
+.person__mail--name { color: rgba(255,255,255,.7); font-weight: 600; }
+.person__mail--name b { color: var(--text); font-weight: 800; }
+.person__avatar--user { background: linear-gradient(160deg, #5c82ff, #2f4fcf); border-color: rgba(120,150,255,.6); }

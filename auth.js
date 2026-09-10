@@ -142,7 +142,7 @@
 
       <div class="points">
         <div class="points__row">
-          <span class="points__coin" aria-hidden="true">P</span>
+          <img class="points__coin" src="./assets/points-coin.png" alt="" width="48" height="48">
           <span class="points__num" data-points>0</span>
         </div>
         <p class="points__label" data-points-label></p>

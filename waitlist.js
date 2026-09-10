@@ -183,12 +183,16 @@
       li.className = "person";
       if (newIds && newIds.has(row.id)) li.classList.add("is-new");
 
-      // Registrirani z izbranim imenom se kazejo z imenom, ostali z maskiranim mailom.
+      // Registrirani se kazejo z delno zakritim imenom + "created a profile",
+      // ostali z maskiranim mailom.
       const label   = row.display_name || row.masked_email || "?";
       const initial = label.charAt(0).toUpperCase();
+      const text    = row.display_name
+        ? `<span class="person__mail person__mail--name"><b>${escapeHtml(label)}</b> created a profile</span>`
+        : `<span class="person__mail">${escapeHtml(label)}</span>`;
       li.innerHTML = `
-        <span class="person__avatar" aria-hidden="true">${escapeHtml(initial)}</span>
-        <span class="person__mail${row.display_name ? " person__mail--name" : ""}">${escapeHtml(label)}</span>
+        <span class="person__avatar${row.display_name ? " person__avatar--user" : ""}" aria-hidden="true">${escapeHtml(initial)}</span>
+        ${text}
         ${row.is_creator ? '<span class="person__tag">creator</span>' : ""}
         <time class="person__time" datetime="${escapeHtml(row.created_at)}">${relTime(row.created_at)}</time>
       `;
