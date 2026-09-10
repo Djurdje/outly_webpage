@@ -323,12 +323,12 @@
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "waitlist_public" },
         (payload) => {
-          // Uporabnik si je izbral ime: zamenjamo mail z imenom v zivo.
+          // Uporabnik si je izbral ime: vrstica dobi nov cas in skoci na vrh,
+          // zato seznam raje na novo nalozimo.
           const row = payload.new;
-          const i = row ? rows.findIndex((r) => r.id === row.id) : -1;
-          if (i < 0) return;
-          rows[i] = Object.assign({}, rows[i], row);
-          render();
+          if (!row) return;
+          rows = rows.filter((r) => r.id !== row.id);
+          loadList(new Set([row.id]));
         }
       )
       .subscribe((status) => {
