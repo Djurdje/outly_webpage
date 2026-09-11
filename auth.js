@@ -294,11 +294,14 @@
 
   // Kam naj gre plosca glede na stanje racuna.
   async function route(target) {
+    // Med ponastavitvijo gesla (povezava iz maila) je uporabnik ze prijavljen,
+    // a mora najprej izbrati novo geslo — vse poti vodijo na "reset".
+    if (pendingRecovery || target === "reset") { view("reset"); return; }
     if (!user) {
       // Neprijavljen: dovoljeni pogledi so login, register, forgot in reset;
       // vse drugo pelje na prijavo. ("forgot" je manjkal -> gumb "Forgot your
       // password?" ni naredil nic; popravljeno 11. 9. 2026.)
-      view(["register", "forgot", "reset"].includes(target) ? target : "login");
+      view(["register", "forgot"].includes(target) ? target : "login");
       return;
     }
     view("loading");
@@ -537,7 +540,11 @@
   /* ---------------------------------------------------------------
      Stanje seje
   ---------------------------------------------------------------- */
-  let pendingRecovery = false;
+  // Povezava iz maila za ponastavitev gesla ima v hashu type=recovery. Supabase
+  // najprej sprozi SIGNED_IN (ta bi odprl profil) in sele nato PASSWORD_RECOVERY,
+  // zato to vemo ze vnaprej — sicer je nalaganje profila prepisalo pogled "reset"
+  // (hrosc 11. 9. 2026: "select new password" te vrze v profil).
+  let pendingRecovery = /type=recovery/.test(START_HASH);
 
   client.auth.onAuthStateChange(async (event, session) => {
     const before = user && user.id;
@@ -546,6 +553,7 @@
     if (event === "PASSWORD_RECOVERY") {
       pendingRecovery = true;
       paintAvatar();
+      history.replaceState(null, "", location.pathname + location.search);
       open("reset");
       return;
     }
@@ -560,7 +568,7 @@
     if (user && (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "USER_UPDATED")) {
       if (event === "USER_UPDATED" && profile) return;
       paintAvatar();
-      if (pendingRecovery) return;              // najprej novo geslo
+      if (pendingRecovery) { open("reset"); return; }   // najprej novo geslo
       await loadProfile();
       document.dispatchEvent(new CustomEvent("outly:auth", { detail: { user, profile } }));
 
