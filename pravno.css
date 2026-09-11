@@ -1,0 +1,52 @@
+:root{
+  --papir:#FBFBFC; --ploskev:#FFFFFF; --crnilo:#16181D; --pridusen:#4E5462;
+  --bled:#858B99; --crta:#E2E4EA; --modra:#3550D8; --modra-bled:#EEF1FD;
+  --opoz:#8A5A08; --opoz-bled:#FDF4E3;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --papir:#0D0E12; --ploskev:#15171C; --crnilo:#E9EBF0; --pridusen:#A0A6B4;
+  --bled:#767D8C; --crta:#262A33; --modra:#8CA0FF; --modra-bled:#171C31;
+  --opoz:#E0A94C; --opoz-bled:#2A2214;
+}}
+:root[data-theme="dark"]{
+  --papir:#0D0E12; --ploskev:#15171C; --crnilo:#E9EBF0; --pridusen:#A0A6B4;
+  --bled:#767D8C; --crta:#262A33; --modra:#8CA0FF; --modra-bled:#171C31;
+  --opoz:#E0A94C; --opoz-bled:#2A2214;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--papir);color:var(--crnilo);
+  font:17px/1.65 Georgia,"Times New Roman",serif;-webkit-font-smoothing:antialiased}
+.ovoj{max-width:760px;margin:0 auto;padding:44px 22px 90px}
+h1,h2,h3,.ui{font-family:-apple-system,"Segoe UI",Roboto,sans-serif}
+header{border-bottom:2px solid var(--crnilo);padding-bottom:22px;margin-bottom:30px}
+.znamka{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--bled);margin-bottom:12px}
+h1{font-size:clamp(27px,5vw,38px);line-height:1.12;font-weight:700;letter-spacing:-.02em;margin:0 0 12px;text-wrap:balance}
+.datum{font-family:-apple-system,"Segoe UI",sans-serif;font-size:13px;color:var(--bled)}
+h2{font-size:19px;font-weight:650;letter-spacing:-.01em;margin:38px 0 12px;padding-top:6px}
+h2 .st{color:var(--bled);font-weight:600;margin-right:9px;font-variant-numeric:tabular-nums}
+h3{font-size:16px;font-weight:650;margin:22px 0 8px}
+p{margin:0 0 14px}
+ul{margin:0 0 14px;padding:0;list-style:none}
+ul li{padding-left:22px;position:relative;margin-bottom:9px}
+ul li::before{content:"–";position:absolute;left:0;color:var(--bled)}
+a{color:var(--modra)}
+strong{font-weight:650}
+.kazalo{background:var(--ploskev);border:1px solid var(--crta);border-radius:6px;padding:18px 22px;margin-bottom:34px}
+.kazalo ol{margin:0;padding-left:20px;columns:2;column-gap:28px;font-family:-apple-system,"Segoe UI",sans-serif;font-size:14px;line-height:1.9}
+@media(max-width:600px){.kazalo ol{columns:1}}
+.kazalo a{text-decoration:none;color:var(--pridusen)}
+.kazalo a:hover{color:var(--modra)}
+.opomba{background:var(--opoz-bled);border:1px solid var(--crta);border-left:3px solid var(--opoz);
+  border-radius:5px;padding:15px 18px;margin:20px 0;font-size:15.5px;color:var(--crnilo)}
+.opomba b{color:var(--opoz)}
+.polje{background:var(--ploskev);border:1px solid var(--crta);border-radius:6px;padding:17px 20px;margin:18px 0}
+.polje p:last-child{margin-bottom:0}
+.drsnik{overflow-x:auto;border:1px solid var(--crta);border-radius:6px;background:var(--ploskev);margin:18px 0}
+table{border-collapse:collapse;width:100%;font-family:-apple-system,"Segoe UI",sans-serif;font-size:14px;min-width:540px}
+th{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--bled);
+  text-align:left;padding:11px 14px;border-bottom:1px solid var(--crta);white-space:nowrap}
+td{padding:11px 14px;border-bottom:1px solid var(--crta);vertical-align:top;color:var(--pridusen)}
+tbody tr:last-child td{border-bottom:0}
+td b{color:var(--crnilo);font-weight:650}
+footer{margin-top:52px;padding-top:22px;border-top:1px solid var(--crta);
+  font-family:-apple-system,"Segoe UI",sans-serif;font-size:13.5px;color:var(--bled)}
