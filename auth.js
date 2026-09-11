@@ -295,7 +295,10 @@
   // Kam naj gre plosca glede na stanje racuna.
   async function route(target) {
     if (!user) {
-      view(target === "register" ? "register" : target === "reset" ? "reset" : "login");
+      // Neprijavljen: dovoljeni pogledi so login, register, forgot in reset;
+      // vse drugo pelje na prijavo. ("forgot" je manjkal -> gumb "Forgot your
+      // password?" ni naredil nic; popravljeno 11. 9. 2026.)
+      view(["register", "forgot", "reset"].includes(target) ? target : "login");
       return;
     }
     view("loading");
@@ -321,8 +324,6 @@
     }
     profile = data || null;
     paintAvatar();
-    // Racun je povezan; morebitna koda povabitelja je porabljena.
-    try { localStorage.removeItem(REF_KEY); } catch (_) {}
   }
 
   function initial() {
