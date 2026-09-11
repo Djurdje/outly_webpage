@@ -1,10 +1,12 @@
 /* =====================================================================
    Outly — prijava creatorja
    ---------------------------------------------------------------------
-   Podatki gredo prek funkcije submit_creator_application() v Supabase.
-   Ta shrani prijavo, pošlje obvestilo ekipi in potrdilo prijavitelju.
-   Nastavitve baze so v ./supabase-config.js, shema v
-   ./supabase-schema-6-creators.sql.
+   Od 11. 9. 2026 gre prijava na backend aplikacije (POST /creator-applications),
+   isto pot kot prijava iz aplikacije — tako se vidi v admin panelu (Prošnje)
+   in jo tam odobriš. Backend pošlje obvestilo ekipi in potrdilo prijavitelju.
+   Če je obiskovalec prijavljen (Supabase Auth), gre zraven njegov žeton in
+   prošnja se veže na njegov račun. Stara pot prek Supabase
+   (submit_creator_application) ostane v bazi, a se ne uporablja več.
    ===================================================================== */
 
 (() => {
@@ -15,6 +17,7 @@
   let currentStep = 1;
   let sending = false;
   let client = null;
+  const API = "https://outly-backend-roy3.onrender.com";
 
   /* ---------- pomožno ---------- */
   function val(id) {
@@ -24,15 +27,15 @@
 
   function fields() {
     return {
-      p_business_name:    val("businessName"),
-      p_business_type:    val("businessType"),
-      p_business_address: val("businessAddress"),
-      p_city:             val("city"),
-      p_licence_id:       val("licenceId"),
-      p_contact_name:     val("contactName"),
-      p_contact_role:     val("contactRole"),
-      p_email:            val("contactEmail"),
-      p_phone:            val("contactPhone")
+      businessName:    val("businessName"),
+      businessType:    val("businessType"),
+      businessAddress: val("businessAddress"),
+      city:            val("city"),
+      licenceId:       val("licenceId"),
+      contactName:     val("contactName"),
+      contactRole:     val("contactRole"),
+      email:           val("contactEmail"),
+      phone:           val("contactPhone")
     };
   }
 
@@ -62,7 +65,7 @@
     const f = fields();
 
     if (step === 1) {
-      if (!f.p_business_name) {
+      if (!f.businessName) {
         msg("Please enter your business name.", "error");
         focusOn("businessName");
         return false;
@@ -70,12 +73,12 @@
     }
 
     if (step === 2) {
-      if (!f.p_contact_name) {
+      if (!f.contactName) {
         msg("Please enter the contact person's full name.", "error");
         focusOn("contactName");
         return false;
       }
-      if (!EMAIL_RE.test(f.p_email)) {
+      if (!EMAIL_RE.test(f.email)) {
         msg("Please enter a valid email address — this is where we reply.", "error");
         focusOn("contactEmail");
         return false;
@@ -92,15 +95,15 @@
     if (!list) return;
     const f = fields();
     const rows = [
-      ["Business",   f.p_business_name],
-      ["Type",       f.p_business_type],
-      ["Address",    f.p_business_address],
-      ["City",       f.p_city],
-      ["Licence ID", f.p_licence_id],
-      ["Contact",    f.p_contact_name],
-      ["Role",       f.p_contact_role],
-      ["Email",      f.p_email],
-      ["Phone",      f.p_phone]
+      ["Business",   f.businessName],
+      ["Type",       f.businessType],
+      ["Address",    f.businessAddress],
+      ["City",       f.city],
+      ["Licence ID", f.licenceId],
+      ["Contact",    f.contactName],
+      ["Role",       f.contactRole],
+      ["Email",      f.email],
+      ["Phone",      f.phone]
     ];
 
     list.innerHTML = "";
@@ -137,44 +140,53 @@
 
     // Če je kdo prišel do konca z manjkajočim podatkom, ga vrnemo na pravi korak.
     const f0 = fields();
-    if (!f0.p_business_name) {
+    if (!f0.businessName) {
       currentStep = 1; showStep(1); validateStep(1); return;
     }
-    if (!f0.p_contact_name || !EMAIL_RE.test(f0.p_email)) {
+    if (!f0.contactName || !EMAIL_RE.test(f0.email)) {
       currentStep = 2; showStep(2); validateStep(2); return;
     }
 
     const btn = document.getElementById("creatorSubmit");
 
-    if (!client) {
-      msg("We can't reach our servers right now. Please try again in a minute.", "error");
-      return;
-    }
-
     sending = true;
     if (btn) { btn.disabled = true; btn.textContent = "Sending…"; }
     msg("");
 
-    const { data: status, error } = await client.rpc("submit_creator_application", fields());
+    // Prijavljen obiskovalec: žeton gre zraven, prošnja se veže na njegov račun.
+    const headers = { "Content-Type": "application/json" };
+    try {
+      if (client) {
+        const { data } = await client.auth.getSession();
+        if (data && data.session && data.session.access_token) headers.Authorization = "Bearer " + data.session.access_token;
+      }
+    } catch (_) {}
+
+    let resp = null, text = "";
+    try {
+      resp = await fetch(API + "/creator-applications", { method: "POST", headers, body: JSON.stringify(fields()) });
+      text = await resp.text();
+    } catch (err) {
+      console.warn("[creator] submit error:", err);
+    }
 
     sending = false;
     if (btn) { btn.disabled = false; btn.textContent = "Submit application"; }
 
-    if (error) {
-      console.warn("[creator] submit error:", error);
-      msg("Something went wrong. Please try again in a moment.", "error");
+    if (!resp) {
+      msg("We can't reach our servers right now. Please try again in a minute.", "error");
       return;
     }
-
-    if (status === "ok") {
+    if (resp.status === 201) {
       showDone();
-    } else if (status === "duplicate") {
+    } else if (resp.status === 409) {
       msg("We already have an application from this address. We'll be in touch.", "ok");
-    } else if (status === "invalid") {
-      msg("Please check your business name, contact name and email address.", "error");
-    } else if (status === "busy") {
+    } else if (resp.status === 400) {
+      msg(/phone/i.test(text) ? "Please check the phone number (digits only, optionally with +)." : "Please check your business name, contact name and email address.", "error");
+    } else if (resp.status === 429) {
       msg("We're getting a lot of applications right now. Please try again in a few minutes.", "error");
     } else {
+      console.warn("[creator] submit", resp.status, text);
       msg("Something went wrong. Please try again in a moment.", "error");
     }
   };
@@ -202,8 +214,6 @@
     const cfg = window.OUTLY_SUPABASE;
     if (cfg && cfg.url && cfg.anonKey && window.supabase) {
       client = window.OUTLY_CLIENT || window.supabase.createClient(cfg.url, cfg.anonKey);
-    } else {
-      console.info("[creator] Supabase ni nastavljen — glej supabase-config.js");
     }
     showStep(currentStep);
   });

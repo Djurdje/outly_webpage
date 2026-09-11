@@ -26,7 +26,11 @@
   window.OUTLY_CLIENT = client;
 
   const EMAIL_RE = /^[^@\s]+@[^@\s.]+\.[^@\s]+$/;
-  const USER_RE  = /^[A-Za-z0-9_](?:[A-Za-z0-9_.]{1,18}[A-Za-z0-9_])?$/;
+  // Isto pravilo kot v aplikaciji (backend PATCH /me): crke, stevilke, podcrtaj.
+  const USER_RE  = /^[A-Za-z0-9_]{3,20}$/;
+  // Backend aplikacije: en profil (username, avatar) za stran in aplikacijo.
+  // Sprejme Supabasov zeton; ob prvem klicu ustvari racun v aplikaciji.
+  const API      = "https://outly-backend-roy3.onrender.com";
   const REF_KEY  = "outly_ref";
   const HOME     = new URL("./", location.href).href;   // https://outly.si/ ali podmapa
   const START_HASH = location.hash;                     // #access_token=… iz potrditvenega maila
@@ -123,13 +127,13 @@
     <div class="drawer__view" data-view="username">
       <p class="kicker">ALMOST DONE</p>
       <h2>Pick a username.</h2>
-      <p class="drawer__lead">This is how you'll show up on the waitlist instead of your email.</p>
+      <p class="drawer__lead">This is how you'll show up on the waitlist and in the Outly app.</p>
       <form data-form="username" novalidate>
         <label class="field"><span>Username</span><input type="text" name="username" autocomplete="nickname" placeholder="e.g. sefika" maxlength="20" required></label>
         <p class="formMsg" data-msg aria-live="polite"></p>
         <button class="btn btn--primary btn--ring btn--block" type="submit">Save</button>
       </form>
-      <p class="drawer__fine">3–20 characters: letters, numbers, dots and underscores.</p>
+      <p class="drawer__fine">3–20 characters: letters, numbers and underscores.</p>
     </div>
 
     <!-- profil -->
@@ -308,7 +312,12 @@
     if (!profile) await loadProfile();
     if (!profile) { view("login"); return; }
 
-    if (!profile.username) { view("username"); return; }
+    if (!profile.username) {
+      // Predlog iz aplikacije (backend ga izpelje iz e-naslova ali registracije).
+      const uf = $('[data-form="username"]');
+      if (uf && !uf.elements.username.value && profile.app_username) uf.elements.username.value = profile.app_username;
+      view("username"); return;
+    }
 
     renderProfile();
     if (target === "invite") toggleInvite(true);
@@ -318,6 +327,20 @@
   /* ---------------------------------------------------------------
      Profil
   ---------------------------------------------------------------- */
+  async function backend(path, method, body) {
+    const { data } = await client.auth.getSession();
+    const token = data && data.session && data.session.access_token;
+    if (!token) throw new Error("not signed in");
+    const r = await fetch(API + path, {
+      method: method || "GET",
+      headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+      body: body === undefined ? undefined : JSON.stringify(body)
+    });
+    const text = await r.text();
+    let json = null; try { json = JSON.parse(text); } catch (_) {}
+    return { ok: r.ok, status: r.status, text, json };
+  }
+
   async function loadProfile() {
     const { data, error } = await client.rpc("sync_my_account", { p_ref: refCode() });
     if (error) {
@@ -326,6 +349,25 @@
       return;
     }
     profile = data || null;
+
+    // En profil s aplikacijo: username in avatar iz backenda (GET /me). Backend
+    // je vir resnice; waitlist se mu prilagodi. Ce backend ne odgovori, stran
+    // dela naprej s podatki z waitliste.
+    if (profile) {
+      try {
+        const me = await backend("/me");
+        if (me.ok && me.json) {
+          profile.avatar_url = me.json.avatar_url || null;
+          profile.app_username = me.json.username || null;
+          if (profile.username && me.json.username && me.json.username !== profile.username) {
+            profile.username = me.json.username;
+            client.rpc("set_username", { p_username: me.json.username }).then(({ data: st }) => {
+              if (st && st !== "ok") console.warn("[auth] waitlist username sync:", st);
+            });
+          }
+        } else if (!me.ok) console.warn("[auth] backend /me:", me.status, me.text);
+      } catch (err) { console.warn("[auth] backend /me:", err.message); }
+    }
     paintAvatar();
   }
 
@@ -347,7 +389,14 @@
 
   function renderProfile() {
     const v = $('[data-view="profile"]');
-    $("[data-avatar]", v).textContent = initial();
+    const av = $("[data-avatar]", v);
+    if (profile.avatar_url) {
+      av.textContent = "";
+      const img = document.createElement("img");
+      img.src = profile.avatar_url; img.alt = ""; img.loading = "lazy";
+      img.style.cssText = "width:100%;height:100%;border-radius:50%;object-fit:cover;display:block";
+      av.appendChild(img);
+    } else av.textContent = initial();
     $("[data-name]", v).textContent   = profile.username || "";
     $("[data-mail]", v).textContent   = profile.email || (user && user.email) || "";
 
@@ -447,7 +496,7 @@
       setMsg(form, "The two passwords don't match.", "error"); f.password2.focus(); return;
     }
     if (f.username && !USER_RE.test((f.username.value || "").trim())) {
-      setMsg(form, "3–20 characters: letters, numbers, dots and underscores.", "error"); f.username.focus(); return;
+      setMsg(form, "3–20 characters: letters, numbers and underscores.", "error"); f.username.focus(); return;
     }
 
     busy = true;
@@ -512,12 +561,18 @@
 
       else if (kind === "username" || kind === "personal") {
         const name = f.username.value.trim();
+        // 1. aplikacija (backend preveri, da ime ni zasedeno v aplikaciji)
+        let me;
+        try { me = await backend("/me", "PATCH", { username: name }); }
+        catch (err) { setMsg(form, "Can't reach our servers. Check your connection.", "error"); return; }
+        if (me.status === 409) { setMsg(form, "That username is taken — try another.", "error"); return; }
+        if (me.status === 400) { setMsg(form, "3–20 characters: letters, numbers and underscores.", "error"); return; }
+        if (!me.ok)            { setMsg(form, "Something went wrong. Please try again.", "error"); return; }
+        // 2. waitlist (javni seznam); ce je tam zasedeno, aplikacija ima prednost
         const { data: st, error } = await client.rpc("set_username", { p_username: name });
-        if (error) { setMsg(form, friendly(error), "error"); return; }
-        if (st === "taken")   { setMsg(form, "That username is taken — try another.", "error"); return; }
-        if (st === "invalid") { setMsg(form, "3–20 characters: letters, numbers, dots and underscores.", "error"); return; }
-        if (st !== "ok")      { setMsg(form, "Something went wrong. Please try again.", "error"); return; }
-        profile = Object.assign({}, profile, { username: name });
+        if (error) console.warn("[auth] set_username:", error.message);
+        else if (st !== "ok") console.warn("[auth] set_username:", st);
+        profile = Object.assign({}, profile, { username: name, app_username: name });
         paintAvatar();
         renderProfile();
         if (kind === "username") { form.reset(); view("profile"); }

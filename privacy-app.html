@@ -8,7 +8,7 @@
 <header>
   <div class="znamka">Outly</div>
   <h1>Politika zasebnosti</h1>
-  <div class="datum">Veljavna od 11. 9. 2026 · različica 2.0 · velja za aplikacijo in spletno stran</div>
+  <div class="datum">Veljavna od 11. 9. 2026 · različica 2.1 · velja za aplikacijo in spletno stran</div>
 </header>
 
 
@@ -40,7 +40,7 @@ odgovarja organizator sam, po svoji politiki zasebnosti.</p>
 <h3>Ob ustvarjanju računa</h3>
 <ul>
   <li>elektronski naslov in uporabniško ime;</li>
-  <li>geslo — shranjeno izključno v obliki kriptografskega odtisa (bcrypt), samega gesla ne poznamo in ga ne moremo prebrati;</li>
+  <li>geslo — shrani ga naš ponudnik avtentikacije Supabase izključno v obliki kriptografskega odtisa (bcrypt); samega gesla ne poznamo in ga ne moremo prebrati; isti račun velja za aplikacijo in spletno stran outly.si;</li>
   <li>potrditvene kode za elektronsko pošto, prav tako samo kot odtis.</li>
 </ul>
 
@@ -111,7 +111,8 @@ storitve, in samo v obsegu, ki je za to nujen.</p>
     <tr><td><b>Cloudinary</b></td><td>Shranjevanje in prikaz slik</td><td>Naložene slike</td></tr>
     <tr><td><b>Stripe</b></td><td>Obdelava plačil</td><td>Znesek, elektronski naslov, podatki o kartici (neposredno, brez nas)</td></tr>
     <tr><td><b>Organizator dogodka</b></td><td>Izvedba nakupa in vstopa</td><td>Elektronski naslov, vstopnice, podatek o vstopu</td></tr>
-    <tr><td><b>Supabase in Brevo</b></td><td>Čakalna lista na spletni strani outly.si</td><td>Elektronski naslov, prijavljen na čakalno listo</td></tr>
+    <tr><td><b>Supabase</b></td><td>Avtentikacija računa (prijava, geslo) in čakalna lista na outly.si</td><td>Elektronski naslov, odtis gesla, prijava na čakalno listo</td></tr>
+    <tr><td><b>Brevo</b></td><td>Pošiljanje elektronske pošte s spletne strani (potrditve, računi)</td><td>Elektronski naslov, vsebina sporočila</td></tr>
   </tbody>
 </table></div>
 <p>Podatke lahko razkrijemo tudi pristojnim organom, kadar nam to nalaga zakon.</p>

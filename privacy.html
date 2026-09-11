@@ -66,166 +66,189 @@
     <div class="container legal">
       <p class="kicker">LEGAL</p>
       <h1>Privacy Policy</h1>
-      <p class="legal__meta">Last updated: 6 September 2026</p>
+      <p class="legal__meta">Last updated: 11 September 2026 &middot; version 2.0 &middot; applies to the Outly app and outly.si</p>
 
       <p class="legal__lead">
-        This policy explains what personal data Outly collects when you join our waitlist or apply
-        as a creator, why we collect it, who processes it on our behalf and what rights you have.
-        We keep it short and specific on purpose &mdash; if anything here is unclear, write to us and
-        we will explain it.
+        This policy explains what personal data Outly collects &mdash; on this website (waitlist, your
+        account, creator applications) and in the Outly app (account, tickets) &mdash; why we collect
+        it, who processes it on our behalf and what rights you have. The Slovenian version for the
+        app is at <a href="/privacy-app">outly.si/privacy-app</a>; if the two differ, the Slovenian
+        version prevails.
       </p>
 
       <h2>1. Who is responsible for your data</h2>
       <p>
-        The controller of your personal data is
-        <strong>NEXT DIMENSIONS, družba za marketing, d.o.o.</strong>,
-        Trebče 81, 3256 Bistrica ob Sotli, Slovenia, registration number 7238274000
-        (&ldquo;Outly&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;).
+        The controller of your personal data is <strong>NEXT DIMENSIONS, dru&#382;ba za marketing, d.o.o.</strong>,
+        Treb&#269;e 81, 3256 Bistrica ob Sotli, Slovenia, registration number 7238274000
+        (&ldquo;Outly&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;). For any question about this policy or about
+        your data, contact <a href="mailto:luka@outly.si">luka@outly.si</a>.
       </p>
       <p>
-        For any question about this policy or about your data, contact
-        <a href="mailto:luka@outly.si">luka@outly.si</a>.
+        <strong>Event organisers are separate controllers.</strong> When you buy a ticket in the app, the
+        organiser of that event receives the data it needs to sell the ticket and let you in. The organiser
+        is responsible for that data under its own privacy policy.
       </p>
 
       <h2>2. What we collect</h2>
-      <p><strong>If you join the waitlist:</strong></p>
+      <p><strong>Waitlist (this website)</strong></p>
       <ul>
-        <li>your email address;</li>
-        <li>the date and time you signed up and the date and time you confirmed;</li>
-        <li>a random confirmation token used only to verify that the inbox is yours.</li>
+        <li>your email address, the time you signed up and the time you confirmed it;</li>
+        <li>a random confirmation token used only to verify that the inbox is yours;</li>
+        <li>if you came through a friend&rsquo;s invite link: the invite code, so we can count the invite
+            (one point for your friend once you confirm). We do not tell your friend your address.</li>
+      </ul>
+      <p><strong>Account (website and app)</strong> &mdash; one account works in both.</p>
+      <ul>
+        <li>your email address and username;</li>
+        <li>your password, stored only as a cryptographic hash (bcrypt) by our authentication provider
+            Supabase &mdash; we never see or store the password itself;</li>
+        <li>email confirmation and password-reset codes, valid for a limited time;</li>
+        <li>when you complete your profile in the app: phone number (optional), date of birth (used for
+            event age limits), country, the music genres you pick, a profile picture if you upload one;</li>
+        <li>events you save with the heart.</li>
+      </ul>
+      <p><strong>Using the app</strong></p>
+      <ul>
+        <li>your IP address, used to limit sign-in and sign-up attempts from one address and so prevent
+            password guessing; kept in server memory for at most one hour;</li>
+        <li>technical server error logs.</li>
+      </ul>
+      <p><strong>Buying a ticket</strong></p>
+      <ul>
+        <li>buyer email, event, number of tickets, amount, date and payment status;</li>
+        <li>the payment identifier at our payment provider;</li>
+        <li>when and where the ticket was scanned at the door.</li>
       </ul>
       <p>
-        We do not ask for your name, phone number, address or date of birth, and we do not buy or
-        import email addresses from anywhere else. You give us your address yourself.
+        We never receive, process or store your card details. You enter your card directly into the payment
+        provider&rsquo;s form.
       </p>
-
-      <p><strong>If you apply as a creator:</strong></p>
+      <p><strong>Creator applications and business accounts</strong></p>
       <ul>
-        <li>the business and contact details you enter in the creator application;</li>
-        <li>any documents you choose to attach to that application.</li>
+        <li>the business and contact details you enter in the creator application (business name, type,
+            address, city, licence ID, contact name and role, email, phone, message);</li>
+        <li>for approved clubs: club name, address, contact email and phone, website, Instagram, map
+            coordinates, logo and banner; the account identifier and onboarding status at the payment provider.</li>
       </ul>
-      <p>
-        The creator application is sent to us by email. It is not stored in the waitlist database.
-      </p>
+      <p><strong>Location.</strong> The app asks for your device location the first time you open the map. Your
+        location is never sent to our servers or stored &mdash; it is used only on your device to centre the map
+        and sort clubs by distance. You can refuse or revoke access in your phone settings at any time.</p>
 
       <h2>3. Why we use it and on what legal basis</h2>
-      <p>
-        We use your email address for one purpose only: to tell you when Outly launches in your
-        city, and to send you the confirmation email that verifies your address.
-      </p>
-      <p>
-        The legal basis is your <strong>consent</strong> under Article 6(1)(a) of the General Data
-        Protection Regulation (GDPR). You give that consent by entering your address and clicking
-        the confirmation link in the email we send you. Until you click that link, your address is
-        not added to our waitlist and is deleted as described in section 5.
-      </p>
-      <p>
-        We do not use your data for profiling, we do not make automated decisions about you, and we
-        never sell or rent your address to anyone.
-      </p>
+      <ul>
+        <li><strong>Waitlist email</strong> &mdash; to tell you when Outly launches in your city and to send the
+            confirmation email. Basis: your consent (Art. 6(1)(a) GDPR), given by entering your address and
+            clicking the confirmation link. You can withdraw it at any time (section 8).</li>
+        <li><strong>Invite counting</strong> &mdash; so your friend gets a point when you confirm. Basis: our
+            legitimate interest in running the invite programme (Art. 6(1)(f)).</li>
+        <li><strong>Email, username, password, confirmation codes</strong> &mdash; running your account and
+            signing you in. Basis: performance of the contract (Art. 6(1)(b)).</li>
+        <li><strong>Date of birth</strong> &mdash; event age limits. Basis: contract and the organiser&rsquo;s
+            legal obligation.</li>
+        <li><strong>Phone number</strong> &mdash; purchase notifications and account recovery. Basis: contract;
+            consent where entering it is optional.</li>
+        <li><strong>Country, genres, saved events</strong> &mdash; recommending clubs and events. Basis: contract.</li>
+        <li><strong>Profile picture</strong> &mdash; shown in your profile. Basis: consent.</li>
+        <li><strong>IP address and logs</strong> &mdash; preventing abuse and password guessing. Basis:
+            legitimate interest (Art. 6(1)(f)) &mdash; security of the service.</li>
+        <li><strong>Purchase data</strong> &mdash; completing the purchase and issuing the ticket (contract);
+            keeping it afterwards for accounting and tax (legal obligation, Art. 6(1)(c)).</li>
+        <li><strong>Ticket scanning</strong> &mdash; preventing double entry. Basis: contract.</li>
+        <li><strong>Creator applications</strong> &mdash; assessing whether to work together. Basis: steps
+            prior to a contract (Art. 6(1)(b)).</li>
+      </ul>
+      <p>We do not use your data for profiling, we do not make automated decisions about you, and we never
+        sell or rent your data to anyone.</p>
 
       <h2>4. Who else processes your data</h2>
-      <p>
-        We use a small number of service providers who process data on our behalf, under data
-        processing agreements, and only on our instructions:
-      </p>
+      <p>We use a small number of service providers who process data on our behalf, under data processing
+        agreements and only on our instructions:</p>
       <ul>
-        <li>
-          <strong>Supabase</strong> &mdash; database hosting. Your address is stored on servers in
-          the European Union (Frankfurt, Germany).
-        </li>
-        <li>
-          <strong>Brevo (Sendinblue SAS, France)</strong> &mdash; sending our emails. Brevo records
-          delivery events and, for the emails we send you, whether the email was opened and whether
-          a link in it was clicked. We use this only to check that our emails actually arrive.
-        </li>
-        <li>
-          <strong>GitHub Pages (GitHub, Inc. / Microsoft)</strong> &mdash; hosting of this website.
-          GitHub processes the technical data any web server receives when you open a page, such as
-          your IP address.
-        </li>
+        <li><strong>Supabase</strong> &mdash; the waitlist database and account authentication (email,
+            password hash). Data is stored in the European Union (Frankfurt, Germany).</li>
+        <li><strong>Brevo</strong> (Sendinblue SAS, France) &mdash; emails from this website (waitlist
+            confirmations, account emails). Brevo records delivery events and whether an email was opened or a
+            link clicked; we use this only to check that our emails arrive.</li>
+        <li><strong>Render</strong> &mdash; hosting of the app&rsquo;s server and database (account, profile,
+            saved events, tickets, purchases, creator applications). Servers in the EU (Frankfurt).</li>
+        <li><strong>Resend</strong> &mdash; emails sent from the app and about creator applications.</li>
+        <li><strong>Cloudinary</strong> &mdash; storing and serving uploaded images (profile pictures, club
+            logos and posters).</li>
+        <li><strong>Stripe</strong> &mdash; payment processing. Amount, email and card details, entered
+            directly with Stripe, never through us.</li>
+        <li><strong>Event organiser</strong> &mdash; your email, your tickets and whether you entered.</li>
+        <li><strong>Cloudflare</strong> &mdash; hosting and delivery of this website. Cloudflare processes the
+            technical data any web server receives when you open a page, such as your IP address.</li>
+        <li><strong>Google Fonts</strong> &mdash; this website loads its typeface from Google; your browser
+            requests the font files from Google servers, which transmits your IP address to Google.</li>
       </ul>
-      <p>
-        This website loads its typeface from <strong>Google Fonts</strong>. When a page loads, your
-        browser requests the font files from Google servers, which means your IP address is
-        transmitted to Google.
-      </p>
-      <p>
-        Your waitlist data is stored inside the European Union. We do not transfer it to countries
-        outside the EU or the EEA.
-      </p>
+      <p>We may also disclose data to public authorities where the law requires it.</p>
 
-      <h2>5. How long we keep it</h2>
+      <h2>5. Transfers outside the EU/EEA</h2>
+      <p>Some of the providers above are companies based in the United States, so personal data may be
+        transferred outside the European Economic Area. Such transfers rely on the European Commission&rsquo;s
+        Standard Contractual Clauses or, where it applies to the provider, an adequacy decision.</p>
+
+      <h2>6. How long we keep it</h2>
       <ul>
-        <li>
-          <strong>Confirmed sign-ups:</strong> until Outly launches in your city and we have sent
-          you the launch email, and in any case no longer than <strong>24 months</strong> from the
-          day you confirmed. After that we delete your address.
-        </li>
-        <li>
-          <strong>Unconfirmed sign-ups:</strong> deleted no later than <strong>90 days</strong>
-          after sign-up if you never click the confirmation link.
-        </li>
-        <li>
-          <strong>Creator applications:</strong> kept for as long as needed to assess the
-          application and, if we work together, for as long as our business relationship and any
-          statutory retention periods require.
-        </li>
+        <li><strong>Confirmed waitlist sign-ups:</strong> until Outly launches in your city and we have sent you
+            the launch email, and no longer than 24 months from the day you confirmed.</li>
+        <li><strong>Unconfirmed sign-ups:</strong> deleted no later than 90 days after sign-up if you never
+            confirm.</li>
+        <li><strong>Account data:</strong> for as long as you have an account. You can delete it yourself in the
+            app (Account settings) or on this website (profile &rarr; Delete account).</li>
+        <li><strong>Confirmation and reset codes:</strong> valid for a limited time, then invalidated.</li>
+        <li><strong>IP address for rate limiting:</strong> server memory only, gone within one hour.</li>
+        <li><strong>Purchase data:</strong> as long as tax and accounting rules require. When you delete your
+            account, purchases are detached from you: your email is replaced by an anonymous marker; the
+            amount and date remain for accounting.</li>
+        <li><strong>Creator applications:</strong> as long as needed to assess them and, if we work together, for
+            the duration of the business relationship and any statutory retention periods.</li>
       </ul>
-      <p>If you ask us to delete your data earlier, we do it earlier. See section 6.</p>
 
-      <h2>6. Your rights</h2>
+      <h2>7. Children</h2>
+      <p>You must be at least 15 to create an Outly account. That is the age set for information-society
+        services in Slovenia by Article 8 of the Personal Data Protection Act (ZVOP-2). If we learn that a
+        younger child created an account without parental consent, we delete it. Events have their own age
+        limits, set by the organiser and checked at the door.</p>
+
+      <h2>8. Your rights</h2>
       <p>Under the GDPR you have the right to:</p>
       <ul>
         <li>ask what data we hold about you and get a copy of it;</li>
         <li>have inaccurate data corrected;</li>
-        <li>have your data deleted;</li>
-        <li>ask us to restrict how we use it;</li>
+        <li>have your data deleted &mdash; you can delete your account yourself in the app or on this website;</li>
+        <li>ask us to restrict how we use it, and object where we rely on legitimate interest;</li>
         <li>receive your data in a machine-readable format, or have it sent to another controller;</li>
-        <li>
-          <strong>withdraw your consent at any time.</strong> Withdrawing it does not affect the
-          lawfulness of what we did before you withdrew it.
-        </li>
+        <li>withdraw your consent at any time. Withdrawing it does not affect what we did before.</li>
       </ul>
-      <p>
-        To exercise any of these, write to
-        <a href="mailto:luka@outly.si">luka@outly.si</a> from the address you signed up with, or
-        tell us which address to look for. We answer within one month.
-        Getting off the waitlist takes one sentence &mdash; you do not need to give a reason.
-      </p>
+      <p>To exercise any of these, write to <a href="mailto:luka@outly.si">luka@outly.si</a> from the address
+        you signed up with, or tell us which address to look for. We answer within one month. Getting off the
+        waitlist takes one sentence &mdash; you do not need to give a reason.</p>
 
-      <h2>7. Complaints</h2>
-      <p>
-        If you think we are handling your data unlawfully, you can lodge a complaint with the
-        Slovenian supervisory authority:
-      </p>
-      <p>
-        Informacijski pooblaščenec Republike Slovenije<br>
-        Dunajska cesta 22, 1000 Ljubljana, Slovenia<br>
-        <a href="mailto:gp.ip@ip-rs.si">gp.ip@ip-rs.si</a> &middot;
-        <a href="https://www.ip-rs.si" target="_blank" rel="noopener">www.ip-rs.si</a>
-      </p>
+      <h2>9. Complaints</h2>
+      <p>If you think we are handling your data unlawfully, you can lodge a complaint with the Slovenian
+        supervisory authority: <strong>Informacijski poobla&#353;&#269;enec Republike Slovenije</strong>,
+        Dunajska cesta 22, 1000 Ljubljana, Slovenia, <a href="mailto:gp.ip@ip-rs.si">gp.ip@ip-rs.si</a>
+        &middot; <a href="https://www.ip-rs.si" target="_blank" rel="noopener">www.ip-rs.si</a></p>
 
-      <h2>8. Cookies</h2>
-      <p>
-        This website does not set advertising or analytics cookies and does not track you across
-        other sites. We do not use Google Analytics, advertising pixels or similar tools.
-      </p>
+      <h2>10. Cookies</h2>
+      <p>This website does not set advertising or analytics cookies and does not track you across other sites.
+        We do not use Google Analytics, advertising pixels or similar tools. If you log in, your browser keeps
+        your session locally so you stay signed in; that is all.</p>
 
-      <h2>9. Security</h2>
-      <p>
-        The site is served over HTTPS. Full email addresses are held in a private database table
-        that the website itself cannot read: the public waitlist counter on our home page shows
-        only masked addresses such as <span class="mono">j***@example.com</span>, and the full
-        address never leaves the server.
-      </p>
+      <h2>11. Security</h2>
+      <p>The website and the app talk to our servers over HTTPS only. Passwords are stored as bcrypt hashes and
+        cannot be recovered. Confirmation and reset codes are time-limited. Sign-in attempts are rate-limited.
+        In the app, your session token is kept in the system&rsquo;s secure storage. Full email addresses on the
+        waitlist are held in a private table the website itself cannot read: the public waitlist on our home page
+        shows only masked addresses such as <code>j***@example.com</code> or a chosen username. Club data is
+        visible only to the club owner and the staff the owner has added.</p>
 
-      <h2>10. Changes to this policy</h2>
-      <p>
-        If we change how we handle your data, we update this page and change the date at the top.
-        If the change is significant, we will tell the people on the waitlist by email before it
-        takes effect.
-      </p>
+      <h2>12. Changes to this policy</h2>
+      <p>If we change how we handle your data, we update this page and change the date at the top. If the change
+        is significant, we will tell you by email or in the app before it takes effect. Use of the app is
+        governed by the <a href="/terms">Terms of Use</a> (Slovenian).</p>
 
       <p class="legal__back"><a href="index.html">&larr; Back to Outly</a></p>
     </div>
