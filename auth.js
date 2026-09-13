@@ -155,12 +155,12 @@
         <div class="invitePanel" data-invite hidden>
           <div class="invite__row">
             <input class="invite__link" type="text" readonly value="" aria-label="Your invite link" data-invite-link>
-            <button class="btn btn--primary" type="button" data-copy>Copy</button>
           </div>
+          <!-- Martin, 13. 9.: dva gumba — moder Share (sistemski meni za deljenje) in siv Copy;
+               WhatsApp in Message umaknjena. -->
           <div class="invite__share">
-            <a class="btn" href="#" target="_blank" rel="noopener" data-share-wa>WhatsApp</a>
-            <a class="btn" href="#" data-share-sms>Message</a>
-            <button class="btn" type="button" hidden data-share-native>Share&hellip;</button>
+            <button class="btn btn--primary" type="button" data-share-native>Share</button>
+            <button class="btn" type="button" data-copy>Copy</button>
           </div>
           <p class="invite__stats">One point for every friend who joins through your link and confirms their email.</p>
         </div>
@@ -410,11 +410,14 @@
     const link = HOME + "?ref=" + profile.ref_code;
     const text = "Where should we go tonight? Get on the Outly list with me: " + link;
     $("[data-invite-link]", v).value = link;
-    $("[data-share-wa]", v).href  = "https://wa.me/?text=" + encodeURIComponent(text);
-    $("[data-share-sms]", v).href = "sms:?&body=" + encodeURIComponent(text);
     const nat = $("[data-share-native]", v);
-    nat.hidden = !navigator.share;
-    nat.onclick = () => navigator.share({ title: "Outly", text, url: link }).catch(() => {});
+    // Brskalnik brez Web Share (namizje) -> Share skopira povezavo in to pove.
+    nat.onclick = async () => {
+      if (navigator.share) { navigator.share({ title: "Outly", text, url: link }).catch(() => {}); return; }
+      try { await navigator.clipboard.writeText(link); } catch (_) {}
+      nat.textContent = "Link copied";
+      setTimeout(() => { nat.textContent = "Share"; }, 1800);
+    };
 
     // osebni podatki
     const pf = $('[data-form="personal"]');
