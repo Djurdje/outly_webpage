@@ -1819,12 +1819,19 @@ body.drawer-open { overflow: hidden; }
   backdrop-filter: blur(0px);
   -webkit-backdrop-filter: blur(0px);
   opacity: 0;
-  transition: opacity .36s var(--ease), backdrop-filter .36s var(--ease), -webkit-backdrop-filter .36s var(--ease);
+  /* Zameglitve NE animiramo (prehod backdrop-filter je na iOS-u drag za GPU) — samo prosojnost. */
+  transition: opacity .36s var(--ease);
 }
 .drawer.is-open .drawer__backdrop {
   opacity: 1;
   backdrop-filter: blur(14px) saturate(.85);
   -webkit-backdrop-filter: blur(14px) saturate(.85);
+}
+/* Med sistemskim deljenjem (Web Share) brez zameglitve — iOS Safari je sicer stran podrl. */
+.drawer.is-sharing .drawer__backdrop {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: rgba(8,8,10,.72);
 }
 
 .drawer__panel {

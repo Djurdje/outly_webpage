@@ -413,7 +413,17 @@
     const nat = $("[data-share-native]", v);
     // Brskalnik brez Web Share (namizje) -> Share skopira povezavo in to pove.
     nat.onclick = async () => {
-      if (navigator.share) { navigator.share({ title: "Outly", text, url: link }).catch(() => {}); return; }
+      if (navigator.share) {
+        // iOS Safari (15. 9.): ob odprtju sistemskega menija za deljenje je stran padla
+        // ("A problem repeatedly occurred") — cel zaslon z backdrop-filter: blur + animacije
+        // je za WebKit ob zajemu strani prevec. Med deljenjem zameglitev izklopimo.
+        const drawer = document.getElementById("authDrawer");
+        if (drawer) drawer.classList.add("is-sharing");
+        await new Promise(r => requestAnimationFrame(() => setTimeout(r, 60)));
+        try { await navigator.share({ title: "Outly", text, url: link }); } catch (_) {}
+        if (drawer) drawer.classList.remove("is-sharing");
+        return;
+      }
       try { await navigator.clipboard.writeText(link); } catch (_) {}
       nat.textContent = "Link copied";
       setTimeout(() => { nat.textContent = "Share"; }, 1800);
