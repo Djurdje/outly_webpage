@@ -1,0 +1,5 @@
+# Cloudflare Pages streze VSE datoteke iz repozitorija. Interna dokumentacija za agente
+# naj ne bo javno dostopna na outly.si - preusmeri na domaco stran.
+/CLAUDE.md          /  302
+/.claude/*          /  302
+/.gitignore         /  302
