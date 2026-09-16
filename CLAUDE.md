@@ -8,7 +8,7 @@ preberi jih (ali zahtevaj njihovo vsebino), preden spreminjaš karkoli, kar se d
 
 - Veja `main` = produkcija. **Cloudflare Pages objavi vsak merge v main v ~1 min** (projekt `outly-webpage`, brez builda,
   streže vse datoteke iz repozitorija; čisti URL-ji: `/Creator`, `/confirm`, `/terms`, `/privacy`, `/privacy-app`).
-- Zato: nikoli ne potiskaj v `main` — veja + PR, pregled (`qa-reviewer`), nato **PR sam mergaj** (`gh pr merge --squash --delete-branch`;
+- Zato: nikoli ne potiskaj v `main` — veja + PR, pregled (`qa-reviewer`), nato **PR sam mergaj** (PR mergaj s squash (GitHub MCP orodje merge_pull_request; gh CLI v oblaku ni) in pobrisi vejo;
   odločeno 16. 9. 2026, človeka vmes ni). Po objavi (~1 min) preveri `https://outly.si` (200) in spremenjene strani v brskalniku;
   CDN cache do 10 min. Če je kaj narobe, takoj revert PR + merge.
 - Izjema: pravni dokumenti (`terms.html`, `privacy*.html`) in Supabase SQL, ki briše podatke – to čaka Martinov DA.
