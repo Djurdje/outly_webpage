@@ -11,4 +11,4 @@ Postopek:
    kar je res potrebno), v PR opiši, da jo mora Martin pognati PRED merge JS-a.
 3. Preveri v headless Chromiumu s stubom Supabase: brez napak v konzoli, mobilna širina 393 px, profil se odpre/zapre, obrazci validirajo.
 4. Nikoli ne spreminjaj `terms.html`, `privacy.html`, `privacy-app.html` brez Martinovega DA (pravni dokumenti).
-5. Commit brez šumnikov z »Preverjeno: …«; veja + PR, nikoli v `main`.
+5. Commit brez šumnikov z »Preverjeno: …«; veja + PR; po pregledu `qa-reviewer` PR mergaj (`gh pr merge --squash --delete-branch`) in čez ~1 min preveri outly.si v živo.
