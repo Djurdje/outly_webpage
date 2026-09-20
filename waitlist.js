@@ -629,6 +629,16 @@
 
   // "Invite friends": link imajo samo registrirani — prijavljenemu odpre profil
   // z linkom, ostalim prijavo/registracijo (auth.js).
+  // Razdelek "Points": "I already have an account" odpre profil z invite povezavo;
+  // brez racuna pelje na prijavo (waitlist), kjer je pot do racuna.
+  const pointsInviteBtn = document.getElementById("pointsInviteBtn");
+  if (pointsInviteBtn) {
+    pointsInviteBtn.addEventListener("click", () => {
+      if (window.OutlyAuth) window.OutlyAuth.open("invite");
+      else location.hash = "#waitlist";
+    });
+  }
+
   const inviteBtn = document.getElementById("inviteFriendsBtn");
   if (inviteBtn) {
     inviteBtn.addEventListener("click", () => {

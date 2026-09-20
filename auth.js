@@ -162,7 +162,8 @@
             <button class="btn btn--primary" type="button" data-share-native>Share</button>
             <button class="btn" type="button" data-copy>Copy</button>
           </div>
-          <p class="invite__stats">One point for every friend who joins through your link and confirms their email.</p>
+          <p class="invite__stats">One point for every friend who joins through your link and confirms their email.
+            <a class="invite__why" href="#points" data-close>What points get you &rarr;</a></p>
         </div>
       </div>
 
