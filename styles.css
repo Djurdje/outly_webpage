@@ -2106,3 +2106,119 @@ body.drawer-open { overflow: hidden; }
 .person__mail--name { color: rgba(255,255,255,.7); font-weight: 600; }
 .person__mail--name b { color: var(--text); font-weight: 800; }
 .person__avatar--user { background: linear-gradient(160deg, #5c82ff, #2f4fcf); border-color: rgba(120,150,255,.6); }
+
+/* =========================================================
+   POINTS — zakaj vabiti prijatelje (razdelek pred waitlisto)
+   Isti jezik kot ostala stran: temne kartice, bela 3–5 %, modra samo za
+   poudarke (ikone, +1, glavni gumb). Brez novih barv in prelivov.
+   ========================================================= */
+#points { scroll-margin-top: 92px; }
+.pointsHero {
+  display: grid;
+  grid-template-columns: 1.05fr .95fr;
+  gap: 24px;
+  align-items: center;
+}
+.pointsHero__copy h2 {
+  font-size: clamp(26px, 3.4vw, 42px);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin: 0 0 12px;
+}
+.pointsHero__copy .section__sub { max-width: 46ch; }
+.pointsHero__copy .hero__actions { margin-top: 22px; }
+.pointsHero__copy .fineprint { max-width: 52ch; }
+
+.perks {
+  list-style: none;
+  margin: 22px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.perk {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.03);
+}
+.perk__icon {
+  flex: 0 0 auto;
+  width: 46px; height: 46px;
+  border-radius: 12px;
+  display: grid; place-items: center;
+  color: rgba(76,118,255,.95);
+  background: rgba(76,118,255,.14);
+  border: 1px solid rgba(76,118,255,.28);
+}
+.perk__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.perk__text strong { font-size: 15px; font-weight: 800; }
+.perk__text small { font-size: 13px; color: rgba(255,255,255,.62); line-height: 1.35; }
+
+.pointsCard {
+  position: relative;
+  border-radius: var(--radius2);
+  border: 1px solid rgba(255,255,255,.10);
+  background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+  box-shadow: var(--shadow);
+  padding: 22px;
+  display: grid;
+  gap: 16px;
+  overflow: hidden;
+}
+.pointsCard::before {
+  content: "";
+  position: absolute;
+  inset: -30%;
+  background: radial-gradient(420px 320px at 30% 20%, rgba(76,118,255,.16), transparent 60%);
+  pointer-events: none;
+}
+.pointsCard > * { position: relative; }
+.pointsCard__top { display: flex; align-items: center; gap: 14px; }
+.pointsCard__coin { width: 56px; height: 56px; flex: 0 0 auto; filter: drop-shadow(0 10px 22px rgba(76,118,255,.35)); }
+.pointsCard__num { font-size: 40px; font-weight: 800; line-height: 1; letter-spacing: -.03em; color: var(--accent); }
+.pointsCard__label { margin-top: 4px; font-size: 13px; font-weight: 700; color: rgba(255,255,255,.72); }
+.pointsCard__link {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px; border: 1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.35);
+  color: rgba(255,255,255,.82);
+  font: 600 14px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  white-space: nowrap; overflow: hidden;
+}
+.pointsCard__link span { overflow: hidden; text-overflow: ellipsis; }
+.pointsCard__link b { color: var(--accent); font-weight: 700; }
+.pointsCard__link svg { flex: 0 0 auto; color: rgba(255,255,255,.6); }
+.pointsSteps {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; gap: 8px;
+}
+.pointsSteps li {
+  display: flex; align-items: center; gap: 12px;
+  font-size: 13.5px; font-weight: 700; color: rgba(255,255,255,.82);
+  line-height: 1.35;
+}
+.pointsSteps__n {
+  flex: 0 0 auto;
+  width: 26px; height: 26px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 12px; font-weight: 800;
+  color: rgba(255,255,255,.9);
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+}
+.pointsLink, .invite__why { color: var(--accent); font-weight: 800; }
+.invite__why { display: block; margin-top: 6px; }
+
+@media (max-width: 980px) {
+  .pointsHero { grid-template-columns: 1fr; gap: 18px; }
+}
+@media (max-width: 700px) {
+  .pointsHero__copy .hero__actions .btn { width: 100%; }
+  .pointsCard { padding: 16px; }
+  .pointsCard__num { font-size: 34px; }
+}
