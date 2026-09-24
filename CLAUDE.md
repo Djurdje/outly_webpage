@@ -26,6 +26,8 @@ terms.html / privacy.html / privacy-app.html / pravno.css   pravni dokumenti (sp
 supabase-config.js                    javni URL + publishable kljuc (javna, namenoma v kodi)
 supabase-schema*.sql                  zgodovina SQL shem (2..13) - dokumentacija; SQL v Supabase pozene Martin
 assets/                               slike, ikone, points-coin.png
+assets/fonts/                         Inter (woff2, latin + latin-ext, SIL OFL) - gostimo sami, NE Google Fonts
+vendor/supabase-2.115.0.js            supabase-js UMD (iz npm) - gostimo sami, NE jsDelivr; nadgradnja = nova datoteka + 3 <script>
 CNAME, _redirects                     domena, preusmeritve
 ```
 
