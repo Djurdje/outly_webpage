@@ -30,11 +30,6 @@
   <meta name="twitter:description" content="How Outly collects, stores and protects the personal data of people on our waitlist.">
   <meta name="twitter:image" content="https://outly.si/assets/og-image.png">
 
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -66,13 +61,13 @@
     <div class="container legal">
       <p class="kicker">LEGAL</p>
       <h1>Privacy Policy</h1>
-      <p class="legal__meta">Last updated: 11 September 2026 &middot; version 2.0 &middot; applies to the Outly app and outly.si</p>
+      <p class="legal__meta">Last updated: 24 September 2026 &middot; version 2.3 &middot; applies to the Outly app and outly.si</p>
 
       <p class="legal__lead">
         This policy explains what personal data Outly collects &mdash; on this website (waitlist, your
-        account, creator applications) and in the Outly app (account, tickets) &mdash; why we collect
+        account, creator applications) and in the Outly app (account, friends, tickets) &mdash; why we collect
         it, who processes it on our behalf and what rights you have. The Slovenian version for the
-        app is at <a href="/privacy-app">outly.si/privacy-app</a>; if the two differ, the Slovenian
+        app and this website is at <a href="/privacy-app">outly.si/privacy-app</a>; if the two differ, the Slovenian
         version prevails.
       </p>
 
@@ -103,9 +98,22 @@
         <li>your password, stored only as a cryptographic hash (bcrypt) by our authentication provider
             Supabase &mdash; we never see or store the password itself;</li>
         <li>email confirmation and password-reset codes, valid for a limited time;</li>
+        <li>when you sign up on this website: which version of the Terms of Use you accepted, and when;</li>
         <li>when you complete your profile in the app: phone number (optional), date of birth (used for
             event age limits), country, the music genres you pick, a profile picture if you upload one;</li>
-        <li>events you save with the heart.</li>
+        <li>events you save with the heart (only you see them) and clubs you follow (the club sees only
+            the number of followers, not who they are); in-app notifications and whether you have read them.</li>
+      </ul>
+      <p><strong>Friends in the app</strong></p>
+      <ul>
+        <li>friend requests and friendships (who, to whom, when, status). Other users can find you by
+            username and see only your username and profile picture &mdash; never your email, phone or date of birth;</li>
+        <li><strong>plans visible to friends:</strong> your friends can see which upcoming events you have a ticket
+            for (&ldquo;going&rdquo;) and where you tapped &ldquo;I&rsquo;m in&rdquo; (&ldquo;interested&rdquo;) &mdash;
+            only your friends, never other users, and only while the <em>Friends see my plans</em> switch in
+            settings is on. You can turn it off, remove a friend or remove an &ldquo;I&rsquo;m in&rdquo; at any time;</li>
+        <li>ticket transfers: who sent a ticket to whom and when. The rules are in the
+            <a href="/terms">Terms of Use</a>.</li>
       </ul>
       <p><strong>Using the app</strong></p>
       <ul>
@@ -128,7 +136,8 @@
         <li>the business and contact details you enter in the creator application (business name, type,
             address, city, licence ID, contact name and role, email, phone, message);</li>
         <li>for approved clubs: club name, address, contact email and phone, website, Instagram, map
-            coordinates, logo and banner; the account identifier and onboarding status at the payment provider.</li>
+            coordinates, logo, photos and videos; the email address and role of staff the owner invites
+            (manager, door); the account identifier and onboarding status at the payment provider.</li>
       </ul>
       <p><strong>Location.</strong> The app asks for your device location the first time you open the map. Your
         location is never sent to our servers or stored &mdash; it is used only on your device to centre the map
@@ -147,7 +156,13 @@
             legal obligation.</li>
         <li><strong>Phone number</strong> &mdash; purchase notifications and account recovery. Basis: contract;
             consent where entering it is optional.</li>
-        <li><strong>Country, genres, saved events</strong> &mdash; recommending clubs and events. Basis: contract.</li>
+        <li><strong>Country, genres, saved events, followed clubs</strong> &mdash; recommending clubs and events,
+            notifying you about new events. Basis: contract.</li>
+        <li><strong>Friends and ticket transfers</strong> &mdash; connecting with friends, sending tickets. Basis: contract.</li>
+        <li><strong>Plans visible to friends</strong> (tickets and &ldquo;I&rsquo;m in&rdquo;) &mdash; the friends&rsquo;
+            plans section. Basis: consent, given with the switch in settings; you can withdraw it at any time.</li>
+        <li><strong>Email delivery data</strong> (delivered, opened, clicked) &mdash; checking that our emails
+            arrive. Basis: legitimate interest (Art. 6(1)(f)); never used for advertising or profiles.</li>
         <li><strong>Profile picture</strong> &mdash; shown in your profile. Basis: consent.</li>
         <li><strong>IP address and logs</strong> &mdash; preventing abuse and password guessing. Basis:
             legitimate interest (Art. 6(1)(f)) &mdash; security of the service.</li>
@@ -157,8 +172,9 @@
         <li><strong>Creator applications</strong> &mdash; assessing whether to work together. Basis: steps
             prior to a contract (Art. 6(1)(b)).</li>
       </ul>
-      <p>We do not use your data for profiling, we do not make automated decisions about you, and we never
-        sell or rent your data to anyone.</p>
+      <p>Recommendations are based on the genres you pick and the events you mark. We do not make automated
+        decisions about you with legal or similarly significant effects (Art. 22 GDPR), and we never sell or
+        rent your data to anyone.</p>
 
       <h2>4. Who else processes your data</h2>
       <p>We use a small number of service providers who process data on our behalf, under data processing
@@ -172,15 +188,13 @@
         <li><strong>Render</strong> &mdash; hosting of the app&rsquo;s server and database (account, profile,
             saved events, tickets, purchases, creator applications). Servers in the EU (Frankfurt).</li>
         <li><strong>Resend</strong> &mdash; emails sent from the app and about creator applications.</li>
-        <li><strong>Cloudinary</strong> &mdash; storing and serving uploaded images (profile pictures, club
-            logos and posters).</li>
+        <li><strong>Cloudinary</strong> &mdash; storing and serving uploaded images and videos (profile pictures,
+            club logos, posters and videos).</li>
         <li><strong>Stripe</strong> &mdash; payment processing. Amount, email and card details, entered
             directly with Stripe, never through us.</li>
         <li><strong>Event organiser</strong> &mdash; your email, your tickets and whether you entered.</li>
         <li><strong>Cloudflare</strong> &mdash; hosting and delivery of this website. Cloudflare processes the
             technical data any web server receives when you open a page, such as your IP address.</li>
-        <li><strong>Google Fonts</strong> &mdash; this website loads its typeface from Google; your browser
-            requests the font files from Google servers, which transmits your IP address to Google.</li>
       </ul>
       <p>We may also disclose data to public authorities where the law requires it.</p>
 
@@ -232,10 +246,17 @@
         Dunajska cesta 22, 1000 Ljubljana, Slovenia, <a href="mailto:gp.ip@ip-rs.si">gp.ip@ip-rs.si</a>
         &middot; <a href="https://www.ip-rs.si" target="_blank" rel="noopener">www.ip-rs.si</a></p>
 
-      <h2>10. Cookies</h2>
+      <h2>10. Cookies and third-party content</h2>
       <p>This website does not set advertising or analytics cookies and does not track you across other sites.
-        We do not use Google Analytics, advertising pixels or similar tools. If you log in, your browser keeps
-        your session locally so you stay signed in; that is all.</p>
+        We do not use Google Analytics, advertising pixels or similar tools, so there is no cookie banner.
+        The browser&rsquo;s local storage holds only what the service you ask for needs:</p>
+      <ul>
+        <li>your login session, if you log in, so you stay signed in;</li>
+        <li>the invite code, if you came through a friend&rsquo;s link, so the point goes to the right person
+            when you sign up. It is removed once you join the waitlist.</li>
+      </ul>
+      <p>The typeface and scripts are served from our own domain, not from Google Fonts or a public CDN. The site
+        has no embedded third-party content (videos, maps, social widgets); the Instagram link is a plain link.</p>
 
       <h2>11. Security</h2>
       <p>The website and the app talk to our servers over HTTPS only. Passwords are stored as bcrypt hashes and
@@ -248,7 +269,7 @@
       <h2>12. Changes to this policy</h2>
       <p>If we change how we handle your data, we update this page and change the date at the top. If the change
         is significant, we will tell you by email or in the app before it takes effect. Use of the app is
-        governed by the <a href="/terms">Terms of Use</a> (Slovenian).</p>
+        governed by the <a href="/terms">Terms of Use</a> (in Slovenian), which you accept when you create an account.</p>
 
       <p class="legal__back"><a href="index.html">&larr; Back to Outly</a></p>
     </div>
@@ -292,11 +313,13 @@
         <h4>Company</h4>
         <a href="mailto:luka@outly.si">Contact</a>
         <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms of Use</a>
       </div>
     </div>
 
     <div class="container footer__bottom">
       <span>&copy; <span id="year"></span> Outly. All rights reserved.</span>
+      <span class="footer__legal">NEXT DIMENSIONS, dru&#382;ba za marketing, d.o.o. &middot; Treb&#269;e 81, 3256 Bistrica ob Sotli, Slovenia &middot; Reg. no. 7238274000 &middot; <a href="mailto:luka@outly.si">luka@outly.si</a></span>
     </div>
   </footer>
 

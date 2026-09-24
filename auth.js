@@ -28,6 +28,8 @@
   const EMAIL_RE = /^[^@\s]+@[^@\s.]+\.[^@\s]+$/;
   // Isto pravilo kot v aplikaciji (backend PATCH /me): crke, stevilke, podcrtaj.
   const USER_RE  = /^[A-Za-z0-9_]{3,20}$/;
+  // Razlicica Pogojev uporabe, ki jo uporabnik sprejme ob registraciji (terms.html).
+  const TERMS_VERSION = "1.1";
   // Backend aplikacije: en profil (username, avatar) za stran in aplikacijo.
   // Sprejme Supabasov zeton; ob prvem klicu ustvari racun v aplikaciji.
   const API      = "https://outly-backend-roy3.onrender.com";
@@ -83,10 +85,11 @@
       <form data-form="register" novalidate>
         <label class="field"><span>Email</span><input type="email" name="email" autocomplete="email" placeholder="you@domain.com" required></label>
         <label class="field"><span>Password</span><input type="password" name="password" autocomplete="new-password" placeholder="At least 8 characters" minlength="8" required></label>
+        <label class="consent"><input type="checkbox" name="terms" required><span>I am at least 15 and accept the <a href="terms.html" target="_blank" rel="noopener">Terms of Use</a> and <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</span></label>
         <p class="formMsg" data-msg aria-live="polite"></p>
         <button class="btn btn--primary btn--ring btn--block" type="submit">Create account</button>
       </form>
-      <p class="drawer__fine">We store your email and a hashed password so you can log in and we can tell you when Outly launches. See our <a href="privacy.html">Privacy Policy</a>.</p>
+      <p class="drawer__fine">One account for the website and the Outly app. We store your email and a hashed password so you can log in and we can tell you when Outly launches.</p>
       <p class="drawer__switch">Already have an account? <button class="linklike" type="button" data-go="login">Log in</button></p>
     </div>
 
@@ -509,6 +512,9 @@
     if (kind === "password" && f.password.value !== f.password2.value) {
       setMsg(form, "The two passwords don't match.", "error"); f.password2.focus(); return;
     }
+    if (kind === "register" && f.terms && !f.terms.checked) {
+      setMsg(form, "Please confirm you are at least 15 and accept the Terms of Use.", "error"); f.terms.focus(); return;
+    }
     if (f.username && !USER_RE.test((f.username.value || "").trim())) {
       setMsg(form, "3–20 characters: letters, numbers and underscores.", "error"); f.username.focus(); return;
     }
@@ -537,7 +543,11 @@
         const email = f.email.value.trim().toLowerCase();
         const { data, error } = await client.auth.signUp({
           email, password: f.password.value,
-          options: { emailRedirectTo: HOME, data: { ref: refCode() } }
+          options: {
+            emailRedirectTo: HOME,
+            // Dokaz privolitve: katera razlicica pogojev je bila sprejeta in kdaj.
+            data: { ref: refCode(), terms_version: TERMS_VERSION, terms_accepted_at: new Date().toISOString() }
+          }
         });
         if (error) { setMsg(form, friendly(error), "error"); return; }
         // Supabase pri ze obstojecem naslovu ne vrne napake (da se ne razkrije,

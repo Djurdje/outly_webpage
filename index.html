@@ -30,11 +30,6 @@
   <meta name="twitter:description" content="Where should we go tonight? Outly finds what is on around you, tonight. Join the waitlist.">
   <meta name="twitter:image" content="https://outly.si/assets/og-image.png">
 
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -536,8 +531,9 @@
             <button class="btn" type="button" id="inviteFriendsBtn">Invite friends</button>
           </div>
           <p class="fineprint">
-            We store your email address so we can tell you when Outly launches. Nothing else, and
-            we never pass it on. Unsubscribe or ask us to delete it at any time &mdash; see our
+            We use your email only to confirm your spot and tell you when Outly launches (plus the invite
+            code, if a friend sent you). We never sell it; our hosting and email providers process it on
+            our behalf. Leave or ask us to delete it at any time &mdash; see our
             <a href="privacy.html">Privacy Policy</a>.
           </p>
 
@@ -645,18 +641,20 @@
         <a href="mailto:luka@outly.si">Contact</a>
         <a href="mailto:luka@outly.si">Support</a>
         <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms of Use</a>
       </div>
     </div>
 
     <div class="container footer__bottom">
       <span>© <span id="year"></span> Outly. All rights reserved.</span>
+      <span class="footer__legal">NEXT DIMENSIONS, dru&#382;ba za marketing, d.o.o. &middot; Treb&#269;e 81, 3256 Bistrica ob Sotli, Slovenia &middot; Reg. no. 7238274000 &middot; <a href="mailto:luka@outly.si">luka@outly.si</a></span>
     </div>
   </footer>
 
   <script src="./script.js"></script>
 
   <!-- Waitlist (Supabase) -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js"></script>
+  <script src="./vendor/supabase-2.115.0.js"></script>
   <script src="./supabase-config.js"></script>
   <script src="./auth.js"></script>
   <script src="./waitlist.js"></script>
