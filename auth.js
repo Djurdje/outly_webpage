@@ -153,6 +153,43 @@
           <span class="points__num" data-points>0</span>
         </div>
         <p class="points__label" data-points-label></p>
+        <button class="points__more" type="button" data-toggle-more aria-expanded="false" aria-controls="pointsMore">
+          <span data-more-text>What are points for?</span>
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6"/></svg>
+        </button>
+
+        <!-- Razsiritev kartice s tockami: kaj so ugodnosti in kako se tocke dobi.
+             Prej samostojen razdelek #points na strani; tu je, ker so tu tudi tocke. -->
+        <div class="pointsMore" id="pointsMore" data-more hidden>
+          <p class="pointsMore__title">What you get</p>
+          <ul class="perks">
+            <li class="perk">
+              <span class="perk__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M3 9V7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2.5 2.5 0 0 0 0 5v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2.5 2.5 0 0 0 0-5Z"/><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" d="M14 5v14"/></svg></span>
+              <span class="perk__text"><strong>Discounts on tickets</strong><small>Use your points for special prices.</small></span>
+            </li>
+            <li class="perk">
+              <span class="perk__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M4 17 2.8 7.6 8 11l4-6 4 6 5.2-3.4L20 17Z"/><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" d="M4.5 20.5h15"/></svg></span>
+              <span class="perk__text"><strong>Build your Outly career</strong><small>Level up and unlock new status.</small></span>
+            </li>
+            <li class="perk">
+              <span class="perk__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" d="m12 3.2 2.7 5.6 6.1.8-4.5 4.3 1.1 6.1L12 17.1 6.6 20l1.1-6.1L3.2 9.6l6.1-.8Z"/></svg></span>
+              <span class="perk__text"><strong>Exclusive access</strong><small>Get invites to special events.</small></span>
+            </li>
+            <li class="perk">
+              <span class="perk__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M3.5 11h17v9.5h-17zM2.5 7.5h19V11h-19zM12 7.5v13M12 7.5c-1.4-2.6-3.6-4.2-5.2-3.1S6.8 7.5 9 7.5M12 7.5c1.4-2.6 3.6-4.2 5.2-3.1S17.2 7.5 15 7.5"/></svg></span>
+              <span class="perk__text"><strong>And more</strong><small>New rewards coming soon.</small></span>
+            </li>
+          </ul>
+
+          <p class="pointsMore__title">How to get them</p>
+          <ol class="pointsSteps">
+            <li><span class="pointsSteps__n">1</span><span>Tap Invite friends and share your link.</span></li>
+            <li><span class="pointsSteps__n">2</span><span>Your friend joins through it and confirms their email.</span></li>
+            <li><span class="pointsSteps__n">3</span><span>You get 1 point for every friend who confirms.</span></li>
+            <li><span class="pointsSteps__n">4</span><span>Redeem your points in the Outly app after launch.</span></li>
+          </ol>
+        </div>
+
         <button class="btn btn--primary btn--ring" type="button" data-toggle-invite>Invite friends</button>
 
         <div class="invitePanel" data-invite hidden>
@@ -165,8 +202,7 @@
             <button class="btn btn--primary" type="button" data-share-native>Share</button>
             <button class="btn" type="button" data-copy>Copy</button>
           </div>
-          <p class="invite__stats">One point for every friend who joins through your link and confirms their email.
-            <a class="invite__why" href="#points" data-close>What points get you &rarr;</a></p>
+          <p class="invite__stats">One point for every friend who joins through your link and confirms their email.</p>
         </div>
       </div>
 
@@ -450,12 +486,20 @@
      Dogodki v plosci
   ---------------------------------------------------------------- */
   drawer.addEventListener("click", async (e) => {
-    const t = e.target.closest("[data-close],[data-go],[data-action],[data-toggle-invite],[data-copy]");
+    const t = e.target.closest("[data-close],[data-go],[data-action],[data-toggle-invite],[data-toggle-more],[data-copy]");
     if (!t) return;
 
     if (t.hasAttribute("data-close")) { close(); return; }
     if (t.hasAttribute("data-go"))    { route(t.dataset.go); return; }
     if (t.hasAttribute("data-toggle-invite")) { toggleInvite(); return; }
+    if (t.hasAttribute("data-toggle-more")) {
+      // Kartica s tockami se razsiri navzdol: ugodnosti + kako do tock.
+      const box = $("[data-more]"), on = box.hidden;
+      box.hidden = !on;
+      t.setAttribute("aria-expanded", String(on));
+      $("[data-more-text]", t).textContent = on ? "Show less" : "What are points for?";
+      return;
+    }
 
     if (t.hasAttribute("data-copy")) {
       const input = $("[data-invite-link]");
