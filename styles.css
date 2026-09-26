@@ -1958,7 +1958,7 @@ body.drawer-open { overflow: hidden; }
 .pointsMore__title { margin: 0 0 8px; font-size: 11.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.5); }
 .pointsMore .perks { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 8px; }
 .pointsMore .perk { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.03); }
-.pointsMore .perk__icon { flex: 0 0 auto; width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; color: rgba(255,255,255,.85); background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); }
+.pointsMore .perk__icon { flex: 0 0 auto; width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; color: #8FA8FF; background: rgba(76,118,255,.10); border: 1px solid rgba(76,118,255,.22); }
 .pointsMore .perk__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .pointsMore .perk__text strong { font-size: 13.5px; font-weight: 800; }
 .pointsMore .perk__text small { font-size: 12px; color: rgba(255,255,255,.62); line-height: 1.35; }
