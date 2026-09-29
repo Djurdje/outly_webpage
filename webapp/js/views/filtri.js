@@ -6,14 +6,16 @@ import { ustvariTrgovino, useStore } from "../store.js";
 import * as P from "../podatki.js";
 import { zanrIme, denar } from "../oblika.js";
 import { List, Ikona } from "../ui.js";
+import { nastavitve } from "../nastavitve.js";
+import { seja } from "../seja.js";
 
 export const PRIVZETI = Object.freeze({
-  city: "", genres: [], minKm: 0, maxKm: 100, ageMin: 16, ageMax: 60, priceMin: 0, priceMax: 10000
+  city: "", genres: [], minKm: 0, maxKm: 100, ageMin: 16, ageMax: 60, priceMin: 0, priceMax: 10000, izNastavitev: false
 });
 export const filtri = ustvariTrgovino({ ...PRIVZETI });
 export const useFiltri = () => useStore(filtri);
 
-export const filtriAktivni = f => Object.keys(PRIVZETI).some(k =>
+export const filtriAktivni = f => Object.keys(PRIVZETI).filter(k => k !== "izNastavitev").some(k =>
   k === "genres" ? f.genres.length > 0 : f[k] !== PRIVZETI[k]);
 
 export function ustrezaDogodek(f, e) {
@@ -44,6 +46,13 @@ export function FiltriList({ odprt, zapri, mesta, imaLokacijo }) {
   useEffect(() => { if (odprt) { setO(filtri.get()); P.zanri().then(setVsiZanri).catch(() => setVsiZanri([])); } }, [odprt]);
   const spremeni = delni => setO(s => ({ ...s, ...delni }));
   const preklopiZanr = g => spremeni({ genres: o.genres.includes(g) ? o.genres.filter(x => x !== g) : [...o.genres, g] });
+  // "Use my preferences" (kot iOS): vklop naloži zanre, razdaljo, starost in ceno iz My preferences
+  // (zanri: lokalni, sicer iz profila); izklop jih vrne na privzeto, mesto ostane.
+  function mojeNastavitve(vklop) {
+    if (!vklop) { spremeni({ genres: [], minKm: 0, maxKm: PRIVZETI.maxKm, ageMin: PRIVZETI.ageMin, ageMax: PRIVZETI.ageMax, priceMin: PRIVZETI.priceMin, priceMax: PRIVZETI.priceMax, izNastavitev: false }); return; }
+    const n = nastavitve.get(), me = seja.get().me;
+    spremeni({ genres: n.genres.length ? n.genres : ((me && me.genres) || []), minKm: 0, maxKm: n.maxKm, ageMin: n.ageMin, ageMax: n.ageMax, priceMin: n.priceMin, priceMax: n.priceMax, izNastavitev: true });
+  }
 
   return html`<${List} odprt=${odprt} zapri=${zapri} naslov=${t("Filters")}>
     <div class="nastavitev">
@@ -56,6 +65,11 @@ export function FiltriList({ odprt, zapri, mesta, imaLokacijo }) {
         <${Ikona} ime="chevron-down" velikost=${16} razred="utisano" />
       </div>
     </div>
+
+    <label class="stikalo-vrstica">
+      <span class="kv-besedilo"><strong>${t("Use my preferences")}</strong><span>${t("Apply preferences from your profile")}</span></span>
+      <input type="checkbox" role="switch" class="stikalo" checked=${o.izNastavitev} onChange=${e => mojeNastavitve(e.target.checked)} />
+    </label>
 
     <div class="nastavitev">
       <span class="nastavitev-naslov">${t("Music genres")}</span>
@@ -92,13 +106,13 @@ export function FiltriList({ odprt, zapri, mesta, imaLokacijo }) {
 }
 
 /* Drsnik od-do: dva input[type=range] na istem tiru (tipkovnica in bralniki zaslona delajo). */
-function Razpon({ od, do: dO, korak, spodaj, zgoraj, napis, ob, ime }) {
+export function Razpon({ od, do: dO, korak, spodaj, zgoraj, napis, ob, ime, samoZgoraj = false }) {
   const odstotek = v => ((v - od) / (dO - od)) * 100;
   return html`<div class="razpon">
     <div class="razpon-napisa"><span>${napis(spodaj)}</span><span>${napis(zgoraj)}${zgoraj >= dO ? "+" : ""}</span></div>
     <div class="razpon-tir" style=${{ "--od": odstotek(spodaj) + "%", "--do": odstotek(zgoraj) + "%" }}>
-      <input type="range" min=${od} max=${dO} step=${korak} value=${spodaj} aria-label=${ime + " – min"}
-        onInput=${e => ob(Math.min(Number(e.target.value), zgoraj), zgoraj)} />
+      ${samoZgoraj ? null : html`<input type="range" min=${od} max=${dO} step=${korak} value=${spodaj} aria-label=${ime + " – min"}
+        onInput=${e => ob(Math.min(Number(e.target.value), zgoraj), zgoraj)} />`}
       <input type="range" min=${od} max=${dO} step=${korak} value=${zgoraj} aria-label=${ime + " – max"}
         onInput=${e => ob(spodaj, Math.max(Number(e.target.value), spodaj))} />
     </div>

@@ -62,8 +62,32 @@ const PRAVILA = [
   ["already registered", "An account with this email or username already exists."]
 ];
 
+/* Pravila, ki morajo pred splosnim "date of birth" (prenos vstopnice govori o prijateljevem datumu). */
+const PREDNOSTNA = [
+  ["valid email is required", "Enter your friend's email address."],
+  ["no outly account with this email", "No Outly account with this email. Ask your friend to sign up first."],
+  ["no outly account with this username", "No Outly account with this username."],
+  ["already hold this ticket", "That is your own email."],
+  ["not verified yet", "Your friend's account is not verified yet."],
+  ["must add a date of birth", "Your friend must add a date of birth in the app before receiving this ticket."],
+  ["friend must be at least", "Your friend is too young for this event."],
+  ["club_has_orders", "Your club has sold tickets. Transfer club ownership before deleting your account."],
+  ["already_invited", "This person already has a pending invitation from your club."],
+  ["already_member", "You are already in this club's team."],
+  ["is_owner", "You own a club, so you can't join another team."],
+  ["invitation not found", "This invitation is no longer available."],
+  ["already_friends", "You are already friends."],
+  ["already_requested", "A friend request is already pending."],
+  ["already pending", "You already have an application waiting for review."],
+  ["can't add yourself", "You can't add yourself."],
+  ["businessname is required", "Enter the business name (at least 2 characters)."],
+  ["contactname is required", "Enter the contact person's name."],
+  ["phone must contain", "Enter a valid phone number, e.g. +386 41 123 456."]
+];
+
 function prevediApi(e) {
   const s = e.raw.toLowerCase();
+  for (const [podniz, sporocilo] of PREDNOSTNA) if (s.includes(podniz)) return t(sporocilo);
   if (s.includes("dateofbirth") || s.includes("date of birth")) {
     if (s.includes("future")) return t("Date of birth cannot be in the future.");
     if (s.includes("plausible")) return t("That date of birth does not look right.");
@@ -117,6 +141,6 @@ export function sporocilo(e) {
   if (e instanceof ApiError) return prevediApi(e);
   if (e instanceof AuthError) return prevediAuth(e);
   if (e && e.name === "AuthApiError") return prevediAuth(new AuthError(e.status, e.code, e.message));
-  if (e && (e.name === "TypeError" || e.name === "AbortError")) return t("No internet connection. Check your network and try again.");
+  if (e && (e.name === "TypeError" || e.name === "AbortError" || e.name === "AuthRetryableFetchError")) return t("No internet connection. Check your network and try again.");
   return t("Something went wrong. Please try again.");
 }

@@ -4,6 +4,7 @@ import { supabase } from "./supabase.js";
 import { send, nastaviObZavrnjeniSeji, pocistiPredpomnilnik, imaShranjenoSejo } from "./api.js";
 import { ApiError } from "./napake.js";
 import { ustvariTrgovino, useStore } from "./store.js";
+import { nastavitve } from "./nastavitve.js";
 
 export const seja = ustvariTrgovino({
   pripravljena: false,   // prvo branje seje iz localStorage je koncano
@@ -61,9 +62,16 @@ export async function naloziMe() {
 }
 
 export async function odjava(obvestilo = "") {
+  // Lokalne nastavitve niso vezane na racun - na skupni napravi jih ob odjavi pocistimo (zasebnost).
+  try { localStorage.removeItem("outly_nastavitve"); } catch { /* brez */ }
+  nastavitve.set({ genres: [], maxKm: 20, ageMin: 18, ageMax: 30, priceMin: 0, priceMax: 3000, shranjeno: false });
   try { await supabase.auth.signOut({ scope: "local" }); } catch { /* lokalno vseeno pocistimo */ }
   pocistiPredpomnilnik();
   seja.set({ prijavljen: false, me: null, meNapaka: null, obvestilo });
 }
 
 export function nastaviMe(me) { seja.set({ me }); }
+
+/** PATCH /me vrne samo osnovna polja (brez clubs, pending_*): zdruzi s trenutnim profilom, da znacke in
+    klubi ne izginejo do naslednjega GET /me. */
+export const zdruzi = novi => ({ ...(seja.get().me || {}), ...(novi || {}) });

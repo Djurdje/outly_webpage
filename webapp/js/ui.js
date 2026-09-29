@@ -130,10 +130,12 @@ export function Vrstica({ href, slikaUrl, ikona = "building", naslov, podnaslov,
 /** Spodnji list (sheet). Zapre ga Escape, klik na ozadje ali gumb. Fokus gre v list. */
 export function List({ odprt, zapri, naslov, children }) {
   const ref = useRef(null);
+  const zapriRef = useRef(zapri);
+  zapriRef.current = zapri;   // Escape vedno poklice zadnji zapri (npr. po uspehu drug kot ob odprtju)
   useEffect(() => {
     if (!odprt) return;
     const prej = document.activeElement;
-    const tipka = e => { if (e.key === "Escape") zapri(); };
+    const tipka = e => { if (e.key === "Escape") zapriRef.current(); };
     document.addEventListener("keydown", tipka);
     document.body.classList.add("brez-drsenja");
     ref.current && ref.current.focus();
