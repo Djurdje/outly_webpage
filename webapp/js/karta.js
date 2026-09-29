@@ -66,6 +66,7 @@ export function naloziKnjiznice() {
       const r = await fetch(PODATKI + ime + "/" + kljuc + ".pbf", { signal: krmilnik && krmilnik.signal });
       if (!r.ok) throw new Error("ploscica " + r.status);
       let b = new Uint8Array(await r.arrayBuffer());
+      if (b[0] === 0x3c) return { data: new Uint8Array(0) };   // "<": Cloudflare je namesto ploscice vrnil index.html
       if (b[0] === 0x1f && b[1] === 0x8b) {   // gzip (ce ga CDN ni ze razsiril)
         b = new Uint8Array(await new Response(new Blob([b]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer());
       }
