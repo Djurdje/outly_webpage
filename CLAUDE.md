@@ -29,6 +29,10 @@ assets/                               slike, ikone, points-coin.png
 assets/fonts/                         Inter (woff2, latin + latin-ext, SIL OFL) - gostimo sami, NE Google Fonts
 vendor/supabase-2.115.0.js            supabase-js UMD (iz npm) - gostimo sami, NE jsDelivr; nadgradnja = nova datoteka + 4 <script>
 vendor/preact-*, htm-*, qrcode-*      knjiznice spletne aplikacije (ESM iz npm, licence *-LICENSE.txt); hooks: uvoz "preact" -> relativna pot
+vendor/maplibre-*, protomaps-basemaps-*   zemljevid (faza 3); CSP gradnja MapLibre (delavec z nase domene)
+karta/v<datum>/{slo,mesta}/           ploscice zemljevida (OSM prek Protomaps, gzip .pbf + seznam.json): slo = Slovenija z0-10,
+                                      mesta = Ljubljana + Maribor z11-15. Izrez (.pmtiles) naredi workflow na veji `karta-izrez`,
+                                      v ploscice ga razpakira `karta/razpakiraj.mjs`. karta/pisave/ = Noto (OFL)
 CNAME, _redirects, _headers           domena, preusmeritve, glave (CSP za /app)
 
 app/index.html                        SPLETNA APLIKACIJA (PWA, od 29. 9. 2026): lupina; _redirects streze vse /app/* z njo
@@ -57,6 +61,12 @@ webapp/app.css, webapp/js/            koda aplikacije (Preact + htm, ES moduli, 
   Brez `404.html` Cloudflare za neznano pot vrne korensko `index.html`; ta ima kot PRVI skript `vstop.js`, ki preusmeri na
   `/app/?pot=...`, `usmerjanje.js` pa pot obnovi. Zato: `index.html` naj ostane z absolutnimi potmi (`/styles.css`), `vstop.js`
   naj ostane prvi skript in **ne dodajaj `404.html`** (pokvaril bi globoke povezave).
+- Zemljevid (`webapp/js/karta.js`): brez tujih streznikov ploscic. **Cloudflare Pages ne podpira HTTP Range** (preverjeno
+  29. 9. 2026: vrne 200 s celo datoteko), zato NE `.pmtiles` na Pages - samo staticne ploscice. Klub zunaj LJ/MB ima ulice
+  sele z novim izrezom mesta (ploscice v `mesta/` + vnos v `MESTA`); Pages dovoli 20.000 datotek na objavo.
+  Nova razlicica podatkov: (1) izrez na veji `karta-izrez`, (2) `karta/razpakiraj.mjs` (navodila v glavi) v novo mapo
+  `karta/v<datum>/` - slo iz slovenija 0-10, vsa mesta 11-15 v isto `mesta/`, (3) `PODATKI` v `webapp/js/karta.js`,
+  (4) staro mapo pobrisi (meja 20.000 datotek). Predpomnilnik 1 dan. Pripis OpenStreetMap mora ostati viden (ODbL).
 - Preverjanje: headless Chromium s stubom backenda in Supabase (`page.route`), lokalni streznik, ki posnema `_redirects`
   in `_headers`; sirine 393, 360, 1280; neprijavljen + prijavljen; konzola brez napak (tudi CSP).
 
