@@ -94,9 +94,14 @@ export function Skener({ klub }) {
 
   useEffect(() => {
     if (!id) return;
-    let zivo = true, tok = null, casovnik = 0, bralnik = null, budnost = null;
+    // zagon: vsak zagon kamere dobi svojo stevilko; ustavi() jo poveca, zato zamujen getUserMedia/zanka starega
+    // zagona ve, da ne velja vec (dva toka hkrati, kamera prizgana po odhodu - QA).
+    let zivo = true, tok = null, casovnik = 0, bralnik = null, budnost = null, zagon = 0;
+    zanka.current = { zadnja: "", zaseden: false };
+    setRezultat(null); setPreverjam(false);
 
     const ustavi = () => {
+      zagon++;
       clearTimeout(casovnik);
       if (tok) tok.getTracks().forEach(s => s.stop());
       tok = null;
@@ -108,7 +113,8 @@ export function Skener({ klub }) {
     async function obravnavaj(koda) {
       const z = zanka.current;
       // Ista koda ostane v kadru vec okvirjev zapored; klicemo samo ob novi kodi in ko ni odprtega rezultata.
-      if (!koda || koda === z.zadnja || z.zaseden) return;
+      // Predolg niz ni vstopnica (tuj QR, npr. plakat) - ga ne posiljamo.
+      if (!koda || koda.length > 2000 || koda === z.zadnja || z.zaseden) return;
       z.zadnja = koda;
       z.zaseden = true;
       setPreverjam(true);
@@ -120,39 +126,50 @@ export function Skener({ klub }) {
         setRezultat(r);
         try { if (navigator.vibrate) navigator.vibrate(ok ? 80 : [60, 60, 60]); } catch { /* brez */ }
       } catch (e) {
-        if (zivo) setRezultat({ napaka: sporocilo(e) });
+        // Brez odgovora (omrezje, 30 s): streznik je vstopnico morda ze vpisal - vratar mora to vedeti.
+        if (zivo) setRezultat({ napaka: e instanceof ApiError && e.status === -1
+          ? t("No response from the server. The ticket may already be checked in: scan it again - if it says Already scanned with the time just now, let the guest in.")
+          : sporocilo(e) });
       } finally {
         if (zivo) setPreverjam(false);
       }
     }
 
-    async function beri() {
-      if (!zivo || !tok) return;
+    async function beri(moj) {
+      if (!zivo || !tok || moj !== zagon) return;
       const v = video.current;
       if (v && !zanka.current.zaseden && v.readyState >= 2) {
         try { await obravnavaj(await bralnik(v)); } catch { /* posamezen okvir */ }
       }
-      if (zivo && tok) casovnik = setTimeout(beri, PREMOR);
+      if (zivo && tok && moj === zagon) casovnik = setTimeout(() => beri(moj), PREMOR);
     }
 
     async function zacni() {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { setFaza("ni-podpore"); return; }
+      ustavi();
+      const moj = zagon;
       setFaza("prosim");
       try {
         const [t0, b] = await Promise.all([
           navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } } }),
           ustvariBralnik()
         ]);
-        if (!zivo) { t0.getTracks().forEach(s => s.stop()); return; }
+        if (!zivo || moj !== zagon || document.visibilityState === "hidden") { t0.getTracks().forEach(s => s.stop()); return; }
         tok = t0; bralnik = b;
         const v = video.current;
         v.srcObject = tok;
         await v.play().catch(() => {});
+        if (moj !== zagon) return;
         setFaza("dela");
-        try { if (navigator.wakeLock) budnost = await navigator.wakeLock.request("screen"); } catch { budnost = null; }
-        beri();
+        try {
+          if (navigator.wakeLock) {
+            const l = await navigator.wakeLock.request("screen");
+            if (zivo && moj === zagon) budnost = l; else l.release().catch(() => {});
+          }
+        } catch { /* brez */ }
+        beri(moj);
       } catch (e) {
-        if (!zivo) return;
+        if (!zivo || moj !== zagon) return;
         const ime = e && e.name;
         setFaza(ime === "NotAllowedError" || ime === "SecurityError" ? "zavrnjeno"
           : ime === "NotFoundError" || ime === "OverconstrainedError" ? "ni-kamere" : "napaka");

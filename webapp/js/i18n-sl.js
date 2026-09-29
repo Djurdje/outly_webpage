@@ -727,5 +727,6 @@ export const SL = {
  "Ticket code is not valid.": "Koda vstopnice ni veljavna.",
  "This ticket was passed on to someone else. Ask them to show their new code.": "Ta vstopnica je bila predana drugi osebi. Prosi jo, naj pokaže novo kodo.",
  "Ticket is void.": "Vstopnica je razveljavljena.",
- "Ticket is refunded.": "Vstopnica je vrnjena."
+ "Ticket is refunded.": "Vstopnica je vrnjena.",
+ "No response from the server. The ticket may already be checked in: scan it again - if it says Already scanned with the time just now, let the guest in.": "Strežnik ni odgovoril. Vstopnica je morda že vpisana: skeniraj jo znova – če piše Že skenirano z uro pravkar, gosta spusti noter."
 };

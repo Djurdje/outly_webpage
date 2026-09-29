@@ -292,7 +292,13 @@ export function VstopniceDogodkaKluba({ klub, dogodek }) {
 
   async function vstop(v) {
     setDelujoc(v.id); setZadnji(null);
-    try { setZadnji(await skenirajVstopnico(id, v.qr)); await nalozi(); }
+    try {
+      const r = await skenirajVstopnico(id, v.qr);
+      setZadnji(r);
+      // Takoj oznacimo lokalno (ce osvezitev seznama pade, gumb ne ostane).
+      if (r.result === "ok" || r.result === "already_used") setS(x => ({ ...x, vstopnice: x.vstopnice.map(y => (y.id === v.id ? { ...y, status: "used" } : y)) }));
+      await nalozi();
+    }
     catch (e) { setZadnji({ napaka: sporocilo(e) }); }
     finally { setDelujoc(null); }
   }
