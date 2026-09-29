@@ -1,6 +1,7 @@
 /* Seja uporabnika: prijava prek Supabase, profil iz GET /me (kot SessionStore na iOS).
    Vloge odloca streznik; tu samo beremo, kaj je rekel. */
 import { supabase } from "./supabase.js";
+import { nastaviObraz } from "./posel.js";
 import { send, nastaviObZavrnjeniSeji, pocistiPredpomnilnik, imaShranjenoSejo } from "./api.js";
 import { ApiError } from "./napake.js";
 import { ustvariTrgovino, useStore } from "./store.js";
@@ -65,6 +66,7 @@ export async function odjava(obvestilo = "") {
   // Lokalne nastavitve niso vezane na racun - na skupni napravi jih ob odjavi pocistimo (zasebnost).
   try { localStorage.removeItem("outly_nastavitve"); } catch { /* brez */ }
   nastavitve.set({ genres: [], maxKm: 20, ageMin: 18, ageMax: 30, priceMin: 0, priceMax: 3000, shranjeno: false });
+  nastaviObraz("club");   // obraz lastnika (klubski/osebni) je vezan na prijavljeno osebo
   try { await supabase.auth.signOut({ scope: "local" }); } catch { /* lokalno vseeno pocistimo */ }
   pocistiPredpomnilnik();
   seja.set({ prijavljen: false, me: null, meNapaka: null, obvestilo });

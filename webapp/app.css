@@ -552,3 +552,115 @@ h1,h2,h3,p{ margin:0; }
   color:rgba(255,255,255,.75); background:rgba(0,0,0,.55); pointer-events:none; }
 .maplibregl-ctrl-attrib{ font-size:10px; }
 .karta .maplibregl-ctrl-bottom-left{ bottom:calc(var(--vrstica) + 24px + env(safe-area-inset-bottom)); left:4px; }
+
+/* ---------- faza 4: poslovni del ---------- */
+.logo-kluba{ display:grid; place-items:center; flex:none; border-radius:16px; overflow:hidden; background:rgba(76,118,255,.16); color:var(--modra); }
+.logo-kluba .slika{ width:100%; height:100%; }
+.logo-kluba.prazen{ background:var(--b08); color:var(--b70); }
+.logo-gumb{ border-radius:18px; flex:none; }
+.opomba-okvir{ display:flex; align-items:flex-start; gap:10px; padding:12px 14px; border-radius:14px; background:var(--b06); color:var(--b70); font-size:13px; }
+.opomba-okvir .ikona{ flex:none; margin-top:1px; }
+.poslovna-glava{ display:flex; align-items:center; gap:16px; padding-top:4px; }
+.poslovna-glava .kv-besedilo{ gap:4px; }
+a.profil-ime{ white-space:normal; }
+.oznaka-vloge{ color:var(--modra) !important; font-weight:600; font-size:12.5px !important; }
+.obrazec-kluba, .obrazec-dogodka{ display:flex; flex-direction:column; gap:18px; }
+.vrsta-logo{ display:flex; align-items:center; gap:16px; }
+.skupina-polj{ display:flex; flex-direction:column; gap:8px; }
+.oznaka-polja{ font-size:13px; font-weight:600; color:var(--b70); }
+.vrsta-izbir{ display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; }
+.vrsta-izbir .cip{ height:40px; font-size:14px; }
+.dve-polji{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.polje textarea, .polje-oznaceno textarea{
+  width:100%; min-height:110px; resize:vertical; padding:12px 14px; border-radius:10px; border:1px solid #2c2c2e; background:#1C1C1E;
+  color:#fff; font:inherit; font-size:16px; outline:none; }
+.polje textarea:focus, .polje-oznaceno textarea:focus{ border-color:var(--modra); }
+.polje-oznaceno input[type="datetime-local"], .polje-oznaceno input[type="number"]{ color-scheme:dark; }
+.izbira-lokacije{ position:relative; border-radius:16px; overflow:hidden; border:1px solid var(--b14); background:#0e0e10; }
+.izbira-lokacije-platno, .izbira-lokacije-platno.maplibregl-map{ position:absolute; inset:0; }
+.izbira-lokacije .oznaka-kluba{ cursor:grab; }
+.galerija-urejanje{ display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; }
+.galerija-slika{ position:relative; aspect-ratio:3/2; border-radius:12px; overflow:hidden; background:var(--b06); }
+.galerija-slika .slika{ width:100%; height:100%; }
+.galerija-slika .krog-gumb{ position:absolute; top:6px; right:6px; background:rgba(0,0,0,.6); }
+.vrstica-cenika{ display:flex; flex-direction:column; gap:8px; padding:12px; border-radius:14px; background:var(--b06); }
+.vc-vrh{ display:flex; align-items:center; gap:8px; }
+.vc-vrh .polje{ flex:1; min-width:0; }
+.vc-vrh .polje.vc-cena{ flex:0 0 92px; }
+.vc-cena input{ text-align:right; }
+.krog-gumb.rdeca{ color:var(--rdeca); }
+.naslov-z-gumbom{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.naslov-z-gumbom .gumb-glavni{ width:auto; padding:0 16px; flex:none; display:inline-flex; align-items:center; gap:6px; }
+.vrstica-dogodka-kluba{ display:flex; align-items:center; gap:12px; padding:12px; border-radius:16px; background:var(--b06); }
+.vrstica-dogodka-kluba + .vrstica-dogodka-kluba{ margin-top:12px; }
+.vdk-slika{ width:78px; height:78px; border-radius:12px; overflow:hidden; background:var(--b08); display:grid; place-items:center; flex:none; }
+.vdk-slika .slika{ width:100%; height:100%; }
+.vdk-datum{ color:var(--besedilo) !important; font-weight:600; }
+.vdk-meta{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.vdk-meta > span{ display:inline-flex; align-items:center; gap:4px; }
+.vdk-meta .rdeca{ color:var(--rdeca); font-weight:600; }
+.vdk-meta .oranzna{ color:#FFA24C; font-weight:600; }
+.vdk-meta .zelena{ color:var(--zelena); font-weight:600; }
+.obrazec-dogodka fieldset{ border:0; margin:0; padding:14px; border-radius:16px; background:var(--b04); display:flex; flex-direction:column; gap:12px; }
+.obrazec-dogodka legend{ float:left; width:100%; padding:0; font-size:13px; font-weight:700; color:var(--b70); text-transform:uppercase; letter-spacing:.04em; }
+.vrsta-plakat{ display:flex; align-items:center; gap:12px; }
+.vrsta-plakat .gumb-siv{ width:auto; }
+.tri-stevilke{ display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; }
+.tri-stevilke > div{ display:flex; flex-direction:column; align-items:center; gap:2px; padding:12px 6px; border-radius:12px; background:var(--b06); }
+.tri-stevilke strong{ font-size:22px; }
+.tri-stevilke span{ font-size:12px; color:var(--b55); }
+.vrstica-vstopnice{ display:flex; align-items:center; gap:10px; padding:12px; border-radius:12px; background:var(--b04); }
+.vrstica-vstopnice + .vrstica-vstopnice{ margin-top:8px; }
+.mono{ font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.oznaka-vstopa{ font-size:12px; font-weight:700; padding:6px 10px; border-radius:999px; background:var(--b08); color:var(--b55); flex:none; }
+.oznaka-vstopa.noter{ background:rgba(53,199,122,.15); color:var(--zelena); }
+.znacka-test{ font-size:11px; font-weight:800; color:#FFA24C; background:rgba(255,162,76,.15); padding:3px 8px; border-radius:999px; }
+.podnaslov-plosce{ margin-top:-10px; font-size:16px; font-weight:600; color:var(--b70); }
+.opomba.oranzna{ color:rgba(255,162,76,.9); }
+.mreza-stevilk{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.kartica-stevilke{ display:flex; flex-direction:column; gap:4px; min-width:0; padding:12px; border-radius:16px; background:var(--b06); }
+.kartica-stevilke strong{ font-size:20px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ks-naslov{ font-size:13px; color:rgba(255,255,255,.65); }
+.ks-opis{ font-size:10.5px; color:rgba(255,255,255,.6); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.obdobja{ display:flex; gap:10px; flex-wrap:wrap; }
+.obdobje{ height:36px; padding:0 14px; border-radius:8px; border:1px solid rgba(76,118,255,.7); font-size:14px; font-weight:500; }
+.obdobje.izbrano{ background:var(--modra); border-color:var(--modra); }
+.graf-prodaje{ display:flex; flex-direction:column; gap:14px; }
+.gp-glava{ display:flex; align-items:baseline; justify-content:space-between; }
+.gp-glava h2{ font-size:18px; font-weight:600; }
+.gp-platno{ height:200px; display:grid; place-items:center; }
+.gp-platno svg{ width:100%; height:100%; overflow:visible; }
+.gp-os{ font-size:10px; fill:rgba(255,255,255,.6); font-family:inherit; }
+.vrtavka.majhna{ width:16px; height:16px; border-width:2px; }
+.aktivnost{ display:flex; flex-direction:column; gap:12px; }
+.naslov-sekcije-velik{ font-size:22px; font-weight:700; }
+.aktivnost-mreza{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.aktivnost-levo{ display:flex; flex-direction:column; gap:10px; }
+.kartica-ekipe{ display:flex; flex-direction:column; gap:10px; padding:12px; border-radius:16px; background:var(--b06); max-height:244px; min-width:0; }
+.ke-prazno{ margin:auto; }
+.ke-seznam{ display:flex; flex-direction:column; gap:10px; overflow-y:auto; }
+.ke-vrstica{ display:flex; align-items:center; gap:8px; font-size:13px; font-weight:500; min-width:0; }
+.ke-vrstica > span:not(.avatar){ flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.vrstica-uspesnosti{ display:flex; align-items:center; gap:12px; padding:12px; border-radius:14px; background:var(--b04); }
+.vrstica-uspesnosti + .vrstica-uspesnosti{ margin-top:10px; }
+.vu-slika{ width:54px; height:54px; border-radius:10px; overflow:hidden; background:rgba(76,118,255,.16); display:grid; place-items:center; flex:none; }
+.vu-slika .slika{ width:100%; height:100%; }
+.vu-meta{ color:rgba(255,255,255,.7) !important; }
+.vu-desno{ display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex:none; }
+.napredek{ display:block; width:70px; height:4px; border-radius:2px; background:var(--b10); overflow:hidden; }
+.napredek > span{ display:block; height:100%; background:var(--modra); transform-origin:left center; }
+.vrstica-clana{ display:flex; align-items:center; gap:12px; padding:14px; border-radius:18px; background:var(--b08); }
+.vrstica-clana + .vrstica-clana{ margin-top:10px; }
+.vrstica-clana.vabilo{ background:none; border:1px dashed var(--b10); }
+.vrstica-clana.vabilo strong{ color:rgba(255,255,255,.8); }
+.krog-ikona{ width:44px; height:44px; border-radius:50%; background:var(--b06); display:grid; place-items:center; color:var(--b55); flex:none; }
+.oznaka-vloge-cip{ flex:none; font-size:12px; font-weight:600; padding:6px 10px; border-radius:999px; background:var(--b08); color:var(--b70); }
+.oznaka-vloge-cip.lastnik{ background:rgba(76,118,255,.15); color:var(--modra); }
+.podnaslov-sekcije{ font-size:13px; font-weight:600; color:var(--b55); margin-bottom:-8px; }
+.razlaga-vlog{ display:flex; flex-direction:column; gap:10px; }
+.razlaga-vlog > div{ display:flex; align-items:flex-start; gap:12px; }
+.razlaga-vlog .kv-besedilo span{ white-space:normal; font-size:12px; }
+.izbira-vloge{ display:flex; align-items:center; gap:12px; padding:14px; border-radius:16px; background:var(--b06); border:1px solid transparent; text-align:left; width:100%; }
+.izbira-vloge.izbrana{ background:var(--b10); border-color:rgba(76,118,255,.7); }
+.izbira-vloge .kv-besedilo span{ white-space:normal; }
+@media (max-width:370px){ .aktivnost-mreza{ grid-template-columns:1fr; } .kartica-ekipe{ max-height:none; } }

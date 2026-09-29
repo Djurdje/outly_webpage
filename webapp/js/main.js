@@ -19,10 +19,15 @@ import { Zemljevid } from "./views/zemljevid.js";
 import { MojRacun, OsebniPodatki, GesloVarnost, Nastavitve, MojeNastavitve, IzbrisRacuna, ProsnjaUstvarjalca, Placila, Pomoc, ClanekPomoci, OAplikaciji } from "./views/racun.js";
 import { MojiPrijatelji, NacrtiPrijateljev } from "./views/prijatelji.js";
 import { MojiKlubi, VabilaKlubov } from "./views/klubi.js";
+import { SredisceKluba, NastavitveLastnika, PodatkiKluba, LokacijaKluba, UrejanjeCenika } from "./views/posel.js";
+import { DogodkiKluba, ObrazecDogodka, VstopniceDogodkaKluba } from "./views/posel-dogodki.js";
+import { NadzornaPlosca, SkeniranjaClana } from "./views/posel-plosca.js";
+import { Ekipa } from "./views/posel-ekipa.js";
 
 const AVT = new Set(["login", "register", "verify", "forgot"]);
 const SAMO_PRIJAVLJENI = new Set(["tickets", "interested", "onboarding", "account", "personal", "security", "preferences",
-  "delete", "creator", "friends", "friends-plans", "my-clubs", "invites"]);
+  "delete", "creator", "friends", "friends-plans", "my-clubs", "invites", "biz", "biz-settings", "biz-dashboard", "biz-staff",
+  "biz-events", "biz-event-new", "biz-event-edit", "biz-event-tickets", "biz-team", "biz-info", "biz-location", "biz-bar-prices"]);
 const ZAVIHKI = [
   { ime: "home", href: "/app", ikona: "house", napis: "Home" },
   { ime: "search", href: "/app/search", ikona: "search", napis: "Search" },
@@ -66,6 +71,18 @@ function Zaslon({ pot }) {
     case "friends-plans": return html`<${NacrtiPrijateljev} />`;
     case "my-clubs": return html`<${MojiKlubi} />`;
     case "invites": return html`<${VabilaKlubov} />`;
+    case "biz": return html`<${SredisceKluba} key=${p.klub} klub=${p.klub} />`;
+    case "biz-settings": return html`<${NastavitveLastnika} key=${p.klub} klub=${p.klub} />`;
+    case "biz-dashboard": return html`<${NadzornaPlosca} key=${p.klub} klub=${p.klub} />`;
+    case "biz-staff": return html`<${SkeniranjaClana} key=${p.klub + "/" + p.clan} klub=${p.klub} clan=${p.clan} />`;
+    case "biz-events": return html`<${DogodkiKluba} key=${p.klub} klub=${p.klub} />`;
+    case "biz-event-new": return html`<${ObrazecDogodka} key=${p.klub} klub=${p.klub} />`;
+    case "biz-event-edit": return html`<${ObrazecDogodka} key=${p.klub + "/" + p.dogodek} klub=${p.klub} dogodek=${p.dogodek} />`;
+    case "biz-event-tickets": return html`<${VstopniceDogodkaKluba} key=${p.klub + "/" + p.dogodek} klub=${p.klub} dogodek=${p.dogodek} />`;
+    case "biz-team": return html`<${Ekipa} key=${p.klub} klub=${p.klub} />`;
+    case "biz-info": return html`<${PodatkiKluba} key=${p.klub} klub=${p.klub} />`;
+    case "biz-location": return html`<${LokacijaKluba} key=${p.klub} klub=${p.klub} />`;
+    case "biz-bar-prices": return html`<${UrejanjeCenika} key=${p.klub} klub=${p.klub} />`;
     default: return html`<div class="zaslon"><${GlavaNazaj} />
       <div class="prazno"><strong>${t("Page not found")}</strong><a class="gumb-siv" href="/app">${t("Go to Home")}</a></div></div>`;
   }
@@ -115,7 +132,7 @@ function App() {
     <main id="vsebina" class=${"okvir" + (brezVrstice ? "" : " z-vrstico")} key=${pot.kljuc} data-smer=${pot.smer}>
       <${Zaslon} pot=${pot} />
     </main>
-    ${brezVrstice ? null : html`<${SpodnjaVrstica} aktiven=${ZAVIHKI.some(z => z.ime === pot.ime) ? pot.ime : zadnjiZavihek} />`}
+    ${brezVrstice ? null : html`<${SpodnjaVrstica} aktiven=${ZAVIHKI.some(z => z.ime === pot.ime) ? pot.ime : pot.ime.startsWith("biz") ? "profile" : zadnjiZavihek} />`}
   </div>`;
 }
 
@@ -126,7 +143,10 @@ function naslovPoti(ime) {
     account: "My Account", personal: "Personal info", security: "Password and security", preferences: "Preferences",
     "my-preferences": "My preferences", delete: "Delete account", creator: "Request for creator", payment: "Payment",
     help: "Help Center", article: "Help Center", about: "About", friends: "My friends", "friends-plans": "Friends plans",
-    "my-clubs": "My clubs", invites: "Notifications" })[ime] || "Outly";
+    "my-clubs": "My clubs", invites: "Notifications", biz: "My clubs", "biz-settings": "Settings", "biz-dashboard": "Dashboard",
+    "biz-staff": "Staff activity", "biz-events": "Events", "biz-event-new": "New event", "biz-event-edit": "Edit event",
+    "biz-event-tickets": "Tickets", "biz-team": "Team", "biz-info": "Club info", "biz-location": "Location on the map",
+    "biz-bar-prices": "Bar prices" })[ime] || "Outly";
 }
 
 zacniSejo();
