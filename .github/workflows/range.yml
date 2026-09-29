@@ -1,4 +1,4 @@
-name: Preveri produkcijo (zacasno)
+name: Preveri predogled (zacasno)
 on:
   push:
     branches: [preveri-range]
@@ -7,12 +7,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          U=https://outly.si
-          for i in $(seq 1 20); do
-            s=$(curl -s -o /dev/null -w "%{http_code} %{content_type}" "$U/webapp/js/views/posel.js"); case "$s" in *javascript*) break;; esac
+          U=https://claude-new-session-xmsl8u.outly-webpage.pages.dev
+          for i in $(seq 1 30); do
+            s=$(curl -s -o /dev/null -w "%{http_code} %{content_type}" "$U/webapp/sw.js"); case "$s" in *javascript*) break;; esac
             echo "poskus $i: $s"; sleep 20
           done
-          for f in / /app/ /app/business/1 /webapp/js/views/posel.js /webapp/js/views/posel-plosca.js /webapp/js/posel.js /karta/v20260929/slo/seznam.json; do
-            echo "$f: $(curl -s -o /dev/null -w '%{http_code} %{content_type}' "$U$f")"
-          done
-          curl -s "$U/webapp/js/main.js" | grep -c "SamoUredniki"
+          echo "== sw.js"; curl -sS -D - -o /dev/null "$U/webapp/sw.js" | grep -iE "^HTTP|content-type|service-worker|cache-control"
+          echo "== manifest"; curl -sS -D - -o /tmp/m "$U/webapp/manifest.webmanifest" | grep -iE "^HTTP|content-type"; head -c 120 /tmp/m; echo
+          echo "== /app/ CSP"; curl -sS -D - -o /tmp/a "$U/app/" | grep -iE "^HTTP|content-security" | cut -c1-200; grep -c modulepreload /tmp/a
+          echo "== ikona"; curl -s -o /dev/null -w "%{http_code} %{content_type}\n" "$U/assets/icon-512.png"
