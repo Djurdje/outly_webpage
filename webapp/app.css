@@ -664,3 +664,5 @@ a.profil-ime{ white-space:normal; }
 .izbira-vloge.izbrana{ background:var(--b10); border-color:rgba(76,118,255,.7); }
 .izbira-vloge .kv-besedilo span{ white-space:normal; }
 @media (max-width:370px){ .aktivnost-mreza{ grid-template-columns:1fr; } .kartica-ekipe{ max-height:none; } }
+.rocne-koordinate summary{ cursor:pointer; font-size:13px; font-weight:600; color:var(--b70); padding:4px 0; }
+.rocne-koordinate[open] summary{ margin-bottom:10px; }

@@ -1,7 +1,7 @@
 /* Nadzorna plosca kluba (BusinessDashboardView, prenova 25.-26. 9. 2026) in skeniranja clana ekipe (StaffScansView).
    Vrstni red kot iOS: stiri stevilke, obdobje, graf prodaje, "Check activity", "Event performance".
    Graf je SVG (brez knjiznice): modra krivulja s prelivom pod njo, kot Martinova skica. */
-import { html, useEffect, useMemo, useState } from "../lib.js";
+import { html, useEffect, useMemo, useRef, useState } from "../lib.js";
 import { t, tn, locale } from "../i18n.js";
 import { sporocilo } from "../napake.js";
 import { denar } from "../oblika.js";
@@ -26,10 +26,12 @@ export function NadzornaPlosca({ klub }) {
   const [nalagaGraf, setNalagaGraf] = useState(false);
   const [napaka, setNapaka] = useState(null);
   const baza = `/app/business/${id}`;
+  const zadnji = useRef(0);   // samo zadnji odgovor sme dolociti graf (hiter preklop obdobja)
 
   const nalozi = async () => {
     setNalaga(true); setNapaka(null);
-    try { setProdaja(await poslovno(id, `/business/sales?range=${obdobje}`)); }
+    const st = ++zadnji.current;
+    try { const r = await poslovno(id, `/business/sales?range=${obdobje}`); if (st === zadnji.current) setProdaja({ ...r, _obdobje: obdobje }); }
     catch (e) { setNapaka(e); setNalaga(false); return; }
     // Ce streznik (se) nima /business/activity, zaslon vseeno pokaze graf in dogodke.
     poslovno(id, "/business/activity").then(setAktivnost).catch(() => setAktivnost(null));
@@ -40,15 +42,21 @@ export function NadzornaPlosca({ klub }) {
   async function zamenjajObdobje(o) {
     if (o === obdobje) return;
     setObdobje(o); setNalagaGraf(true);
-    try { setProdaja(await poslovno(id, `/business/sales?range=${o}`)); }
-    catch (e) { setNapaka(e); }
-    setNalagaGraf(false);
+    const st = ++zadnji.current;
+    try {
+      const r = await poslovno(id, `/business/sales?range=${o}`);
+      if (st === zadnji.current) setProdaja({ ...r, _obdobje: o });
+    } catch (e) {
+      // Ob napaki gumb pokaze obdobje grafa, ki je na zaslonu.
+      if (st === zadnji.current) { setNapaka(e); setObdobje(p => (prodaja && prodaja._obdobje) || p); }
+    }
+    if (st === zadnji.current) setNalagaGraf(false);
   }
 
   if (!id) return html`<div class="zaslon"><${GlavaNazaj} rezerva="/app/profile" /><${PoslovnaNapaka} napaka=${{ status: 404 }} /></div>`;
   const s = prodaja;
   const povzetek = (s && s.summary) || {};
-  const test = s && (s.mode || "test") === "test";
+  const test = !!s && s.mode === "test";
   return html`<div class="zaslon plosca">
     <${GlavaNazaj} rezerva=${baza} />
     <div class="naslov-z-gumbom"><h1 class="velik-naslov">${t("Dashboard")}</h1>${test ? html`<span class="znacka-test">${t("TEST")}</span>` : null}</div>
@@ -62,13 +70,13 @@ export function NadzornaPlosca({ klub }) {
         <${Stevilka} naslov=${t("Total revenue")} vrednost=${denar(povzetek.gross_cents || 0)} opis=${t("gross, all events")} />
         <${Stevilka} naslov=${t("Tickets sold")} vrednost=${stevilka(povzetek.tickets_sold)}
           opis=${t("{orders} orders · {buyers} buyers", { orders: stevilka(povzetek.orders), buyers: stevilka(povzetek.buyers) })} />
-        <${Stevilka} naslov=${t("Outly fee")} vrednost=${denar(povzetek.fee_cents || 0)} opis=${t("{p} % of gross", { p: Math.round(s.fee_percent ?? 10) })} />
+        <${Stevilka} naslov=${t("Outly fee")} vrednost=${denar(povzetek.fee_cents || 0)} opis=${s.fee_percent != null ? t("{p} % of gross", { p: Math.round(s.fee_percent) }) : ""} />
         <${Stevilka} naslov=${t("Your payout")} vrednost=${denar(povzetek.net_cents || 0)} opis=${t("after fee and refunds")} modra=${true} />
       </div>
       <div class="obdobja" role="group" aria-label=${t("Period")}>
         ${OBDOBJA.map(([o, napis]) => html`<button type="button" class=${"obdobje" + (o === obdobje ? " izbrano" : "")} aria-pressed=${o === obdobje} onClick=${() => zamenjajObdobje(o)}>${t(napis)}</button>`)}
       </div>
-      <${GrafProdaje} serija=${Array.isArray(s.series) ? s.series : []} obdobje=${obdobje} nalaga=${nalagaGraf} />
+      <${GrafProdaje} serija=${Array.isArray(s.series) ? s.series : []} obdobje=${s._obdobje || obdobje} nalaga=${nalagaGraf} />
       ${aktivnost ? html`<${Aktivnost} a=${aktivnost} baza=${baza} />` : null}
       <div class="sekcija-glava"><h2>${t("Event performance")}</h2><a class="povezava-desno" href=${baza + "/events"}>${t("View all")}</a></div>
       ${!(s.events || []).length ? html`<p class="opomba">${t("No events yet. Add one under Events.")}</p>` : html`<div class="seznam">

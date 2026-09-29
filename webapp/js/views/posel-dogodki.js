@@ -89,7 +89,8 @@ export function ObrazecDogodka({ klub, dogodek }) {
   const [obstojeci, setObstojeci] = useState(null);
   const [nalaga, setNalaga] = useState(urejam);
   const [napakaNalaganja, setNapakaNalaganja] = useState(null);
-  const [vsiZanri, setVsiZanri] = useState([]);
+  const [vsiZanri, setVsiZanri] = useState(null);   // null = se nalaga / ni uspelo (glej naloziZanre)
+  const [zanriNapaka, setZanriNapaka] = useState(false);
   const privzetZacetek = new Date(Date.now() + 7 * 24 * 3600e3);
   privzetZacetek.setSeconds(0, 0);
   const [p, setP] = useState({
@@ -106,7 +107,8 @@ export function ObrazecDogodka({ klub, dogodek }) {
   const vnosPlakat = useRef(null), vnosVideo = useRef(null);
   const nastavi = (k, v) => setP(x => ({ ...x, [k]: v }));
 
-  useEffect(() => { P.zanri().then(setVsiZanri).catch(() => setVsiZanri([])); }, []);
+  const naloziZanre = () => { setZanriNapaka(false); P.zanri().then(setVsiZanri).catch(() => setZanriNapaka(true)); };
+  useEffect(naloziZanre, []);
   const naloziDogodek = () => {
     setNalaga(true); setNapakaNalaganja(null);
     poslovno(id, "/business/events").then(r => {
@@ -182,7 +184,8 @@ export function ObrazecDogodka({ klub, dogodek }) {
     }
     const body = {
       title, description: p.description, startAt: zacetek.toISOString(), endAt: konec ? konec.toISOString() : null,
-      minAge: starost, genres: vsiZanri.filter(g => p.genres.has(g)),
+      // Brez nalozenega seznama zanrov obdrzimo izbrane (sicer bi PATCH zanre izbrisal).
+      minAge: starost, genres: vsiZanri ? vsiZanri.filter(g => p.genres.has(g)) : [...p.genres],
       status: obstojeci && obstojeci.status === "cancelled" ? "cancelled" : (p.objavljen ? "published" : "draft"),
       currency: "EUR", ticketUrl: url, posterUrl: p.poster, ticketPriceCents: centi, capacity: kapaciteta
     };
@@ -215,8 +218,10 @@ export function ObrazecDogodka({ klub, dogodek }) {
       </fieldset>
       <fieldset><legend>${t("Who")}</legend>
         <label class="polje-oznaceno">${t("Minimum age")}<input type="number" inputmode="numeric" min="0" max="99" value=${p.minAge} onInput=${e => nastavi("minAge", e.target.value)} /></label>
-        ${vsiZanri.length ? html`<div class="mreza-cipov" role="group" aria-label=${t("Music genres")}>${vsiZanri.map(g => html`<button type="button" class=${"cip" + (p.genres.has(g) ? " izbran" : "")} aria-pressed=${p.genres.has(g)}
-          onClick=${() => setP(x => { const n = new Set(x.genres); n.has(g) ? n.delete(g) : n.add(g); return { ...x, genres: n }; })}>${zanrIme(g)}</button>`)}</div>` : html`<span class="opomba">${t("Loading genres...")}</span>`}
+        ${vsiZanri && vsiZanri.length ? html`<div class="mreza-cipov" role="group" aria-label=${t("Music genres")}>${vsiZanri.map(g => html`<button type="button" class=${"cip" + (p.genres.has(g) ? " izbran" : "")} aria-pressed=${p.genres.has(g)}
+          onClick=${() => setP(x => { const n = new Set(x.genres); n.has(g) ? n.delete(g) : n.add(g); return { ...x, genres: n }; })}>${zanrIme(g)}</button>`)}</div>`
+          : zanriNapaka ? html`<button type="button" class="povezava-gumb" onClick=${naloziZanre}>${t("Could not load genres.")} ${t("Try again")}</button>`
+          : html`<span class="opomba">${t("Loading genres...")}</span>`}
       </fieldset>
       <fieldset><legend>${t("Tickets")}</legend>
         <label class="polje-oznaceno">${t("Price (EUR)")}<input inputmode="decimal" placeholder="0.00" value=${p.price} onInput=${e => nastavi("price", e.target.value)} /></label>
@@ -274,7 +279,9 @@ export function VstopniceDogodkaKluba({ klub, dogodek }) {
       poslovno(id, "/business/events").catch(() => [])
     ]).then(([v, dogodki]) => {
       const e = (Array.isArray(dogodki) ? dogodki : []).find(x => x.id === idDogodka);
-      setS({ nalaga: false, napaka: null, vstopnice: Array.isArray(v) ? v : [], naslov: e ? e.title : "" });
+      // Obdrzimo samo, kar prikazemo (brez podpisanega QR, celotne serijske in e-naslovov).
+      const vstopnice = (Array.isArray(v) ? v : []).map(x => ({ id: x.id, status: x.status, public_ref: x.public_ref || "", kratka: String(x.serial || "").slice(0, 8).toUpperCase() }));
+      setS({ nalaga: false, napaka: null, vstopnice, naslov: e ? e.title : "" });
     }).catch(e => setS({ nalaga: false, napaka: e, vstopnice: [], naslov: "" }));
   };
   useEffect(() => { if (id && idDogodka) nalozi(); }, [id, idDogodka]);
@@ -298,7 +305,7 @@ export function VstopniceDogodkaKluba({ klub, dogodek }) {
         ${s.vstopnice.map(v => {
           const noterJe = v.status === "used";
           return html`<div class="vrstica-vstopnice" key=${v.id}>
-            <span class="kv-besedilo"><strong class="mono">${String(v.serial || "").slice(0, 8).toUpperCase()}</strong><span>${v.public_ref || ""}</span></span>
+            <span class="kv-besedilo"><strong class="mono">${v.kratka}</strong><span>${v.public_ref || ""}</span></span>
             <span class=${"oznaka-vstopa" + (noterJe ? " noter" : "")}>${noterJe ? t("IN") : t("Not yet")}</span>
           </div>`;
         })}

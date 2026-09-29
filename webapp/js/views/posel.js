@@ -35,6 +35,17 @@ export function PoslovnaNapaka({ napaka, znova, rezerva = "/app/profile" }) {
   return html`<${Napaka} besedilo=${sporocilo(napaka)} znova=${znova} />`;
 }
 
+/** Orodja kluba (plosca, dogodki, ekipa, podatki) so za lastnika in managerja. Vratar dobi sporocilo brez klicev
+    (streznik bi mu tako ali tako vrnil 403; GET /business/events bi mu sicer pokazal osnutke). Ce klub ni v
+    me.clubs (npr. admin), odloci streznik. */
+export function SamoUredniki({ klub, children }) {
+  const me = useSeja(s => s.me);
+  const c = me && Array.isArray(me.clubs) ? me.clubs.find(x => Number(x.club_id) === idKluba(klub)) : null;
+  if (c && !lahkoUreja(c.role)) return html`<div class="zaslon"><${GlavaNazaj} rezerva=${"/app/business/" + idKluba(klub)} />
+    <${PoslovnaNapaka} napaka=${{ status: 403 }} rezerva=${"/app/business/" + idKluba(klub)} /></div>`;
+  return children;
+}
+
 /** Opomba o skenerju: samo v aplikaciji (Martin, 29. 9. 2026). */
 const OpombaSkenerja = () => html`<div class="opomba-okvir">
   <${Ikona} ime="scan-line" velikost=${18} />
@@ -123,8 +134,14 @@ export function NastavitevKluba({ ob }) {
     setShranjujem(true); setNapaka("");
     const body = { name: ime.trim(), logoUrl: logo, address: naslov.trim(), city: mesto.trim(), minAge: starost, genres: [...zanri].sort() };
     if (lokacija) { body.lat = lokacija.lat; body.lng = lokacija.lng; }
-    try { await send("/clubs", { method: "POST", body, auth: true }); ob(); }
-    catch (e) { setNapaka(sporocilo(e)); setShranjujem(false); }
+    try { await send("/clubs", { method: "POST", body, auth: true }); ob(); return; }
+    catch (e) {
+      if (e.status === -1) {
+        // Odgovor se je izgubil - klub je morda ze nastal. Ponovni klik bi ustvaril drugega.
+        try { await send("/business/clubs/me", { auth: true }); ob(); return; } catch { /* kluba ni - pokazemo napako */ }
+      }
+      setNapaka(sporocilo(e)); setShranjujem(false);
+    }
   }
 
   return html`<div class="obrazec-kluba">
@@ -253,6 +270,8 @@ export function PodatkiKluba({ klub }) {
     try { k.nastavi(await poslovno(id, "/business/clubs/me", { method: "PATCH", body })); return true; }
     catch (e) { setNapaka(sporocilo(e)); return false; }
   }
+  // Odstranitev slike/videa: med shranjevanjem so gumbi onemogoceni (sicer dva hitra klika prepiseta drug drugega).
+  async function odstrani(body) { setNalaga("shranjujem"); await posodobi(body); setNalaga(""); }
   async function shraniPolje() {
     const [v, nap] = preveriPolje(urejam, vrednost);
     if (nap) return setNapakaUrejanja(nap);
@@ -320,14 +339,14 @@ export function PodatkiKluba({ klub }) {
     ${galerija.length ? html`<div class="galerija-urejanje">${galerija.map((u, i) => html`<div class="galerija-slika" key=${u}>
       <${Slika} src=${u} sirina=${300} alt=${t("Photo {n}", { n: i + 1 })} />
       <button type="button" class="krog-gumb majhen" disabled=${!!nalaga} aria-label=${t("Remove photo {n}", { n: i + 1 })}
-        onClick=${() => posodobi({ gallery_urls: galerija.filter((_, j) => j !== i), video_url: c.video_url || "" })}><${Ikona} ime="x" velikost=${14} /></button>
+        onClick=${() => odstrani({ gallery_urls: galerija.filter((_, j) => j !== i), video_url: c.video_url || "" })}><${Ikona} ime="x" velikost=${14} /></button>
     </div>`)}</div>` : null}
     <${KarticaPolja} ikona="square-play" naslov=${t("Club video")}
       vrednost=${c.video_url ? t("Video uploaded") : t("No video yet")}
       opis=${t("Short intro video shown on your club page (up to 100 MB, plays muted in a loop).")}
       gumb=${nalaga === "video" ? t("Uploading...") : c.video_url ? t("Replace") : t("Upload")} ob=${() => vnosVideo.current && vnosVideo.current.click()} onemogoceno=${!!nalaga} />
     <input ref=${vnosVideo} type="file" accept="video/*" class="skrito" onChange=${izberiVideo} tabindex="-1" aria-hidden="true" />
-    ${c.video_url ? html`<button type="button" class="povezava-gumb rdeca" disabled=${!!nalaga} onClick=${() => posodobi({ gallery_urls: galerija, video_url: "" })}>${t("Remove video")}</button>` : null}
+    ${c.video_url ? html`<button type="button" class="povezava-gumb rdeca" disabled=${!!nalaga} onClick=${() => odstrani({ gallery_urls: galerija, video_url: "" })}>${t("Remove video")}</button>` : null}
     <${KarticaPolja} ikona="wine" naslov=${t("Bar prices")}
       vrednost=${c.bar_prices.length ? t("{n} items", { n: c.bar_prices.length }) : t("Not added yet")}
       opis=${t("Guests see the list under \"Bar prices\" on every event of your club.")} gumb=${t("Edit")} href=${baza + "/bar-prices"} />
@@ -391,7 +410,8 @@ export function IzbiraLokacije({ lat, lng, ob, visina = 300 }) {
   const posoda = useRef(null);
   const stanje = useRef({ m: null, K: null, oznaka: null });
   const obRef = useRef(ob);
-  obRef.current = ob;
+  // Tocka z zemljevida gre tudi v polja koordinat (dostopnost: lokacijo se da vnesti brez miske).
+  obRef.current = p => { setRocno({ lat: String(p.lat), lng: String(p.lng) }); ob(p); };
   const [brezKarte, setBrezKarte] = useState(false);
   const [rocno, setRocno] = useState({ lat: lat != null ? String(lat) : "", lng: lng != null ? String(lng) : "" });
 
@@ -428,28 +448,39 @@ export function IzbiraLokacije({ lat, lng, ob, visina = 300 }) {
       m.touchZoomRotate.disableRotation();
       stanje.current = { m, K, oznaka: null };
       if (imaTocko) postavi({ lat, lng }, false);
-      m.on("click", e => { const p = zaokrozi(e.lngLat.lat, e.lngLat.lng); postavi(p, false); obRef.current(p); });
+      m.on("click", e => {
+        // Klik na samo oznako (npr. pred vlecenjem) je ne premakne.
+        const cilj = e.originalEvent && e.originalEvent.target;
+        if (cilj && cilj.closest && cilj.closest(".oznaka-kluba")) return;
+        const p = zaokrozi(e.lngLat.lat, e.lngLat.lng); postavi(p, false); obRef.current(p);
+      });
     }).catch(() => { if (!unicen) setBrezKarte(true); });
     return () => { unicen = true; if (stanje.current.m) stanje.current.m.remove(); stanje.current = { m: null, K: null, oznaka: null }; };
   }, []);
 
-  if (brezKarte) {
-    const posodobi = (kljuc, v) => {
-      const n = { ...rocno, [kljuc]: v };
-      setRocno(n);
-      const a = Number(n.lat.replace(",", ".")), b = Number(n.lng.replace(",", "."));
-      if (n.lat && n.lng && Number.isFinite(a) && Number.isFinite(b) && Math.abs(a) <= 90 && Math.abs(b) <= 180) ob(zaokrozi(a, b));
-    };
-    return html`<div class="skupina-polj">
-      <p class="opomba">${t("The map can't be shown in this browser. Enter the coordinates instead (e.g. from a maps app).")}</p>
-      <div class="dve-polji">
-        <label class="polje-oznaceno">${t("Latitude")}<input inputmode="decimal" value=${rocno.lat} placeholder="46.0514" onInput=${e => posodobi("lat", e.target.value)} /></label>
-        <label class="polje-oznaceno">${t("Longitude")}<input inputmode="decimal" value=${rocno.lng} placeholder="14.5060" onInput=${e => posodobi("lng", e.target.value)} /></label>
-      </div>
-    </div>`;
-  }
-  return html`<div class="izbira-lokacije" style=${{ height: visina + "px" }}>
-    <div class="izbira-lokacije-platno" ref=${posoda} role="application" aria-label=${t("Map: tap to set the location of the club")}></div>
+  // Rocni vnos koordinat: vedno na voljo (tipkovnica, bralnik zaslona); brez WebGL edini nacin.
+  const posodobi = (kljuc, v) => {
+    const n = { ...rocno, [kljuc]: v };
+    setRocno(n);
+    const sa = n.lat.trim().replace(",", "."), sb = n.lng.trim().replace(",", ".");
+    if (!/^-?\d{1,3}(\.\d+)?$/.test(sa) || !/^-?\d{1,3}(\.\d+)?$/.test(sb)) return;
+    const a = Number(sa), b2 = Number(sb);
+    if (Math.abs(a) > 90 || Math.abs(b2) > 180) return;
+    const p = zaokrozi(a, b2);
+    postavi(p, true);
+    ob(p);
+  };
+  const polja = html`<div class="dve-polji">
+    <label class="polje-oznaceno">${t("Latitude")}<input inputmode="decimal" value=${rocno.lat} placeholder="46.0514" onInput=${e => posodobi("lat", e.target.value)} /></label>
+    <label class="polje-oznaceno">${t("Longitude")}<input inputmode="decimal" value=${rocno.lng} placeholder="14.5060" onInput=${e => posodobi("lng", e.target.value)} /></label>
+  </div>`;
+  if (brezKarte) return html`<div class="skupina-polj">
+    <p class="opomba">${t("The map can't be shown in this browser. Enter the coordinates instead (e.g. from a maps app).")}</p>${polja}</div>`;
+  return html`<div class="skupina-polj">
+    <div class="izbira-lokacije" style=${{ height: visina + "px" }}>
+      <div class="izbira-lokacije-platno" ref=${posoda} role="application" aria-label=${t("Map: tap to set the location of the club")}></div>
+    </div>
+    <details class="rocne-koordinate"><summary>${t("Enter coordinates instead")}</summary>${polja}</details>
   </div>`;
 }
 const zaokrozi = (lat, lng) => ({ lat: Math.round(lat * 1e6) / 1e6, lng: Math.round(lng * 1e6) / 1e6 });

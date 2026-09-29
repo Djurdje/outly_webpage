@@ -19,7 +19,7 @@ import { Zemljevid } from "./views/zemljevid.js";
 import { MojRacun, OsebniPodatki, GesloVarnost, Nastavitve, MojeNastavitve, IzbrisRacuna, ProsnjaUstvarjalca, Placila, Pomoc, ClanekPomoci, OAplikaciji } from "./views/racun.js";
 import { MojiPrijatelji, NacrtiPrijateljev } from "./views/prijatelji.js";
 import { MojiKlubi, VabilaKlubov } from "./views/klubi.js";
-import { SredisceKluba, NastavitveLastnika, PodatkiKluba, LokacijaKluba, UrejanjeCenika } from "./views/posel.js";
+import { SredisceKluba, NastavitveLastnika, PodatkiKluba, LokacijaKluba, UrejanjeCenika, SamoUredniki } from "./views/posel.js";
 import { DogodkiKluba, ObrazecDogodka, VstopniceDogodkaKluba } from "./views/posel-dogodki.js";
 import { NadzornaPlosca, SkeniranjaClana } from "./views/posel-plosca.js";
 import { Ekipa } from "./views/posel-ekipa.js";
@@ -72,17 +72,17 @@ function Zaslon({ pot }) {
     case "my-clubs": return html`<${MojiKlubi} />`;
     case "invites": return html`<${VabilaKlubov} />`;
     case "biz": return html`<${SredisceKluba} key=${p.klub} klub=${p.klub} />`;
-    case "biz-settings": return html`<${NastavitveLastnika} key=${p.klub} klub=${p.klub} />`;
-    case "biz-dashboard": return html`<${NadzornaPlosca} key=${p.klub} klub=${p.klub} />`;
-    case "biz-staff": return html`<${SkeniranjaClana} key=${p.klub + "/" + p.clan} klub=${p.klub} clan=${p.clan} />`;
-    case "biz-events": return html`<${DogodkiKluba} key=${p.klub} klub=${p.klub} />`;
-    case "biz-event-new": return html`<${ObrazecDogodka} key=${p.klub} klub=${p.klub} />`;
-    case "biz-event-edit": return html`<${ObrazecDogodka} key=${p.klub + "/" + p.dogodek} klub=${p.klub} dogodek=${p.dogodek} />`;
+    case "biz-settings": return html`<${SamoUredniki} klub=${p.klub}><${NastavitveLastnika} key=${p.klub} klub=${p.klub} /><//>`;
+    case "biz-dashboard": return html`<${SamoUredniki} klub=${p.klub}><${NadzornaPlosca} key=${p.klub} klub=${p.klub} /><//>`;
+    case "biz-staff": return html`<${SamoUredniki} klub=${p.klub}><${SkeniranjaClana} key=${p.klub + "/" + p.clan} klub=${p.klub} clan=${p.clan} /><//>`;
+    case "biz-events": return html`<${SamoUredniki} klub=${p.klub}><${DogodkiKluba} key=${p.klub} klub=${p.klub} /><//>`;
+    case "biz-event-new": return html`<${SamoUredniki} klub=${p.klub}><${ObrazecDogodka} key=${p.klub} klub=${p.klub} /><//>`;
+    case "biz-event-edit": return html`<${SamoUredniki} klub=${p.klub}><${ObrazecDogodka} key=${p.klub + "/" + p.dogodek} klub=${p.klub} dogodek=${p.dogodek} /><//>`;
     case "biz-event-tickets": return html`<${VstopniceDogodkaKluba} key=${p.klub + "/" + p.dogodek} klub=${p.klub} dogodek=${p.dogodek} />`;
-    case "biz-team": return html`<${Ekipa} key=${p.klub} klub=${p.klub} />`;
-    case "biz-info": return html`<${PodatkiKluba} key=${p.klub} klub=${p.klub} />`;
-    case "biz-location": return html`<${LokacijaKluba} key=${p.klub} klub=${p.klub} />`;
-    case "biz-bar-prices": return html`<${UrejanjeCenika} key=${p.klub} klub=${p.klub} />`;
+    case "biz-team": return html`<${SamoUredniki} klub=${p.klub}><${Ekipa} key=${p.klub} klub=${p.klub} /><//>`;
+    case "biz-info": return html`<${SamoUredniki} klub=${p.klub}><${PodatkiKluba} key=${p.klub} klub=${p.klub} /><//>`;
+    case "biz-location": return html`<${SamoUredniki} klub=${p.klub}><${LokacijaKluba} key=${p.klub} klub=${p.klub} /><//>`;
+    case "biz-bar-prices": return html`<${SamoUredniki} klub=${p.klub}><${UrejanjeCenika} key=${p.klub} klub=${p.klub} /><//>`;
     default: return html`<div class="zaslon"><${GlavaNazaj} />
       <div class="prazno"><strong>${t("Page not found")}</strong><a class="gumb-siv" href="/app">${t("Go to Home")}</a></div></div>`;
   }
