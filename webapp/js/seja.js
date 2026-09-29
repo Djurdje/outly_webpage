@@ -29,7 +29,7 @@ export async function zacniSejo() {
     // Gost: seje ni, aplikacija se izrise takoj; supabase-js se nalozi v ozadju, ko je stran nalozena (faza 5).
     posodobiIzSeje(null);
     seja.set({ pripravljena: true });
-    koNalozen(() => poslusajSejo());   // prijava v aplikaciji nalozi knjiznico - poslusalec je takrat ze na mestu
+    poslusajSejo();   // registrira se ob nalozitvi knjiznice (prijava v aplikaciji jo nalozi)
     const kasneje = () => odjemalec().catch(() => {});
     if (document.readyState === "complete") setTimeout(kasneje, 1500); else window.addEventListener("load", () => setTimeout(kasneje, 1500), { once: true });
     return;
@@ -49,12 +49,13 @@ let poslusam = false;
 function poslusajSejo() {
   if (poslusam) return;
   poslusam = true;
-  supabase.auth.onAuthStateChange((dogodek, nova) => {
+  // Prek koNalozen: poslusalec se registrira, ko je odjemalec ustvarjen - tudi ce je prvo nalaganje padlo.
+  koNalozen(c => c.auth.onAuthStateChange((dogodek, nova) => {
     const prej = zadnjiUid;
     posodobiIzSeje(nova);
     if (dogodek === "SIGNED_OUT") { seja.set({ me: null }); pocistiPredpomnilnik(); }
     else if (nova && nova.user && nova.user.id !== prej) naloziMe();
-  });
+  }));
 }
 
 function posodobiIzSeje(s) {

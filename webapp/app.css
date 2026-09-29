@@ -290,7 +290,7 @@ h1,h2,h3,p{ margin:0; }
 .dogodek-naslov{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
 .dogodek-naslov h1{ font-size:30px; font-weight:700; line-height:1.15; overflow-wrap:anywhere; }
 .gumb-plan{ flex:none; height:40px; padding:0 14px; border-radius:999px; border:1.5px solid rgba(255,255,255,.6); font-size:14px; font-weight:700; display:inline-flex; align-items:center; gap:6px; white-space:nowrap; }
-.gumb-plan.zanima{ background:#fff; color:var(--modra); border-color:#fff; }
+.gumb-plan.zanima{ background:#fff; color:#3B63E6; border-color:#fff; } /* modra na beli: #4C76FF ima 3,9 < 4,5 (AA) */
 .gumb-plan.gre{ background:var(--modra); border-color:var(--modra); color:#fff; }
 .prijatelji-vrsta{ display:flex; align-items:center; gap:8px; font-size:13px; font-weight:500; color:rgba(255,255,255,.8); }
 .avatarji{ display:flex; }

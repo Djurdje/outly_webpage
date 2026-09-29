@@ -41,6 +41,13 @@ export function odjemalec() {
   return obljuba;
 }
 
+/* Ce se knjiznica ne nalozi (omrezje), klic vrne { data, error } kot supabase-js ob izpadu omrezja - ne izjeme,
+   zato zasloni (prijava ...) napako pokazejo namesto da obvisijo. error.name je kot pri supabase-js, da ga
+   api.js (zacasna napaka) in napake.js ("No internet connection") prepoznata; seja ostane (I10). */
+const napakaNalaganja = () => ({ data: { session: null, user: null }, error: { name: "AuthRetryableFetchError", status: 0, message: "Failed to load auth library" } });
 export const supabase = {
-  auth: new Proxy({}, { get: (_, ime) => (...argumenti) => odjemalec().then(c => c.auth[ime](...argumenti)) })
+  auth: new Proxy({}, {
+    get: (_, ime) => (ime === "then" ? undefined
+      : (...argumenti) => odjemalec().then(c => c.auth[ime](...argumenti), () => napakaNalaganja()))
+  })
 };

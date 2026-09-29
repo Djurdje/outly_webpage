@@ -1,6 +1,7 @@
 /* Koda QR vstopnice. Vsebina je podpisan niz iz backenda (ticket.qr) - odjemalec ga samo narise,
    nikoli ga ne sestavlja. Popravljanje napak "M" kot na iOS. Izris kot SVG (<rect>), brez innerHTML. */
 import { html, useEffect, useMemo, useState } from "./lib.js";
+import { t } from "./i18n.js";
 
 /* Knjiznica QR (~50 KB) se nalozi sele, ko je koda prvic potrebna (vstopnice), ne ob zagonu aplikacije. */
 let knjiznica = null;
@@ -8,7 +9,14 @@ const naloziQR = () => (knjiznica ||= import("/vendor/qrcode-generator-2.0.4.mjs
 
 export function KodaQR({ vsebina, velikost = 220, oznaka = "QR" }) {
   const [qrcode, setQrcode] = useState(null);
-  useEffect(() => { let zivo = true; naloziQR().then(q => { if (zivo) setQrcode(() => q); }).catch(() => {}); return () => { zivo = false; }; }, []);
+  const [napaka, setNapaka] = useState(false);
+  const [poskus, setPoskus] = useState(0);
+  useEffect(() => {
+    let zivo = true;
+    setNapaka(false);
+    naloziQR().then(q => { if (zivo) setQrcode(() => q); }).catch(() => { if (zivo) setNapaka(true); });
+    return () => { zivo = false; };
+  }, [poskus]);
   const moduli = useMemo(() => {
     if (!vsebina || !qrcode) return null;
     try {
@@ -21,6 +29,8 @@ export function KodaQR({ vsebina, velikost = 220, oznaka = "QR" }) {
       return { n, polja };
     } catch { return null; }
   }, [vsebina, qrcode]);
+  if (napaka) return html`<div class="qr qr-prazen" style=${{ width: velikost + "px", height: velikost + "px" }}>
+    <button type="button" class="gumb-siv majhen" onClick=${() => setPoskus(p => p + 1)}>${t("Try again")}</button></div>`;
   if (!moduli) return html`<div class="qr qr-prazen" style=${{ width: velikost + "px", height: velikost + "px" }}>QR</div>`;
   const rob = 2, vse = moduli.n + rob * 2;
   return html`<div class="qr" style=${{ width: velikost + 24 + "px" }}>

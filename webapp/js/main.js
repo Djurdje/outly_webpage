@@ -87,10 +87,21 @@ function leno(pot, ime) {
     useEffect(() => {
       if (modul) return;
       let zivo = true;
-      NALAGALNIKI[pot]().then(m => { nalozeni.set(pot, m); if (zivo) setModul(m); }).catch(() => { if (zivo) setNapaka(true); });
+      NALAGALNIKI[pot]().then(m => { nalozeni.set(pot, m); if (zivo) setModul(m); }).catch(() => {
+        // Najpogosteje nova objava: odprta stran ima se stare module, nov zaslon pa jih ne najde. Ena samodejna
+        // osvezitev (najvec na minuto) nalozi novo razlicico; sicer pokazemo napako s "Try again".
+        let prej = 0;
+        try { prej = Number(sessionStorage.getItem("outly_leno_osvezitev")) || 0; } catch { /* brez */ }
+        if (navigator.onLine && Date.now() - prej > 60000) {
+          try { sessionStorage.setItem("outly_leno_osvezitev", String(Date.now())); } catch { /* brez */ }
+          location.reload();
+          return;
+        }
+        if (zivo) setNapaka(true);
+      });
       return () => { zivo = false; };
     }, []);
-    if (napaka) return html`<div class="zaslon"><${Napaka} besedilo=${t("No internet connection. Check your network and try again.")} znova=${() => location.reload()} /></div>`;
+    if (napaka) return html`<div class="zaslon"><${Napaka} besedilo=${navigator.onLine ? t("This screen could not be loaded. Please try again.") : t("No internet connection. Check your network and try again.")} znova=${() => location.reload()} /></div>`;
     if (!modul) return html`<div class="zaslon"><${Nalaganje} /></div>`;
     const K = modul[ime];
     return html`<${K} ...${props} />`;
@@ -98,7 +109,10 @@ function leno(pot, ime) {
 }
 /* Ko je zacetni zaslon nalozen, v miru nalozimo se najpogostejse (prehod na Profil in vstopnice brez cakanja). */
 function prednaloziVMiru() {
-  const zacni = () => ["./views/profil.js", "./views/vstopnice.js", "./views/prijava.js"].forEach(p => NALAGALNIKI[p]().then(m => nalozeni.set(p, m)).catch(() => {}));
+  const zacni = () => {
+    ["./views/profil.js", "./views/vstopnice.js", "./views/prijava.js"].forEach(p => NALAGALNIKI[p]().then(m => nalozeni.set(p, m)).catch(() => {}));
+    import("/vendor/qrcode-generator-2.0.4.mjs").catch(() => {});   // vstopnica pred vrati mora pokazati QR tudi brez signala
+  };
   if ("requestIdleCallback" in window) requestIdleCallback(zacni, { timeout: 8000 }); else setTimeout(zacni, 4000);
 }
 

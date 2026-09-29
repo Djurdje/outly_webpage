@@ -80,6 +80,9 @@ export function razcleni(pathname) {
   } catch { /* neveljavna pot - ostanemo na /app/ */ }
 })();
 
+/* /app brez posevnice ni v obsegu service workerja (/app/) - kanonicni naslov je /app/ (sicer brez povezave ne dela). */
+if (location.pathname === "/app") history.replaceState(history.state, "", "/app/" + location.search + location.hash);
+
 let stevec = (history.state && history.state.k) || 0;
 let globina = (history.state && history.state.g) || 0;
 const drsenja = new Map();   // kljuc vnosa -> scrollY
@@ -103,6 +106,7 @@ export const usePot = () => useStore(usmerjanje);
 
 export function navigiraj(url, { zamenjaj = false } = {}) {
   const cilj = new URL(url, location.origin);
+  if (cilj.pathname === "/app") cilj.pathname = "/app/";
   if (cilj.origin !== location.origin || !cilj.pathname.startsWith("/app")) { location.href = cilj.href; return; }
   if (cilj.pathname + cilj.search === location.pathname + location.search && !zamenjaj) return;
   drsenja.set(usmerjanje.get().kljuc, window.scrollY);

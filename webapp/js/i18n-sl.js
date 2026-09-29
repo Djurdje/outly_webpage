@@ -492,6 +492,7 @@ export const SL = {
  "They need an Outly account with this email. They get the invitation in the app (Profile → My clubs) and join once they accept.": "Potrebujejo Outly račun s tem e-poštnim naslovom. Vabilo dobijo v aplikaciji (Profil → Moji klubi) in se pridružijo, ko ga sprejmejo.",
  "This action is permanent. It will remove your account, liked events and personal data. Tickets you have already bought stay valid, but they will no longer be linked to you and cannot be recovered in the app.": "To dejanje je dokončno. Izbrisali bomo tvoj račun, všečkane dogodke in osebne podatke. Že kupljene vstopnice ostanejo veljavne, a ne bodo več povezane s tabo in jih v aplikaciji ne moreš obnoviti.",
  "This club is not available.": "Ta klub ni na voljo.",
+ "This screen could not be loaded. Please try again.": "Tega zaslona ni bilo mogoče naložiti. Poskusi znova.",
  "This event has already ended.": "Ta dogodek se je že končal.",
  "This event has already started.": "Ta dogodek se je že začel.",
  "This event is cancelled.": "Ta dogodek je preklican.",
