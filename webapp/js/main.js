@@ -104,7 +104,7 @@ function leno(pot, ime) {
       });
       return () => { zivo = false; };
     }, []);
-    if (napaka) return html`<div class="zaslon"><${Napaka} besedilo=${navigator.onLine ? t("This screen could not be loaded. Please try again.") : t("No internet connection. Check your network and try again.")} znova=${() => location.reload()} /></div>`;
+    if (napaka) return html`<div class="zaslon"><${Napaka} besedilo=${navigator.onLine ? t("This screen could not be loaded. Please try again.") : t("No internet connection. Check your network and try again.")} znova=${() => (window.outlyObnovi ? window.outlyObnovi(true) : location.reload())} /></div>`;
     if (!modul) return html`<div class="zaslon"><${Nalaganje} /></div>`;
     const K = modul[ime];
     return html`<${K} ...${props} />`;
