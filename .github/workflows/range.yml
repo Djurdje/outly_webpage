@@ -6,15 +6,12 @@ jobs:
   preveri:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
       - run: |
-          U=https://outly.si
-          for i in $(seq 1 20); do
-            s=$(curl -s -o /dev/null -w "%{http_code} %{content_type}" "$U/vendor/jsqr-1.4.0.mjs"); case "$s" in *javascript*) break;; esac
-            echo "poskus $i: $s"; sleep 20
+          for f in / /app/ /webapp/js/main.js /webapp/js/views/posel-skener.js; do
+            echo "$f: $(curl -s -o /dev/null -w '%{http_code} %{content_type} %{size_download}' "https://outly.si$f")"
           done
-          for f in / /app/ /app/business/1/scan /webapp/js/views/posel-skener.js /vendor/jsqr-1.4.0.mjs /vendor/jsqr-LICENSE.txt; do
-            echo "$f: $(curl -s -o /dev/null -w '%{http_code} %{content_type}' "$U$f")"
-          done
-          echo "== glave /app/"; curl -sS -D - -o /dev/null "$U/app/" | grep -iE "^HTTP|permissions-policy|content-security"
-          echo "== skener v kodi"; curl -s "$U/webapp/js/main.js" | grep -c "posel-skener"
-          echo "== sl prevod"; curl -s "$U/webapp/js/i18n-sl.js" | grep -c "Skeniraj vstopnice"
+          cd .github/preveri && npm init -y >/dev/null && npm i playwright@1 >/dev/null 2>&1 && npx playwright install --with-deps chromium webkit >/dev/null 2>&1
+          node brskalnik.mjs
