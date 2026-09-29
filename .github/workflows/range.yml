@@ -1,4 +1,4 @@
-name: Preveri predogled (zacasno)
+name: Preveri produkcijo (zacasno)
 on:
   push:
     branches: [preveri-range]
@@ -7,12 +7,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          U=https://claude-new-session-xmsl8u.outly-webpage.pages.dev
-          for i in $(seq 1 30); do
+          U=https://outly.si
+          for i in $(seq 1 20); do
             s=$(curl -s -o /dev/null -w "%{http_code} %{content_type}" "$U/webapp/sw.js"); case "$s" in *javascript*) break;; esac
             echo "poskus $i: $s"; sleep 20
           done
-          echo "== sw.js"; curl -sS -D - -o /dev/null "$U/webapp/sw.js" | grep -iE "^HTTP|content-type|service-worker|cache-control"
-          echo "== manifest"; curl -sS -D - -o /tmp/m "$U/webapp/manifest.webmanifest" | grep -iE "^HTTP|content-type"; head -c 120 /tmp/m; echo
-          echo "== /app/ CSP"; curl -sS -D - -o /tmp/a "$U/app/" | grep -iE "^HTTP|content-security" | cut -c1-200; grep -c modulepreload /tmp/a
-          echo "== ikona"; curl -s -o /dev/null -w "%{http_code} %{content_type}\n" "$U/assets/icon-512.png"
+          for f in / /app/ /app/event/1 /webapp/manifest.webmanifest /webapp/js/pwa.js; do
+            echo "$f: $(curl -s -o /dev/null -w '%{http_code} %{content_type}' "$U$f")"
+          done
+          echo "== sw"; curl -sS -D - -o /tmp/s "$U/webapp/sw.js" | grep -iE "^HTTP|service-worker"; grep -o 'outly-app-[0-9]*' /tmp/s | head -1
