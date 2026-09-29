@@ -77,7 +77,7 @@ export function Ekipa({ klub }) {
         <div><${Ikona} ime="id-card" velikost=${16} razred="modra" /><span class="kv-besedilo"><strong>${t("Manager")}</strong>
           <span>${t("Events, sales, club page and door staff. Can't add other managers.")}</span></span></div>
         <div><${Ikona} ime="scan-line" velikost=${16} razred="modra" /><span class="kv-besedilo"><strong>${t("Door staff")}</strong>
-          <span>${t("Scans tickets at the door (in the Outly app). Nothing else.")}</span></span></div>
+          <span>${t("Scans tickets at the door. Nothing else.")}</span></span></div>
       </div>` : null}
 
     <${List} odprt=${!!odstrani} zapri=${() => setOdstrani(null)} naslov=${odstrani ? t("Remove {name} from the team?", { name: ime(odstrani) }) : ""}>

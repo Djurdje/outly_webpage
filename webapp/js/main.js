@@ -28,6 +28,7 @@ const NALAGALNIKI = {
   "./views/posel-dogodki.js": () => import("./views/posel-dogodki.js"),
   "./views/posel-plosca.js": () => import("./views/posel-plosca.js"),
   "./views/posel-ekipa.js": () => import("./views/posel-ekipa.js"),
+  "./views/posel-skener.js": () => import("./views/posel-skener.js"),
 };
 const Vstopnice = leno("./views/vstopnice.js", "Vstopnice");
 const Prijava = leno("./views/prijava.js", "Prijava");
@@ -64,11 +65,12 @@ const VstopniceDogodkaKluba = leno("./views/posel-dogodki.js", "VstopniceDogodka
 const NadzornaPlosca = leno("./views/posel-plosca.js", "NadzornaPlosca");
 const SkeniranjaClana = leno("./views/posel-plosca.js", "SkeniranjaClana");
 const Ekipa = leno("./views/posel-ekipa.js", "Ekipa");
+const Skener = leno("./views/posel-skener.js", "Skener");
 
 const AVT = new Set(["login", "register", "verify", "forgot"]);
 const SAMO_PRIJAVLJENI = new Set(["tickets", "interested", "onboarding", "account", "personal", "security", "preferences",
   "delete", "creator", "friends", "friends-plans", "my-clubs", "invites", "biz", "biz-settings", "biz-dashboard", "biz-staff",
-  "biz-events", "biz-event-new", "biz-event-edit", "biz-event-tickets", "biz-team", "biz-info", "biz-location", "biz-bar-prices"]);
+  "biz-events", "biz-event-new", "biz-event-edit", "biz-event-tickets", "biz-team", "biz-info", "biz-location", "biz-bar-prices", "biz-scan"]);
 const ZAVIHKI = [
   { ime: "home", href: "/app", ikona: "house", napis: "Home" },
   { ime: "search", href: "/app/search", ikona: "search", napis: "Search" },
@@ -151,6 +153,8 @@ function Zaslon({ pot }) {
     case "my-clubs": return html`<${MojiKlubi} />`;
     case "invites": return html`<${VabilaKlubov} />`;
     case "biz": return html`<${SredisceKluba} key=${p.klub} klub=${p.klub} />`;
+    // Skener: vse vloge v klubu (tudi vratar) - brez SamoUredniki.
+    case "biz-scan": return html`<${Skener} key=${p.klub} klub=${p.klub} />`;
     case "biz-settings": return html`<${SamoUredniki} klub=${p.klub}><${NastavitveLastnika} key=${p.klub} klub=${p.klub} /><//>`;
     case "biz-dashboard": return html`<${SamoUredniki} klub=${p.klub}><${NadzornaPlosca} key=${p.klub} klub=${p.klub} /><//>`;
     case "biz-staff": return html`<${SamoUredniki} klub=${p.klub}><${SkeniranjaClana} key=${p.klub + "/" + p.clan} klub=${p.klub} clan=${p.clan} /><//>`;

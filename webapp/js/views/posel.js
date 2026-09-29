@@ -1,7 +1,7 @@
 /* Poslovni obraz (faza 4): profil lastnika (OwnerProfileView), prvi klub (ClubSetupView), nastavitve lastnika
    (OwnerSettingsView), klub, v katerem delam (MyClubDetailView), podatki kluba (ClubInfoView), cenik bara
    (BarPricesEditorView) in lokacija kluba. Vloge uveljavlja streznik (403); tu je samo drug obraz.
-   QR skener je SAMO v aplikaciji Outly (Martin, 29. 9. 2026) - splet ga ne ponuja.
+   QR skener vstopnic je v posel-skener.js (/app/business/:klub/scan) - za vse vloge v klubu, tudi vratarja.
    Lokacijo kluba iOS izracuna iz naslova (CLGeocoder); splet geokoderja nima (brez tujih streznikov), zato
    lastnik klub oznaci s klikom na zemljevid (odlocitev 29. 9. 2026). */
 import { html, useEffect, useRef, useState } from "../lib.js";
@@ -47,12 +47,6 @@ export function SamoUredniki({ klub, children }) {
   return children;
 }
 
-/** Opomba o skenerju: samo v aplikaciji (Martin, 29. 9. 2026). */
-const OpombaSkenerja = () => html`<div class="opomba-okvir">
-  <${Ikona} ime="scan-line" velikost=${18} />
-  <span>${t("Ticket scanning at the door is only available in the Outly app.")}</span>
-</div>`;
-
 /* ---------- Profil lastnika (vloga business, obraz "club") ---------- */
 export function LastnikProfil({ me }) {
   const lastnistvo = (Array.isArray(me.clubs) ? me.clubs : []).find(k => k.role === "owner");
@@ -80,10 +74,10 @@ export function LastnikProfil({ me }) {
       ${baza ? html`<div class="seznam-kartica">
         <${MenijskaVrstica} href=${baza + "/dashboard"} ikona="chart-column" naslov=${t("Dashboard")} />
         <${MenijskaVrstica} href=${baza + "/events"} ikona="calendar" naslov=${t("Events")} />
+        <${MenijskaVrstica} href=${baza + "/scan"} ikona="scan-line" naslov=${t("Scan tickets")} />
         <${MenijskaVrstica} href=${baza + "/team"} ikona="users" naslov=${t("My team")} />
         <${MenijskaVrstica} href=${baza + "/settings"} ikona="settings" naslov=${t("Settings")} />
       </div>
-      <${OpombaSkenerja} />
       <${VrsticaNamestitve} />` : null}`}
     <button type="button" class="povezava-gumb rdeca" onClick=${async () => { await odjava(); navigiraj("/app", { zamenjaj: true }); }}>${t("Log out")}</button>
   </div>`;
@@ -216,7 +210,9 @@ export function SredisceKluba({ klub }) {
       <${MenijskaVrstica} href=${baza + "/events"} ikona="calendar" naslov=${t("View events")} />
       <${MenijskaVrstica} href=${baza + "/team"} ikona="users" naslov=${t("Team")} />
     </div>` : null}
-    <${OpombaSkenerja} />
+    ${vloga ? html`<div class="seznam-kartica">
+      <${MenijskaVrstica} href=${baza + "/scan"} ikona="scan-line" naslov=${t("Scan ticket")} />
+    </div>` : null}
     ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}
     ${vloga && vloga !== "owner" ? html`<button type="button" class="gumb-rdec" disabled=${tece} onClick=${() => setZapusti(true)}>${t("Leave the team")}</button>` : null}
     <${List} odprt=${zapusti} zapri=${() => setZapusti(false)} naslov=${t("Leave the team?")}>

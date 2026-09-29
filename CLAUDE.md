@@ -28,7 +28,7 @@ supabase-schema*.sql                  zgodovina SQL shem (2..13) - dokumentacija
 assets/                               slike, ikone, points-coin.png
 assets/fonts/                         Inter (woff2, latin + latin-ext, SIL OFL) - gostimo sami, NE Google Fonts
 vendor/supabase-2.115.0.js            supabase-js UMD (iz npm) - gostimo sami, NE jsDelivr; nadgradnja = nova datoteka + 4 <script>
-vendor/preact-*, htm-*, qrcode-*      knjiznice spletne aplikacije (ESM iz npm, licence *-LICENSE.txt); hooks: uvoz "preact" -> relativna pot
+vendor/preact-*, htm-*, qrcode-*, jsqr-*   knjiznice spletne aplikacije (ESM iz npm, licence *-LICENSE.txt); hooks: uvoz "preact" -> relativna pot
 vendor/maplibre-*, protomaps-basemaps-*   zemljevid (faza 3); CSP gradnja MapLibre (delavec z nase domene)
 karta/v<datum>/{slo,mesta}/           ploscice zemljevida (OSM prek Protomaps, gzip .pbf + seznam.json): slo = Slovenija z0-10,
                                       mesta = Ljubljana + Maribor z11-15. Izrez (.pmtiles) naredi workflow na veji `karta-izrez`,
@@ -45,6 +45,7 @@ webapp/app.css, webapp/js/            koda aplikacije (Preact + htm, ES moduli, 
   views/*.js                          zasloni (en na datoteko, ime po iOS: home, event, club, search, prijava ...)
   posel.js, views/posel*.js           poslovni del (faza 4): /app/business/:klub/... - klub je v poti, vsak klic ga poslje
                                       v glavi X-Outly-Club; lastnik (vloga business) ima v Profilu klubski obraz
+  views/posel-skener.js               QR skener vstopnic (kamera; vse vloge v klubu)
   pwa.js, views/namestitev.js         PWA (faza 5): registracija service workerja, "Add Outly to Home Screen"
 webapp/sw.js, webapp/manifest.webmanifest   service worker (velja za /app/ prek glave Service-Worker-Allowed) in manifest
 webapp/orodja/predhodno-nalaganje.mjs       generira <link rel="modulepreload"> v app/index.html (staticni uvozi main.js)
@@ -72,9 +73,12 @@ webapp/orodja/predhodno-nalaganje.mjs       generira <link rel="modulepreload"> 
   Nova razlicica podatkov: (1) izrez na veji `karta-izrez`, (2) `karta/razpakiraj.mjs` (navodila v glavi) v novo mapo
   `karta/v<datum>/` - slo iz slovenija 0-10, vsa mesta 11-15 v isto `mesta/`, (3) `PODATKI` v `webapp/js/karta.js`,
   (4) staro mapo pobrisi (meja 20.000 datotek). Predpomnilnik 1 dan. Pripis OpenStreetMap mora ostati viden (ODbL).
-- Poslovni del: **QR skener (in rocni "Check in") je SAMO v aplikaciji Outly** (Martin, 29. 9. 2026) - splet kaze
-  vstopnice dogodka samo za ogled. Lokacijo kluba lastnik oznaci s klikom na zemljevid (geokoderja na spletu ni).
-  Vloge uveljavlja streznik (403); splet samo skrije gumbe.
+- Poslovni del: **QR skener je tudi na spletu** (`views/posel-skener.js`, `/app/business/:klub/scan`; Martin 29. 9. 2026:
+  vratar z Androidom nima aplikacije) - za vse vloge v klubu, tudi vratarja. Kamera prek getUserMedia, dekodiranje
+  BarcodeDetector (Chrome Android) ali leno nalozen `vendor/jsqr-1.4.0.mjs` (Safari, Firefox); slike ostanejo na napravi,
+  streznik dobi samo vsebino kode. Pri vstopnicah dogodka je rocni "Check in" (kot iOS). Kamera zahteva HTTPS in
+  `Permissions-Policy: camera=(self)` v `_headers`. Lokacijo kluba lastnik oznaci s klikom na zemljevid (geokoderja na
+  spletu ni). Vloge uveljavlja streznik (403); splet samo skrije gumbe.
 - Hitrost (faza 5): zasloni izven Home/Search/dogodek/klub/zemljevid se nalozijo leno (`leno()` v `main.js`), prav tako
   slovenski prevodi, knjiznica QR in supabase-js (gost brez seje ga ob zagonu ne rabi). **Po vsakem novem staticnem
   uvozu pozeni `node webapp/orodja/predhodno-nalaganje.mjs`** (sicer brskalnik module odkriva v valovih).

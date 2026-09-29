@@ -47,7 +47,8 @@ const POTI = [
   ["/app/business/:klub/team", "biz-team"],
   ["/app/business/:klub/info", "biz-info"],
   ["/app/business/:klub/location", "biz-location"],
-  ["/app/business/:klub/bar-prices", "biz-bar-prices"]
+  ["/app/business/:klub/bar-prices", "biz-bar-prices"],
+  ["/app/business/:klub/scan", "biz-scan"]
 ].map(([vzorec, ime]) => {
   const imena = [];
   const re = new RegExp("^" + vzorec.replace(/:(\w+)/g, (m, k) => { imena.push(k); return "([^/]+)"; }) + "/?$");
