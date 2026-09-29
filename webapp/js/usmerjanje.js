@@ -1,0 +1,107 @@
+/* Usmerjanje z zgodovino brskalnika: vsak zaslon ima svoj URL (/app/event/12 ...), gumb Nazaj
+   v brskalniku dela, povezave se lahko delijo. Cloudflare Pages vse /app/* streze z app/index.html
+   (_redirects), zato je vsak URL tudi vstopna tocka. */
+import { ustvariTrgovino, useStore } from "./store.js";
+
+const POTI = [
+  ["/app", "home"],
+  ["/app/search", "search"],
+  ["/app/map", "map"],
+  ["/app/profile", "profile"],
+  ["/app/events", "events"],
+  ["/app/interested", "interested"],
+  ["/app/genre/:genre", "genre"],
+  ["/app/event/:id", "event"],
+  ["/app/club/:id", "club"],
+  ["/app/tickets", "tickets"],
+  ["/app/login", "login"],
+  ["/app/register", "register"],
+  ["/app/verify", "verify"],
+  ["/app/forgot", "forgot"],
+  ["/app/onboarding", "onboarding"],
+  ["/app/language", "language"]
+].map(([vzorec, ime]) => {
+  const imena = [];
+  const re = new RegExp("^" + vzorec.replace(/:(\w+)/g, (m, k) => { imena.push(k); return "([^/]+)"; }) + "/?$");
+  return { re, imena, ime };
+});
+
+export function razcleni(pathname) {
+  for (const p of POTI) {
+    const m = p.re.exec(pathname);
+    if (m) {
+      const params = {};
+      p.imena.forEach((k, i) => { params[k] = decodeURIComponent(m[i + 1]); });
+      return { ime: p.ime, params };
+    }
+  }
+  return { ime: "notfound", params: {} };
+}
+
+let stevec = (history.state && history.state.k) || 0;
+let globina = (history.state && history.state.g) || 0;
+const drsenja = new Map();   // kljuc vnosa -> scrollY
+
+function trenutno(smer) {
+  const { ime, params } = razcleni(location.pathname);
+  return {
+    ime, params, smer,
+    pot: location.pathname,
+    iskanje: new URLSearchParams(location.search),
+    kljuc: (history.state && history.state.k) || 0
+  };
+}
+
+if (!history.state || history.state.k === undefined) {
+  history.replaceState({ k: stevec, g: globina }, "", location.href);
+}
+
+export const usmerjanje = ustvariTrgovino(trenutno("zacetek"));
+export const usePot = () => useStore(usmerjanje);
+
+export function navigiraj(url, { zamenjaj = false } = {}) {
+  const cilj = new URL(url, location.origin);
+  if (cilj.origin !== location.origin || !cilj.pathname.startsWith("/app")) { location.href = cilj.href; return; }
+  if (cilj.pathname + cilj.search === location.pathname + location.search && !zamenjaj) return;
+  drsenja.set(usmerjanje.get().kljuc, window.scrollY);
+  stevec += 1;
+  if (zamenjaj) history.replaceState({ k: stevec, g: globina }, "", cilj.pathname + cilj.search);
+  else { globina += 1; history.pushState({ k: stevec, g: globina }, "", cilj.pathname + cilj.search); }
+  usmerjanje.set(trenutno(zamenjaj ? "zamenjava" : "naprej"));
+}
+
+/** Nazaj v aplikaciji: ce smo prisli od drugod (deljena povezava), gremo na Home. */
+export function nazaj(rezerva = "/app") {
+  if (globina > 0) history.back();
+  else navigiraj(rezerva, { zamenjaj: true });
+}
+
+window.addEventListener("popstate", () => {
+  drsenja.set(usmerjanje.get().kljuc, window.scrollY);
+  globina = (history.state && history.state.g) || 0;
+  usmerjanje.set(trenutno("nazaj"));
+});
+
+/** Po izrisu zaslona: ob "nazaj" obnovi drsenje (podatki pridejo asinhrono - poskusa do 1,5 s). */
+export function obnoviDrsenje(pot) {
+  if (pot.smer !== "nazaj") { window.scrollTo(0, 0); return; }
+  const cilj = drsenja.get(pot.kljuc) || 0;
+  const zacetek = performance.now();
+  const poskusi = () => {
+    const najvec = document.documentElement.scrollHeight - window.innerHeight;
+    if (najvec >= cilj || performance.now() - zacetek > 1500) { window.scrollTo(0, Math.min(cilj, Math.max(0, najvec))); return; }
+    requestAnimationFrame(poskusi);
+  };
+  requestAnimationFrame(poskusi);
+}
+
+/* Klik na <a href="/app/..."> ne nalozi strani znova. */
+document.addEventListener("click", e => {
+  if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  const a = e.target.closest && e.target.closest("a[href]");
+  if (!a || a.target === "_blank" || a.hasAttribute("download")) return;
+  const href = a.getAttribute("href");
+  if (!href || !href.startsWith("/app")) return;
+  e.preventDefault();
+  navigiraj(href);
+});

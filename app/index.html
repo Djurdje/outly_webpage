@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Outly</title>
+  <meta name="description" content="Outly - clubs, events and tickets. The web version of the Outly app." />
+  <meta name="theme-color" content="#111111" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="icon" href="/assets/icon-32.png" type="image/png" sizes="32x32" />
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+  <link rel="preload" href="/assets/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preconnect" href="https://outly-backend-roy3.onrender.com" crossorigin />
+  <link rel="stylesheet" href="/webapp/app.css" />
+  <link rel="modulepreload" href="/webapp/js/main.js" />
+  <link rel="modulepreload" href="/vendor/preact-10.29.8.module.js" />
+  <link rel="modulepreload" href="/vendor/preact-hooks-10.29.8.module.js" />
+  <link rel="modulepreload" href="/vendor/htm-3.1.1.module.js" />
+  <!-- Supabase Auth (isti projekt kot aplikacija in outly.si) - gostimo sami, brez CDN-ja. -->
+  <script src="/vendor/supabase-2.115.0.js" defer></script>
+  <script src="/supabase-config.js" defer></script>
+  <script type="module" src="/webapp/js/main.js"></script>
+</head>
+<body>
+  <div id="aplikacija">
+    <div class="nalaganje-zacetno" role="status" aria-label="Loading"><span class="vrtavka"></span></div>
+  </div>
+  <noscript><p class="brez-js">Outly needs JavaScript. <a href="/">Back to outly.si</a></p></noscript>
+</body>
+</html>

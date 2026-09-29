@@ -27,9 +27,33 @@ supabase-config.js                    javni URL + publishable kljuc (javna, name
 supabase-schema*.sql                  zgodovina SQL shem (2..13) - dokumentacija; SQL v Supabase pozene Martin
 assets/                               slike, ikone, points-coin.png
 assets/fonts/                         Inter (woff2, latin + latin-ext, SIL OFL) - gostimo sami, NE Google Fonts
-vendor/supabase-2.115.0.js            supabase-js UMD (iz npm) - gostimo sami, NE jsDelivr; nadgradnja = nova datoteka + 3 <script>
-CNAME, _redirects                     domena, preusmeritve
+vendor/supabase-2.115.0.js            supabase-js UMD (iz npm) - gostimo sami, NE jsDelivr; nadgradnja = nova datoteka + 4 <script>
+vendor/preact-*, htm-*, qrcode-*      knjiznice spletne aplikacije (ESM iz npm, licence *-LICENSE.txt); hooks: uvoz "preact" -> relativna pot
+CNAME, _redirects, _headers           domena, preusmeritve, glave (CSP za /app)
+
+app/index.html                        SPLETNA APLIKACIJA (PWA, od 29. 9. 2026): lupina; _redirects streze vse /app/* z njo
+webapp/app.css, webapp/js/            koda aplikacije (Preact + htm, ES moduli, brez builda) - NAMENOMA zunaj /app
+  api.js                              EDINA pot do backenda (send, zeton, 401 -> osvezi 1x, 503 NE odjavi)
+  seja.js, supabase.js                seja (Supabase, isti kljuc kot auth.js = ena prijava), GET /me, onboarding
+  usmerjanje.js, main.js              URL-ji /app/... (History API), zavihki Home/Search/Map/Profile, varovala
+  i18n.js, i18n-sl.js                 en (privzeto) | sl; kljuc = angleski niz (isti kot iOS Localizable.xcstrings)
+  oblika.js, podatki.js, ui.js        datumi/denar/oznake (prevod APIEvent.swift), javni podatki, skupni gradniki
+  views/*.js                          zasloni (en na datoteko, ime po iOS: home, event, club, search, prijava ...)
 ```
+
+## Spletna aplikacija (/app) - posebna pravila
+
+- Odlocitev (29. 9. 2026, Martin): **ista stran, isti repo, brez builda** (backend `docs/DECISIONS.md`). Isti backend, baza in
+  prijava kot iOS - je samo nov odjemalec. Funkcije enake iOS, izgled prilagojen spletu (stolpec do 480 px).
+- **XSS je kriticen** (seja je v localStorage): podatki gredo v DOM samo prek htm predloge (besedilo/atribut), nikoli
+  `innerHTML`/`dangerouslySetInnerHTML`; povezave iz podatkov (splet, Instagram) samo `http(s)` (glej `views/club.js`).
+- Vsi klici prek `webapp/js/api.js` `send()`; napake prek `napake.js` `sporocilo()` (prevod iOS APIErrorMessages).
+- Prijava in ponastavitev gesla s **kodo iz maila** (kot iOS), ne s povezavo - Supabase Redirect URL-ji za /app niso potrebni.
+- Slike: Cloudinary URL dobi `f_auto,q_auto,w_N` (`oblika.js` `slika()`), `loading="lazy"`, fiksno razmerje. Animacije samo
+  `transform`/`opacity`; **brez `backdrop-filter`** (87bc106).
+- Datoteke aplikacije ne smejo biti pod `/app/` (pravilo 200 v `_redirects` bi jih prekrilo).
+- Preverjanje: headless Chromium s stubom backenda in Supabase (`page.route`), lokalni streznik, ki posnema `_redirects`
+  in `_headers`; sirine 393, 360, 1280; neprijavljen + prijavljen; konzola brez napak (tudi CSP).
 
 ## Trda pravila
 
