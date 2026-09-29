@@ -87,7 +87,7 @@ export function NadzornaPlosca({ klub }) {
             <span class="vu-meta">${[e.capacity != null ? t("{sold}/{cap} sold", { sold: e.tickets_sold || 0, cap: e.capacity }) : t("{n} sold", { n: e.tickets_sold || 0 }),
               t("{n} in", { n: e.checked_in || 0 }), e.interested_count > 0 ? t("{n} interested", { n: e.interested_count }) : ""].filter(Boolean).join(" · ")}</span></span>
           <span class="vu-desno"><strong class="modra">${denar(e.gross_cents || 0)}</strong>
-            ${e.capacity > 0 ? html`<span class="napredek" role="progressbar" aria-valuemin="0" aria-valuemax=${e.capacity} aria-valuenow=${Math.min(e.sold_count || 0, e.capacity)}>
+            ${e.capacity > 0 ? html`<span class="napredek" role="progressbar" aria-label=${t("{sold}/{cap} sold", { sold: e.sold_count || 0, cap: e.capacity })} aria-valuemin="0" aria-valuemax=${e.capacity} aria-valuenow=${Math.min(e.sold_count || 0, e.capacity)}>
               <span style=${{ transform: `scaleX(${Math.min(1, (e.sold_count || 0) / e.capacity)})` }}></span></span>` : null}</span>
         </a>`)}
       </div>`}` : null}

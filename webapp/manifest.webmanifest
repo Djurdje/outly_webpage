@@ -1,0 +1,16 @@
+{
+  "id": "/app/",
+  "name": "Outly",
+  "short_name": "Outly",
+  "description": "Clubs, events and tickets - the web version of the Outly app.",
+  "start_url": "/app/",
+  "scope": "/app/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#111111",
+  "theme_color": "#111111",
+  "icons": [
+    { "src": "/assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

@@ -83,7 +83,8 @@ function PrenosList({ vstopnica: v, zapri, koncano }) {
     if (!v) return;
     setIzbran(null); setNapaka(""); setUspeh(""); setEmail("");
     send("/me/friends", { auth: true }).then(r => setPrijatelji((r && r.friends) || [])).catch(() => setPrijatelji([]));
-  }, [v]);
+    // Po id, ne po objektu: osvezitev seznama vstopnic v ozadju ustvari nov objekt in bi sredi tipkanja pobrisala vnos.
+  }, [v && v.id]);
   if (!v) return null;
 
   async function poslji() {

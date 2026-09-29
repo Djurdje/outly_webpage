@@ -18,6 +18,7 @@
   --ozadje:#111111;
   --kartica:#242323;
   --modra:#4C76FF;
+  --modra-besedilo:#6A8CFF; /* modro BESEDILO na temnem ozadju: #4C76FF ima na karticah kontrast < 4,5 (WCAG AA) */
   --bela:#ffffff;
   --besedilo:#EDEDED;
   --utisano:#9D9D9D;
@@ -58,7 +59,7 @@ h1,h2,h3,p{ margin:0; }
 :focus-visible{ outline:2px solid var(--modra); outline-offset:2px; border-radius:6px; }
 .skrito{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
 .utisano{ color:var(--utisano); }
-.modra{ color:var(--modra); }
+.modra{ color:var(--modra-besedilo); }
 .brez-js{ padding:24px; text-align:center; }
 
 /* ---------- okvir ---------- */
@@ -254,7 +255,7 @@ h1,h2,h3,p{ margin:0; }
 .vrstica-besedilo span{ font-size:12px; color:var(--utisano); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .vrstica-dogodka{ display:flex; align-items:center; gap:12px; padding:12px; border-radius:16px; background:var(--b06); }
 .vd-slika{ width:56px; height:56px; border-radius:14px; overflow:hidden; flex:none; background:var(--b08); }
-.vd-cena{ font-size:17px; font-weight:700; color:var(--modra); white-space:nowrap; flex:none; }
+.vd-cena{ font-size:17px; font-weight:700; color:var(--modra-besedilo); white-space:nowrap; flex:none; }
 .kv-besedilo{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
 .kv-besedilo strong{ font-size:16px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .kv-besedilo span{ font-size:13px; color:var(--b55); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -289,7 +290,7 @@ h1,h2,h3,p{ margin:0; }
 .dogodek-naslov{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
 .dogodek-naslov h1{ font-size:30px; font-weight:700; line-height:1.15; overflow-wrap:anywhere; }
 .gumb-plan{ flex:none; height:40px; padding:0 14px; border-radius:999px; border:1.5px solid rgba(255,255,255,.6); font-size:14px; font-weight:700; display:inline-flex; align-items:center; gap:6px; white-space:nowrap; }
-.gumb-plan.zanima{ background:#fff; color:var(--modra); border-color:#fff; }
+.gumb-plan.zanima{ background:#fff; color:#3B63E6; border-color:#fff; } /* modra na beli: #4C76FF ima 3,9 < 4,5 (AA) */
 .gumb-plan.gre{ background:var(--modra); border-color:var(--modra); color:#fff; }
 .prijatelji-vrsta{ display:flex; align-items:center; gap:8px; font-size:13px; font-weight:500; color:rgba(255,255,255,.8); }
 .avatarji{ display:flex; }
@@ -311,8 +312,8 @@ h1,h2,h3,p{ margin:0; }
 .info-vrstica.razmaknjena{ flex-direction:row; justify-content:space-between; gap:12px; padding:4px 0; }
 .info-vrstica.razmaknjena > :last-child{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .info-oznaka{ font-size:12px; font-weight:600; color:var(--utisano); }
-.info-vrstica a{ color:var(--modra); font-weight:600; }
-.povezava-zemljevid{ display:inline-flex; gap:6px; align-items:center; font-weight:600; font-size:14px; color:var(--modra); }
+.info-vrstica a{ color:var(--modra-besedilo); font-weight:600; }
+.povezava-zemljevid{ display:inline-flex; gap:6px; align-items:center; font-weight:600; font-size:14px; color:var(--modra-besedilo); }
 .kartica-vip{ position:relative; display:grid; place-items:center; width:100%; min-height:200px; border-radius:18px; overflow:hidden; border:1px solid var(--b10); text-align:center; background:#222; }
 .vip-ozadje{ position:absolute; inset:0; transform:scale(1.15); }
 .vip-ozadje img{ filter:blur(14px); }
@@ -322,7 +323,7 @@ h1,h2,h3,p{ margin:0; }
 .vip-vsebina > span{ font-size:13px; font-weight:500; color:rgba(255,255,255,.75); }
 .vip-vec{ display:inline-flex; gap:4px; align-items:center; font-size:13px !important; font-weight:600 !important; color:rgba(255,255,255,.9) !important; }
 .vip-klic{ text-align:center; font-size:15px; font-weight:700; color:var(--b55); line-height:1.6; }
-.vip-klic a{ color:var(--modra); font-size:17px; }
+.vip-klic a{ color:var(--modra-besedilo); font-size:17px; }
 
 /* ---------- klub ---------- */
 .klub-glava{ position:relative; margin:0 calc(-1 * var(--odmik)); height:260px; overflow:hidden; }
@@ -345,7 +346,7 @@ h1,h2,h3,p{ margin:0; }
 .gumb-sledi{ height:36px; padding:0 16px; border-radius:999px; background:var(--modra); display:inline-flex; gap:6px; align-items:center; font-size:14px; font-weight:600; white-space:nowrap; }
 .gumb-sledi.sledim{ background:var(--b08); border:1px solid rgba(255,255,255,.35); color:rgba(255,255,255,.9); }
 .klub-video{ width:100%; height:230px; border-radius:18px; object-fit:cover; background:#000; border:1px solid var(--b10); }
-.klub-video.prazen{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; background:var(--b04); color:rgba(255,255,255,.35); font-size:13px; font-weight:500; }
+.klub-video.prazen{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; background:var(--b04); color:var(--utisano); font-size:13px; font-weight:500; }
 .cenik-skupina{ display:flex; flex-direction:column; gap:6px; margin-top:12px; }
 .cenik-vrsta{ display:flex; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid var(--b08); }
 
@@ -467,14 +468,14 @@ h1,h2,h3,p{ margin:0; }
 /* ---------- faza 2: profil, racun, prijatelji, obvestila ---------- */
 .profil-vrsta{ display:flex; align-items:center; gap:20px; padding:16px 0 6px; }
 .profil-ime{ font-size:22px !important; font-weight:700 !important; }
-.povezava-modra{ color:var(--modra); font-weight:600; font-size:14px; }
+.povezava-modra{ color:var(--modra-besedilo); font-weight:600; font-size:14px; }
 .povezava-gumb.rdeca{ color:var(--rdeca); }
 .znacka-stevilo{ min-width:20px; height:20px; padding:0 6px; border-radius:999px; background:var(--modra); color:#fff; font-size:11px; font-weight:700; display:inline-grid; place-items:center; flex:none; }
 .gumb-rdec{ display:flex; align-items:center; justify-content:center; width:100%; height:48px; border-radius:14px; background:rgba(255,90,90,.14); border:1px solid rgba(255,90,90,.5); color:var(--rdeca); font-weight:600; font-size:16px; }
 .gumb-majhen{ height:34px; padding:0 12px; border-radius:999px; background:var(--b08); border:1px solid var(--b14); font-size:13px; font-weight:600; white-space:nowrap; display:inline-flex; align-items:center; gap:5px; flex:none; }
 .gumb-majhen.modri{ background:var(--modra); border-color:var(--modra); color:#fff; }
 .gumb-glavni.majhen, .gumb-siv.majhen{ height:40px; min-height:40px; font-size:14px; border-radius:12px; }
-.vec.modra{ color:var(--modra); }
+.vec.modra{ color:var(--modra-besedilo); }
 .vec-vrstic{ white-space:pre-line !important; }
 .kartica-podatka{ display:flex; flex-direction:column; gap:6px; padding:16px; border-radius:14px; background:var(--b08); border:1px solid var(--b14); }
 .kp-vrh{ display:flex; align-items:center; gap:10px; }
@@ -505,7 +506,7 @@ h1,h2,h3,p{ margin:0; }
 .krog-prijatelja.gre{ border-color:var(--modra); }
 .vec-krog{ font-size:14px; font-weight:700; background:var(--b08); border-color:var(--modra); }
 .namig{ max-width:145px; }
-.povabi{ display:flex; align-items:center; gap:6px; color:var(--modra); font-size:11px; font-weight:600; text-align:left; flex:none; }
+.povabi{ display:flex; align-items:center; gap:6px; color:var(--modra-besedilo); font-size:11px; font-weight:600; text-align:left; flex:none; }
 .povabi-krog{ width:36px; height:36px; border-radius:50%; border:1.5px dashed rgba(255,255,255,.45); display:grid; place-items:center; color:#fff; }
 .povabi span:last-child{ max-width:42px; }
 .vrsta-cipov{ display:flex; gap:8px; justify-content:center; }
@@ -563,7 +564,7 @@ h1,h2,h3,p{ margin:0; }
 .poslovna-glava{ display:flex; align-items:center; gap:16px; padding-top:4px; }
 .poslovna-glava .kv-besedilo{ gap:4px; }
 a.profil-ime{ white-space:normal; }
-.oznaka-vloge{ color:var(--modra) !important; font-weight:600; font-size:12.5px !important; }
+.oznaka-vloge{ color:var(--modra-besedilo) !important; font-weight:600; font-size:12.5px !important; }
 .obrazec-kluba, .obrazec-dogodka{ display:flex; flex-direction:column; gap:18px; }
 .vrsta-logo{ display:flex; align-items:center; gap:16px; }
 .skupina-polj{ display:flex; flex-direction:column; gap:8px; }
@@ -655,7 +656,7 @@ a.profil-ime{ white-space:normal; }
 .vrstica-clana.vabilo strong{ color:rgba(255,255,255,.8); }
 .krog-ikona{ width:44px; height:44px; border-radius:50%; background:var(--b06); display:grid; place-items:center; color:var(--b55); flex:none; }
 .oznaka-vloge-cip{ flex:none; font-size:12px; font-weight:600; padding:6px 10px; border-radius:999px; background:var(--b08); color:var(--b70); }
-.oznaka-vloge-cip.lastnik{ background:rgba(76,118,255,.15); color:var(--modra); }
+.oznaka-vloge-cip.lastnik{ background:rgba(76,118,255,.15); color:var(--modra-besedilo); }
 .podnaslov-sekcije{ font-size:13px; font-weight:600; color:var(--b55); margin-bottom:-8px; }
 .razlaga-vlog{ display:flex; flex-direction:column; gap:10px; }
 .razlaga-vlog > div{ display:flex; align-items:flex-start; gap:12px; }
@@ -666,3 +667,6 @@ a.profil-ime{ white-space:normal; }
 @media (max-width:370px){ .aktivnost-mreza{ grid-template-columns:1fr; } .kartica-ekipe{ max-height:none; } }
 .rocne-koordinate summary{ cursor:pointer; font-size:13px; font-weight:600; color:var(--b70); padding:4px 0; }
 .rocne-koordinate[open] summary{ margin-bottom:10px; }
+
+/* ---------- faza 5: namestitev ---------- */
+.koraki{ margin:0; padding-left:22px; display:flex; flex-direction:column; gap:10px; font-size:15px; }

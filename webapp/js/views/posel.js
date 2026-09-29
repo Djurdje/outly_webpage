@@ -15,6 +15,7 @@ import { zanrIme } from "../oblika.js";
 import { naloziKnjiznice, slog, povecavaZa, SLOVENIJA, LJUBLJANA } from "../karta.js";
 import { GlavaNazaj, Ikona, Slika, Nalaganje, Napaka, List } from "../ui.js";
 import { MenijskaVrstica } from "./racun.js";
+import { VrsticaNamestitve } from "./namestitev.js";
 import { imeVloge, lahkoUreja, idKluba, poslovno, useKlub, nastaviObraz, centiIz, evriBesedilo, NAJVEC_VIDEA } from "../posel.js";
 
 /* ---------- skupni deli ---------- */
@@ -68,6 +69,7 @@ export function LastnikProfil({ me }) {
   const baza = k ? `/app/business/${k.id}` : null;
 
   return html`<div class="zaslon profil">
+    <h1 class="skrito">${t("Profile")}</h1>
     ${s.brezKluba ? html`<${NastavitevKluba} ob=${() => { naloziMe(); nalozi(); }} />` : html`
       <div class="profil-vrsta">
         <${LogoKluba} url=${k && k.logo_url} velikost=${60} />
@@ -81,7 +83,8 @@ export function LastnikProfil({ me }) {
         <${MenijskaVrstica} href=${baza + "/team"} ikona="users" naslov=${t("My team")} />
         <${MenijskaVrstica} href=${baza + "/settings"} ikona="settings" naslov=${t("Settings")} />
       </div>
-      <${OpombaSkenerja} />` : null}`}
+      <${OpombaSkenerja} />
+      <${VrsticaNamestitve} />` : null}`}
     <button type="button" class="povezava-gumb rdeca" onClick=${async () => { await odjava(); navigiraj("/app", { zamenjaj: true }); }}>${t("Log out")}</button>
   </div>`;
 }

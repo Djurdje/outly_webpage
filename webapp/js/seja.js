@@ -1,6 +1,6 @@
 /* Seja uporabnika: prijava prek Supabase, profil iz GET /me (kot SessionStore na iOS).
    Vloge odloca streznik; tu samo beremo, kaj je rekel. */
-import { supabase } from "./supabase.js";
+import { supabase, odjemalec, koNalozen } from "./supabase.js";
 import { nastaviObraz } from "./posel.js";
 import { send, nastaviObZavrnjeniSeji, pocistiPredpomnilnik, imaShranjenoSejo } from "./api.js";
 import { ApiError } from "./napake.js";
@@ -25,6 +25,15 @@ let zadnjiUid = null;
 
 export async function zacniSejo() {
   nastaviObZavrnjeniSeji(() => odjava("Your session has expired. Please log in again."));
+  if (!imaShranjenoSejo()) {
+    // Gost: seje ni, aplikacija se izrise takoj; supabase-js se nalozi v ozadju, ko je stran nalozena (faza 5).
+    posodobiIzSeje(null);
+    seja.set({ pripravljena: true });
+    poslusajSejo();   // registrira se ob nalozitvi knjiznice (prijava v aplikaciji jo nalozi)
+    const kasneje = () => odjemalec().catch(() => {});
+    if (document.readyState === "complete") setTimeout(kasneje, 1500); else window.addEventListener("load", () => setTimeout(kasneje, 1500), { once: true });
+    return;
+  }
   let s = null;
   try { s = (await supabase.auth.getSession()).data.session; } catch { s = null; }
   posodobiIzSeje(s);
@@ -33,12 +42,20 @@ export async function zacniSejo() {
   if (!s && imaShranjenoSejo()) seja.set({ prijavljen: true });
   seja.set({ pripravljena: true });
   if (s || seja.get().prijavljen) naloziMe();
-  supabase.auth.onAuthStateChange((dogodek, nova) => {
+  poslusajSejo();
+}
+
+let poslusam = false;
+function poslusajSejo() {
+  if (poslusam) return;
+  poslusam = true;
+  // Prek koNalozen: poslusalec se registrira, ko je odjemalec ustvarjen - tudi ce je prvo nalaganje padlo.
+  koNalozen(c => c.auth.onAuthStateChange((dogodek, nova) => {
     const prej = zadnjiUid;
     posodobiIzSeje(nova);
     if (dogodek === "SIGNED_OUT") { seja.set({ me: null }); pocistiPredpomnilnik(); }
     else if (nova && nova.user && nova.user.id !== prej) naloziMe();
-  });
+  }));
 }
 
 function posodobiIzSeje(s) {

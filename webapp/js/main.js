@@ -1,28 +1,69 @@
 /* Spletna aplikacija Outly - vstop. Isti backend, baza in prijava kot iOS; to je samo nov odjemalec.
    Zavihki kot na iOS: Home (0), Search (1), Map (2), Profile (3) v plavajoci spodnji vrstici. */
-import { html, render, useEffect, useLayoutEffect } from "./lib.js";
-import { t, useJezik } from "./i18n.js";
+import { html, render, useEffect, useLayoutEffect, useState } from "./lib.js";
+import { t, useJezik, pripraviJezik } from "./i18n.js";
 import { usePot, navigiraj, obnoviDrsenje } from "./usmerjanje.js";
 import { zacniSejo, useSeja, potrebujeOnboarding } from "./seja.js";
-import { Ikona, Avatar, Nalaganje, GlavaNazaj } from "./ui.js";
-import { Home } from "./views/home.js";
+import { Ikona, Avatar, Nalaganje, GlavaNazaj, Napaka } from "./ui.js";
+import { Home, OzadjeHome } from "./views/home.js";
 import { Iskanje } from "./views/search.js";
 import { Dogodek } from "./views/event.js";
 import { Klub } from "./views/club.js";
 import { VsiDogodki, Zanr, Zanimivi } from "./views/seznami.js";
-import { Vstopnice } from "./views/vstopnice.js";
-import { Prijava, Registracija, Potrditev, PozabljenoGeslo } from "./views/prijava.js";
-import { Onboarding } from "./views/onboarding.js";
-import { Profil } from "./views/profil.js";
-import { Jezik } from "./views/jezik.js";
 import { Zemljevid } from "./views/zemljevid.js";
-import { MojRacun, OsebniPodatki, GesloVarnost, Nastavitve, MojeNastavitve, IzbrisRacuna, ProsnjaUstvarjalca, Placila, Pomoc, ClanekPomoci, OAplikaciji } from "./views/racun.js";
-import { MojiPrijatelji, NacrtiPrijateljev } from "./views/prijatelji.js";
-import { MojiKlubi, VabilaKlubov } from "./views/klubi.js";
-import { SredisceKluba, NastavitveLastnika, PodatkiKluba, LokacijaKluba, UrejanjeCenika, SamoUredniki } from "./views/posel.js";
-import { DogodkiKluba, ObrazecDogodka, VstopniceDogodkaKluba } from "./views/posel-dogodki.js";
-import { NadzornaPlosca, SkeniranjaClana } from "./views/posel-plosca.js";
-import { Ekipa } from "./views/posel-ekipa.js";
+import { registrirajSW } from "./pwa.js";
+
+/* Zasloni, ki jih ni na zacetnem zaslonu, se nalozijo sele, ko so potrebni (faza 5: manj JS ob prvem obisku).
+   Home, iskanje, dogodek, klub in zemljevid ostanejo takoj (deljene povezave vodijo nanje). */
+const NALAGALNIKI = {
+  "./views/vstopnice.js": () => import("./views/vstopnice.js"),
+  "./views/prijava.js": () => import("./views/prijava.js"),
+  "./views/onboarding.js": () => import("./views/onboarding.js"),
+  "./views/profil.js": () => import("./views/profil.js"),
+  "./views/jezik.js": () => import("./views/jezik.js"),
+  "./views/racun.js": () => import("./views/racun.js"),
+  "./views/prijatelji.js": () => import("./views/prijatelji.js"),
+  "./views/klubi.js": () => import("./views/klubi.js"),
+  "./views/posel.js": () => import("./views/posel.js"),
+  "./views/posel-dogodki.js": () => import("./views/posel-dogodki.js"),
+  "./views/posel-plosca.js": () => import("./views/posel-plosca.js"),
+  "./views/posel-ekipa.js": () => import("./views/posel-ekipa.js"),
+};
+const Vstopnice = leno("./views/vstopnice.js", "Vstopnice");
+const Prijava = leno("./views/prijava.js", "Prijava");
+const Registracija = leno("./views/prijava.js", "Registracija");
+const Potrditev = leno("./views/prijava.js", "Potrditev");
+const PozabljenoGeslo = leno("./views/prijava.js", "PozabljenoGeslo");
+const Onboarding = leno("./views/onboarding.js", "Onboarding");
+const Profil = leno("./views/profil.js", "Profil");
+const Jezik = leno("./views/jezik.js", "Jezik");
+const MojRacun = leno("./views/racun.js", "MojRacun");
+const OsebniPodatki = leno("./views/racun.js", "OsebniPodatki");
+const GesloVarnost = leno("./views/racun.js", "GesloVarnost");
+const Nastavitve = leno("./views/racun.js", "Nastavitve");
+const MojeNastavitve = leno("./views/racun.js", "MojeNastavitve");
+const IzbrisRacuna = leno("./views/racun.js", "IzbrisRacuna");
+const ProsnjaUstvarjalca = leno("./views/racun.js", "ProsnjaUstvarjalca");
+const Placila = leno("./views/racun.js", "Placila");
+const Pomoc = leno("./views/racun.js", "Pomoc");
+const ClanekPomoci = leno("./views/racun.js", "ClanekPomoci");
+const OAplikaciji = leno("./views/racun.js", "OAplikaciji");
+const MojiPrijatelji = leno("./views/prijatelji.js", "MojiPrijatelji");
+const NacrtiPrijateljev = leno("./views/prijatelji.js", "NacrtiPrijateljev");
+const MojiKlubi = leno("./views/klubi.js", "MojiKlubi");
+const VabilaKlubov = leno("./views/klubi.js", "VabilaKlubov");
+const SredisceKluba = leno("./views/posel.js", "SredisceKluba");
+const NastavitveLastnika = leno("./views/posel.js", "NastavitveLastnika");
+const PodatkiKluba = leno("./views/posel.js", "PodatkiKluba");
+const LokacijaKluba = leno("./views/posel.js", "LokacijaKluba");
+const UrejanjeCenika = leno("./views/posel.js", "UrejanjeCenika");
+const SamoUredniki = leno("./views/posel.js", "SamoUredniki");
+const DogodkiKluba = leno("./views/posel-dogodki.js", "DogodkiKluba");
+const ObrazecDogodka = leno("./views/posel-dogodki.js", "ObrazecDogodka");
+const VstopniceDogodkaKluba = leno("./views/posel-dogodki.js", "VstopniceDogodkaKluba");
+const NadzornaPlosca = leno("./views/posel-plosca.js", "NadzornaPlosca");
+const SkeniranjaClana = leno("./views/posel-plosca.js", "SkeniranjaClana");
+const Ekipa = leno("./views/posel-ekipa.js", "Ekipa");
 
 const AVT = new Set(["login", "register", "verify", "forgot"]);
 const SAMO_PRIJAVLJENI = new Set(["tickets", "interested", "onboarding", "account", "personal", "security", "preferences",
@@ -36,6 +77,44 @@ const ZAVIHKI = [
 ];
 /* Kateri zavihek je aktiven na potisnjenem zaslonu (dogodek, klub ...): kar je bilo zadnje izbrano. */
 let zadnjiZavihek = "home";
+
+/* Leno nalozena komponenta: modul se nalozi ob prvem prikazu in ostane v pomnilniku. */
+const nalozeni = new Map();
+function leno(pot, ime) {
+  return function LenaKomponenta(props) {
+    const [modul, setModul] = useState(() => nalozeni.get(pot) || null);
+    const [napaka, setNapaka] = useState(false);
+    useEffect(() => {
+      if (modul) return;
+      let zivo = true;
+      NALAGALNIKI[pot]().then(m => { nalozeni.set(pot, m); if (zivo) setModul(m); }).catch(() => {
+        // Najpogosteje nova objava: odprta stran ima se stare module, nov zaslon pa jih ne najde. Ena samodejna
+        // osvezitev (najvec na minuto) nalozi novo razlicico; sicer pokazemo napako s "Try again".
+        let prej = 0;
+        try { prej = Number(sessionStorage.getItem("outly_leno_osvezitev")) || 0; } catch { /* brez */ }
+        if (navigator.onLine && Date.now() - prej > 60000) {
+          try { sessionStorage.setItem("outly_leno_osvezitev", String(Date.now())); } catch { /* brez */ }
+          location.reload();
+          return;
+        }
+        if (zivo) setNapaka(true);
+      });
+      return () => { zivo = false; };
+    }, []);
+    if (napaka) return html`<div class="zaslon"><${Napaka} besedilo=${navigator.onLine ? t("This screen could not be loaded. Please try again.") : t("No internet connection. Check your network and try again.")} znova=${() => location.reload()} /></div>`;
+    if (!modul) return html`<div class="zaslon"><${Nalaganje} /></div>`;
+    const K = modul[ime];
+    return html`<${K} ...${props} />`;
+  };
+}
+/* Ko je zacetni zaslon nalozen, v miru nalozimo se najpogostejse (prehod na Profil in vstopnice brez cakanja). */
+function prednaloziVMiru() {
+  const zacni = () => {
+    ["./views/profil.js", "./views/vstopnice.js", "./views/prijava.js"].forEach(p => NALAGALNIKI[p]().then(m => nalozeni.set(p, m)).catch(() => {}));
+    import("/vendor/qrcode-generator-2.0.4.mjs").catch(() => {});   // vstopnica pred vrati mora pokazati QR tudi brez signala
+  };
+  if ("requestIdleCallback" in window) requestIdleCallback(zacni, { timeout: 8000 }); else setTimeout(zacni, 4000);
+}
 
 function Zaslon({ pot }) {
   const p = pot.params;
@@ -129,6 +208,7 @@ function App() {
   if (!pripravljena || preusmeritev) return html`<main class="okvir"><${Nalaganje} /></main>`;
 
   return html`<div class="okvir-aplikacije" key=${koda}>
+    ${pot.ime === "home" ? html`<${OzadjeHome} />` : null}
     <main id="vsebina" class=${"okvir" + (brezVrstice ? "" : " z-vrstico")} key=${pot.kljuc} data-smer=${pot.smer}>
       <${Zaslon} pot=${pot} />
     </main>
@@ -150,6 +230,10 @@ function naslovPoti(ime) {
 }
 
 zacniSejo();
-const koren = document.getElementById("aplikacija");
-koren.textContent = "";   // zacetna vrtavka iz index.html
-render(html`<${App} />`, koren);
+registrirajSW();
+window.addEventListener("load", () => setTimeout(prednaloziVMiru, 2500));
+pripraviJezik().then(() => {
+  const koren = document.getElementById("aplikacija");
+  koren.textContent = "";   // zacetna vrtavka iz index.html
+  render(html`<${App} />`, koren);
+});

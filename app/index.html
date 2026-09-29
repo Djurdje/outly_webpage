@@ -11,16 +11,49 @@
   <link rel="icon" href="/favicon.ico" sizes="any" />
   <link rel="icon" href="/assets/icon-32.png" type="image/png" sizes="32x32" />
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+  <link rel="manifest" href="/webapp/manifest.webmanifest" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Outly" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   <link rel="preload" href="/assets/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="preconnect" href="https://outly-backend-roy3.onrender.com" crossorigin />
   <link rel="stylesheet" href="/webapp/app.css" />
+  <!-- modulepreload:zacetek (generira webapp/orodja/predhodno-nalaganje.mjs) -->
   <link rel="modulepreload" href="/webapp/js/main.js" />
+  <link rel="modulepreload" href="/webapp/js/lib.js" />
   <link rel="modulepreload" href="/vendor/preact-10.29.8.module.js" />
   <link rel="modulepreload" href="/vendor/preact-hooks-10.29.8.module.js" />
   <link rel="modulepreload" href="/vendor/htm-3.1.1.module.js" />
-  <!-- Supabase Auth (isti projekt kot aplikacija in outly.si) - gostimo sami, brez CDN-ja. -->
-  <script src="/vendor/supabase-2.115.0.js" defer></script>
-  <script src="/supabase-config.js" defer></script>
+  <link rel="modulepreload" href="/webapp/js/i18n.js" />
+  <link rel="modulepreload" href="/webapp/js/store.js" />
+  <link rel="modulepreload" href="/webapp/js/usmerjanje.js" />
+  <link rel="modulepreload" href="/webapp/js/seja.js" />
+  <link rel="modulepreload" href="/webapp/js/supabase.js" />
+  <link rel="modulepreload" href="/webapp/js/posel.js" />
+  <link rel="modulepreload" href="/webapp/js/api.js" />
+  <link rel="modulepreload" href="/webapp/js/napake.js" />
+  <link rel="modulepreload" href="/webapp/js/oblika.js" />
+  <link rel="modulepreload" href="/webapp/js/nastavitve.js" />
+  <link rel="modulepreload" href="/webapp/js/ui.js" />
+  <link rel="modulepreload" href="/webapp/js/ikone.js" />
+  <link rel="modulepreload" href="/webapp/js/views/home.js" />
+  <link rel="modulepreload" href="/webapp/js/podatki.js" />
+  <link rel="modulepreload" href="/webapp/js/lokacija.js" />
+  <link rel="modulepreload" href="/webapp/js/views/prijatelji.js" />
+  <link rel="modulepreload" href="/webapp/js/views/obvestila.js" />
+  <link rel="modulepreload" href="/webapp/js/views/filtri.js" />
+  <link rel="modulepreload" href="/webapp/js/views/search.js" />
+  <link rel="modulepreload" href="/webapp/js/views/event.js" />
+  <link rel="modulepreload" href="/webapp/js/views/nakup.js" />
+  <link rel="modulepreload" href="/webapp/js/qr.js" />
+  <link rel="modulepreload" href="/webapp/js/views/zemljevid.js" />
+  <link rel="modulepreload" href="/webapp/js/karta.js" />
+  <link rel="modulepreload" href="/webapp/js/views/club.js" />
+  <link rel="modulepreload" href="/webapp/js/views/seznami.js" />
+  <link rel="modulepreload" href="/webapp/js/pwa.js" />
+  <!-- modulepreload:konec -->
+  <!-- Supabase Auth (isti projekt kot aplikacija in outly.si) - gostimo sami; nalozi ga webapp/js/supabase.js leno. -->
   <script type="module" src="/webapp/js/main.js"></script>
 </head>
 <body>

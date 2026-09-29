@@ -62,7 +62,7 @@ export function Home() {
 
   const izpeljano = useMemo(() => izpelji(stanje, me, lok, f, moji, mejaRazdalje(nast)), [stanje, me, lok, f, moji, nast]);
   return html`<div class="zaslon home">
-    <${OzadjeHome} />
+    <h1 class="skrito">${t("Home")}</h1>
     <header class="home-glava">
       <div class="home-glava-vrsta">
         ${prijavljen
@@ -293,7 +293,9 @@ function barvaZanra(z) {
 /* ---------- ozadje: temno modri preliv z dvema sijema, ki se ob drsenju premikata ----------
    Premik samo prek transform/opacity na eni plasti (CSS spremenljivka --t), requestAnimationFrame,
    poslusalec passive. Brez filter: blur (iOS lekcija 29. 9.). */
-function OzadjeHome() {
+/* Izrise ga App (main.js) ZUNAJ animiranega okvirja: vstopna animacija okvirja uporablja transform, zato bi bil
+   position:fixed med animacijo vezan na okvir in bi ob koncu poskocil (premik postavitve, CLS 0,84 - faza 5). */
+export function OzadjeHome() {
   const ref = useRef(null);
   useEffect(() => {
     let cakajoce = false;
