@@ -1,9 +1,14 @@
 // Razpakira .pmtiles v staticne ploscice {z}/{x}/{y}.pbf (Cloudflare Pages ne podpira HTTP Range).
+// Uporaba (lokalno ali v Actions, ne v brskalniku):  npm i pmtiles@4.5.0
+//   node razpakiraj.mjs <vhod.pmtiles> <izhodna mapa> <min z> <max z>
+// Primer: slo = slovenija.pmtiles 0-10; mesta = vsako mesto (LJ, MB, ...) 11-15 v ISTO mapo mesta/.
+// seznam.json se na koncu zgradi iz VSEH .pbf v izhodni mapi - vec mest v isti mapi se zato ne izgubi.
 import fs from "node:fs"; import path from "node:path"; import zlib from "node:zlib";
-import { PMTiles, Compression, TileType } from "pmtiles";
+import { PMTiles } from "pmtiles";
 class Datoteka { constructor(p) { this.p = p; this.fd = fs.openSync(p, "r"); }
   getKey() { return this.p; }
-  async getBytes(off, len) { const b = Buffer.alloc(len); fs.readSync(this.fd, b, 0, len, off); return { data: b.buffer.slice(b.byteOffset, b.byteOffset + len) }; } }
+  async getBytes(off, len) { const b = Buffer.alloc(len);
+    if (fs.readSync(this.fd, b, 0, len, off) !== len) throw new Error("delno branje " + off); return { data: b.buffer.slice(b.byteOffset, b.byteOffset + len) }; } }
 const [,, vhod, izhod, minz, maxz] = process.argv;
 const a = new PMTiles(new Datoteka(vhod), undefined, async (buf) => buf);   // brez razsirjanja: ploscice ostanejo gzip
 const h = await a.getHeader();
@@ -23,4 +28,12 @@ for (let z = Number(minz); z <= Number(maxz); z++) {
   }
 }
 console.error(izhod, seznam.length, "ploscic", (bajti / 1e6).toFixed(1), "MB");
-fs.writeFileSync(path.join(izhod, "seznam.json"), JSON.stringify(seznam));
+const vse = [];
+(function beri(mapa, pot) {
+  for (const d of fs.readdirSync(mapa, { withFileTypes: true })) {
+    if (d.isDirectory()) beri(path.join(mapa, d.name), [...pot, d.name]);
+    else if (d.name.endsWith(".pbf")) vse.push([...pot, d.name.slice(0, -4)].join("/"));
+  }
+})(izhod, []);
+fs.writeFileSync(path.join(izhod, "seznam.json"), JSON.stringify(vse.sort()));
+console.error("seznam.json:", vse.length, "ploscic skupaj");

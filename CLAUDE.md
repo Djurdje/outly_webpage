@@ -64,7 +64,9 @@ webapp/app.css, webapp/js/            koda aplikacije (Preact + htm, ES moduli, 
 - Zemljevid (`webapp/js/karta.js`): brez tujih streznikov ploscic. **Cloudflare Pages ne podpira HTTP Range** (preverjeno
   29. 9. 2026: vrne 200 s celo datoteko), zato NE `.pmtiles` na Pages - samo staticne ploscice. Klub zunaj LJ/MB ima ulice
   sele z novim izrezom mesta (ploscice v `mesta/` + vnos v `MESTA`); Pages dovoli 20.000 datotek na objavo.
-  Nova razlicica podatkov = nova mapa `karta/v<datum>/` (predpomnilnik 1 dan). Pripis OpenStreetMap mora ostati viden (ODbL).
+  Nova razlicica podatkov: (1) izrez na veji `karta-izrez`, (2) `karta/razpakiraj.mjs` (navodila v glavi) v novo mapo
+  `karta/v<datum>/` - slo iz slovenija 0-10, vsa mesta 11-15 v isto `mesta/`, (3) `PODATKI` v `webapp/js/karta.js`,
+  (4) staro mapo pobrisi (meja 20.000 datotek). Predpomnilnik 1 dan. Pripis OpenStreetMap mora ostati viden (ODbL).
 - Preverjanje: headless Chromium s stubom backenda in Supabase (`page.route`), lokalni streznik, ki posnema `_redirects`
   in `_headers`; sirine 393, 360, 1280; neprijavljen + prijavljen; konzola brez napak (tudi CSP).
 

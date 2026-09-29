@@ -53,11 +53,11 @@ export function naloziKnjiznice() {
     const { maplibregl, basemaps } = window;
     maplibregl.setWorkerUrl(DATOTEKE.delavec);   // CSP gradnja: delavec z nase domene (brez blob:)
     const seznami = {};
-    for (const ime of ["slo", "mesta"]) {
+    await Promise.all(["slo", "mesta"].map(async ime => {
       const r = await fetch(PODATKI + ime + "/seznam.json");
       if (!r.ok) throw new Error("seznam ploscic " + r.status);
-      seznami[ime] = new Set(await r.json());
-    }
+      seznami[ime] = new Set(await r.json());   // HTML (Cloudflare) -> SyntaxError -> seznam klubov
+    }));
     // outly://slo/z/x/y: ploscica, ce obstaja; sicer prazna (brez zahteve - Cloudflare bi vrnil index.html).
     maplibregl.addProtocol("outly", async (params, krmilnik) => {
       const [ime, ...zxy] = params.url.replace("outly://", "").split("/");
