@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          U=https://claude-new-session-xmsl8u.outly-webpage.pages.dev
+          U=https://outly.si
           for i in $(seq 1 30); do
             s=$(curl -s -o /dev/null -w "%{http_code} %{content_type}" "$U/karta/v20260929/slo/seznam.json"); case "$s" in *html*) ;; 200*) break;; esac
             echo "poskus $i: $s"; sleep 30
@@ -18,3 +18,6 @@ jobs:
           done
           echo "== neobstojeca"; curl -sS -o /dev/null -w "%{http_code} %{content_type}\n" "$U/karta/v20260929/slo/15/1/1.pbf"
           echo "== maplibre"; curl -sS -o /dev/null -w "%{http_code} %{content_type}\n" "$U/vendor/maplibre-gl-csp-worker-5.24.0.js"
+          echo "== domaca"; curl -sS -o /dev/null -w "%{http_code}\n" "$U/"
+          echo "== /app/map"; curl -sS -o /tmp/a -w "%{http_code}\n" "$U/app/map"; grep -o '<title>[^<]*' /tmp/a | head -1
+          echo "== karta.js"; curl -sS "$U/webapp/js/karta.js" | grep -c "outly://"
