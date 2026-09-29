@@ -1,0 +1,122 @@
+/* Razumljiva sporocila napak - prevod iOS APIErrorMessages.swift in SupabaseAuthError.
+   Surovega besedila streznika uporabnik nikoli ne vidi (razen izjeme "you must be at least",
+   kot na iOS). Pravila so podnizi v besedilu odgovora, v istem vrstnem redu kot na iOS. */
+import { t } from "./i18n.js";
+
+export class ApiError extends Error {
+  constructor(status, raw) {
+    super(`API ${status}: ${raw}`);
+    this.status = status;   // -1 = ni odgovora (omrezje)
+    this.raw = raw || "";
+  }
+}
+
+export class AuthError extends Error {
+  constructor(status, code, message) {
+    super(message || code || "auth error");
+    this.status = status;
+    this.code = code || "";
+  }
+}
+
+const PRAVILA = [
+  ["invalid or expired code", "The code is wrong or has expired. Request a new one."],
+  ["too many attempts", "Too many wrong attempts. Request a new code."],
+  ["code must be 6 digits", "Enter the code from the email."],
+  ["password too short", "Password must be at least 8 characters."],
+  ["email not verified", "Your email is not verified yet."],
+  ["locked", "Too many failed logins. Try again in 15 minutes."],
+  ["invalid credentials", "Wrong email or password."],
+  ["username too short", "Username must be at least 3 characters."],
+  ["username too long", "Username can have at most 20 characters."],
+  ["username invalid", "Username can contain only letters, numbers and underscore."],
+  ["username already in use", "That username is already taken."],
+  ["phone must be", "Enter the phone number with country code, e.g. +386 41 123 456."],
+  ["phone number already in use", "That phone number is already used by another account."],
+  ["refresh token", "Your session has expired. Please log in again."],
+  ["invalid token", "Your session has expired. Please log in again."],
+  ["missing token", "Your session has expired. Please log in again."],
+  ["auth service unavailable", "Sign-in service is temporarily unavailable. Please try again."],
+  ["at least 15 years", "You must be at least 15 years old to use Outly."],
+  ["event not found", "This event no longer exists."],
+  ["club not found", "This club is not available."],
+  ["country must be", "Choose your country."],
+  ["unknown_genres", "One of the selected genres is not available. Reload and try again."],
+  ["genres must be", "Select at least one genre."],
+  ["nothing to update", "Nothing to save."],
+  ["event_ended", "This event has already ended."],
+  ["already used", "This ticket was already used."],
+  ["ticket not found", "This ticket is not available anymore."],
+  ["no longer valid", "This ticket is no longer valid."],
+  ["quantity must be", "Choose between 1 and 10 tickets."],
+  ["not on sale", "This event is not on sale."],
+  ["no tickets on outly", "Tickets for this event are not sold on Outly."],
+  ["already started", "This event has already started."],
+  ["have not opened", "Ticket sales have not opened yet."],
+  ["sales are closed", "Ticket sales are closed."],
+  ["tickets left", "Not enough tickets left."],
+  ["not enough tickets", "Not enough tickets left."],
+  ["add your date of birth", "Add your date of birth in Personal info to buy tickets."],
+  ["payments are not available", "Payments are not available yet."],
+  ["already exists", "An account with this email or username already exists."],
+  ["already registered", "An account with this email or username already exists."]
+];
+
+function prevediApi(e) {
+  const s = e.raw.toLowerCase();
+  if (s.includes("dateofbirth") || s.includes("date of birth")) {
+    if (s.includes("future")) return t("Date of birth cannot be in the future.");
+    if (s.includes("plausible")) return t("That date of birth does not look right.");
+    return t("Enter a valid date of birth.");
+  }
+  // "You must be at least 18 years old..." - streznik pove mejo, iOS pokaze besedilo, kot je.
+  if (s.includes("you must be at least") && !s.includes("15 years")) return e.raw;
+  for (const [podniz, sporocilo] of PRAVILA) if (s.includes(podniz)) return t(sporocilo);
+  switch (true) {
+    case e.status === 400: return t("Please check what you entered and try again.");
+    case e.status === 401: return t("Your session has expired. Please log in again.");
+    case e.status === 403: return t("You do not have permission to do that.");
+    case e.status === 404: return t("Not found.");
+    case e.status === 409: return t("This is already in use.");
+    case e.status === 429: return t("Too many attempts. Please wait a while and try again.");
+    case e.status >= 500: return t("The server is having trouble. Please try again later.");
+    case e.status === -1: return t("No response from the server. Check your connection.");
+    default: return t("Something went wrong. Please try again.");
+  }
+}
+
+function prevediAuth(e) {
+  switch (e.code) {
+    case "invalid_credentials": return t("Wrong email or password.");
+    case "email_not_confirmed": return t("Your email is not verified yet.");
+    case "user_already_exists":
+    case "email_exists": return t("That email is already registered. Sign in instead.");
+    case "weak_password": return t("Password must be at least 8 characters.");
+    case "otp_expired":
+    case "otp_disabled": return t("The code is wrong or has expired. Request a new one.");
+    case "over_email_send_rate_limit":
+    case "over_request_rate_limit": return t("Too many attempts. Please wait a minute and try again.");
+    case "same_password": return t("New password must be different from the current one.");
+    case "session_expired":
+    case "refresh_token_not_found":
+    case "refresh_token_already_used":
+    case "bad_jwt": return t("Your session has expired. Please log in again.");
+    case "user_not_found": return t("No account with this email.");
+    case "validation_failed": return t("Please check what you entered and try again.");
+  }
+  const m = (e.message || "").toLowerCase();
+  if (e.status >= 500) return t("The server is having trouble. Please try again later.");
+  if (m.includes("invalid login credentials")) return t("Wrong email or password.");
+  if (m.includes("already registered")) return t("That email is already registered. Sign in instead.");
+  if (m.includes("failed to fetch") || m.includes("network")) return t("No internet connection. Check your network and try again.");
+  return t("Something went wrong. Please try again.");
+}
+
+/** Sporocilo za uporabnika iz katerekoli napake. */
+export function sporocilo(e) {
+  if (e instanceof ApiError) return prevediApi(e);
+  if (e instanceof AuthError) return prevediAuth(e);
+  if (e && e.name === "AuthApiError") return prevediAuth(new AuthError(e.status, e.code, e.message));
+  if (e && (e.name === "TypeError" || e.name === "AbortError")) return t("No internet connection. Check your network and try again.");
+  return t("Something went wrong. Please try again.");
+}

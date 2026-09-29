@@ -3,3 +3,8 @@
 /CLAUDE.md          /  302
 /.claude/*          /  302
 /.gitignore         /  302
+
+# Spletna aplikacija (/app): vsak zaslon ima svoj URL (/app/event/12 ...), vse streze ena lupina.
+# Datoteke aplikacije so namenoma ZUNAJ /app (webapp/, vendor/), ker pravilo 200 velja tudi,
+# ce na poti obstaja datoteka.
+/app/*              /app/index.html  200
