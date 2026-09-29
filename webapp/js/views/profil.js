@@ -1,5 +1,6 @@
 /* Profil (ProfileView.swift): osebni obraz - glava z My Account, meni (klubi, prijatelji, vstopnice ...).
-   Poslovni obraz lastnika kluba (OwnerProfileView) pride v fazi 4. */
+   Lastnik kluba (vloga business) vidi klubski profil (OwnerProfileView -> views/posel.js), dokler v Settings
+   ne preklopi na osebni racun; izbira je shranjena v tem brskalniku (kot iOS profilObraz). */
 import { html, useEffect } from "../lib.js";
 import { t } from "../i18n.js";
 import { useSeja, odjava, naloziMe } from "../seja.js";
@@ -7,9 +8,12 @@ import { sporocilo } from "../napake.js";
 import { navigiraj } from "../usmerjanje.js";
 import { Avatar, Ikona, Nalaganje, Napaka } from "../ui.js";
 import { MenijskaVrstica } from "./racun.js";
+import { LastnikProfil } from "./posel.js";
+import { useObraz } from "../posel.js";
 
 export function Profil() {
   const { prijavljen, me, email, meNapaka } = useSeja(s => s);
+  const obraz = useObraz();
   // Ob vsakem obisku sveze znacke (vabila, prosnje) - kot iOS onAppear.
   useEffect(() => { if (prijavljen) naloziMe(); }, [prijavljen]);
   if (!prijavljen) return html`<div class="zaslon">
@@ -27,6 +31,7 @@ export function Profil() {
   if (!me && meNapaka) return html`<div class="zaslon"><h1 class="velik-naslov">${t("Profile")}</h1>
     <${Napaka} besedilo=${sporocilo(meNapaka)} znova=${naloziMe} /></div>`;
   if (!me) return html`<div class="zaslon"><${Nalaganje} /></div>`;
+  if (me.role === "business" && obraz === "club") return html`<${LastnikProfil} me=${me} />`;
 
   return html`<div class="zaslon profil">
     <div class="profil-vrsta">
@@ -43,7 +48,6 @@ export function Profil() {
       <${MenijskaVrstica} href="/app/help" ikona="circle-question-mark" naslov=${t("Support")} />
       <${MenijskaVrstica} href="/app/about" ikona="info" naslov=${t("About")} />
     </div>
-    ${me.role === "business" ? html`<p class="opomba srednje">${t("Club tools (dashboard, events, team) are coming to the web soon. Until then use the Outly app.")}</p>` : null}
     <button type="button" class="povezava-gumb rdeca" onClick=${async () => { await odjava(); navigiraj("/app", { zamenjaj: true }); }}>${t("Log out")}</button>
   </div>`;
 }

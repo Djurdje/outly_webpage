@@ -14,6 +14,7 @@ import { GlavaNazaj, Ikona, Avatar, Nalaganje, Napaka, List } from "../ui.js";
 import { Razpon } from "./filtri.js";
 import { DRZAVE_SEZNAM } from "./onboarding.js";
 import { CLANKI } from "../pomoc-clanki.js";
+import { nastaviObraz } from "../posel.js";
 
 const Vrstica = ({ href, ikona, naslov, znacka, onClick, rdeca }) => {
   const vsebina = html`<${Ikona} ime=${ikona} /><span>${naslov}</span>
@@ -40,6 +41,8 @@ export function MojRacun() {
       <${Vrstica} href="/app/account/security" ikona="lock" naslov=${t("Password and security")} />
       <${Vrstica} href="/app/account/creator" ikona="trending-up" naslov=${t("Request for creator")} />
       <${Vrstica} href="/app/account/preferences" ikona="sliders-horizontal" naslov=${t("Preferences")} />
+      ${me.role === "business" ? html`<${Vrstica} ikona="arrow-left-right" naslov=${t("Switch to club account")}
+        onClick=${() => { nastaviObraz("club"); navigiraj("/app/profile", { zamenjaj: true }); }} />` : null}
     </div>
     <div class="seznam-kartica">
       <${Vrstica} ikona="log-out" naslov=${t("Log out")} onClick=${async () => { await odjava(); navigiraj("/app", { zamenjaj: true }); }} />

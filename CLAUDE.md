@@ -43,6 +43,8 @@ webapp/app.css, webapp/js/            koda aplikacije (Preact + htm, ES moduli, 
   i18n.js, i18n-sl.js                 en (privzeto) | sl; kljuc = angleski niz (isti kot iOS Localizable.xcstrings)
   oblika.js, podatki.js, ui.js        datumi/denar/oznake (prevod APIEvent.swift), javni podatki, skupni gradniki
   views/*.js                          zasloni (en na datoteko, ime po iOS: home, event, club, search, prijava ...)
+  posel.js, views/posel*.js           poslovni del (faza 4): /app/business/:klub/... - klub je v poti, vsak klic ga poslje
+                                      v glavi X-Outly-Club; lastnik (vloga business) ima v Profilu klubski obraz
 ```
 
 ## Spletna aplikacija (/app) - posebna pravila
@@ -67,6 +69,9 @@ webapp/app.css, webapp/js/            koda aplikacije (Preact + htm, ES moduli, 
   Nova razlicica podatkov: (1) izrez na veji `karta-izrez`, (2) `karta/razpakiraj.mjs` (navodila v glavi) v novo mapo
   `karta/v<datum>/` - slo iz slovenija 0-10, vsa mesta 11-15 v isto `mesta/`, (3) `PODATKI` v `webapp/js/karta.js`,
   (4) staro mapo pobrisi (meja 20.000 datotek). Predpomnilnik 1 dan. Pripis OpenStreetMap mora ostati viden (ODbL).
+- Poslovni del: **QR skener (in rocni "Check in") je SAMO v aplikaciji Outly** (Martin, 29. 9. 2026) - splet kaze
+  vstopnice dogodka samo za ogled. Lokacijo kluba lastnik oznaci s klikom na zemljevid (geokoderja na spletu ni).
+  Vloge uveljavlja streznik (403); splet samo skrije gumbe.
 - Preverjanje: headless Chromium s stubom backenda in Supabase (`page.route`), lokalni streznik, ki posnema `_redirects`
   in `_headers`; sirine 393, 360, 1280; neprijavljen + prijavljen; konzola brez napak (tudi CSP).
 

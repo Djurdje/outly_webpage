@@ -34,7 +34,20 @@ const POTI = [
   ["/app/friends", "friends"],
   ["/app/friends-plans", "friends-plans"],
   ["/app/my-clubs", "my-clubs"],
-  ["/app/invites", "invites"]
+  ["/app/invites", "invites"],
+  // Poslovni del (faza 4): klub je v poti, vsak klic ga poslje v glavi X-Outly-Club.
+  ["/app/business/:klub", "biz"],
+  ["/app/business/:klub/settings", "biz-settings"],
+  ["/app/business/:klub/dashboard", "biz-dashboard"],
+  ["/app/business/:klub/staff/:clan", "biz-staff"],
+  ["/app/business/:klub/events", "biz-events"],
+  ["/app/business/:klub/events/new", "biz-event-new"],
+  ["/app/business/:klub/events/:dogodek/edit", "biz-event-edit"],
+  ["/app/business/:klub/events/:dogodek/tickets", "biz-event-tickets"],
+  ["/app/business/:klub/team", "biz-team"],
+  ["/app/business/:klub/info", "biz-info"],
+  ["/app/business/:klub/location", "biz-location"],
+  ["/app/business/:klub/bar-prices", "biz-bar-prices"]
 ].map(([vzorec, ime]) => {
   const imena = [];
   const re = new RegExp("^" + vzorec.replace(/:(\w+)/g, (m, k) => { imena.push(k); return "([^/]+)"; }) + "/?$");

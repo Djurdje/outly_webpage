@@ -1,14 +1,14 @@
 /* My Clubs (MyClubsView.swift) in vabila v ekipo kluba (ClubInvitesView.swift).
    Ena oseba je lahko v ekipi vec klubov (backend 018); vlogo po klubu odloca streznik.
-   Orodja kluba (nadzorna plosca, dogodki, ekipa, skener) pridejo v fazi 4. */
+   "View" odpre klub, v katerem delam (views/posel.js SredisceKluba). QR skener je samo v aplikaciji Outly. */
 import { html, useEffect, useState } from "../lib.js";
 import { t } from "../i18n.js";
 import { send } from "../api.js";
 import { sporocilo } from "../napake.js";
 import { useSeja, naloziMe } from "../seja.js";
 import { GlavaNazaj, Ikona, Slika, Nalaganje, Napaka, List } from "../ui.js";
+import { imeVloge } from "../posel.js";
 
-const imeVloge = v => (v === "owner" ? t("Owner") : v === "manager" ? t("Manager") : t("Door staff"));
 const opisVloge = v => (v === "manager" ? t("event management, sales and ticket scanning") : t("ticket scanning at the door"));
 
 export function MojiKlubi() {
@@ -47,11 +47,10 @@ export function MojiKlubi() {
       <span class="okrogla-slika velika">${k.club_logo_url ? html`<${Slika} src=${k.club_logo_url} sirina=${190} alt="" />` : html`<${Ikona} ime="building" velikost=${24} />`}</span>
       <span class="kv-besedilo"><strong>${k.club_name}</strong><span>${imeVloge(k.role)}</span></span>
       <div class="kk-gumba">
-        <a class="gumb-siv majhen" href=${"/app/club/" + k.club_id}>${t("View")}</a>
+        <a class="gumb-siv majhen" href=${"/app/business/" + k.club_id}>${t("View")}</a>
         ${k.role !== "owner" ? html`<button type="button" class="gumb-majhen" disabled=${tece} onClick=${() => setZapusti(k)}>${t("Leave the team")}</button>` : null}
       </div>
     </div>`)}
-    ${klubi.length ? html`<p class="opomba srednje">${t("Club tools (dashboard, events, team, ticket scanner) are coming to the web soon. Until then use the Outly app.")}</p>` : null}
     <${List} odprt=${!!zapusti} zapri=${() => setZapusti(null)} naslov=${t("Leave the team")}>
       <p class="besedilo-opis">${t("You lose access to the club tools. The club can invite you again.")}</p>
       <button type="button" class="gumb-rdec" onClick=${zapustiEkipo}>${t("Leave team")}</button>
