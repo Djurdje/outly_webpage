@@ -1,20 +1,20 @@
-name: Preveri Range (zacasno)
+name: Preveri ploscice (zacasno)
 on:
   push:
     branches: [preveri-range]
 jobs:
-  range:
+  ploscice:
     runs-on: ubuntu-latest
     steps:
       - run: |
           U=https://claude-new-session-xmsl8u.outly-webpage.pages.dev
-          for i in $(seq 1 20); do
-            s=$(curl -s -o /dev/null -w "%{http_code}" "$U/karta/maribor.pmtiles" -r 0-1) && [ "$s" = "206" ] && break
+          for i in $(seq 1 30); do
+            s=$(curl -s -o /dev/null -w "%{http_code}" "$U/karta/v20260929/slo/seznam.json") && [ "$s" = "200" ] && break
             echo "poskus $i: $s"; sleep 30
           done
-          for f in slovenija ljubljana maribor; do
-            echo "== $f"; curl -sS -D - -o /tmp/k -r 0-16383 "$U/karta/$f.pmtiles" | grep -iE "^HTTP|content-range|content-length|content-type|cache-control|etag"
-            echo "bajtov: $(wc -c < /tmp/k)"; head -c 7 /tmp/k; echo
+          for f in slo/seznam.json mesta/seznam.json slo/0/0/0.pbf mesta/15/17704/11637.pbf mesta/11/1105/727.pbf; do
+            echo "== $f"; curl -sS --compressed -D - -o /tmp/k "$U/karta/v20260929/$f" | grep -iE "^HTTP|content-type|content-encoding|content-length|cache-control"
+            echo "bajtov: $(wc -c < /tmp/k); zacetek: $(head -c 2 /tmp/k | od -An -tx1)"
           done
-          echo "== pisava"; curl -sS -D - -o /dev/null "$U/karta/pisave/noto-regular/0-255.pbf" | grep -iE "^HTTP|content-type"
-          echo "== CSP /app/map"; curl -sS -D - -o /dev/null "$U/app/map" | grep -iE "^HTTP|content-security"
+          echo "== neobstojeca"; curl -sS -o /dev/null -w "%{http_code} %{content_type}\n" "$U/karta/v20260929/slo/15/1/1.pbf"
+          echo "== maplibre"; curl -sS -o /dev/null -w "%{http_code} %{content_type}\n" "$U/vendor/maplibre-gl-csp-worker-5.24.0.js"
