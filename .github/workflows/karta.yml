@@ -1,0 +1,52 @@
+# Enkraten izrez zemljevida Slovenije iz Protomaps (PMTiles) za spletno aplikacijo (faza 3).
+# Tece SAMO ob pushu na vejo karta-izrez (ne na main). Rezultat zapise nazaj na isto vejo:
+# karta/velikosti.txt (velikosti po najvecji povecavi) in izreze, manjse od 24 MB (Cloudflare Pages: 25 MiB na datoteko).
+name: Izrez zemljevida (Protomaps)
+on:
+  push:
+    branches: [karta-izrez]
+    paths: [".github/workflows/karta.yml"]
+permissions:
+  contents: write
+jobs:
+  izrez:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: pmtiles CLI (go-pmtiles, zadnja izdaja)
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          gh release download -R protomaps/go-pmtiles --pattern '*Linux_x86_64.tar.gz' -O pm.tgz
+          tar xzf pm.tgz pmtiles && ./pmtiles version
+      - name: Zadnja dnevna gradnja Protomaps
+        run: |
+          B=$(curl -fsSL https://build-metadata.protomaps.dev/builds.json | jq -r '.[-1].key')
+          echo "gradnja: $B"; echo "GRADNJA=$B" >> "$GITHUB_ENV"
+      - name: Izrezi
+        run: |
+          mkdir -p karta
+          SLO="13.37,45.42,16.62,46.88"
+          LJ="14.40,45.99,14.62,46.12"
+          MB="15.58,46.52,15.72,46.59"
+          {
+            echo "gradnja: $GRADNJA"
+            for z in 11 12 13 14 15; do
+              ./pmtiles extract "https://build.protomaps.com/$GRADNJA" "slo-z$z.pmtiles" --bbox="$SLO" --maxzoom=$z
+              echo "slovenija maxzoom $z: $(stat -c %s slo-z$z.pmtiles) B"
+            done
+            ./pmtiles extract "https://build.protomaps.com/$GRADNJA" lj-z15.pmtiles --bbox="$LJ" --minzoom=12 --maxzoom=15
+            echo "ljubljana z12-15: $(stat -c %s lj-z15.pmtiles) B"
+            ./pmtiles extract "https://build.protomaps.com/$GRADNJA" mb-z15.pmtiles --bbox="$MB" --minzoom=12 --maxzoom=15
+            echo "maribor z12-15: $(stat -c %s mb-z15.pmtiles) B"
+          } | tee karta/velikosti.txt
+          for f in slo-z*.pmtiles lj-z15.pmtiles mb-z15.pmtiles; do
+            if [ "$(stat -c %s "$f")" -lt 24000000 ]; then cp "$f" karta/; fi
+          done
+          ls -la karta
+      - name: Shrani na vejo karta-izrez
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add karta
+          git commit -m "Izrez zemljevida Slovenije (Protomaps $GRADNJA)"
+          git push origin HEAD:karta-izrez
