@@ -14,7 +14,7 @@ export function MojiPrijatelji() {
   const [s, setS] = useState({ nalaga: true, napaka: null, friends: [], requests_in: [], requests_out: [] });
   const [dodajanje, setDodajanje] = useState(false);
   const [odstrani, setOdstrani] = useState(null);
-  const [zaseden, setZaseden] = useState(null);
+  const [zasedeni, setZasedeni] = useState(new Set());   // vec prosenj hkrati (vsaka svoj gumb)
   const nalozi = async () => {
     try {
       const r = await send("/me/friends", { auth: true });
@@ -23,11 +23,13 @@ export function MojiPrijatelji() {
   };
   useEffect(() => { nalozi(); }, []);
 
+  const zaseden = k => zasedeni.has(k);
   async function dejanje(kljuc, pot, metoda = "POST") {
-    setZaseden(kljuc);
+    if (zasedeni.has(kljuc)) return;
+    setZasedeni(z => new Set(z).add(kljuc));
     try { await send(pot, { method: metoda, auth: true }); await nalozi(); naloziMe(); }
     catch (e) { setS(x => ({ ...x, napaka: sporocilo(e) })); }
-    setZaseden(null);
+    setZasedeni(z => { const n = new Set(z); n.delete(kljuc); return n; });
   }
 
   return html`<div class="zaslon">
@@ -42,10 +44,10 @@ export function MojiPrijatelji() {
       ${s.requests_in.map(r => html`<div class="vrstica-osebe" key=${"in" + r.id}>
         <${Avatar} url=${r.user.avatar_url} ime=${r.user.username} velikost=${44} />
         <span class="kv-besedilo"><strong>${r.user.username}</strong><span>${t("wants to be your friend")}</span></span>
-        <button type="button" class="gumb-majhen modri" disabled=${zaseden === "in" + r.id}
-          onClick=${() => dejanje("in" + r.id, `/me/friends/requests/${r.id}/accept`)}>${t("Accept")}</button>
-        <button type="button" class="gumb-majhen" disabled=${zaseden === "in" + r.id}
-          onClick=${() => dejanje("in" + r.id, `/me/friends/requests/${r.id}/decline`)}>${t("Decline")}</button>
+        <button type="button" class="gumb-majhen modri" disabled=${zaseden("in" + r.id)}
+          onClick=${() => dejanje("in" + r.id, `/me/friends/requests/${r.id}/accept`)} aria-label=${t("Accept") + " " + r.user.username}>${t("Accept")}</button>
+        <button type="button" class="gumb-majhen" disabled=${zaseden("in" + r.id)}
+          onClick=${() => dejanje("in" + r.id, `/me/friends/requests/${r.id}/decline`)} aria-label=${t("Decline") + " " + r.user.username}>${t("Decline")}</button>
       </div>`)}
     </section>` : null}
 
@@ -65,7 +67,7 @@ export function MojiPrijatelji() {
       ${s.requests_out.map(r => html`<div class="vrstica-osebe" key=${"out" + r.id}>
         <${Avatar} url=${r.user.avatar_url} ime=${r.user.username} velikost=${44} />
         <span class="kv-besedilo"><strong>${r.user.username}</strong><span>${t("Requested")}</span></span>
-        <button type="button" class="gumb-majhen" disabled=${zaseden === "out" + r.id}
+        <button type="button" class="gumb-majhen" disabled=${zaseden("out" + r.id)}
           onClick=${() => dejanje("out" + r.id, `/me/friends/requests/${r.id}`, "DELETE")}>${t("Cancel")}</button>
       </div>`)}
     </section>` : null}
@@ -88,7 +90,7 @@ function DodajPrijatelje({ odprt, zapri }) {
   const st = useRef(0);   // stanje je sveze ob vsakem odprtju (list se izrise na novo)
   useEffect(() => {
     const iskano = q.trim();
-    if (iskano.length < 2 || !/^[A-Za-z0-9_]+$/.test(iskano)) { setRez(null); return; }
+    if (iskano.length < 2 || !/^[A-Za-z0-9_]+$/.test(iskano)) { st.current++; setRez(null); return; }   // zamujen odgovor se ne pokaze
     const moj = ++st.current;
     const cas = setTimeout(async () => {
       try { const r = await send("/users/search?q=" + encodeURIComponent(iskano), { auth: true }); if (moj === st.current) { setRez(r.users || []); setNapaka(""); } }

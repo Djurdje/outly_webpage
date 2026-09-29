@@ -19,7 +19,7 @@ import {
 import { zahtevajLokacijo, useLokacija } from "../lokacija.js";
 import { SekcijaNacrtov, naloziNacrte } from "./prijatelji.js";
 import { Zvonec, MeniObvestil } from "./obvestila.js";
-import { useNastavitve } from "../nastavitve.js";
+import { useNastavitve, mejaRazdalje } from "../nastavitve.js";
 import { useFiltri, FiltriList, ustrezaDogodek, ustrezaKlub, filtriAktivni } from "./filtri.js";
 
 /* Vrstni red predlogov se premesa ENKRAT na sejo strani (ne ob vsakem izrisu - iOS past). */
@@ -60,7 +60,7 @@ export function Home() {
       .catch(() => setMoji([]));   // ni kriticno (kot iOS): razdelek ostane prazen
   }, [prijavljen]);
 
-  const izpeljano = useMemo(() => izpelji(stanje, me, lok, f, moji, nast.maxKm), [stanje, me, lok, f, moji, nast.maxKm]);
+  const izpeljano = useMemo(() => izpelji(stanje, me, lok, f, moji, mejaRazdalje(nast)), [stanje, me, lok, f, moji, nast]);
   return html`<div class="zaslon home">
     <${OzadjeHome} />
     <header class="home-glava">

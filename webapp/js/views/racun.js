@@ -5,7 +5,7 @@ import { t, useJezik, locale } from "../i18n.js";
 import { send, naloziNaCloudinary, pomanjsajSliko } from "../api.js";
 import { supabase } from "../supabase.js";
 import { sporocilo, ApiError } from "../napake.js";
-import { useSeja, nastaviMe, naloziMe, odjava } from "../seja.js";
+import { useSeja, nastaviMe, zdruzi, naloziMe, odjava } from "../seja.js";
 import { navigiraj, usePot } from "../usmerjanje.js";
 import * as P from "../podatki.js";
 import { zanrIme, denar } from "../oblika.js";
@@ -91,14 +91,14 @@ export function OsebniPodatki() {
     } else if (urejam === "phone") {
       const tel = vrednost.replace(/[\s\-()]/g, "");
       if (!tel) body.phone = null;
-      else if (!/^\+[1-9]\d{6,14}$/.test(tel)) return setNapaka(t("Enter the phone number with country code, e.g. +386 41 123 456."));
+      else if (!/^\+[1-9]\d{7,14}$/.test(tel)) return setNapaka(t("Enter the phone number with country code, e.g. +386 41 123 456."));
       else body.phone = tel;
     } else if (urejam === "dob") {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(vrednost)) return setNapaka(t("Enter a valid date of birth."));
       body.dateOfBirth = vrednost;
     } else body.country = vrednost;
     setShranjujem(true);
-    try { nastaviMe(await send("/me", { method: "PATCH", body, auth: true })); setUrejam(null); }
+    try { nastaviMe(zdruzi(await send("/me", { method: "PATCH", body, auth: true }))); setUrejam(null); }
     catch (e) { setNapaka(sporocilo(e)); }
     setShranjujem(false);
   }
@@ -174,20 +174,27 @@ export function GesloVarnost() {
     if (p.novo.length < 8) return setSporocilo({ besedilo: t("Password must be at least 8 characters.") });
     if (p.novo !== p.potrdi) return setSporocilo({ besedilo: t("New passwords do not match.") });
     if (p.novo === p.trenutno) return setSporocilo({ besedilo: t("New password must be different from the current one.") });
-    if (!me || !me.email) return;
+    if (!me || !me.email || tece) return;
     setTece(true); setSporocilo({ besedilo: "" });
-    // Kot iOS: najprej preveri trenutno geslo (ponovna prijava), nato zamenjaj.
-    const prijava = await supabase.auth.signInWithPassword({ email: me.email, password: p.trenutno });
-    if (prijava.error) { setTece(false); return setSporocilo({ besedilo: prijava.error.code === "invalid_credentials" ? t("Current password is wrong.") : sporocilo(prijava.error) }); }
-    const r = await supabase.auth.updateUser({ password: p.novo });
-    setTece(false);
-    if (r.error) return setSporocilo({ besedilo: sporocilo(r.error) });
-    setP({ trenutno: "", novo: "", potrdi: "" });
-    setSporocilo({ besedilo: t("Password changed."), ok: true });
+    try {
+      // Kot iOS: najprej preveri trenutno geslo (ponovna prijava), nato zamenjaj.
+      const prijava = await supabase.auth.signInWithPassword({ email: me.email, password: p.trenutno });
+      if (prijava.error) return setSporocilo({ besedilo: prijava.error.code === "invalid_credentials" ? t("Current password is wrong.") : sporocilo(prijava.error) });
+      const r = await supabase.auth.updateUser({ password: p.novo });
+      if (r.error) return setSporocilo({ besedilo: sporocilo(r.error) });
+      setP({ trenutno: "", novo: "", potrdi: "" });
+      setSporocilo({ besedilo: t("Password changed."), ok: true });
+    } catch (e) { setSporocilo({ besedilo: sporocilo(e) }); }
+    finally { setTece(false); }
   }
 
+  const [napakaOdjave, setNapakaOdjave] = useState("");
   async function odjaviPovsod() {
-    try { await supabase.auth.signOut({ scope: "global" }); } catch { /* lokalno vseeno */ }
+    setNapakaOdjave("");
+    // Ce streznik odjave drugih naprav ne potrdi (omrezje), tega ne skrijemo - uporabnik poskusi znova.
+    let r;
+    try { r = await supabase.auth.signOut({ scope: "global" }); } catch (e) { r = { error: e }; }
+    if (r && r.error) { setPotrdiOdjavo(false); setNapakaOdjave(sporocilo(r.error)); return; }
     await odjava();
     navigiraj("/app/login", { zamenjaj: true });
   }
@@ -206,6 +213,7 @@ export function GesloVarnost() {
     <div class="seznam-kartica">
       <${Vrstica} ikona="log-out" naslov=${t("Sign out everywhere")} onClick=${() => setPotrdiOdjavo(true)} rdeca=${true} />
     </div>
+    ${napakaOdjave ? html`<p class="napaka-besedilo" role="alert">${napakaOdjave}</p>` : null}
     <${List} odprt=${potrdiOdjavo} zapri=${() => setPotrdiOdjavo(false)} naslov=${t("Sign out everywhere")}>
       <p class="besedilo-opis">${t("You will be signed out on this device too.")}</p>
       <button type="button" class="gumb-rdec" onClick=${odjaviPovsod}>${t("Sign out everywhere")}</button>
@@ -222,7 +230,7 @@ export function Nastavitve() {
   const deli = me ? me.share_plans_with_friends !== false : true;
   async function preklopi() {
     setTece(true); setNapaka("");
-    try { nastaviMe(await send("/me", { method: "PATCH", body: { share_plans_with_friends: !deli }, auth: true })); }
+    try { nastaviMe(zdruzi(await send("/me", { method: "PATCH", body: { share_plans_with_friends: !deli }, auth: true }))); }
     catch (e) { setNapaka(sporocilo(e)); }
     setTece(false);
   }
@@ -282,7 +290,9 @@ export function IzbrisRacuna() {
       navigiraj("/app", { zamenjaj: true });
     } catch (e) {
       // 401 tu pomeni napacno geslo (streznik: "Invalid credentials."), ne potekle seje.
-      setNapaka(e instanceof ApiError && e.status === 401 ? t("Wrong password.") : sporocilo(e));
+      setNapaka(e instanceof ApiError && e.status === 401 && /credentials/i.test(e.raw) ? t("Wrong password.")
+        : e instanceof ApiError && e.status === -1 ? t("No response from the server. Log in again to check whether the account still exists.")
+        : sporocilo(e));
     }
     setTece(false);
   }

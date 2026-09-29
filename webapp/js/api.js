@@ -9,7 +9,7 @@ export const API_URL = "https://outly-backend-roy3.onrender.com";
 const CAKANJE_MS = 30000;
 /* Nakup (POST) brez casovne meje: ob hladnem zagonu Renderja bi prekinjen zahtevek lahko ze ustvaril
    narocilo, uporabnik pa bi kupil se enkrat (backend nima idempotencnega kljuca). */
-const BREZ_MEJE = /\/orders$/;
+const BREZ_MEJE = /\/orders$|^\/me$|\/transfer$/;
 
 /* Seja nastavi, kaj se zgodi, ko Supabase sejo zavrne (odjava + obvestilo). */
 let obZavrnjeniSeji = () => {};
@@ -47,7 +47,7 @@ async function surovKlic(path, { method, body, zeton, signal, klub }) {
   if (k) glave["X-Outly-Club"] = String(k);
   if (body !== undefined) glave["Content-Type"] = "application/json";
   const krmilnik = new AbortController();
-  const casovnik = method === "POST" && BREZ_MEJE.test(path) ? null : setTimeout(() => krmilnik.abort(), CAKANJE_MS);
+  const casovnik = (method === "POST" || method === "DELETE") && BREZ_MEJE.test(path) ? null : setTimeout(() => krmilnik.abort(), CAKANJE_MS);
   if (signal) signal.addEventListener("abort", () => krmilnik.abort(), { once: true });
   try {
     return await fetch(API_URL + path, {
@@ -169,7 +169,9 @@ export async function pomanjsajSliko(datoteka, najvec = 1200) {
   const faktor = Math.min(1, najvec / Math.max(bitmap.width, bitmap.height));
   const c = document.createElement("canvas");
   c.width = Math.round(bitmap.width * faktor); c.height = Math.round(bitmap.height * faktor);
-  c.getContext("2d").drawImage(bitmap, 0, 0, c.width, c.height);
+  const g = c.getContext("2d");
+  g.fillStyle = "#ffffff"; g.fillRect(0, 0, c.width, c.height);   // prosojen PNG -> JPEG brez crnega ozadja
+  g.drawImage(bitmap, 0, 0, c.width, c.height);
   bitmap.close && bitmap.close();
   return await new Promise(res => c.toBlob(b => res(b || datoteka), "image/jpeg", 0.86));
 }

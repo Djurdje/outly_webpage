@@ -4,7 +4,7 @@ import { html, useEffect, useState } from "../lib.js";
 import { t, locale } from "../i18n.js";
 import { send } from "../api.js";
 import { sporocilo, ApiError } from "../napake.js";
-import { useSeja, nastaviMe, odjava, potrebujeOnboarding } from "../seja.js";
+import { useSeja, nastaviMe, zdruzi, odjava, potrebujeOnboarding } from "../seja.js";
 import { navigiraj, usePot } from "../usmerjanje.js";
 import * as P from "../podatki.js";
 import { zanrIme } from "../oblika.js";
@@ -69,13 +69,13 @@ function Racun({ naprej }) {
     if (l < 15) return setNapaka(t("You must be at least 15 years old to use Outly."));
     if (l > 120) return setNapaka(t("That date of birth does not look right."));
     const telefon = tel.replace(/[\s\-()]/g, "");
-    if (telefon && !/^\+[1-9]\d{6,14}$/.test(telefon)) return setNapaka(t("Enter the phone number with country code, e.g. +386 41 123 456."));
+    if (telefon && !/^\+[1-9]\d{7,14}$/.test(telefon)) return setNapaka(t("Enter the phone number with country code, e.g. +386 41 123 456."));
     setTece(true); setNapaka("");
     try {
       const body = { dateOfBirth: dob, country: drzava };
       if (telefon) body.phone = telefon;
       const novi = await shrani(body);
-      if (novi) { nastaviMe(novi); naprej(); }
+      if (novi) { nastaviMe(zdruzi(novi)); naprej(); }
     } catch (e) { setNapaka(sporocilo(e)); }
     setTece(false);
   }
@@ -118,7 +118,7 @@ function Zanri({ nazaj }) {
     try {
       const novi = await shrani({ genres: vsi.filter(g => izbrani.has(g)) });   // vrstni red streznika
       if (novi) {
-        nastaviMe(novi);
+        nastaviMe(zdruzi(novi));
         if (!novi.onboarded_at) setNapaka(t("Please fill in your date of birth on the previous step."));
       }
     } catch (e) { setNapaka(sporocilo(e)); }
