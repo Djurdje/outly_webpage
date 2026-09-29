@@ -9,7 +9,7 @@ jobs:
       - run: |
           U=https://claude-new-session-xmsl8u.outly-webpage.pages.dev
           for i in $(seq 1 30); do
-            s=$(curl -s -o /dev/null -w "%{http_code}" "$U/karta/v20260929/slo/seznam.json") && [ "$s" = "200" ] && break
+            s=$(curl -s -o /dev/null -w "%{http_code} %{content_type}" "$U/karta/v20260929/slo/seznam.json"); case "$s" in *html*) ;; 200*) break;; esac
             echo "poskus $i: $s"; sleep 30
           done
           for f in slo/seznam.json mesta/seznam.json slo/0/0/0.pbf mesta/15/17704/11637.pbf mesta/11/1105/727.pbf; do
