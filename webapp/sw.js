@@ -2,13 +2,14 @@
    v _headers). Namen: namestljiva PWA in lupina, ki se odpre tudi brez povezave.
    - Navigacija pod /app/: vedno lupina /app/ (omrezje najprej, ob izpadu shranjena). Tako globoka povezava
      (/app/event/12) ne gre cez korensko index.html in vstop.js.
-   - /webapp/* (koda brez razlicice v imenu): omrezje najprej, shranjeno samo ob izpadu - po objavi nikoli stara koda.
+   - /webapp/* (koda brez razlicice v imenu): omrezje najprej MIMO predpomnilnika brskalnika (cache: "no-cache"),
+     shranjeno samo ob izpadu - po objavi nikoli stara koda.
    - /vendor/*, pisave, ikone (razlicica v imenu / se ne spreminjajo): shranjeno najprej.
    - API (backend, Supabase, Cloudinary), vstopnice, ploscice zemljevida: NE prestrezamo (vedno sveze, kot iOS). */
-const RAZLICICA = "outly-app-2";
+const RAZLICICA = "outly-app-3";
 const LUPINA = "/app/";
 const JEDRO = [
-  LUPINA, "/webapp/app.css", "/webapp/js/main.js", "/webapp/manifest.webmanifest",
+  LUPINA, "/webapp/app.css", "/webapp/zagon.js", "/webapp/js/main.js", "/webapp/manifest.webmanifest",
   "/vendor/preact-10.29.8.module.js", "/vendor/preact-hooks-10.29.8.module.js", "/vendor/htm-3.1.1.module.js",
   "/vendor/qrcode-generator-2.0.4.mjs",
   "/vendor/supabase-2.115.0.js", "/supabase-config.js",
@@ -31,7 +32,7 @@ self.addEventListener("message", e => {
   const d = e.data || {};
   if (d.tip !== "shrani" || !Array.isArray(d.poti)) return;
   const poti = d.poti.filter(p => typeof p === "string" && /^\/(webapp|vendor)\/[\w./-]+$/.test(p) && !p.includes(".."));
-  e.waitUntil(caches.open(RAZLICICA).then(c => Promise.all(poti.map(p => c.match(p).then(z => z || fetch(p)
+  e.waitUntil(caches.open(RAZLICICA).then(c => Promise.all(poti.map(p => c.match(p).then(z => z || fetch(p, { cache: "no-cache" })
     .then(odg => { if (odg.ok && pravaVsebina(p, odg)) return c.put(p, odg); }).catch(() => {}))))));
 });
 
@@ -70,7 +71,9 @@ self.addEventListener("fetch", e => {
   }
   const p = url.pathname;
   if (p.startsWith("/webapp/") || p === "/supabase-config.js") {
-    e.respondWith(fetch(r).then(odg => shraniOdgovor(e, p, odg)).catch(() => caches.match(p).then(z => z || Response.error())));
+    // cache: "no-cache": vedno preveri pri strezniku (ETag -> 304). Cloudflare doda max-age=14400 in brez tega bi
+    // brskalnik 4 ure po objavi dajal stare module poleg novih (29. 9. 2026: aplikacija obvisela na vrtavki).
+    e.respondWith(fetch(new Request(r, { cache: "no-cache" })).then(odg => shraniOdgovor(e, p, odg)).catch(() => caches.match(p).then(z => z || Response.error())));
     return;
   }
   if (p.startsWith("/vendor/") || p.startsWith("/assets/fonts/") || /^\/assets\/icon-\d+\.png$/.test(p)) {

@@ -83,6 +83,12 @@ webapp/orodja/predhodno-nalaganje.mjs       generira <link rel="modulepreload"> 
   slovenski prevodi, knjiznica QR in supabase-js (gost brez seje ga ob zagonu ne rabi). **Po vsakem novem staticnem
   uvozu pozeni `node webapp/orodja/predhodno-nalaganje.mjs`** (sicer brskalnik module odkriva v valovih).
   Elementi `position:fixed` naj bodo ZUNAJ animiranega `.okvir` (animacija s transform jih med prehodom premakne -> CLS).
+- **Past (29. 9. 2026, aplikacija obvisela na vrtavki):** Cloudflare (nastavitev racuna "Browser Cache TTL") kodi
+  `/webapp/*` doda `max-age=14400` in povozi `no-cache` iz `_headers` - brskalnik do 4 h po objavi pomesa stare in nove
+  module ("does not provide an export named"). Varovala: SW kodo /webapp/* vedno prenasa s `cache: "no-cache"`, in
+  `webapp/zagon.js` (navaden skript PRED moduli) ob napaki nase kode pred zagonom module prenese mimo predpomnilnika
+  in stran enkrat osvezi (sicer gumb "Reload"). `zagon.js` mora ostati v `app/index.html` pred `<script type=module>`;
+  `main.js` po izrisu poklice `window.outlyZagnano()`. Test brez `page.route` (ta izklopi HTTP predpomnilnik).
 - Service worker (`webapp/sw.js`): navigacija pod /app/ vedno dobi lupino /app/, koda /webapp/* omrezje najprej,
   vendor/pisave iz predpomnilnika. **API odgovorov, vstopnic in ploscic NE predpomni.** Ob spremembi seznama JEDRO
   ali strategije dvigni `RAZLICICA`.

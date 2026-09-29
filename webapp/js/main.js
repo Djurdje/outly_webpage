@@ -96,14 +96,15 @@ function leno(pot, ime) {
         try { prej = Number(sessionStorage.getItem("outly_leno_osvezitev")) || 0; } catch { /* brez */ }
         if (navigator.onLine && Date.now() - prej > 60000) {
           try { sessionStorage.setItem("outly_leno_osvezitev", String(Date.now())); } catch { /* brez */ }
-          location.reload();
+          // Ne navadna osvezitev: brskalnik bi (Cloudflare max-age=14400) znova vzel stare module - zagon.js jih prenese na novo.
+          if (window.outlyObnovi) window.outlyObnovi(true); else location.reload();
           return;
         }
         if (zivo) setNapaka(true);
       });
       return () => { zivo = false; };
     }, []);
-    if (napaka) return html`<div class="zaslon"><${Napaka} besedilo=${navigator.onLine ? t("This screen could not be loaded. Please try again.") : t("No internet connection. Check your network and try again.")} znova=${() => location.reload()} /></div>`;
+    if (napaka) return html`<div class="zaslon"><${Napaka} besedilo=${navigator.onLine ? t("This screen could not be loaded. Please try again.") : t("No internet connection. Check your network and try again.")} znova=${() => (window.outlyObnovi ? window.outlyObnovi(true) : location.reload())} /></div>`;
     if (!modul) return html`<div class="zaslon"><${Nalaganje} /></div>`;
     const K = modul[ime];
     return html`<${K} ...${props} />`;
@@ -240,4 +241,5 @@ pripraviJezik().then(() => {
   const koren = document.getElementById("aplikacija");
   koren.textContent = "";   // zacetna vrtavka iz index.html
   render(html`<${App} />`, koren);
+  if (window.outlyZagnano) window.outlyZagnano();   // varovalo zagona (webapp/zagon.js)
 });
