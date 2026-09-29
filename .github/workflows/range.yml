@@ -6,10 +6,11 @@ jobs:
   preveri:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
       - run: |
-          U=https://outly.si
-          for f in /webapp/js/views/home.js /webapp/js/main.js /webapp/sw.js /app/; do
-            echo "== $f"; curl -sS -D - -o /tmp/f "$U$f" | grep -iE "^HTTP|cache-control|etag|age:|cf-cache-status|last-modified"
-            echo "   OzadjeHome: $(grep -c OzadjeHome /tmp/f)"
-          done
-          echo "== z If-None-Match"; E=$(curl -sI "$U/webapp/js/views/home.js" | grep -i etag | cut -d' ' -f2 | tr -d '\r'); curl -sI -H "If-None-Match: $E" "$U/webapp/js/views/home.js" | head -1
+          cd .github/preveri && npm init -y >/dev/null && npm i playwright@1 >/dev/null 2>&1 && npx playwright install --with-deps chromium webkit >/dev/null 2>&1
+          node brskalnik.mjs
+          for f in / /app/ /webapp/zagon.js /webapp/sw.js; do echo "$f: $(curl -s -o /dev/null -w '%{http_code} %{content_type}' "https://outly.si$f")"; done
+          curl -s https://outly.si/webapp/sw.js | grep -o 'outly-app-[0-9]*' | head -1
