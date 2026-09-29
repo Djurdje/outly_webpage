@@ -5,6 +5,6 @@
 /.gitignore         /  302
 
 # Spletna aplikacija (/app): vsak zaslon ima svoj URL (/app/event/12 ...), vse streze ena lupina.
-# Datoteke aplikacije so namenoma ZUNAJ /app (webapp/, vendor/), ker pravilo 200 velja tudi,
-# ce na poti obstaja datoteka.
+# POZOR (29. 9. 2026): Cloudflare tega pravila v produkciji ni uporabil - globoke povezave zato
+# resuje webapp/vstop.js v index.html (preusmeritev na /app/?pot=...). Pravilo ostane, ker ne skodi.
 /app/*              /app/index.html  200

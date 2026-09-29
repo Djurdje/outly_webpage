@@ -52,6 +52,11 @@ webapp/app.css, webapp/js/            koda aplikacije (Preact + htm, ES moduli, 
 - Slike: Cloudinary URL dobi `f_auto,q_auto,w_N` (`oblika.js` `slika()`), `loading="lazy"`, fiksno razmerje. Animacije samo
   `transform`/`opacity`; **brez `backdrop-filter`** (87bc106).
 - Datoteke aplikacije ne smejo biti pod `/app/` (pravilo 200 v `_redirects` bi jih prekrilo).
+- **Globoke povezave (`/app/event/12`) resuje `webapp/vstop.js`, ne `_redirects`**: Cloudflare pravila
+  `/app/* /app/index.html 200` v produkciji ni uporabil (29. 9. 2026, Martinov posnetek: osvezitev `/app/map` = domaca stran).
+  Brez `404.html` Cloudflare za neznano pot vrne korensko `index.html`; ta ima kot PRVI skript `vstop.js`, ki preusmeri na
+  `/app/?pot=...`, `usmerjanje.js` pa pot obnovi. Zato: `index.html` naj ostane z absolutnimi potmi (`/styles.css`), `vstop.js`
+  naj ostane prvi skript in **ne dodajaj `404.html`** (pokvaril bi globoke povezave).
 - Preverjanje: headless Chromium s stubom backenda in Supabase (`page.route`), lokalni streznik, ki posnema `_redirects`
   in `_headers`; sirine 393, 360, 1280; neprijavljen + prijavljen; konzola brez napak (tudi CSP).
 

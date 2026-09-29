@@ -53,6 +53,15 @@ export function razcleni(pathname) {
   return { ime: "notfound", params: {} };
 }
 
+/* Globoka povezava prek preusmeritve (webapp/vstop.js): /app/?pot=/app/event/12 -> /app/event/12.
+   Samo poti znotraj aplikacije. */
+(function () {
+  const pot = new URLSearchParams(location.search).get("pot");
+  if (pot && pot.startsWith("/app/") && !pot.startsWith("//") && !/[\\]/.test(pot)) {
+    history.replaceState(history.state, "", pot);
+  }
+})();
+
 let stevec = (history.state && history.state.k) || 0;
 let globina = (history.state && history.state.g) || 0;
 const drsenja = new Map();   // kljuc vnosa -> scrollY
