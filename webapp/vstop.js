@@ -6,6 +6,8 @@
 (function () {
   var p = location.pathname;
   if (p.indexOf("/app/") === 0 && p !== "/app/") {
-    location.replace("/app/?pot=" + encodeURIComponent(p + location.search + location.hash));
+    document.documentElement.hidden = true;   // domaca stran naj ne blisne pred preusmeritvijo
+    // #fragment ostane v brskalniku (ne gre v ?pot na streznik).
+    location.replace("/app/?pot=" + encodeURIComponent(p + location.search) + location.hash);
   }
 })();

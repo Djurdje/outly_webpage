@@ -57,9 +57,14 @@ export function razcleni(pathname) {
    Samo poti znotraj aplikacije. */
 (function () {
   const pot = new URLSearchParams(location.search).get("pot");
-  if (pot && pot.startsWith("/app/") && !pot.startsWith("//") && !/[\\]/.test(pot)) {
-    history.replaceState(history.state, "", pot);
-  }
+  if (!pot) return;
+  try {
+    // Normaliziran URL (../, %2e ...) mora ostati na istem izvoru IN pod /app/.
+    const u = new URL(pot, location.origin);
+    if (u.origin === location.origin && u.pathname.startsWith("/app/")) {
+      history.replaceState(history.state, "", u.pathname + u.search + location.hash);
+    }
+  } catch { /* neveljavna pot - ostanemo na /app/ */ }
 })();
 
 let stevec = (history.state && history.state.k) || 0;
