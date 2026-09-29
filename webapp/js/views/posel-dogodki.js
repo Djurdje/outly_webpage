@@ -13,6 +13,7 @@ import { zanrIme, napisCene, seJeKoncal, normalizirajDogodek } from "../oblika.j
 import { GlavaNazaj, Ikona, Slika, Nalaganje, List } from "../ui.js";
 import { idKluba, poslovno, normalizirajDogodke, centiIz, evriBesedilo, NAJVEC_VIDEA } from "../posel.js";
 import { PoslovnaNapaka } from "./posel.js";
+import { skenirajVstopnico, naslovRezultata, opisRezultata } from "./posel-skener.js";
 
 const datumDogodka = d => (d ? new Intl.DateTimeFormat(locale(), { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }).format(d) : "");
 
@@ -267,27 +268,45 @@ export function ObrazecDogodka({ klub, dogodek }) {
   </div>`;
 }
 
-/* ---------- Vstopnice dogodka (samo ogled) ---------- */
+/* ---------- Vstopnice dogodka + rocni "Check in" (iOS EventTicketsView) ---------- */
 export function VstopniceDogodkaKluba({ klub, dogodek }) {
   const id = idKluba(klub);
   const idDogodka = idKluba(dogodek);
   const [s, setS] = useState({ nalaga: true, napaka: null, vstopnice: [], naslov: "" });
+  const [delujoc, setDelujoc] = useState(null);
+  const [zadnji, setZadnji] = useState(null);   // zadnji odgovor skenerja (pasica nad seznamom)
   const nalozi = () => {
-    setS(x => ({ ...x, nalaga: true, napaka: null }));
-    Promise.all([
+    setS(x => ({ ...x, nalaga: !x.vstopnice.length, napaka: null }));
+    return Promise.all([
       poslovno(id, `/business/events/${idDogodka}/tickets`),
       poslovno(id, "/business/events").catch(() => [])
     ]).then(([v, dogodki]) => {
       const e = (Array.isArray(dogodki) ? dogodki : []).find(x => x.id === idDogodka);
-      // Obdrzimo samo, kar prikazemo (brez podpisanega QR, celotne serijske in e-naslovov).
-      const vstopnice = (Array.isArray(v) ? v : []).map(x => ({ id: x.id, status: x.status, public_ref: x.public_ref || "", kratka: String(x.serial || "").slice(0, 8).toUpperCase() }));
+      // Obdrzimo samo, kar rabimo: podpisan QR za rocni vstop (kot iOS), brez celotne serijske in e-naslovov.
+      const vstopnice = (Array.isArray(v) ? v : []).map(x => ({ id: x.id, status: x.status, qr: typeof x.qr === "string" ? x.qr : "",
+        public_ref: x.public_ref || "", kratka: String(x.serial || "").slice(0, 8).toUpperCase() }));
       setS({ nalaga: false, napaka: null, vstopnice, naslov: e ? e.title : "" });
-    }).catch(e => setS({ nalaga: false, napaka: e, vstopnice: [], naslov: "" }));
+    }).catch(e => setS(x => ({ ...x, nalaga: false, napaka: e })));
   };
   useEffect(() => { if (id && idDogodka) nalozi(); }, [id, idDogodka]);
+
+  async function vstop(v) {
+    setDelujoc(v.id); setZadnji(null);
+    try {
+      const r = await skenirajVstopnico(id, v.qr);
+      setZadnji(r);
+      // Takoj oznacimo lokalno (ce osvezitev seznama pade, gumb ne ostane).
+      if (r.result === "ok" || r.result === "already_used") setS(x => ({ ...x, vstopnice: x.vstopnice.map(y => (y.id === v.id ? { ...y, status: "used" } : y)) }));
+      await nalozi();
+    }
+    catch (e) { setZadnji({ napaka: sporocilo(e) }); }
+    finally { setDelujoc(null); }
+  }
+
   const rezerva = `/app/business/${id}/dashboard`;
   if (!id || !idDogodka) return html`<div class="zaslon"><${GlavaNazaj} rezerva=${rezerva} /><${PoslovnaNapaka} napaka=${{ status: 404 }} /></div>`;
   const noter = s.vstopnice.filter(v => v.status === "used").length;
+  const ok = zadnji && zadnji.result === "ok";
   return html`<div class="zaslon">
     <${GlavaNazaj} rezerva=${rezerva} />
     <h1 class="velik-naslov">${s.naslov || t("Tickets")}</h1>
@@ -299,16 +318,25 @@ export function VstopniceDogodkaKluba({ klub, dogodek }) {
         <div><strong>${noter}</strong><span>${t("checked in")}</span></div>
         <div><strong>${s.vstopnice.length - noter}</strong><span>${t("expected")}</span></div>
       </div>
-      <div class="opomba-okvir"><${Ikona} ime="scan-line" velikost=${18} />
-        <span>${t("Guests are checked in at the door with the scanner in the Outly app. This list is for overview only.")}</span></div>
+      <a class="gumb-siv" href=${`/app/business/${id}/scan`}><${Ikona} ime="scan-line" velikost=${18} />${t("Scan tickets")}</a>
+      <div aria-live="polite">${zadnji ? html`<div class=${"skener-pasica " + (ok ? "ok" : "ne")}>
+        <${Ikona} ime=${ok ? "circle-check" : "circle-x"} velikost=${20} razred=${ok ? "zelena-besedilo" : "rdeca-besedilo"} />
+        <span class="kv-besedilo"><strong>${zadnji.napaka ? t("Could not check the ticket") : naslovRezultata(zadnji.result)}</strong>
+          <span>${zadnji.napaka || opisRezultata(zadnji)}</span></span></div>` : null}</div>
+      <h2 class="podnaslov">${t("Door check-in")}</h2>
       ${!s.vstopnice.length ? html`<p class="opomba srednje">${t("No tickets sold for this event yet.")}</p>` : html`<div class="seznam">
         ${s.vstopnice.map(v => {
           const noterJe = v.status === "used";
           return html`<div class="vrstica-vstopnice" key=${v.id}>
             <span class="kv-besedilo"><strong class="mono">${v.kratka}</strong><span>${v.public_ref || ""}</span></span>
-            <span class=${"oznaka-vstopa" + (noterJe ? " noter" : "")}>${noterJe ? t("IN") : t("Not yet")}</span>
+            ${noterJe || !v.qr
+              ? html`<span class=${"oznaka-vstopa" + (noterJe ? " noter" : "")}>${noterJe ? t("IN") : t("Not yet")}</span>`
+              : html`<button type="button" class="gumb-vstopa" disabled=${delujoc !== null} onClick=${() => vstop(v)}
+                  aria-label=${t("Check in") + " " + v.kratka}>
+                  ${delujoc === v.id ? html`<span class="vrtavka majhna" aria-hidden="true"></span>` : t("Check in")}</button>`}
           </div>`;
         })}
-      </div>`}` : null}
+      </div>`}
+      <p class="opomba">${t("The QR on each ticket is signed by the server; scanning it twice is refused. Use Scan tickets in your profile for the camera scanner.")}</p>` : null}
   </div>`;
 }

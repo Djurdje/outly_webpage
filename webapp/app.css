@@ -670,3 +670,32 @@ a.profil-ime{ white-space:normal; }
 
 /* ---------- faza 5: namestitev ---------- */
 .koraki{ margin:0; padding-left:22px; display:flex; flex-direction:column; gap:10px; font-size:15px; }
+
+/* ---------- QR skener vstopnic (posel-skener.js) ---------- */
+.skener{ position:relative; width:100%; aspect-ratio:3/4; max-height:62vh; border-radius:18px; overflow:hidden; background:#000; margin-top:8px; }
+.skener-video{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.skener-video.skrito-video{ opacity:0; }
+.skener-plast{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:16px; }
+.skener-namig{ position:absolute; top:16px; left:16px; right:16px; margin:0 auto; width:fit-content; max-width:calc(100% - 32px); font-size:14px; font-weight:600; color:#fff; background:rgba(0,0,0,.55); padding:6px 12px; border-radius:999px; text-align:center; }
+.skener-okvir{ width:min(240px, 62%); aspect-ratio:1; border:3px solid #fff; border-radius:20px; box-shadow:0 0 0 100vmax rgba(0,0,0,.35); }
+.skener-stanje{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:24px; text-align:center; color:var(--b70); }
+.skener-stanje strong{ color:#fff; font-size:17px; }
+.skener-stanje .gumb-siv{ width:auto; margin-top:4px; }
+.skener-stevci{ display:flex; justify-content:center; gap:20px; margin:12px 0 4px; font-weight:700; font-size:15px; }
+.zelena-besedilo{ color:var(--zelena); }
+.rdeca-besedilo{ color:var(--rdeca); }
+.skener-rezultat-mesto{ min-height:88px; margin-top:8px; }
+.skener-rezultat{ display:flex; align-items:center; gap:12px; padding:14px; border-radius:16px; background:var(--b06); color:#fff; }
+.skener-rezultat.ok{ background:rgba(53,199,122,.18); }
+.skener-rezultat.ok > svg{ color:var(--zelena); }
+.skener-rezultat.ne{ background:rgba(255,90,90,.18); }
+.skener-rezultat.ne > svg{ color:var(--rdeca); }
+.skener-rezultat .kv-besedilo{ flex:1; min-width:0; }
+.skener-rezultat strong{ font-size:18px; letter-spacing:.02em; }
+.skener-rezultat .kv-besedilo span, .skener-pasica .kv-besedilo span{ font-size:13px; color:var(--b70); white-space:normal; overflow:visible; text-overflow:clip; }
+.skener-rezultat .skener-naprej{ width:auto; flex:none; }
+.gumb-vstopa{ flex:none; height:32px; padding:0 12px; border-radius:999px; background:#fff; color:#000; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:6px; }
+.gumb-vstopa:disabled{ opacity:.6; }
+.skener-pasica{ display:flex; align-items:center; gap:10px; padding:12px; border-radius:12px; margin-bottom:12px; }
+.skener-pasica.ok{ background:rgba(53,199,122,.15); }
+.skener-pasica.ne{ background:rgba(255,90,90,.15); }
