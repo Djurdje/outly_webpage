@@ -17,6 +17,9 @@ import {
   KarticaLogo, KarticaDogodka
 } from "../ui.js";
 import { zahtevajLokacijo, useLokacija } from "../lokacija.js";
+import { SekcijaNacrtov, naloziNacrte } from "./prijatelji.js";
+import { Zvonec, MeniObvestil } from "./obvestila.js";
+import { useNastavitve } from "../nastavitve.js";
 import { useFiltri, FiltriList, ustrezaDogodek, ustrezaKlub, filtriAktivni } from "./filtri.js";
 
 /* Vrstni red predlogov se premesa ENKRAT na sejo strani (ne ob vsakem izrisu - iOS past). */
@@ -27,6 +30,9 @@ export function Home() {
   const prijavljen = useSeja(s => s.prijavljen);
   const [stanje, setStanje] = useState({ nalaga: true, napaka: null, klubi: [], prihajajoci: [], pretekli: [], zanri: [] });
   const [moji, setMoji] = useState([]);
+  const [nacrti, setNacrti] = useState([]);
+  const [obvestila, setObvestila] = useState(false);
+  const nast = useNastavitve();
   const [filtriOdprti, setFiltriOdprti] = useState(false);
   const lok = useLokacija();
   const f = useFiltri();
@@ -47,13 +53,14 @@ export function Home() {
 
   useEffect(() => { nalozi(); }, []);
   useEffect(() => {
-    if (!prijavljen) { setMoji([]); return; }
+    if (!prijavljen) { setMoji([]); setNacrti([]); return; }
+    naloziNacrte().then(setNacrti).catch(() => setNacrti([]));   // ni kriticno (kot iOS)
     send("/me/plans", { auth: true })
       .then(r => setMoji(((r && r.events) || []).map(normalizirajDogodek)))
       .catch(() => setMoji([]));   // ni kriticno (kot iOS): razdelek ostane prazen
   }, [prijavljen]);
 
-  const izpeljano = useMemo(() => izpelji(stanje, me, lok, f, moji), [stanje, me, lok, f, moji]);
+  const izpeljano = useMemo(() => izpelji(stanje, me, lok, f, moji, nast.maxKm), [stanje, me, lok, f, moji, nast.maxKm]);
   return html`<div class="zaslon home">
     <${OzadjeHome} />
     <header class="home-glava">
@@ -62,7 +69,7 @@ export function Home() {
           ? html`<a class="krog-povezava" href="/app/profile" aria-label=${t("Profile")}><${Avatar} url=${me && me.avatar_url} ime=${me && me.username} velikost=${36} /></a>`
           : html`<a class="prijava-cip" href=${"/app/login?next=/app"}>${t("Sign in")}</a>`}
         <img class="home-logo" src="/assets/transperent-logo.png" alt="Outly" width="104" height="104" />
-        <span class="home-glava-prostor" aria-hidden="true"></span>
+        ${prijavljen ? html`<${Zvonec} odpri=${() => setObvestila(true)} />` : html`<span class="home-glava-prostor" aria-hidden="true"></span>`}
       </div>
       <p class="home-pozdrav">${pozdrav(me && me.username)}</p>
     </header>
@@ -81,14 +88,15 @@ export function Home() {
     ${stanje.nalaga && !stanje.klubi.length && !stanje.prihajajoci.length
       ? html`<div class="sekcija"><div class="skeleton" style="width:120px;height:18px;border-radius:9px"></div><${Skeleton} /></div>
              <div class="sekcija"><div class="skeleton" style="width:160px;height:18px;border-radius:9px"></div><${Skeleton} sirina=${110} visina=${110} /></div>`
-      : html`<${Sekcije} i=${izpeljano} lok=${lok} prijavljen=${prijavljen} />`}
+      : html`<${Sekcije} i=${izpeljano} lok=${lok} prijavljen=${prijavljen} nacrti=${nacrti} />`}
 
     <${FiltriList} odprt=${filtriOdprti} zapri=${() => setFiltriOdprti(false)}
       mesta=${izpeljano.mesta} imaLokacijo=${!!lok.polozaj} />
+    ${prijavljen ? html`<${MeniObvestil} odprt=${obvestila} zapri=${() => setObvestila(false)} />` : null}
   </div>`;
 }
 
-function Sekcije({ i, lok, prijavljen }) {
+function Sekcije({ i, lok, prijavljen, nacrti }) {
   const { klubiPoId } = i;
   return html`
     ${i.predlogi.length ? html`<section class="sekcija">
@@ -121,6 +129,8 @@ function Sekcije({ i, lok, prijavljen }) {
       <div class="vrsta-drsna">${i.obmocje.map(k => html`<${KarticaLogo} key=${k.id} klub=${k} razdalja=${napisRazdalje(i.razdalje.get(k.id))} />`)}</div>
     </section>` : null}
 
+    ${prijavljen ? html`<${SekcijaNacrtov} nacrti=${nacrti} />` : null}
+
     ${i.velik ? html`<section class="sekcija">
       <${NaslovSekcije} naslov=${t("Big events coming up")} />
       <${KarticaVelika} dogodek=${i.velik} klub=${klubiPoId.get(i.velik.club_id)} />
@@ -147,7 +157,7 @@ function Sekcije({ i, lok, prijavljen }) {
 }
 
 /* ---------- izpeljani seznami (kot racunane lastnosti HomeView) ---------- */
-function izpelji(s, me, lok, f, moji) {
+function izpelji(s, me, lok, f, moji, maxKm) {
   const klubiPoId = P.poId(s.klubi);
   const starost = me && me.date_of_birth ? letaIz(me.date_of_birth) : null;
   const mojiZanri = new Set(((me && me.genres) || []).map(g => g.toLowerCase()));
@@ -157,6 +167,8 @@ function izpelji(s, me, lok, f, moji) {
   const filtriraniKlubi = s.klubi.filter(k => {
     if (starost != null && k.min_age > starost) return false;
     if (mojiZanri.size && k.genres.length && !k.genres.some(g => mojiZanri.has(g.toLowerCase()))) return false;
+    // Najvecja razdalja iz "My preferences" (kot iOS prefs.maxDistanceKm) - samo ko je lokacija znana.
+    if (razdalje.has(k.id) && razdalje.get(k.id) > maxKm) return false;
     return ustrezaKlub(f, k, razdalje.get(k.id));
   });
   const dovoljeni = new Set(filtriraniKlubi.map(k => k.id));

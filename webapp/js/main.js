@@ -16,9 +16,13 @@ import { Onboarding } from "./views/onboarding.js";
 import { Profil } from "./views/profil.js";
 import { Jezik } from "./views/jezik.js";
 import { Zemljevid } from "./views/zemljevid.js";
+import { MojRacun, OsebniPodatki, GesloVarnost, Nastavitve, MojeNastavitve, IzbrisRacuna, ProsnjaUstvarjalca, Placila, Pomoc, ClanekPomoci, OAplikaciji } from "./views/racun.js";
+import { MojiPrijatelji, NacrtiPrijateljev } from "./views/prijatelji.js";
+import { MojiKlubi, VabilaKlubov } from "./views/klubi.js";
 
 const AVT = new Set(["login", "register", "verify", "forgot"]);
-const SAMO_PRIJAVLJENI = new Set(["tickets", "interested", "onboarding"]);
+const SAMO_PRIJAVLJENI = new Set(["tickets", "interested", "onboarding", "account", "personal", "security", "preferences",
+  "delete", "creator", "friends", "friends-plans", "my-clubs", "invites"]);
 const ZAVIHKI = [
   { ime: "home", href: "/app", ikona: "house", napis: "Home" },
   { ime: "search", href: "/app/search", ikona: "search", napis: "Search" },
@@ -47,6 +51,21 @@ function Zaslon({ pot }) {
     case "forgot": return html`<${PozabljenoGeslo} />`;
     case "onboarding": return html`<${Onboarding} />`;
     case "language": return html`<${Jezik} />`;
+    case "account": return html`<${MojRacun} />`;
+    case "personal": return html`<${OsebniPodatki} />`;
+    case "security": return html`<${GesloVarnost} />`;
+    case "preferences": return html`<${Nastavitve} />`;
+    case "my-preferences": return html`<${MojeNastavitve} />`;
+    case "delete": return html`<${IzbrisRacuna} />`;
+    case "creator": return html`<${ProsnjaUstvarjalca} />`;
+    case "payment": return html`<${Placila} />`;
+    case "help": return html`<${Pomoc} />`;
+    case "article": return html`<${ClanekPomoci} key=${p.id} id=${p.id} />`;
+    case "about": return html`<${OAplikaciji} />`;
+    case "friends": return html`<${MojiPrijatelji} />`;
+    case "friends-plans": return html`<${NacrtiPrijateljev} />`;
+    case "my-clubs": return html`<${MojiKlubi} />`;
+    case "invites": return html`<${VabilaKlubov} />`;
     default: return html`<div class="zaslon"><${GlavaNazaj} />
       <div class="prazno"><strong>${t("Page not found")}</strong><a class="gumb-siv" href="/app">${t("Go to Home")}</a></div></div>`;
   }
@@ -103,7 +122,11 @@ function App() {
 function naslovPoti(ime) {
   return ({ search: "Search", map: "Map", profile: "Profile", events: "Events", interested: "Interested events",
     tickets: "Tickets", login: "Sign in", register: "Create an account", verify: "Verify your email",
-    forgot: "Forgot password?", onboarding: "Complete your account", language: "Language", genre: "Events" })[ime] || "Outly";
+    forgot: "Forgot password?", onboarding: "Complete your account", language: "Language", genre: "Events",
+    account: "My Account", personal: "Personal info", security: "Password and security", preferences: "Preferences",
+    "my-preferences": "My preferences", delete: "Delete account", creator: "Request for creator", payment: "Payment",
+    help: "Help Center", article: "Help Center", about: "About", friends: "My friends", "friends-plans": "Friends plans",
+    "my-clubs": "My clubs", invites: "Notifications" })[ime] || "Outly";
 }
 
 zacniSejo();

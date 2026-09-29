@@ -1,14 +1,17 @@
-/* Profil (ProfileView.swift) - faza 1: glava, vstopnice, "I'm in" dogodki, jezik, odjava.
-   Ostalo (My Account, prijatelji, klubi, pomoc) pride v fazi 2; poslovni obraz v fazi 4. */
-import { html } from "../lib.js";
+/* Profil (ProfileView.swift): osebni obraz - glava z My Account, meni (klubi, prijatelji, vstopnice ...).
+   Poslovni obraz lastnika kluba (OwnerProfileView) pride v fazi 4. */
+import { html, useEffect } from "../lib.js";
 import { t } from "../i18n.js";
 import { useSeja, odjava, naloziMe } from "../seja.js";
 import { sporocilo } from "../napake.js";
 import { navigiraj } from "../usmerjanje.js";
 import { Avatar, Ikona, Nalaganje, Napaka } from "../ui.js";
+import { MenijskaVrstica } from "./racun.js";
 
 export function Profil() {
   const { prijavljen, me, email, meNapaka } = useSeja(s => s);
+  // Ob vsakem obisku sveze znacke (vabila, prosnje) - kot iOS onAppear.
+  useEffect(() => { if (prijavljen) naloziMe(); }, [prijavljen]);
   if (!prijavljen) return html`<div class="zaslon">
     <h1 class="velik-naslov">${t("Profile")}</h1>
     <div class="prazno">
@@ -26,22 +29,22 @@ export function Profil() {
   if (!me) return html`<div class="zaslon"><${Nalaganje} /></div>`;
 
   return html`<div class="zaslon profil">
-    <div class="profil-glava">
-      <${Avatar} url=${me.avatar_url} ime=${me.username} velikost=${88} />
-      <h1>${me.username}</h1>
-      <span class="utisano">${me.email || email}</span>
+    <div class="profil-vrsta">
+      <${Avatar} url=${me.avatar_url} ime=${me.username} velikost=${60} />
+      <div class="kv-besedilo"><strong class="profil-ime">${me.username}</strong>
+        <a class="povezava-modra" href="/app/account">${t("My Account")}</a></div>
     </div>
     <div class="seznam-kartica">
-      <a class="menijska-vrstica" href="/app/tickets"><${Ikona} ime="ticket" /><span>${t("Tickets")}</span><${Ikona} ime="chevron-right" velikost=${16} razred="utisano" /></a>
-      <a class="menijska-vrstica" href="/app/interested"><${Ikona} ime="thumbs-up" /><span>${t("Interested events")}</span><${Ikona} ime="chevron-right" velikost=${16} razred="utisano" /></a>
-      <a class="menijska-vrstica" href="/app/language"><${Ikona} ime="globe" /><span>${t("Language")}</span><${Ikona} ime="chevron-right" velikost=${16} razred="utisano" /></a>
+      <${MenijskaVrstica} href="/app/my-clubs" ikona="building" naslov=${t("My Clubs")} znacka=${me.pending_invites || 0} />
+      <${MenijskaVrstica} href="/app/friends" ikona="users" naslov=${t("My Friends")} znacka=${me.pending_friend_requests || 0} />
+      <${MenijskaVrstica} href="/app/tickets" ikona="ticket" naslov=${t("Tickets")} />
+      <${MenijskaVrstica} href="/app/interested" ikona="thumbs-up" naslov=${t("Interested events")} />
+      <${MenijskaVrstica} href="/app/payment" ikona="credit-card" naslov=${t("Payment")} />
+      <${MenijskaVrstica} href="/app/help" ikona="circle-question-mark" naslov=${t("Support")} />
+      <${MenijskaVrstica} href="/app/about" ikona="info" naslov=${t("About")} />
     </div>
-    <p class="opomba srednje">${t("More profile settings are coming to the web soon. Until then you can change them in the Outly app.")}</p>
-    <div class="seznam-kartica">
-      <button type="button" class="menijska-vrstica rdeca" onClick=${async () => { await odjava(); navigiraj("/app", { zamenjaj: true }); }}>
-        <${Ikona} ime="log-out" /><span>${t("Log out")}</span>
-      </button>
-    </div>
+    ${me.role === "business" ? html`<p class="opomba srednje">${t("Club tools (dashboard, events, team) are coming to the web soon. Until then use the Outly app.")}</p>` : null}
+    <button type="button" class="povezava-gumb rdeca" onClick=${async () => { await odjava(); navigiraj("/app", { zamenjaj: true }); }}>${t("Log out")}</button>
   </div>`;
 }
 

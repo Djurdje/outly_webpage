@@ -19,7 +19,22 @@ const POTI = [
   ["/app/verify", "verify"],
   ["/app/forgot", "forgot"],
   ["/app/onboarding", "onboarding"],
-  ["/app/language", "language"]
+  ["/app/language", "language"],
+  ["/app/account", "account"],
+  ["/app/account/personal", "personal"],
+  ["/app/account/security", "security"],
+  ["/app/account/preferences", "preferences"],
+  ["/app/account/my-preferences", "my-preferences"],
+  ["/app/account/delete", "delete"],
+  ["/app/account/creator", "creator"],
+  ["/app/payment", "payment"],
+  ["/app/help", "help"],
+  ["/app/help/:id", "article"],
+  ["/app/about", "about"],
+  ["/app/friends", "friends"],
+  ["/app/friends-plans", "friends-plans"],
+  ["/app/my-clubs", "my-clubs"],
+  ["/app/invites", "invites"]
 ].map(([vzorec, ime]) => {
   const imena = [];
   const re = new RegExp("^" + vzorec.replace(/:(\w+)/g, (m, k) => { imena.push(k); return "([^/]+)"; }) + "/?$");

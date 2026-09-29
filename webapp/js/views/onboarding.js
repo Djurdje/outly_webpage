@@ -18,7 +18,7 @@ const DRZAVE = ("AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF 
   "SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU " +
   "WF WS XK YE YT ZA ZM ZW").split(" ");
 
-function seznamDrzav() {
+export function seznamDrzav() {
   let imena;
   try { imena = new Intl.DisplayNames([locale()], { type: "region" }); } catch { imena = null; }
   return DRZAVE.map(k => ({ k, ime: (imena && imena.of(k)) || k })).sort((a, b) => a.ime.localeCompare(b.ime, locale()));
@@ -138,3 +138,5 @@ function Zanri({ nazaj }) {
     </div>
   </div>`;
 }
+
+export const DRZAVE_SEZNAM = seznamDrzav;

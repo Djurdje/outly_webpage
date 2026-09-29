@@ -40,10 +40,11 @@ export async function trenutniZeton() {
   return zeton;
 }
 
-async function surovKlic(path, { method, body, zeton, signal }) {
+async function surovKlic(path, { method, body, zeton, signal, klub }) {
   const glave = {};
   if (zeton) glave["Authorization"] = "Bearer " + zeton;
-  if (izbraniKlub) glave["X-Outly-Club"] = String(izbraniKlub);
+  const k = klub || izbraniKlub;
+  if (k) glave["X-Outly-Club"] = String(k);
   if (body !== undefined) glave["Content-Type"] = "application/json";
   const krmilnik = new AbortController();
   const casovnik = method === "POST" && BREZ_MEJE.test(path) ? null : setTimeout(() => krmilnik.abort(), CAKANJE_MS);
@@ -66,12 +67,12 @@ async function preberi(odg) {
  * send("/me", { auth: true }) · send("/events/5", { auth: "optional" })
  * auth: false (javno) | "optional" (zeton, ce obstaja) | true (obvezen; brez njega 401 lokalno)
  */
-export async function send(path, { method = "GET", body, auth = false, signal } = {}) {
+export async function send(path, { method = "GET", body, auth = false, signal, klub } = {}) {
   let zeton = auth ? await trenutniZeton() : "";
   if (auth === true && !zeton) throw new ApiError(401, "Missing token.");
 
   let odg;
-  try { odg = await surovKlic(path, { method, body, zeton, signal }); }
+  try { odg = await surovKlic(path, { method, body, zeton, signal, klub }); }
   catch (e) {
     if (signal && signal.aborted) throw e;
     throw new ApiError(-1, "No response.");
@@ -86,7 +87,7 @@ export async function send(path, { method = "GET", body, auth = false, signal } 
       if (osvezeno === null) throw new ApiError(-1, "Could not refresh session.");
       if (osvezeno) {
         zeton = osvezeno;
-        try { odg = await surovKlic(path, { method, body, zeton, signal }); }
+        try { odg = await surovKlic(path, { method, body, zeton, signal, klub }); }
         catch { throw new ApiError(-1, "No response."); }
       }
     }
@@ -137,4 +138,38 @@ export function pocistiPredpomnilnik() { predpomnilnik.clear(); }
 /* Stetje ogledov (backend 021): tiho, brez zetona, napaka se ne kaze. */
 export function zabeleziOgled(cilj) {
   send("/views", { method: "POST", body: cilj }).catch(() => {});
+}
+
+/* Nalaganje slike na Cloudinary: podpis izda backend (POST /uploads/cloudinary-signature, zeton), datoteka
+   gre neposredno na Cloudinary (ne cez nas streznik). public_id je del podpisa - posljemo ga nespremenjenega.
+   Vrne secure_url. To ni klic backenda, zato gre mimo send(). */
+export async function naloziNaCloudinary(datoteka, vrsta = "image") {
+  const p = await send("/uploads/cloudinary-signature", { method: "POST", auth: true });
+  const f = new FormData();
+  f.append("api_key", p.apiKey);
+  f.append("timestamp", String(p.timestamp));
+  f.append("folder", p.folder);
+  f.append("public_id", p.publicId);
+  f.append("signature", p.signature);
+  f.append("file", datoteka);
+  let odg;
+  try {
+    odg = await fetch(`https://api.cloudinary.com/v1_1/${encodeURIComponent(p.cloudName)}/${vrsta}/upload`, { method: "POST", body: f });
+  } catch { throw new ApiError(-1, "No response."); }
+  const r = await odg.json().catch(() => ({}));
+  if (!odg.ok || !r.secure_url) throw new ApiError(odg.status || 500, "Upload failed.");
+  return r.secure_url;
+}
+
+/* Pomanjsa sliko v brskalniku pred nalaganjem (najvec 1200 px, JPEG) - manj podatkov in hitrejse
+   nalaganje (iOS lekcija 29. 9.: nikoli slike v polni locljivosti). */
+export async function pomanjsajSliko(datoteka, najvec = 1200) {
+  const bitmap = await createImageBitmap(datoteka).catch(() => null);
+  if (!bitmap) return datoteka;
+  const faktor = Math.min(1, najvec / Math.max(bitmap.width, bitmap.height));
+  const c = document.createElement("canvas");
+  c.width = Math.round(bitmap.width * faktor); c.height = Math.round(bitmap.height * faktor);
+  c.getContext("2d").drawImage(bitmap, 0, 0, c.width, c.height);
+  bitmap.close && bitmap.close();
+  return await new Promise(res => c.toBlob(b => res(b || datoteka), "image/jpeg", 0.86));
 }
