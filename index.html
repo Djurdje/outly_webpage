@@ -4,11 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Outly</title>
+  <!-- Globoke povezave spletne aplikacije (/app/...) - mora biti prvi skript, glej webapp/vstop.js -->
+  <script src="/webapp/vstop.js"></script>
+  <link rel="canonical" href="https://outly.si/">
 
   <link rel="icon" href="/favicon.ico" sizes="any">
-  <link rel="icon" type="image/png" sizes="32x32" href="./assets/icon-32.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="./assets/icon-192.png">
-  <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon-32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/icon-192.png">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <meta name="theme-color" content="#111111">
   <meta name="generator" content="Outly">
 
@@ -30,7 +33,7 @@
   <meta name="twitter:description" content="Where should we go tonight? Outly finds what is on around you, tonight. Join the waitlist.">
   <meta name="twitter:image" content="https://outly.si/assets/og-image.png">
 
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <div class="bgfx" aria-hidden="true"></div>
@@ -40,7 +43,7 @@
   <header class="nav">
     <div class="container nav__inner">
       <a class="brand" href="#top" aria-label="Outly home">
-        <img src="./assets/transperent-logo.png" alt="Outly logo">
+        <img src="/assets/transperent-logo.png" alt="Outly logo">
       </a>
 
       <nav class="nav__links" aria-label="Primary">
@@ -81,7 +84,7 @@
       <aside class="phone" aria-label="App preview">
         <div class="phone__card">
           <div class="phone__img">
-            <img class="phone__bg" src="./assets/dasboard2.png" alt="Outly app home screen preview" width="941" height="1672" fetchpriority="high" decoding="async">
+            <img class="phone__bg" src="/assets/dasboard2.png" alt="Outly app home screen preview" width="941" height="1672" fetchpriority="high" decoding="async">
           </div>
         </div>
       </aside>
@@ -410,15 +413,15 @@
 
       <div class="preview">
         <figure class="shot">
-          <img src="./assets/image1.png" alt="Outly sign up screen" width="1080" height="1920" loading="lazy" decoding="async">
+          <img src="/assets/image1.png" alt="Outly sign up screen" width="1080" height="1920" loading="lazy" decoding="async">
           <figcaption>Create an account</figcaption>
         </figure>
         <figure class="shot">
-          <img src="./assets/homesc.png" alt="Outly home screen" width="1080" height="1920" loading="lazy" decoding="async">
+          <img src="/assets/homesc.png" alt="Outly home screen" width="1080" height="1920" loading="lazy" decoding="async">
           <figcaption>Discover tonight</figcaption>
         </figure>
         <figure class="shot">
-          <img src="./assets/dasboard.png" alt="Outly creator dashboard" width="941" height="1670" loading="lazy" decoding="async">
+          <img src="/assets/dasboard.png" alt="Outly creator dashboard" width="941" height="1670" loading="lazy" decoding="async">
           <figcaption>Creator analytics</figcaption>
         </figure>
       </div>
@@ -538,7 +541,7 @@
       </div>
 
       <div class="footer__brand">
-        <img src="./assets/transperent-logo.png" alt="Outly logo">
+        <img src="/assets/transperent-logo.png" alt="Outly logo">
         <div>
           <p>Nightlife discovery, simplified.</p>
         </div>
@@ -575,12 +578,12 @@
     </div>
   </footer>
 
-  <script src="./script.js"></script>
+  <script src="/script.js"></script>
 
   <!-- Waitlist (Supabase) -->
-  <script src="./vendor/supabase-2.115.0.js"></script>
-  <script src="./supabase-config.js"></script>
-  <script src="./auth.js"></script>
-  <script src="./waitlist.js"></script>
+  <script src="/vendor/supabase-2.115.0.js"></script>
+  <script src="/supabase-config.js"></script>
+  <script src="/auth.js"></script>
+  <script src="/waitlist.js"></script>
 </body>
 </html>
