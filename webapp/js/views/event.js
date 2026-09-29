@@ -9,7 +9,7 @@ import { sporocilo } from "../napake.js";
 import { navigiraj } from "../usmerjanje.js";
 import * as P from "../podatki.js";
 import {
-  cena, jeMimo, jeRazprodan, jeMaloVstopnic, preostanek, seJeKoncal, danDolg, ura, mesecKratko, relativno
+  cena, jeMimo, jeRazprodan, jeMaloVstopnic, preostanek, seJeKoncal, danDolg, ura, mesecKratko, relativno, varenUrl
 } from "../oblika.js";
 import { Ikona, Slika, Avatar, GlavaNazaj, Nalaganje, Napaka, List } from "../ui.js";
 import { NakupList } from "./nakup.js";
@@ -33,12 +33,13 @@ export function Dogodek({ id }) {
       P.klub(d.club_id).then(setKlub).catch(() => {});
     } catch (err) { setNapaka(sporocilo(err)); }
   }
-  useEffect(() => { nalozi(); zabeleziOgled({ event_id: Number(id) }); }, [id, prijavljen]);
+  useEffect(() => { nalozi(); }, [id, prijavljen]);
+  useEffect(() => { zabeleziOgled({ event_id: Number(id) }); }, [id]);   // en ogled na obisk
   // Po prijavi z namenom "kupi" odpremo nakup samodejno (?buy=1).
   useEffect(() => {
     if (e && prijavljen && new URLSearchParams(location.search).get("buy") === "1") {
       history.replaceState(history.state, "", location.pathname);
-      setList("nakup");
+      if (moznoKupiti(e)) setList("nakup");
     }
   }, [e, prijavljen]);
 
@@ -64,8 +65,8 @@ export function Dogodek({ id }) {
     if (e.ticket_price_cents != null) {
       if (!prijavljen) { navigiraj(`/app/login?next=${encodeURIComponent(`/app/event/${id}?buy=1`)}`); return; }
       setList("nakup");
-    } else if (e.ticket_url) {
-      window.open(e.ticket_url, "_blank", "noopener,noreferrer");
+    } else if (varenUrl(e.ticket_url)) {
+      window.open(varenUrl(e.ticket_url), "_blank", "noopener,noreferrer");
     }
   }
 
@@ -146,6 +147,9 @@ export function Dogodek({ id }) {
   </div>`;
 }
 
+/* Nakup na Outlyju: cena mora obstajati (null = ne prodaja se pri nas), dogodek ni mimo ali razprodan. */
+const moznoKupiti = e => e.ticket_price_cents != null && !jeMimo(e) && !jeRazprodan(e);
+
 function naslovKluba(k) {
   if (!k) return "-";
   return [k.address, k.city, k.country].map(x => (x || "").trim()).filter(Boolean).join(" ") || "-";
@@ -204,7 +208,7 @@ function PasVstopnic({ e, ob }) {
     if (e.ticket_price_cents === 0) { zgoraj = t("FREE"); spodaj = t("free entry"); }
     else if (jeMaloVstopnic(e) && n != null) { zgoraj = c; spodaj = n === 1 ? t("last ticket") : t("only {n} left", { n }); }
     else { zgoraj = c; spodaj = t("per ticket"); }
-  } else if (e.ticket_url) { aktiven = true; zgoraj = t("Tickets"); spodaj = t("sold by the club"); }
+  } else if (varenUrl(e.ticket_url)) { aktiven = true; zgoraj = t("Tickets"); spodaj = t("sold by the club"); }
   else { zgoraj = t("Tickets"); spodaj = t("at the door"); }
 
   const vsebina = html`<strong>${zgoraj}</strong><span>${spodaj}</span>`;

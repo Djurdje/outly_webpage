@@ -3,6 +3,7 @@
 export const SL = {
  "1 event": "1 dogodek",
  "1 ticket": "1 vstopnica",
+ "No response from the server. Check Profile → Tickets before you try again.": "Strežnik se ne odziva. Preden poskusiš znova, preveri Profil → Vstopnice.",
  "ABOUT": "O DOGODKU",
  "ADDRESS": "NASLOV",
  "AGE": "STAROST",

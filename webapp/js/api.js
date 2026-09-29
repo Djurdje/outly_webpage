@@ -7,6 +7,9 @@ import { ApiError } from "./napake.js";
 
 export const API_URL = "https://outly-backend-roy3.onrender.com";
 const CAKANJE_MS = 30000;
+/* Nakup (POST) brez casovne meje: ob hladnem zagonu Renderja bi prekinjen zahtevek lahko ze ustvaril
+   narocilo, uporabnik pa bi kupil se enkrat (backend nima idempotencnega kljuca). */
+const BREZ_MEJE = /\/orders$/;
 
 /* Seja nastavi, kaj se zgodi, ko Supabase sejo zavrne (odjava + obvestilo). */
 let obZavrnjeniSeji = () => {};
@@ -16,12 +19,25 @@ export function nastaviObZavrnjeniSeji(fn) { obZavrnjeniSeji = fn; }
 let izbraniKlub = null;
 export function nastaviIzbraniKlub(id) { izbraniKlub = id || null; }
 
+/* Ali je v brskalniku shranjena seja (tudi ce je zeton potekel in ga zdaj ni mogoce osveziti). */
+export const KLJUC_SEJE = "sb-zbewqcxnvrwebxonvebx-auth-token";
+export function imaShranjenoSejo() {
+  try { return !!localStorage.getItem(KLJUC_SEJE); } catch { return false; }
+}
+
+/* Napaka Supabase, ki ni zavrnitev seje: omrezje ali 5xx. Taka napaka NE sme odjaviti (I10). */
+const zacasna = err => !!err && (err.name === "AuthRetryableFetchError" || !err.status || err.status >= 500);
+
 export async function trenutniZeton() {
-  try {
-    // getSession() v supabase-js sam osvezi potekel zeton (z refresh_token).
-    const { data } = await supabase.auth.getSession();
-    return (data && data.session && data.session.access_token) || "";
-  } catch { return ""; }
+  // getSession() v supabase-js sam osvezi potekel zeton (z refresh_token). Ce osvezitev pade zaradi
+  // omrezja, vrne session: null + napako, seje pa ne izbrise - takrat vrzemo -1, ne "ni prijave".
+  let rezultat;
+  try { rezultat = await supabase.auth.getSession(); }
+  catch { throw new ApiError(-1, "Could not refresh session."); }
+  const { data, error } = rezultat;
+  const zeton = (data && data.session && data.session.access_token) || "";
+  if (!zeton && error && zacasna(error) && imaShranjenoSejo()) throw new ApiError(-1, "Could not refresh session.");
+  return zeton;
 }
 
 async function surovKlic(path, { method, body, zeton, signal }) {
@@ -30,14 +46,14 @@ async function surovKlic(path, { method, body, zeton, signal }) {
   if (izbraniKlub) glave["X-Outly-Club"] = String(izbraniKlub);
   if (body !== undefined) glave["Content-Type"] = "application/json";
   const krmilnik = new AbortController();
-  const casovnik = setTimeout(() => krmilnik.abort(), CAKANJE_MS);
+  const casovnik = method === "POST" && BREZ_MEJE.test(path) ? null : setTimeout(() => krmilnik.abort(), CAKANJE_MS);
   if (signal) signal.addEventListener("abort", () => krmilnik.abort(), { once: true });
   try {
     return await fetch(API_URL + path, {
       method, headers: glave, signal: krmilnik.signal,
       body: body === undefined ? undefined : JSON.stringify(body)
     });
-  } finally { clearTimeout(casovnik); }
+  } finally { if (casovnik) clearTimeout(casovnik); }
 }
 
 async function preberi(odg) {
@@ -66,6 +82,8 @@ export async function send(path, { method = "GET", body, auth = false, signal } 
     // Samo potekel/neveljaven zeton ("Missing token." / "Invalid token."), ne npr. napacno geslo.
     if (/token/i.test(besedilo)) {
       const osvezeno = await osveziSejo();
+      // Osvezitev ni uspela zaradi omrezja/5xx: seja ostane, klic javimo kot "ni odgovora" (I10).
+      if (osvezeno === null) throw new ApiError(-1, "Could not refresh session.");
       if (osvezeno) {
         zeton = osvezeno;
         try { odg = await surovKlic(path, { method, body, zeton, signal }); }
@@ -82,16 +100,19 @@ export async function send(path, { method = "GET", body, auth = false, signal } 
   return podatki;
 }
 
-/* Ena osvezitev naenkrat, tudi ce jo zahteva vec klicev hkrati. */
+/* Ena osvezitev naenkrat, tudi ce jo zahteva vec klicev hkrati.
+   Vrne nov zeton, "" (seja zavrnjena) ali null (zacasna napaka - seja ostane). */
 let tekocaOsvezitev = null;
 async function osveziSejo() {
   if (!tekocaOsvezitev) {
     tekocaOsvezitev = (async () => {
-      const { data, error } = await supabase.auth.refreshSession();
+      let r;
+      try { r = await supabase.auth.refreshSession(); } catch { return null; }
+      const { data, error } = r;
       if (error) {
-        // Supabase je sejo zavrnil (400/401/403) -> odjava. Omrezje ali 5xx -> seja ostane.
-        const s = error.status || 0;
-        if (s >= 400 && s < 500) obZavrnjeniSeji();
+        // Omrezje ali 5xx -> null (seja ostane). Supabase je sejo zavrnil (4xx) -> odjava, "".
+        if (zacasna(error)) return null;
+        obZavrnjeniSeji();
         return "";
       }
       return (data && data.session && data.session.access_token) || "";

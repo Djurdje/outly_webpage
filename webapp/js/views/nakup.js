@@ -1,9 +1,9 @@
 /* Nakup vstopnic (BuyTicketsView.swift). Testni nacin: dokler Stripe ni vklopljen, je narocilo
    takoj placano in nic se ne zaracuna. Brez vprasanja pred placilom (Martin, 23. 9.).
    Kartice NIKOLI ne vnasamo v nas vmesnik (Stripe Checkout, ko pride). */
-import { html, useEffect, useState } from "../lib.js";
+import { html, useEffect, useRef, useState } from "../lib.js";
 import { t, tn } from "../i18n.js";
-import { send } from "../api.js";
+import { send, pocistiPredpomnilnik } from "../api.js";
 import { sporocilo } from "../napake.js";
 import { denar, jeRazprodan, preostanek, danInUra } from "../oblika.js";
 import { List, Ikona } from "../ui.js";
@@ -14,10 +14,12 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
   const [posiljam, setPosiljam] = useState(false);
   const [napaka, setNapaka] = useState("");
   const [nakup, setNakup] = useState(null);
+  const tece = useRef(false);   // zascita pred dvojnim klikom v istem trenutku (stanje se posodobi prepozno)
   useEffect(() => { if (odprt) { setKolicina(1); setNapaka(""); setNakup(null); } }, [odprt]);
-  if (!odprt) return null;
+  // Cena null = vstopnic ni na Outlyju; tak dogodek nima nakupa (in NI "Free").
+  if (!odprt || e.ticket_price_cents == null) return null;
 
-  const cenaEna = e.ticket_price_cents || 0;
+  const cenaEna = e.ticket_price_cents;
   const brezplacno = cenaEna === 0;
   const ostane = preostanek(e);
   const najvec = Math.max(1, Math.min(10, ostane == null ? 10 : ostane));
@@ -25,11 +27,18 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
   const razprodano = jeRazprodan(e) || ostane === 0;
 
   async function kupi() {
+    if (tece.current) return;
+    tece.current = true;
     setPosiljam(true); setNapaka("");
     try {
       const r = await send(`/events/${e.id}/orders`, { method: "POST", body: { quantity: kolicina }, auth: true });
+      pocistiPredpomnilnik();   // zaloga (sold_count) na karticah naj bo sveza
       setNakup(r);
-    } catch (err) { setNapaka(sporocilo(err)); }
+    } catch (err) {
+      // Brez odgovora: narocilo je morda nastalo - preden kupi znova, naj pogleda vstopnice.
+      setNapaka(err && err.status === -1 ? t("No response from the server. Check Profile → Tickets before you try again.") : sporocilo(err));
+    }
+    tece.current = false;
     setPosiljam(false);
   }
 

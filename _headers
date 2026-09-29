@@ -12,3 +12,9 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(self), geolocation=(self), microphone=(), payment=()
+
+# Koda aplikacije nima razlicice v imenu: brskalnik naj vsakic preveri (ETag), sicer bi po objavi
+# lahko pomesal stare in nove module. Knjiznice v vendor/ imajo razlicico v imenu in ostanejo privzete.
+/webapp/*
+  Cache-Control: no-cache
+  X-Content-Type-Options: nosniff

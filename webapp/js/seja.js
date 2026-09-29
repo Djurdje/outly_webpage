@@ -1,7 +1,7 @@
 /* Seja uporabnika: prijava prek Supabase, profil iz GET /me (kot SessionStore na iOS).
    Vloge odloca streznik; tu samo beremo, kaj je rekel. */
 import { supabase } from "./supabase.js";
-import { send, nastaviObZavrnjeniSeji, pocistiPredpomnilnik } from "./api.js";
+import { send, nastaviObZavrnjeniSeji, pocistiPredpomnilnik, imaShranjenoSejo } from "./api.js";
 import { ApiError } from "./napake.js";
 import { ustvariTrgovino, useStore } from "./store.js";
 
@@ -26,8 +26,11 @@ export async function zacniSejo() {
   let s = null;
   try { s = (await supabase.auth.getSession()).data.session; } catch { s = null; }
   posodobiIzSeje(s);
+  // Potekel zeton, ki ga zaradi omrezja zdaj ni mogoce osveziti: uporabnik ostane prijavljen (I10),
+  // /me pa pove napako in "Try again".
+  if (!s && imaShranjenoSejo()) seja.set({ prijavljen: true });
   seja.set({ pripravljena: true });
-  if (s) naloziMe();
+  if (s || seja.get().prijavljen) naloziMe();
   supabase.auth.onAuthStateChange((dogodek, nova) => {
     const prej = zadnjiUid;
     posodobiIzSeje(nova);
@@ -38,7 +41,7 @@ export async function zacniSejo() {
 
 function posodobiIzSeje(s) {
   zadnjiUid = s && s.user ? s.user.id : null;
-  seja.set({ prijavljen: !!s, email: (s && s.user && s.user.email) || "" });
+  seja.set({ prijavljen: !!s || imaShranjenoSejo(), email: (s && s.user && s.user.email) || "" });
 }
 
 /** GET /me; ob 401 (tudi po osvezitvi) je seja mrtva -> odjava. 503 in omrezje: seja ostane. */

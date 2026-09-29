@@ -173,3 +173,11 @@ export const zanrIme = g => {
   if (posebni[g]) return posebni[g];
   return g ? g.charAt(0).toUpperCase() + g.slice(1) : "";
 };
+
+/** Povezava iz podatkov (klub, dogodek) - samo http(s); javascript:, data: ipd. vrne null. */
+export function varenUrl(v) {
+  const niz = (v || "").trim();
+  if (!niz) return null;
+  const url = /^https?:\/\//i.test(niz) ? niz : "https://" + niz;
+  try { const u = new URL(url); return u.protocol === "https:" || u.protocol === "http:" ? u.href : null; } catch { return null; }
+}

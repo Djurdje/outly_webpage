@@ -7,7 +7,7 @@ import { useSeja } from "../seja.js";
 import { sporocilo } from "../napake.js";
 import { navigiraj } from "../usmerjanje.js";
 import * as P from "../podatki.js";
-import { denar, zanrIme } from "../oblika.js";
+import { denar, zanrIme, varenUrl } from "../oblika.js";
 import { Ikona, Slika, GlavaNazaj, Nalaganje, Napaka, List, VrsticaDogodka } from "../ui.js";
 
 export function Klub({ id }) {
@@ -30,7 +30,8 @@ export function Klub({ id }) {
     } catch (e) { setNapaka(sporocilo(e)); }
     setNalaga(false);
   }
-  useEffect(() => { nalozi(); zabeleziOgled({ club_id: Number(id) }); }, [id, prijavljen]);
+  useEffect(() => { nalozi(); }, [id, prijavljen]);
+  useEffect(() => { zabeleziOgled({ club_id: Number(id) }); }, [id]);   // en ogled na obisk
 
   async function preklopiSledenje() {
     if (!prijavljen) { navigiraj(`/app/login?next=${encodeURIComponent("/app/club/" + id)}`); return; }
@@ -112,13 +113,8 @@ export function Klub({ id }) {
 
 const kratko = n => (n < 1000 ? String(n) : n < 10000 ? (n / 1000).toFixed(1) + "k" : Math.round(n / 1000) + "k");
 
-/* Povezave iz podatkov kluba: samo http(s), nikoli javascript: ipd. */
-function spletna(v) {
-  const s = (v || "").trim();
-  if (!s) return null;
-  const url = /^https?:\/\//i.test(s) ? s : "https://" + s;
-  try { const u = new URL(url); return u.protocol === "https:" || u.protocol === "http:" ? u.href : null; } catch { return null; }
-}
+/* Povezave iz podatkov kluba: samo http(s), nikoli javascript: ipd. (varenUrl v oblika.js). */
+const spletna = varenUrl;
 function instagram(v) {
   const s = (v || "").trim();
   if (!s) return null;
