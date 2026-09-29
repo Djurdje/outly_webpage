@@ -1,0 +1,20 @@
+name: Preveri Range (zacasno)
+on:
+  push:
+    branches: [preveri-range]
+jobs:
+  range:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          U=https://claude-new-session-xmsl8u.outly-webpage.pages.dev
+          for i in $(seq 1 20); do
+            s=$(curl -s -o /dev/null -w "%{http_code}" "$U/karta/maribor.pmtiles" -r 0-1) && [ "$s" = "206" ] && break
+            echo "poskus $i: $s"; sleep 30
+          done
+          for f in slovenija ljubljana maribor; do
+            echo "== $f"; curl -sS -D - -o /tmp/k -r 0-16383 "$U/karta/$f.pmtiles" | grep -iE "^HTTP|content-range|content-length|content-type|cache-control|etag"
+            echo "bajtov: $(wc -c < /tmp/k)"; head -c 7 /tmp/k; echo
+          done
+          echo "== pisava"; curl -sS -D - -o /dev/null "$U/karta/pisave/noto-regular/0-255.pbf" | grep -iE "^HTTP|content-type"
+          echo "== CSP /app/map"; curl -sS -D - -o /dev/null "$U/app/map" | grep -iE "^HTTP|content-security"
