@@ -10,6 +10,7 @@ import { Avatar, Ikona, Nalaganje, Napaka } from "../ui.js";
 import { MenijskaVrstica } from "./racun.js";
 import { LastnikProfil } from "./posel.js";
 import { useObraz } from "../posel.js";
+import { VrsticaNamestitve } from "./namestitev.js";
 
 export function Profil() {
   const { prijavljen, me, email, meNapaka } = useSeja(s => s);
@@ -26,6 +27,7 @@ export function Profil() {
       <a class="gumb-bel" href="/app/register?next=/app/profile">${t("Create an account")}</a>
     </div>
     <${MeniJezik} />
+    <${VrsticaNamestitve} />
   </div>`;
   // Streznik ali Supabase ne odgovarja (npr. 503): seja ostane, pokazemo napako in "Try again" (I10).
   if (!me && meNapaka) return html`<div class="zaslon"><h1 class="velik-naslov">${t("Profile")}</h1>
@@ -34,6 +36,7 @@ export function Profil() {
   if (me.role === "business" && obraz === "club") return html`<${LastnikProfil} me=${me} />`;
 
   return html`<div class="zaslon profil">
+    <h1 class="skrito">${t("Profile")}</h1>
     <div class="profil-vrsta">
       <${Avatar} url=${me.avatar_url} ime=${me.username} velikost=${60} />
       <div class="kv-besedilo"><strong class="profil-ime">${me.username}</strong>
@@ -48,6 +51,7 @@ export function Profil() {
       <${MenijskaVrstica} href="/app/help" ikona="circle-question-mark" naslov=${t("Support")} />
       <${MenijskaVrstica} href="/app/about" ikona="info" naslov=${t("About")} />
     </div>
+    <${VrsticaNamestitve} />
     <button type="button" class="povezava-gumb rdeca" onClick=${async () => { await odjava(); navigiraj("/app", { zamenjaj: true }); }}>${t("Log out")}</button>
   </div>`;
 }

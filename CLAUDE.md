@@ -45,6 +45,9 @@ webapp/app.css, webapp/js/            koda aplikacije (Preact + htm, ES moduli, 
   views/*.js                          zasloni (en na datoteko, ime po iOS: home, event, club, search, prijava ...)
   posel.js, views/posel*.js           poslovni del (faza 4): /app/business/:klub/... - klub je v poti, vsak klic ga poslje
                                       v glavi X-Outly-Club; lastnik (vloga business) ima v Profilu klubski obraz
+  pwa.js, views/namestitev.js         PWA (faza 5): registracija service workerja, "Add Outly to Home Screen"
+webapp/sw.js, webapp/manifest.webmanifest   service worker (velja za /app/ prek glave Service-Worker-Allowed) in manifest
+webapp/orodja/predhodno-nalaganje.mjs       generira <link rel="modulepreload"> v app/index.html (staticni uvozi main.js)
 ```
 
 ## Spletna aplikacija (/app) - posebna pravila
@@ -72,6 +75,13 @@ webapp/app.css, webapp/js/            koda aplikacije (Preact + htm, ES moduli, 
 - Poslovni del: **QR skener (in rocni "Check in") je SAMO v aplikaciji Outly** (Martin, 29. 9. 2026) - splet kaze
   vstopnice dogodka samo za ogled. Lokacijo kluba lastnik oznaci s klikom na zemljevid (geokoderja na spletu ni).
   Vloge uveljavlja streznik (403); splet samo skrije gumbe.
+- Hitrost (faza 5): zasloni izven Home/Search/dogodek/klub/zemljevid se nalozijo leno (`leno()` v `main.js`), prav tako
+  slovenski prevodi, knjiznica QR in supabase-js (gost brez seje ga ob zagonu ne rabi). **Po vsakem novem staticnem
+  uvozu pozeni `node webapp/orodja/predhodno-nalaganje.mjs`** (sicer brskalnik module odkriva v valovih).
+  Elementi `position:fixed` naj bodo ZUNAJ animiranega `.okvir` (animacija s transform jih med prehodom premakne -> CLS).
+- Service worker (`webapp/sw.js`): navigacija pod /app/ vedno dobi lupino /app/, koda /webapp/* omrezje najprej,
+  vendor/pisave iz predpomnilnika. **API odgovorov, vstopnic in ploscic NE predpomni.** Ob spremembi seznama JEDRO
+  ali strategije dvigni `RAZLICICA`.
 - Preverjanje: headless Chromium s stubom backenda in Supabase (`page.route`), lokalni streznik, ki posnema `_redirects`
   in `_headers`; sirine 393, 360, 1280; neprijavljen + prijavljen; konzola brez napak (tudi CSP).
 

@@ -19,6 +19,10 @@
   Cache-Control: no-cache
   X-Content-Type-Options: nosniff
 
+# Service worker lezi v /webapp/ (datotek pod /app/ ne streze _redirects zanesljivo), velja pa za /app/.
+/webapp/sw.js
+  Service-Worker-Allowed: /app/
+
 # Zemljevid (faza 3): ploscice in pisave se ne spreminjajo pogosto - dan predpomnjenja.
 /karta/*
   Cache-Control: public, max-age=86400

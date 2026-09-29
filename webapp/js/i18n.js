@@ -1,7 +1,14 @@
 /* Jezik: en (privzeto) | sl, enako kot iOS (Jezik.swift). Kljuc je angleski niz;
    slovenski prevodi so v i18n-sl.js. Preklop brez osvezitve strani (trgovina jezik). */
 import { ustvariTrgovino, useStore, lokalno } from "./store.js";
-import { SL } from "./i18n-sl.js";
+
+/* Slovenski prevodi (~40 KB) se nalozijo samo, ce je izbrana slovenscina (faza 5: manj ob prvem obisku). */
+let SL = {};
+let slNalozen = null;
+function naloziSl() {
+  if (!slNalozen) slNalozen = import("./i18n-sl.js").then(m => { SL = m.SL; }).catch(e => { slNalozen = null; throw e; });
+  return slNalozen;
+}
 
 const KLJUC = "outly_jezik";
 
@@ -16,8 +23,12 @@ function zacetniJezik() {
 export const jezik = ustvariTrgovino({ koda: zacetniJezik() });
 document.documentElement.lang = jezik.get().koda;
 
-export function nastaviJezik(koda) {
+/** Pred prvim izrisom: ce je jezik slovenscina, pocakaj na prevode (sicer bi se zaslon najprej pokazal v anglescini). */
+export const pripraviJezik = () => (jezik.get().koda === "sl" ? naloziSl().catch(() => {}) : Promise.resolve());
+
+export async function nastaviJezik(koda) {
   if (koda !== "en" && koda !== "sl") return;
+  if (koda === "sl") { try { await naloziSl(); } catch { return; } }
   lokalno.set(KLJUC, koda);
   document.documentElement.lang = koda;
   jezik.set({ koda });
