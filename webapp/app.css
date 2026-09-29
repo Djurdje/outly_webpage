@@ -546,5 +546,9 @@ h1,h2,h3,p{ margin:0; }
 .oznaka-jaz{ width:18px; height:18px; border-radius:50%; background:var(--modra); border:3px solid #fff; box-shadow:0 0 0 6px rgba(76,118,255,.25); }
 .mini-karta{ display:block; height:160px; border-radius:18px; overflow:hidden; border:1px solid var(--b10); position:relative; }
 .mini-karta-platno, .mini-karta-platno.maplibregl-map{ position:absolute; inset:0; background:#0e0e10; }
+.mini-karta-povezava{ position:absolute; inset:0; z-index:2; border-radius:inherit; }
+.mini-karta-povezava:focus-visible{ outline:2px solid #fff; outline-offset:-2px; }
+.mini-karta-pripis{ position:absolute; z-index:3; right:6px; bottom:6px; padding:2px 6px; border-radius:6px; font-size:10px;
+  color:rgba(255,255,255,.75); background:rgba(0,0,0,.55); pointer-events:none; }
 .maplibregl-ctrl-attrib{ font-size:10px; }
 .karta .maplibregl-ctrl-bottom-left{ bottom:calc(var(--vrstica) + 24px + env(safe-area-inset-bottom)); left:4px; }

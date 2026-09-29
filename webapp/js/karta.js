@@ -18,6 +18,9 @@ const MESTA = [
   { url: "/karta/ljubljana.pmtiles", bbox: [14.35, 45.97, 14.66, 46.15] },
   { url: "/karta/maribor.pmtiles", bbox: [15.55, 46.51, 15.72, 46.60] }
 ];
+/** Najvecja smiselna povecava na tocki: ulice (z16) samo v mestih z arhivom, drugod z12 (sicer prazen zaslon). */
+export const povecavaZa = (lng, lat) =>
+  (MESTA.some(m => lng >= m.bbox[0] && lng <= m.bbox[2] && lat >= m.bbox[1] && lat <= m.bbox[3]) ? 16 : 12);
 export const SLOVENIJA = [[13.37, 45.42], [16.62, 46.88]];
 export const LJUBLJANA = [14.5058, 46.0569];
 
@@ -25,7 +28,7 @@ function skripta(src) {
   return new Promise((ok, napaka) => {
     const s = document.createElement("script");
     s.src = src; s.async = false;
-    s.onload = ok; s.onerror = () => napaka(new Error("Nalaganje " + src));
+    s.onload = ok; s.onerror = () => { s.remove(); napaka(new Error("Nalaganje " + src)); };
     document.head.appendChild(s);
   });
 }
@@ -53,12 +56,16 @@ export function naloziKnjiznice() {
     maplibregl.addProtocol("mesta", async (params, krmilnik) => {
       const [z, x, y] = params.url.replace("mesta://", "").split("/").map(Number);
       const n = 2 ** z;
-      const lng = ((x + 0.5) / n) * 360 - 180;
-      const lat = (Math.atan(Math.sinh(Math.PI * (1 - (2 * (y + 0.5)) / n))) * 180) / Math.PI;
-      const m = arhivi.find(a => lng >= a.bbox[0] && lng <= a.bbox[2] && lat >= a.bbox[1] && lat <= a.bbox[3]);
-      if (!m) return { data: new Uint8Array(0) };
-      const r = await m.a.getZxy(z, x, y, krmilnik && krmilnik.signal);
-      return { data: r && r.data ? new Uint8Array(r.data) : new Uint8Array(0) };
+      const lng = v => (v / n) * 360 - 180;
+      const lat = v => (Math.atan(Math.sinh(Math.PI * (1 - (2 * v) / n))) * 180) / Math.PI;
+      const [z0, z1, s0, s1] = [lng(x), lng(x + 1), lat(y + 1), lat(y)];   // zahod, vzhod, jug, sever ploscice
+      // Ploscica ob robu mesta seka bbox, cetudi je njeno sredisce zunaj - zato presek, ne sredisce.
+      for (const a of arhivi) {
+        if (z1 < a.bbox[0] || z0 > a.bbox[2] || s1 < a.bbox[1] || s0 > a.bbox[3]) continue;
+        const r = await a.a.getZxy(z, x, y, krmilnik && krmilnik.signal);
+        if (r && r.data) return { data: new Uint8Array(r.data) };
+      }
+      return { data: new Uint8Array(0) };
     });
     return { maplibregl, pmtiles, basemaps };
   })();
@@ -78,8 +85,9 @@ function prilagodiSloje(sloji, predpona, samo) {
       if (n.layout && Array.isArray(n.layout["text-font"])) {
         n.layout = { ...n.layout, "text-font": n.layout["text-font"].map(f => PISAVE[f] || "noto-regular").slice(0, 1) };
       }
-      // Napisi iz slovenija.pmtiles le do povecave 11 - naprej jih nadomestijo podrobnejsi iz mest (brez podvajanja).
-      if (samo === "slo" && n.type === "symbol") n.maxzoom = Math.min(n.maxzoom ?? 24, 11);
+      // Napisi ulic iz slovenija.pmtiles le do povecave 11 - naprej jih nadomestijo podrobnejsi iz mest. Imena krajev
+      // ostanejo (zunaj LJ/MB sicer ne bi bilo nobenega napisa); podvojena imena v mestih skrije trk napisov.
+      if (samo === "slo" && n.type === "symbol" && n["source-layer"] !== "places") n.maxzoom = Math.min(n.maxzoom ?? 24, 11);
       if (samo === "mesta") n.minzoom = Math.max(n.minzoom ?? 0, 11);
       return n;
     });
