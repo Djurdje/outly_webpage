@@ -29,6 +29,9 @@ assets/                               slike, ikone, points-coin.png
 assets/fonts/                         Inter (woff2, latin + latin-ext, SIL OFL) - gostimo sami, NE Google Fonts
 vendor/supabase-2.115.0.js            supabase-js UMD (iz npm) - gostimo sami, NE jsDelivr; nadgradnja = nova datoteka + 4 <script>
 vendor/preact-*, htm-*, qrcode-*      knjiznice spletne aplikacije (ESM iz npm, licence *-LICENSE.txt); hooks: uvoz "preact" -> relativna pot
+vendor/maplibre-*, pmtiles-*, protomaps-basemaps-*   zemljevid (faza 3); CSP gradnja MapLibre (delavec z nase domene)
+karta/*.pmtiles, karta/pisave/        podatki zemljevida (OSM prek Protomaps) in pisave (Noto, OFL); izrez naredi workflow na veji
+                                      `karta-izrez`; slovenija = z0-10, ljubljana/maribor = z11-15 (Pages: najvec 25 MB/datoteko)
 CNAME, _redirects, _headers           domena, preusmeritve, glave (CSP za /app)
 
 app/index.html                        SPLETNA APLIKACIJA (PWA, od 29. 9. 2026): lupina; _redirects streze vse /app/* z njo
@@ -57,6 +60,8 @@ webapp/app.css, webapp/js/            koda aplikacije (Preact + htm, ES moduli, 
   Brez `404.html` Cloudflare za neznano pot vrne korensko `index.html`; ta ima kot PRVI skript `vstop.js`, ki preusmeri na
   `/app/?pot=...`, `usmerjanje.js` pa pot obnovi. Zato: `index.html` naj ostane z absolutnimi potmi (`/styles.css`), `vstop.js`
   naj ostane prvi skript in **ne dodajaj `404.html`** (pokvaril bi globoke povezave).
+- Zemljevid (`webapp/js/karta.js`): brez tujih streznikov ploscic; klub zunaj LJ/MB ima ulice sele, ko dodamo arhiv mesta
+  (nov izrez + vnos v `MESTA`) ali celo Slovenijo na R2 (Martin). Pripis OpenStreetMap mora ostati viden (licenca ODbL).
 - Preverjanje: headless Chromium s stubom backenda in Supabase (`page.route`), lokalni streznik, ki posnema `_redirects`
   in `_headers`; sirine 393, 360, 1280; neprijavljen + prijavljen; konzola brez napak (tudi CSP).
 

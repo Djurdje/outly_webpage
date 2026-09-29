@@ -13,6 +13,7 @@ import {
 } from "../oblika.js";
 import { Ikona, Slika, Avatar, GlavaNazaj, Nalaganje, Napaka, List } from "../ui.js";
 import { NakupList } from "./nakup.js";
+import { MiniKarta } from "./zemljevid.js";
 import { CenikList } from "./club.js";
 
 export function Dogodek({ id }) {
@@ -106,6 +107,7 @@ export function Dogodek({ id }) {
       <div class="info-vrstica"><span class="info-oznaka">${t("PHONE")}:</span>
         ${klub && klub.contact_phone ? html`<a href=${"tel:" + klub.contact_phone.replace(/[^\d+]/g, "")}>${klub.contact_phone}</a>` : html`<span>-</span>`}
       </div>
+      ${klub && klub.lat != null && klub.lng != null ? html`<${MiniKarta} lat=${klub.lat} lng=${klub.lng} ime=${klub.name} />` : null}
       ${klub && klub.lat != null && klub.lng != null ? html`<a class="povezava-zemljevid" target="_blank" rel="noopener noreferrer"
         href=${`https://www.openstreetmap.org/?mlat=${klub.lat}&mlon=${klub.lng}#map=17/${klub.lat}/${klub.lng}`}>
         <${Ikona} ime="map-pin" velikost=${16} /> ${t("Open in maps")}</a>` : null}

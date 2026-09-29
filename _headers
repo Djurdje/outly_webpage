@@ -18,3 +18,8 @@
 /webapp/*
   Cache-Control: no-cache
   X-Content-Type-Options: nosniff
+
+# Zemljevid (faza 3): ploscice in pisave se ne spreminjajo pogosto - dan predpomnjenja.
+/karta/*
+  Cache-Control: public, max-age=86400
+  X-Content-Type-Options: nosniff

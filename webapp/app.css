@@ -520,3 +520,31 @@ h1,h2,h3,p{ margin:0; }
 .kk-gumba > *{ flex:1; }
 .kartica-vabila{ display:flex; flex-direction:column; gap:12px; padding:16px; border-radius:18px; background:var(--b06); border:1px solid var(--b10); }
 .kv-vrsta-glava{ display:flex; align-items:center; gap:12px; }
+
+/* ---------- faza 3: zemljevid ---------- */
+.zemljevid-zaslon{ padding:0; gap:0; }
+.okvir.z-vrstico:has(.zemljevid-zaslon){ padding-bottom:0; padding-left:0; padding-right:0; max-width:none; }
+.karta, .karta.maplibregl-map{ position:fixed; inset:0; z-index:0; background:#0e0e10; }
+.karta-obvestilo{ position:fixed; z-index:5; top:calc(14px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%);
+  max-width:calc(100% - 32px); padding:10px 14px; border-radius:12px; background:rgba(20,20,22,.94); border:1px solid var(--b10); font-size:14px; text-align:center; }
+.karta-obvestilo.spodaj{ top:auto; bottom:calc(var(--vrstica) + 100px + env(safe-area-inset-bottom)); }
+.karta-lokacija{ position:fixed; z-index:5; right:16px; bottom:calc(var(--vrstica) + 28px + env(safe-area-inset-bottom)); width:48px; height:48px; background:rgba(20,20,22,.94); }
+.karta-kartica{ position:fixed; z-index:6; left:50%; transform:translateX(-50%); bottom:calc(var(--vrstica) + 24px + env(safe-area-inset-bottom));
+  width:min(calc(100% - 24px), 440px); display:flex; align-items:center; gap:12px; padding:12px; border-radius:18px;
+  background:rgba(22,22,24,.97); border:1px solid var(--b14); box-shadow:0 12px 32px rgba(0,0,0,.5); animation:gor .22s var(--ease) both; }
+.karta-kartica .gumb-glavni{ width:auto; padding:0 18px; flex:none; }
+.oznaka-kluba{ width:40px; height:46px; padding:0; background:none; border:0; cursor:pointer; display:block; }
+.oznaka-kluba .igla{ position:absolute; left:3px; top:0; width:34px; height:34px; border-radius:50% 50% 50% 3px; transform:rotate(-45deg);
+  transform-origin:50% 50%; overflow:hidden; background:#1c1c1e; border:2px solid #fff; box-shadow:0 4px 10px rgba(0,0,0,.5);
+  display:grid; place-items:center; color:#fff; font-weight:800; }
+.oznaka-kluba .igla > *{ transform:rotate(45deg); }
+.oznaka-kluba .igla img{ width:100%; height:100%; object-fit:cover; transform:rotate(45deg) scale(1.25); }
+.oznaka-kluba:focus-visible{ outline:none; }
+.oznaka-kluba:focus-visible .igla{ box-shadow:0 0 0 3px var(--modra); }
+.oznaka-kluba.mala{ width:28px; height:34px; }
+.oznaka-kluba.mala .igla{ left:2px; width:24px; height:24px; background:#fff; }
+.oznaka-jaz{ width:18px; height:18px; border-radius:50%; background:var(--modra); border:3px solid #fff; box-shadow:0 0 0 6px rgba(76,118,255,.25); }
+.mini-karta{ display:block; height:160px; border-radius:18px; overflow:hidden; border:1px solid var(--b10); position:relative; }
+.mini-karta-platno, .mini-karta-platno.maplibregl-map{ position:absolute; inset:0; background:#0e0e10; }
+.maplibregl-ctrl-attrib{ font-size:10px; }
+.karta .maplibregl-ctrl-bottom-left{ bottom:calc(var(--vrstica) + 24px + env(safe-area-inset-bottom)); left:4px; }

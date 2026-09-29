@@ -9,6 +9,7 @@ import { navigiraj } from "../usmerjanje.js";
 import * as P from "../podatki.js";
 import { denar, zanrIme, varenUrl } from "../oblika.js";
 import { Ikona, Slika, GlavaNazaj, Nalaganje, Napaka, List, VrsticaDogodka } from "../ui.js";
+import { MiniKarta } from "./zemljevid.js";
 
 export function Klub({ id }) {
   const prijavljen = useSeja(s => s.prijavljen);
@@ -88,6 +89,7 @@ export function Klub({ id }) {
       <${Ikona} ime="chevron-right" velikost=${16} razred="utisano" />
     </button>
 
+    <${MiniKarta} lat=${k.lat} lng=${k.lng} ime=${k.name} />
     ${k.lat != null && k.lng != null ? html`<a class="kartica-vrstica" target="_blank" rel="noopener noreferrer"
       href=${`https://www.openstreetmap.org/?mlat=${k.lat}&mlon=${k.lng}#map=17/${k.lat}/${k.lng}`}>
       <${Ikona} ime="map-pin" velikost=${20} />
