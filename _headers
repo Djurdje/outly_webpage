@@ -1,14 +1,14 @@
 # Cloudflare Pages: glave odgovorov. Za zdaj samo spletna aplikacija (/app) - landing ostane, kot je.
-# CSP: skripte samo z nase domene (brez inline, brez eval, brez CDN-jev); povezave samo na backend
+# CSP: skripte samo z nase domene (brez inline, brez eval, brez CDN-jev); povezave samo na backend, Sentry (porocila napak)
 # in Supabase; slike/video https (klubi nalagajo Cloudinary in druge https URL-je).
 /app
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https: data: blob:; media-src 'self' https: blob:; font-src 'self'; connect-src 'self' https://outly-backend-roy3.onrender.com https://api.cloudinary.com https://zbewqcxnvrwebxonvebx.supabase.co wss://zbewqcxnvrwebxonvebx.supabase.co; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https: data: blob:; media-src 'self' https: blob:; font-src 'self'; connect-src 'self' https://outly-backend-roy3.onrender.com https://api.cloudinary.com https://zbewqcxnvrwebxonvebx.supabase.co wss://zbewqcxnvrwebxonvebx.supabase.co https://o4512176179773440.ingest.de.sentry.io; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(self), geolocation=(self), microphone=(), payment=()
 
 /app/*
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https: data: blob:; media-src 'self' https: blob:; font-src 'self'; connect-src 'self' https://outly-backend-roy3.onrender.com https://api.cloudinary.com https://zbewqcxnvrwebxonvebx.supabase.co wss://zbewqcxnvrwebxonvebx.supabase.co; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https: data: blob:; media-src 'self' https: blob:; font-src 'self'; connect-src 'self' https://outly-backend-roy3.onrender.com https://api.cloudinary.com https://zbewqcxnvrwebxonvebx.supabase.co wss://zbewqcxnvrwebxonvebx.supabase.co https://o4512176179773440.ingest.de.sentry.io; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(self), geolocation=(self), microphone=(), payment=()
