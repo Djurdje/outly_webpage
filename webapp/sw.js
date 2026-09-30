@@ -6,10 +6,10 @@
      shranjeno samo ob izpadu - po objavi nikoli stara koda.
    - /vendor/*, pisave, ikone (razlicica v imenu / se ne spreminjajo): shranjeno najprej.
    - API (backend, Supabase, Cloudinary), vstopnice, ploscice zemljevida: NE prestrezamo (vedno sveze, kot iOS). */
-const RAZLICICA = "outly-app-3";
+const RAZLICICA = "outly-app-4";   // ob dvigu uskladi tudi webapp/porocilo.js
 const LUPINA = "/app/";
 const JEDRO = [
-  LUPINA, "/webapp/app.css", "/webapp/zagon.js", "/webapp/js/main.js", "/webapp/manifest.webmanifest",
+  LUPINA, "/webapp/app.css", "/webapp/zagon.js", "/webapp/porocilo.js", "/webapp/js/main.js", "/webapp/manifest.webmanifest",
   "/vendor/preact-10.29.8.module.js", "/vendor/preact-hooks-10.29.8.module.js", "/vendor/htm-3.1.1.module.js",
   "/vendor/qrcode-generator-2.0.4.mjs",
   "/vendor/supabase-2.115.0.js", "/supabase-config.js",
