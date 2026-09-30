@@ -419,7 +419,7 @@ export const SL = {
  "Send your ticket for {event} to {name}?": "Pošljem tvojo vstopnico za {event} uporabniku {name}?",
  "Sending...": "Pošiljam …",
  "Sent requests": "Poslane prošnje",
- "Sent to {name}": "Poslano {name}",
+ "Sent to {name}": "Vstopnica poslana: {name}",
  "Set on map": "Nastavi na zemljevidu",
  "Set up your club": "Nastavi svoj klub",
  "Settings": "Nastavitve",
