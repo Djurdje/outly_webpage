@@ -6,7 +6,7 @@
      shranjeno samo ob izpadu - po objavi nikoli stara koda.
    - /vendor/*, pisave, ikone (razlicica v imenu / se ne spreminjajo): shranjeno najprej.
    - API (backend, Supabase, Cloudinary), vstopnice, ploscice zemljevida: NE prestrezamo (vedno sveze, kot iOS). */
-const RAZLICICA = "outly-app-4";
+const RAZLICICA = "outly-app-4";   // ob dvigu uskladi tudi webapp/porocilo.js
 const LUPINA = "/app/";
 const JEDRO = [
   LUPINA, "/webapp/app.css", "/webapp/zagon.js", "/webapp/porocilo.js", "/webapp/js/main.js", "/webapp/manifest.webmanifest",
