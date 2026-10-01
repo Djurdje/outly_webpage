@@ -3,6 +3,7 @@
 /CLAUDE.md          /  302
 /.claude/*          /  302
 /.gitignore         /  302
+/.github/*          /  302
 
 # Spletna aplikacija (/app): vsak zaslon ima svoj URL (/app/event/12 ...), vse streze ena lupina.
 # POZOR (29. 9. 2026): Cloudflare tega pravila v produkciji ni uporabil - globoke povezave zato

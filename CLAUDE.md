@@ -12,7 +12,10 @@ preberi jih (ali zahtevaj njihovo vsebino), preden spreminjaš karkoli, kar se d
   odločeno 16. 9. 2026, človeka vmes ni). Po objavi (~1 min) preveri `https://outly.si` (200) in spremenjene strani v brskalniku;
   CDN cache do 10 min. Če je kaj narobe, takoj revert PR + merge.
 - Izjema: pravni dokumenti (`terms.html`, `privacy*.html`) in Supabase SQL, ki briše podatke – to čaka Martinov DA.
-- Ker se streže vse iz repa, **v repo ne sme nič internega ali občutljivega** (`_redirects` skriva `CLAUDE.md` in `.claude/`).
+- **Oznaka `odobril-martin`** (workflow `Zascita`, od 1. 10. 2026): PR, ki spremeni `.github/workflows/**`, `CLAUDE.md`,
+  `.claude/**`, `_headers`, `_redirects`, `terms.html` ali `privacy*.html`, pade brez te oznake. Oznako doda **Martin**;
+  agent si je ne sme dodati sam. Rdeč `Zascita` = ne mergaj, povej Martinu, kaj v PR-ju je občutljivo, in počakaj.
+- Ker se streže vse iz repa, **v repo ne sme nič internega ali občutljivega** (`_redirects` skriva `CLAUDE.md`, `.claude/` in `.github/`).
 
 ## Kaj je kje
 
