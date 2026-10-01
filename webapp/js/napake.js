@@ -75,6 +75,10 @@ const PRAVILA = [
   ["sales are closed", "Ticket sales are closed."],
   ["tickets left", "Not enough tickets left."],
   ["not enough tickets", "Not enough tickets left."],
+  // VIP mize (kupec): mizo je vmes kupil nekdo drug / paket ni izbran ali ni od tega kluba
+  ["already booked", "This table is already booked."],
+  ["table not found", "This table is not available anymore."],
+  ["package", "Choose a bottle for your table."],
   ["add your date of birth", "Add your date of birth in Personal info to buy tickets."],
   ["payments are not available", "Payments are not available yet."],
   ["already exists", "An account with this email or username already exists."],

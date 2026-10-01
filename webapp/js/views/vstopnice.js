@@ -7,6 +7,7 @@ import { sporocilo } from "../napake.js";
 import { danInUra } from "../oblika.js";
 import { GlavaNazaj, Nalaganje, Napaka, Ikona, Slika, Avatar, List } from "../ui.js";
 import { KodaQR } from "../qr.js";
+import { VipVrstica, doOseb } from "../vip.js";
 
 export function Vstopnice() {
   const [s, setS] = useState({ nalaga: true, napaka: null, vst: [] });
@@ -50,14 +51,20 @@ export function Vstopnice() {
 function Karta({ v, odprta, preklopi, stara, poslji }) {
   const uporabljena = v.status === "used";
   const stanje = uporabljena ? t("ALREADY USED") : v.status === "valid" ? (stara ? t("ENDED") : "") : v.status.toUpperCase();
-  return html`<div class=${"vstopnica" + (stara ? " stara" : "")}>
+  const vip = v.is_vip === true;
+  return html`<div class=${"vstopnica" + (stara ? " stara" : "") + (vip ? " vip" : "")}>
     <button type="button" class="vstopnica-glava-gumb" onClick=${preklopi} disabled=${stara} aria-expanded=${odprta}>
       <span class="vd-slika"><${Slika} src=${v.poster_url} sirina=${150} alt="" /></span>
       <span class="kv-besedilo"><span class="nadnapis">${(v.club_name || "").toUpperCase()}</span><strong>${v.event_title}</strong>
-        <span>${danInUra(v._zacetek)}</span></span>
+        <span>${danInUra(v._zacetek)}</span>
+        ${vip ? html`<${VipVrstica} v=${v} />` : null}</span>
       ${stanje ? html`<span class="cip-plan">${stanje}</span>` : null}
     </button>
     ${odprta && !stara ? html`<div class="vstopnica-qr">
+      ${vip && (v.package_description || v.table_seats) ? html`<div class="vip-paket-opis">
+        ${v.package_description ? html`<span>${v.package_description}</span>` : null}
+        ${v.table_seats ? html`<span>${doOseb(v.table_seats)}</span>` : null}
+      </div>` : null}
       <${KodaQR} vsebina=${v.qr} velikost=${220} oznaka=${t("Ticket QR code")} />
       <div class="vstopnica-polja">
         <span><small>${t("ORDER")}</small>${v.public_ref}</span>
@@ -108,7 +115,8 @@ function PrenosList({ vstopnica: v, zapri, koncano }) {
         <button type="button" class="gumb-glavni" onClick=${poslji} disabled=${tece}>${tece ? t("Sending...") : t("Send")}</button>
         <button type="button" class="gumb-siv" onClick=${() => setIzbran(null)}>${t("Cancel")}</button>`
     : html`
-      <div class="nakup-dogodek"><strong>${v.event_title}</strong><span class="utisano">${v.club_name} · ${v.public_ref}</span></div>
+      <div class="nakup-dogodek"><strong>${v.event_title}</strong><span class="utisano">${v.club_name} · ${v.public_ref}</span>
+        ${v.is_vip === true ? html`<${VipVrstica} v=${v} />` : null}</div>
       <p class="opomba">${opis}</p>
       ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}
       <h3 class="nastavitev-naslov">${t("Choose a friend")}</h3>

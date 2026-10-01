@@ -8,6 +8,7 @@ import { t, locale } from "../i18n.js";
 import { ApiError, sporocilo } from "../napake.js";
 import { GlavaNazaj, Ikona } from "../ui.js";
 import { idKluba, poslovno } from "../posel.js";
+import { VipVrstica } from "../vip.js";
 
 /** Odgovor skenerja (ScanResult). Streznik ga vrne tudi s 400/403/404/409 (iOS scanTicket enako). */
 export async function skenirajVstopnico(klub, qr) {
@@ -225,6 +226,7 @@ export function Skener({ klub }) {
           <span>${rezultat.napaka ? rezultat.napaka : opisRezultata(rezultat)}</span>
         </div>
         <button type="button" class="gumb-siv majhen skener-naprej" onClick=${naprej}>${t("Next")}</button>
+        ${rezultat.ticket && rezultat.ticket.is_vip === true ? html`<div class="skener-vip"><${VipVrstica} v=${rezultat.ticket} velika=${true} /></div>` : null}
       </div>` : null}
     </div>
   </div>`;

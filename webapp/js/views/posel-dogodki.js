@@ -14,6 +14,8 @@ import { GlavaNazaj, Ikona, Slika, Nalaganje, List } from "../ui.js";
 import { idKluba, poslovno, normalizirajDogodke, centiIz, evriBesedilo, NAJVEC_VIDEA } from "../posel.js";
 import { PoslovnaNapaka } from "./posel.js";
 import { skenirajVstopnico, naslovRezultata, opisRezultata } from "./posel-skener.js";
+import { VipVrstica } from "../vip.js";
+import { VipDogodka, RezervacijeVip } from "./posel-vip-dogodek.js";
 
 const datumDogodka = d => (d ? new Intl.DateTimeFormat(locale(), { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }).format(d) : "");
 
@@ -256,6 +258,7 @@ export function ObrazecDogodka({ klub, dogodek }) {
           <input type="checkbox" role="switch" class="stikalo" checked=${p.objavljen} onChange=${e => nastavi("objavljen", e.target.checked)} /></label>
         ${obstojeci && obstojeci.status === "cancelled" ? html`<p class="napaka-besedilo">${t("This event is cancelled.")}</p>` : null}
       </fieldset>
+      ${urejam && obstojeci ? html`<${VipDogodka} klub=${id} dogodek=${idDogodka} />` : null}
       ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}
       <button type="button" class="gumb-glavni" onClick=${shrani} disabled=${shranjujem || nalagaPlakat || !p.title.trim()}>${shranjujem ? t("Saving...") : t("Save")}</button>
       ${urejam ? html`<button type="button" class="gumb-rdec" disabled=${shranjujem} onClick=${() => setBrisem(true)}>${t("Cancel or delete event")}</button>` : null}
@@ -275,6 +278,7 @@ export function VstopniceDogodkaKluba({ klub, dogodek }) {
   const [s, setS] = useState({ nalaga: true, napaka: null, vstopnice: [], naslov: "" });
   const [delujoc, setDelujoc] = useState(null);
   const [zadnji, setZadnji] = useState(null);   // zadnji odgovor skenerja (pasica nad seznamom)
+  const [vstopi, setVstopi] = useState(0);   // stevec rocnih vstopov: osvezi "prisli X/N" pri VIP rezervacijah
   const nalozi = () => {
     setS(x => ({ ...x, nalaga: !x.vstopnice.length, napaka: null }));
     return Promise.all([
@@ -284,7 +288,8 @@ export function VstopniceDogodkaKluba({ klub, dogodek }) {
       const e = (Array.isArray(dogodki) ? dogodki : []).find(x => x.id === idDogodka);
       // Obdrzimo samo, kar rabimo: podpisan QR za rocni vstop (kot iOS), brez celotne serijske in e-naslovov.
       const vstopnice = (Array.isArray(v) ? v : []).map(x => ({ id: x.id, status: x.status, qr: typeof x.qr === "string" ? x.qr : "",
-        public_ref: x.public_ref || "", kratka: String(x.serial || "").slice(0, 8).toUpperCase() }));
+        public_ref: x.public_ref || "", kratka: String(x.serial || "").slice(0, 8).toUpperCase(),
+        is_vip: x.is_vip === true, table_label: x.table_label || "", package_name: x.package_name || "" }));
       setS({ nalaga: false, napaka: null, vstopnice, naslov: e ? e.title : "" });
     }).catch(e => setS(x => ({ ...x, nalaga: false, napaka: e })));
   };
@@ -298,6 +303,7 @@ export function VstopniceDogodkaKluba({ klub, dogodek }) {
       // Takoj oznacimo lokalno (ce osvezitev seznama pade, gumb ne ostane).
       if (r.result === "ok" || r.result === "already_used") setS(x => ({ ...x, vstopnice: x.vstopnice.map(y => (y.id === v.id ? { ...y, status: "used" } : y)) }));
       await nalozi();
+      setVstopi(n => n + 1);
     }
     catch (e) { setZadnji({ napaka: sporocilo(e) }); }
     finally { setDelujoc(null); }
@@ -322,13 +328,16 @@ export function VstopniceDogodkaKluba({ klub, dogodek }) {
       <div aria-live="polite">${zadnji ? html`<div class=${"skener-pasica " + (ok ? "ok" : "ne")}>
         <${Ikona} ime=${ok ? "circle-check" : "circle-x"} velikost=${20} razred=${ok ? "zelena-besedilo" : "rdeca-besedilo"} />
         <span class="kv-besedilo"><strong>${zadnji.napaka ? t("Could not check the ticket") : naslovRezultata(zadnji.result)}</strong>
-          <span>${zadnji.napaka || opisRezultata(zadnji)}</span></span></div>` : null}</div>
+          <span>${zadnji.napaka || opisRezultata(zadnji)}</span></span>
+        ${zadnji.ticket && zadnji.ticket.is_vip === true ? html`<div class="skener-vip"><${VipVrstica} v=${zadnji.ticket} velika=${true} /></div>` : null}</div>` : null}</div>
+      <${RezervacijeVip} klub=${id} dogodek=${idDogodka} osvezi=${vstopi} />
       <h2 class="podnaslov">${t("Door check-in")}</h2>
       ${!s.vstopnice.length ? html`<p class="opomba srednje">${t("No tickets sold for this event yet.")}</p>` : html`<div class="seznam">
         ${s.vstopnice.map(v => {
           const noterJe = v.status === "used";
           return html`<div class="vrstica-vstopnice" key=${v.id}>
-            <span class="kv-besedilo"><strong class="mono">${v.kratka}</strong><span>${v.public_ref || ""}</span></span>
+            <span class="kv-besedilo"><strong class="mono">${v.kratka}</strong><span>${v.public_ref || ""}</span>
+              ${v.is_vip ? html`<${VipVrstica} v=${v} />` : null}</span>
             ${noterJe || !v.qr
               ? html`<span class=${"oznaka-vstopa" + (noterJe ? " noter" : "")}>${noterJe ? t("IN") : t("Not yet")}</span>`
               : html`<button type="button" class="gumb-vstopa" disabled=${delujoc !== null} onClick=${() => vstop(v)}
