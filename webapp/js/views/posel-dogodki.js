@@ -324,7 +324,7 @@ export function VstopniceDogodkaKluba({ klub, dogodek }) {
         <div><strong>${noter}</strong><span>${t("checked in")}</span></div>
         <div><strong>${s.vstopnice.length - noter}</strong><span>${t("expected")}</span></div>
       </div>
-      <a class="gumb-siv" href=${`/app/business/${id}/scan`}><${Ikona} ime="scan-line" velikost=${18} />${t("Scan tickets")}</a>
+      <a class="gumb-siv" href=${`/app/business/${id}/scan?dogodek=${idDogodka}`}><${Ikona} ime="scan-line" velikost=${18} />${t("Scan tickets")}</a>
       <div aria-live="polite">${zadnji ? html`<div class=${"skener-pasica " + (ok ? "ok" : "ne")}>
         <${Ikona} ime=${ok ? "circle-check" : "circle-x"} velikost=${20} razred=${ok ? "zelena-besedilo" : "rdeca-besedilo"} />
         <span class="kv-besedilo"><strong>${zadnji.napaka ? t("Could not check the ticket") : naslovRezultata(zadnji.result)}</strong>

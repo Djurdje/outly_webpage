@@ -31,6 +31,7 @@
   --b70:rgba(255,255,255,.70);
   --rdeca:#FF5A5A;
   --zelena:#35C77A;
+  --oranzna:#FFA24C;        /* opozorilo: brez povezave, ni odlocitve (skener) */
   --zlata:#D4AF37;          /* VIP: poudarek (znacka, obroba), nikoli ploskev */
   --stolpec:480px;
   --odmik:16px;
@@ -673,11 +674,11 @@ a.profil-ime{ white-space:normal; }
 .koraki{ margin:0; padding-left:22px; display:flex; flex-direction:column; gap:10px; font-size:15px; }
 
 /* ---------- QR skener vstopnic (posel-skener.js) ---------- */
-.skener{ position:relative; width:100%; aspect-ratio:3/4; max-height:62vh; border-radius:18px; overflow:hidden; background:#000; margin-top:8px; }
+.skener{ position:relative; width:100%; aspect-ratio:3/4; max-height:62vh; max-height:max(240px, min(62vh, calc(100svh - 340px))); border-radius:18px; overflow:hidden; background:#000; margin-top:8px; }
 .skener-video{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
 .skener-video.skrito-video{ opacity:0; }
 .skener-plast{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:16px; }
-.skener-namig{ position:absolute; top:16px; left:16px; right:16px; margin:0 auto; width:fit-content; max-width:calc(100% - 32px); font-size:14px; font-weight:600; color:#fff; background:rgba(0,0,0,.55); padding:6px 12px; border-radius:999px; text-align:center; }
+.skener-namig{ position:absolute; top:12px; left:12px; right:12px; margin:0 auto; width:fit-content; max-width:calc(100% - 24px); font-size:13px; font-weight:600; color:#fff; background:rgba(0,0,0,.55); padding:6px 12px; border-radius:999px; text-align:center; }
 .skener-okvir{ width:min(240px, 62%); aspect-ratio:1; border:3px solid #fff; border-radius:20px; box-shadow:0 0 0 100vmax rgba(0,0,0,.35); }
 .skener-stanje{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:24px; text-align:center; color:var(--b70); }
 .skener-stanje strong{ color:#fff; font-size:17px; }
@@ -685,7 +686,12 @@ a.profil-ime{ white-space:normal; }
 .skener-stevci{ display:flex; justify-content:center; gap:20px; margin:12px 0 4px; font-weight:700; font-size:15px; }
 .zelena-besedilo{ color:var(--zelena); }
 .rdeca-besedilo{ color:var(--rdeca); }
-.skener-rezultat-mesto{ min-height:88px; margin-top:8px; }
+/* Rezultat skena je na kameri (spodaj): ostane viden brez drsenja tudi na majhnih telefonih in nad plavajoco spodnjo vrstico. */
+.skener-rezultat-mesto{ position:absolute; left:8px; right:8px; bottom:8px; z-index:2; }
+.skener .skener-rezultat{ background:#1e1e1e; box-shadow:0 0 0 1px rgba(255,255,255,.1), 0 8px 24px rgba(0,0,0,.5); }
+.skener .skener-rezultat.ok{ background:#12301f; }
+.skener .skener-rezultat.ne{ background:#3a1717; }
+.skener .skener-rezultat.opozorilo{ background:#3a2a12; }
 .skener-rezultat{ display:flex; align-items:center; gap:12px; padding:14px; border-radius:16px; background:var(--b06); color:#fff; }
 .skener-rezultat.ok{ background:rgba(53,199,122,.18); }
 .skener-rezultat.ok > svg{ color:var(--zelena); }
@@ -700,6 +706,36 @@ a.profil-ime{ white-space:normal; }
 .skener-pasica{ display:flex; align-items:center; gap:10px; padding:12px; border-radius:12px; margin-bottom:12px; }
 .skener-pasica.ok{ background:rgba(53,199,122,.15); }
 .skener-pasica.ne{ background:rgba(255,90,90,.15); }
+
+/* Skener brez povezave (issue outly-backend#86): izbira dogodka, stanje, konflikti */
+.skener-glava{ display:flex; flex-direction:column; gap:8px; padding:8px 8px 10px 14px; border-radius:14px; background:var(--b06); }
+.skener-dogodek{ display:flex; align-items:center; gap:12px; }
+.skener-dogodek .kv-besedilo{ flex:1; min-width:0; }
+.skener-dogodek .kv-besedilo strong{ display:block; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.skener-dogodek .kv-besedilo span{ display:block; font-size:12.5px; color:var(--b70); }
+.skener-dogodek .gumb-siv{ width:auto; flex:none; }
+.skener-dogodki{ display:flex; flex-direction:column; gap:8px; }
+.skener-dogodek-gumb{ display:flex; flex-direction:column; align-items:flex-start; gap:2px; width:100%; padding:12px 14px; border-radius:14px; background:var(--b06); color:#fff; text-align:left; }
+.skener-dogodek-gumb strong{ font-size:16px; }
+.skener-dogodek-gumb span{ font-size:13px; color:var(--b70); }
+.skener-dogodek-gumb.izbran{ box-shadow:inset 0 0 0 1.5px var(--b55); }
+.skener-stanje-prazno{ display:flex; justify-content:center; padding:48px 0; }
+.skener-stanje-vrstica{ display:flex; flex-wrap:wrap; gap:6px; padding-right:6px; }
+.znacka-stanja{ display:inline-flex; align-items:center; gap:6px; min-height:28px; padding:0 10px; border-radius:999px; background:var(--b10); font-size:13px; font-weight:600; color:var(--b70); }
+.znacka-stanja .pika{ width:8px; height:8px; border-radius:50%; background:currentColor; flex:none; }
+.znacka-stanja.online{ color:var(--zelena); }
+.znacka-stanja.offline, .znacka-stanja.opozorilo{ color:var(--oranzna); background:rgba(255,162,76,.14); }
+.znacka-stanja.caka{ color:#fff; }
+.skener-stanje-vrstica .gumb-vstopa{ height:28px; }
+.skener-rezultat.opozorilo > svg{ color:var(--oranzna); }
+.opomba-okvir.ne{ background:rgba(255,90,90,.12); color:#fff; }
+.skener-konflikti{ margin-top:12px; padding:14px; border-radius:16px; background:rgba(255,90,90,.12); display:flex; flex-direction:column; gap:10px; }
+.skener-konflikti-glava{ display:flex; align-items:center; gap:8px; color:var(--rdeca); }
+.skener-konflikt{ display:flex; align-items:center; gap:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,.12); }
+.skener-konflikt .kv-besedilo{ flex:1; min-width:0; }
+.skener-konflikt .kv-besedilo strong{ display:block; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.skener-konflikt .kv-besedilo span{ display:block; font-size:12.5px; color:var(--b70); white-space:normal; }
+.skener-konflikt .gumb-siv{ width:auto; flex:none; }
 
 /* ---------- VIP mize (vip.js, views/vip-kupec.js, posel-vip*.js) ---------- */
 .znacka-vip{ display:inline-flex; align-items:center; height:20px; padding:0 8px; border-radius:999px; border:1px solid rgba(212,175,55,.7);
