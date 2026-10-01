@@ -31,6 +31,7 @@
   --b70:rgba(255,255,255,.70);
   --rdeca:#FF5A5A;
   --zelena:#35C77A;
+  --zlata:#D4AF37;          /* VIP: poudarek (znacka, obroba), nikoli ploskev */
   --stolpec:480px;
   --odmik:16px;
   --vrstica:64px;           /* visina plavajoce spodnje vrstice */
@@ -699,3 +700,112 @@ a.profil-ime{ white-space:normal; }
 .skener-pasica{ display:flex; align-items:center; gap:10px; padding:12px; border-radius:12px; margin-bottom:12px; }
 .skener-pasica.ok{ background:rgba(53,199,122,.15); }
 .skener-pasica.ne{ background:rgba(255,90,90,.15); }
+
+/* ---------- VIP mize (vip.js, views/vip-kupec.js, posel-vip*.js) ---------- */
+.znacka-vip{ display:inline-flex; align-items:center; height:20px; padding:0 8px; border-radius:999px; border:1px solid rgba(212,175,55,.7);
+  background:rgba(212,175,55,.12); color:var(--zlata); font-size:11px; font-weight:800; letter-spacing:.08em; font-style:normal; flex:none; }
+.vip-vrstica{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:0; }
+.vip-besedilo{ font-style:normal; font-size:13px; font-weight:600; color:var(--b70); overflow-wrap:anywhere; }
+.vip-vrstica.velika{ gap:10px; justify-content:center; }
+.vip-vrstica.velika .znacka-vip{ height:28px; padding:0 12px; font-size:15px; }
+.vip-vrstica.velika .vip-besedilo{ font-size:18px; font-weight:800; color:#fff; }
+.vstopnica.vip{ border-color:rgba(212,175,55,.55); }
+.vip-paket-opis{ display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; }
+.vip-paket-opis > span{ font-size:13px; color:var(--b70); }
+.vip-vsebina > .vip-od{ font-size:16px; font-weight:700; color:var(--zlata); }
+
+/* tloris (SVG; viewBox = mreza celic, prilagodi se sirini) */
+.tloris{ display:block; width:100%; height:auto; border-radius:14px; background:#0b0b0b; border:1px solid var(--b10);
+  -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+.tl-mreza{ fill:none; stroke:rgba(255,255,255,.05); stroke-width:1; }
+.tl-gnezdo{ overflow:hidden; }
+.tl-el{ fill:rgba(255,255,255,.07); stroke:rgba(255,255,255,.2); stroke-width:1; pointer-events:all; }
+.tl-el.stage{ fill:rgba(255,255,255,.13); }
+.tl-el.dj{ fill:rgba(255,255,255,.10); }
+.tl-el.dancefloor{ fill:rgba(255,255,255,.035); stroke-dasharray:4 3; }
+.tl-el.entrance{ fill:rgba(53,199,122,.10); stroke:rgba(53,199,122,.5); }
+.tl-el.wc{ fill:rgba(255,255,255,.05); }
+.tl-el.wall{ fill:rgba(255,255,255,.32); stroke:none; }
+.tl-el.label{ fill:none; stroke:none; }
+.tl-nap, .tl-nap2{ fill:rgba(255,255,255,.7); font-weight:600; font-family:inherit; text-anchor:middle; pointer-events:none; }
+.tl-nap2{ fill:rgba(255,255,255,.55); }
+.tl-miza{ cursor:pointer; outline:none; }
+.tl-miza .tl-oblika{ fill:rgba(255,255,255,.06); stroke:rgba(255,255,255,.8); stroke-width:1.5; }
+.tl-miza .tl-nap{ fill:#fff; font-weight:700; }
+.tl-miza.izbrana .tl-oblika{ fill:var(--modra); stroke:#fff; }
+.tl-miza.prodana{ cursor:not-allowed; }
+.tl-miza.prodana .tl-oblika{ fill:rgba(255,255,255,.025); stroke:rgba(255,255,255,.2); stroke-dasharray:3 3; }
+.tl-miza.prodana .tl-nap, .tl-miza.prodana .tl-nap2{ fill:rgba(255,255,255,.35); }
+.tl-zadetek{ fill:transparent; }
+.tl-miza:focus-visible .tl-oblika{ stroke:#fff; stroke-width:3; }
+@media (hover:hover){ .tl-miza.prosta:hover .tl-oblika{ fill:rgba(255,255,255,.16); stroke:#fff; } }
+.vip-legenda{ display:flex; gap:16px; flex-wrap:wrap; align-items:center; font-size:12px; color:var(--b70); }
+.vip-legenda span{ display:inline-flex; align-items:center; gap:6px; }
+.tl-pika{ width:14px; height:14px; border-radius:50%; border:1.5px solid rgba(255,255,255,.8); display:inline-block; }
+.tl-pika.izbrana{ background:var(--modra); border-color:#fff; }
+.tl-pika.prodana{ border-style:dashed; border-color:rgba(255,255,255,.3); background:rgba(255,255,255,.03); }
+
+/* kupec: kartica mize, paketi, spodnji gumb */
+.vip-kartica-mize{ display:flex; flex-direction:column; gap:14px; padding:14px; border-radius:16px; background:var(--b06); border:1px solid var(--b10); }
+.vip-miza-glava{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.vip-miza-glava strong{ font-size:18px; }
+.vip-miza-glava .vip-cena{ font-size:22px; white-space:nowrap; }
+.vip-paketi{ display:flex; flex-direction:column; gap:8px; }
+.vip-paket{ position:relative; display:flex; align-items:center; gap:12px; padding:12px; min-height:56px; border-radius:14px; background:var(--b06);
+  border:1px solid transparent; cursor:pointer; }
+.vip-paket.izbran{ border-color:#fff; background:var(--b10); }
+.vip-paket input{ position:absolute; inset:0; width:100%; height:100%; margin:0; opacity:0; cursor:pointer; }
+.vip-radio{ width:20px; height:20px; border-radius:50%; border:2px solid var(--b55); flex:none; display:grid; place-items:center; }
+.vip-paket.izbran .vip-radio{ border-color:#fff; }
+.vip-paket.izbran .vip-radio::after{ content:""; width:10px; height:10px; border-radius:50%; background:#fff; }
+.vip-paket input:focus-visible + .vip-radio{ outline:2px solid var(--modra); outline-offset:2px; }
+.vip-paket .kv-besedilo span{ white-space:normal; }
+.vip-pas-nakupa{ position:sticky; bottom:0; z-index:2; display:flex; flex-direction:column; gap:6px; margin:0 calc(-1 * var(--odmik));
+  padding:10px var(--odmik) 2px; background:#131313; border-top:1px solid var(--b08); }
+
+/* poslovno: rezervacije na dogodku in cene miz */
+.vip-razdelek{ display:flex; flex-direction:column; gap:10px; }
+.vip-rezervacije{ display:flex; flex-direction:column; gap:8px; }
+.vip-rez{ display:flex; align-items:center; gap:12px; padding:12px; border-radius:14px; background:var(--b06); }
+.vip-rez-miza{ flex:none; min-width:44px; height:44px; padding:0 8px; display:grid; place-items:center; border-radius:12px;
+  border:1px solid rgba(212,175,55,.6); color:var(--zlata); font-weight:800; font-size:15px; }
+.vip-rez-vstop{ display:flex; flex-direction:column; align-items:flex-end; flex:none; }
+.vip-rez-vstop strong{ font-size:18px; }
+.vip-rez-vstop small{ font-size:10px; color:var(--b55); text-transform:uppercase; letter-spacing:.06em; }
+.vip-mize-seznam{ display:flex; flex-direction:column; gap:8px; }
+.vip-vrstica-mize{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; background:var(--b04); }
+.vip-vrstica-mize.zasedena{ opacity:.8; }
+.vip-cena-polje{ flex:0 0 92px; }
+.vip-cena-polje input{ height:40px; padding:0 10px; text-align:right; font-size:15px; }
+.vip-stikalo{ display:inline-flex; flex:none; }
+.skener-rezultat, .skener-pasica{ flex-wrap:wrap; }
+.skener-vip{ flex-basis:100%; padding-top:10px; border-top:1px solid rgba(255,255,255,.15); }
+
+/* urejevalnik tlorisa */
+.okvir.siroko{ max-width:1100px; }
+.vip-urejevalnik{ display:flex; flex-direction:column; gap:18px; }
+.vip-platno-stolpec, .vip-stranski{ display:flex; flex-direction:column; gap:12px; min-width:0; }
+@media (min-width:900px){
+  .vip-urejevalnik{ display:grid; grid-template-columns:minmax(0, 1.7fr) minmax(300px, 1fr); align-items:start; gap:24px; }
+  .vip-platno-stolpec{ position:sticky; top:12px; }
+}
+.vip-paleta{ display:flex; flex-wrap:wrap; gap:8px; }
+.vip-paleta .gumb-siv.majhen{ width:auto; padding:0 12px; }
+.vip-paleta .poudarjen{ border:1px solid rgba(255,255,255,.5); }
+.tloris.urejevalnik{ touch-action:pan-y; }
+.tloris.urejevalnik.izbrano{ touch-action:none; }
+.tl-predmet{ cursor:grab; outline:none; }
+.tl-predmet .tl-miza{ cursor:grab; }
+.tl-predmet:focus-visible .tl-el, .tl-predmet:focus-visible .tl-oblika{ stroke:#fff; stroke-width:2; }
+.tl-okvir-izbire{ fill:none; stroke:#fff; stroke-width:1.5; stroke-dasharray:5 3; pointer-events:none; }
+.tl-rocaj{ cursor:nwse-resize; }
+.tl-rocaj-zadetek{ fill:transparent; }
+.tl-rocaj-pika{ fill:#fff; stroke:#111; stroke-width:1; }
+.vip-skupina{ display:flex; flex-direction:column; gap:10px; padding:14px; border-radius:16px; background:var(--b04); }
+.vip-stevec{ display:flex; flex-direction:column; gap:6px; min-width:0; }
+.vip-stevec-oznaka{ font-size:13px; font-weight:600; color:var(--b70); }
+.vip-stevec .stevec{ justify-content:space-between; }
+.vrsta-izbir.dve{ grid-template-columns:repeat(2, 1fr); }
+.vip-paket-urejanje{ display:flex; flex-direction:column; gap:8px; padding:10px; border-radius:12px; background:var(--b04); }
+.vip-paket-urejanje .vc-vrh .polje{ flex:1; }
+.vip-paket-urejanje textarea{ height:76px; }

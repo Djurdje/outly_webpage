@@ -9,7 +9,7 @@ import { sporocilo } from "../napake.js";
 import { navigiraj } from "../usmerjanje.js";
 import * as P from "../podatki.js";
 import {
-  cena, jeMimo, jeRazprodan, jeMaloVstopnic, preostanek, seJeKoncal, danDolg, ura, mesecKratko, relativno, varenUrl
+  denar, cena, jeMimo, jeRazprodan, jeMaloVstopnic, preostanek, seJeKoncal, danDolg, ura, mesecKratko, relativno, varenUrl
 } from "../oblika.js";
 import { Ikona, Slika, Avatar, GlavaNazaj, Nalaganje, Napaka, List } from "../ui.js";
 import { NakupList } from "./nakup.js";
@@ -24,6 +24,7 @@ export function Dogodek({ id }) {
   const [plan, setPlan] = useState(null);
   const [posiljam, setPosiljam] = useState(false);
   const [list, setList] = useState(null);   // "nakup" | "cenik" | "vip"
+  const [vipIzbor, setVipIzbor] = useState(null);   // { miza, paket } po vrnitvi s prijave (?vip=1&table=..&pkg=..)
 
   async function nalozi() {
     setNapaka(null);
@@ -36,13 +37,23 @@ export function Dogodek({ id }) {
   }
   useEffect(() => { nalozi(); }, [id, prijavljen]);
   useEffect(() => { zabeleziOgled({ event_id: Number(id) }); }, [id]);   // en ogled na obisk
-  // Po prijavi z namenom "kupi" odpremo nakup samodejno (?buy=1).
+  // Po prijavi z namenom "kupi" odpremo nakup samodejno (?buy=1); enako VIP mize (?vip=1, z izbrano mizo in paketom).
   useEffect(() => {
     if (e && prijavljen && new URLSearchParams(location.search).get("buy") === "1") {
       history.replaceState(history.state, "", location.pathname);
       if (moznoKupiti(e)) setList("nakup");
     }
+    const q = new URLSearchParams(location.search);
+    if (e && prijavljen && q.get("vip") === "1") {
+      history.replaceState(history.state, "", location.pathname);
+      if (e.vip_enabled === true && !seJeKoncal(e)) {
+        setVipIzbor({ miza: Number(q.get("table")) || null, paket: Number(q.get("pkg")) || null });
+        setList("vip");
+      }
+    }
   }, [e, prijavljen]);
+  // Dogodek z VIP mizami: modul za tloris se v ozadju nalozi vnaprej (list se odpre brez cakanja).
+  useEffect(() => { if (e && e.vip_enabled === true) naloziVip().catch(() => {}); }, [e && e.vip_enabled]);
 
   if (napaka && !e) return html`<div class="zaslon"><${GlavaNazaj} /><${Napaka} besedilo=${napaka} znova=${nalozi} /></div>`;
   if (!e) return html`<div class="zaslon"><${GlavaNazaj} /><${Nalaganje} /></div>`;
@@ -126,13 +137,15 @@ export function Dogodek({ id }) {
 
     ${!seJeKoncal(e) && klub ? html`<section class="blok-besedila">
       <h2 class="nadnapis">${t("VIP & TABLES")}</h2>
-      <button type="button" class="kartica-vip" onClick=${() => setList("vip")}>
+      <button type="button" class="kartica-vip" onClick=${() => { setVipIzbor(null); setList("vip"); }}>
         ${naslovnaSlika ? html`<${Slika} src=${naslovnaSlika} sirina=${300} alt="" razred="vip-ozadje" />` : null}
         <span class="vip-senca" aria-hidden="true"></span>
         <span class="vip-vsebina">
           <${Ikona} ime="crown" velikost=${24} />
           <strong>${t("Reserve a VIP table")}</strong>
           <span>${t("Bottle service and private tables for your group.")}</span>
+          ${e.vip_enabled === true && e.vip_from_cents != null
+            ? html`<span class="vip-od">${t("from {price}", { price: denar(e.vip_from_cents, e.currency) })}</span>` : null}
           <span class="vip-vec">${t("See tables")} <${Ikona} ime="chevron-right" velikost=${14} /></span>
         </span>
       </button>
@@ -142,11 +155,33 @@ export function Dogodek({ id }) {
 
     <${NakupList} odprt=${list === "nakup"} zapri=${() => setList(null)} dogodek=${e} imeKluba=${klub ? klub.name : ""} />
     <${CenikList} odprt=${list === "cenik"} zapri=${() => setList(null)} klub=${klub} />
-    <${List} odprt=${list === "vip"} zapri=${() => setList(null)} naslov=${t("VIP tables")}>
-      <p class="besedilo-opis">${t("Table reservations in the app are coming soon. {club} will publish the table layout for this event here.", { club: klub ? klub.name : t("Club") })}</p>
-      <p class="opomba">${t("Until then, call the club to reserve a table.")}</p>
-    <//>
+    ${e.vip_enabled === true
+      // Star backend (brez polja vip_enabled) ali dogodek brez VIP: kot doslej - list s telefonom kluba.
+      ? html`<${VipLoader} odprt=${list === "vip"} zapri=${() => setList(null)} dogodek=${e} imeKluba=${klub ? klub.name : ""}
+          klub=${klub} prijavljen=${prijavljen} predizbor=${vipIzbor} />`
+      : html`<${List} odprt=${list === "vip"} zapri=${() => setList(null)} naslov=${t("VIP tables")}>
+          <p class="besedilo-opis">${t("Table reservations in the app are coming soon. {club} will publish the table layout for this event here.", { club: klub ? klub.name : t("Club") })}</p>
+          <p class="opomba">${t("Until then, call the club to reserve a table.")}</p>
+        <//>`}
   </div>`;
+}
+
+/* VIP tloris (views/vip-kupec.js) se nalozi leno: samo dogodki z VIP mizami ga potrebujejo. */
+let vipModul = null;
+const naloziVip = () => import("./vip-kupec.js").then(m => (vipModul = m));
+function VipLoader(props) {
+  const [m, setM] = useState(vipModul);
+  const [napaka, setNapaka] = useState(false);
+  useEffect(() => {
+    if (!props.odprt || m) return;
+    naloziVip().then(setM).catch(() => setNapaka(true));
+  }, [props.odprt]);
+  if (!props.odprt) return null;
+  if (m) return html`<${m.VipList} ...${props} />`;
+  return html`<${List} odprt=${true} zapri=${props.zapri} naslov=${t("VIP tables")}>
+    ${napaka ? html`<${Napaka} besedilo=${navigator.onLine ? t("This screen could not be loaded. Please try again.") : t("No internet connection. Check your network and try again.")}
+      znova=${() => (window.outlyObnovi ? window.outlyObnovi(true) : location.reload())} />` : html`<${Nalaganje} />`}
+  <//>`;
 }
 
 /* Nakup na Outlyju: cena mora obstajati (null = ne prodaja se pri nas), dogodek ni mimo ali razprodan. */

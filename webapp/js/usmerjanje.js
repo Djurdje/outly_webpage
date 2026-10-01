@@ -48,7 +48,8 @@ const POTI = [
   ["/app/business/:klub/info", "biz-info"],
   ["/app/business/:klub/location", "biz-location"],
   ["/app/business/:klub/bar-prices", "biz-bar-prices"],
-  ["/app/business/:klub/scan", "biz-scan"]
+  ["/app/business/:klub/scan", "biz-scan"],
+  ["/app/business/:klub/vip", "biz-vip"]
 ].map(([vzorec, ime]) => {
   const imena = [];
   const re = new RegExp("^" + vzorec.replace(/:(\w+)/g, (m, k) => { imena.push(k); return "([^/]+)"; }) + "/?$");
@@ -105,11 +106,17 @@ if (!history.state || history.state.k === undefined) {
 export const usmerjanje = ustvariTrgovino(trenutno("zacetek"));
 export const usePot = () => useStore(usmerjanje);
 
+/* Varovalo odhoda (urejevalnik VIP tlorisa): zaslon z neshranjenimi spremembami nastavi funkcijo, ki vrne false,
+   ce uporabnik ostane. Velja za povezave in gumb Nazaj v aplikaciji ter za gumb Nazaj brskalnika. */
+let varovalo = null;
+export function nastaviVarovalo(fn) { varovalo = typeof fn === "function" ? fn : null; }
+
 export function navigiraj(url, { zamenjaj = false } = {}) {
   const cilj = new URL(url, location.origin);
   if (cilj.pathname === "/app") cilj.pathname = "/app/";
   if (cilj.origin !== location.origin || !cilj.pathname.startsWith("/app")) { location.href = cilj.href; return; }
   if (cilj.pathname + cilj.search === location.pathname + location.search && !zamenjaj) return;
+  if (varovalo && !varovalo()) return;
   drsenja.set(usmerjanje.get().kljuc, window.scrollY);
   stevec += 1;
   if (zamenjaj) history.replaceState({ k: stevec, g: globina }, "", cilj.pathname + cilj.search);
@@ -119,11 +126,20 @@ export function navigiraj(url, { zamenjaj = false } = {}) {
 
 /** Nazaj v aplikaciji: ce smo prisli od drugod (deljena povezava), gremo na Home. */
 export function nazaj(rezerva = "/app") {
+  if (varovalo && !varovalo()) return;
   if (globina > 0) history.back();
   else navigiraj(rezerva, { zamenjaj: true });
 }
 
+let vracam = false;   // popstate zaradi nase razveljavitve (uporabnik je ostal na zaslonu)
 window.addEventListener("popstate", () => {
+  if (vracam) { vracam = false; return; }
+  if (varovalo && !varovalo()) {
+    // Gumb Nazaj brskalnika: URL se je ze spremenil - vrnemo se na zaslon, kjer smo bili.
+    vracam = true;
+    history.go(((history.state && history.state.k) || 0) < usmerjanje.get().kljuc ? 1 : -1);
+    return;
+  }
   drsenja.set(usmerjanje.get().kljuc, window.scrollY);
   globina = (history.state && history.state.g) || 0;
   usmerjanje.set(trenutno("nazaj"));
