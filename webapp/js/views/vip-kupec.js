@@ -94,7 +94,7 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
     setPosiljam(true); setNapaka("");
     try {
       const r = await send(`/events/${e.id}/tables/${miza.id}/orders`, {
-        method: "POST", body: paket ? { package_id: paket.id } : {}, auth: true
+        method: "POST", body: paket ? { package_id: paket.id, expected_price_cents: miza.price_cents } : { expected_price_cents: miza.price_cents }, auth: true
       });
       pocistiPredpomnilnik();
       setNakup(r);

@@ -193,7 +193,7 @@ function Platno({ klub, zacetno, glava }) {
       if (!p.name.trim() || [...p.name.trim()].length > 60) return setNapaka(t("Every bottle package needs a name of up to 60 characters."));
     }
     const elementi = st.predmeti.filter(p => p.tip !== "table")
-      .map(p => ({ type: p.tip, x: p.x, y: p.y, w: p.w, h: p.h, label: p.tip === "wall" ? "" : p.label.trim().slice(0, 30) }));
+      .map(p => ({ type: p.tip, x: p.x, y: p.y, w: p.w, h: p.h, label: p.tip === "wall" ? "" : [...p.label.trim()].slice(0, 30).join("") }));
     const body = {
       // plan: null je dovoljen samo brez miz; kdor tloris ze ima, ga ohrani (tudi prazen).
       plan: elementi.length || mize.length || imaTloris.current ? { width: st.sirina, height: st.visina, elements: elementi } : null,

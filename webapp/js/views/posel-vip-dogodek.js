@@ -18,6 +18,7 @@ function normaliziraj(r) {
     return {
       ...m,
       disabled: m.disabled === true,
+      archived: m.archived === true,   // arhivirana miza z rezervacijo na tem dogodku: samo v seznamu rezervacij
       default_price_cents: celo(m.default_price_cents, m.price_cents),
       booking: b ? { ...b, guests: celo(b.guests, 0), checked_in: celo(b.checked_in, 0), buyer_username: String(b.buyer_username || "") } : null
     };
@@ -77,6 +78,7 @@ export function VipDogodka({ klub, dogodek }) {
   const [shranjeno, setShranjeno] = useState(false);
   const d = v.d;
   const baza = `/app/business/${klub}`;
+  const aktivne = d ? d.mize.filter(m => !m.archived) : [];   // arhiviranih ne urejamo in ne posiljamo v PUT
 
   // Obrazec se napolni iz odgovora streznika (ob nalaganju in po shranjevanju).
   useEffect(() => {
@@ -94,7 +96,7 @@ export function VipDogodka({ klub, dogodek }) {
   async function shrani() {
     setNapaka(""); setShranjeno(false);
     const tables = [];
-    for (const m of d.mize) {
+    for (const m of aktivne) {
       const c = centiIz(cene[m.id], 100000);
       if (c === undefined) { return setNapaka(t("Enter the price as a number, e.g. 12.50.")); }
       // Prazno ali enako privzeti = privzeta cena (izjema se pobrise).
@@ -109,7 +111,7 @@ export function VipDogodka({ klub, dogodek }) {
   }
   const preklopi = id => setIzklopljene(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
-  if (!d.mize.length) return html`<fieldset>${naslov}
+  if (!aktivne.length) return html`<fieldset>${naslov}
     <p class="opomba">${t("Your club has no VIP tables yet. Draw the floor plan once and reuse it for every event.")}</p>
     <a class="gumb-siv" href=${baza + "/vip"}><${Ikona} ime="crown" velikost=${18} /> ${t("Set up VIP tables")}</a>
   </fieldset>`;
@@ -118,7 +120,7 @@ export function VipDogodka({ klub, dogodek }) {
     <label class="stikalo-vrstica"><span class="kv-besedilo"><strong>${t("Sell VIP tables for this event")}</strong>
       <span>${t("Guests book a table and choose a bottle package.")}</span></span>
       <input type="checkbox" role="switch" class="stikalo" checked=${vklop} onChange=${e => { setVklop(e.target.checked); setShranjeno(false); }} /></label>
-    ${vklop ? html`<div class="vip-mize-seznam">${d.mize.map(m => {
+    ${vklop ? html`<div class="vip-mize-seznam">${aktivne.map(m => {
       const zasedena = !!m.booking;
       return html`<div class=${"vip-vrstica-mize" + (zasedena ? " zasedena" : "")} key=${m.id}>
         <span class="kv-besedilo"><strong>${m.label}</strong>

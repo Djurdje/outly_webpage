@@ -798,6 +798,7 @@ export const SL = {
  "Tap a free table to reserve it.": "Dotakni se proste mize, da jo rezerviraš.",
  "Tap an item to select it, then drag it. Drag the corner dot to resize.": "Dotakni se predmeta, da ga izbereš, nato ga povleci. Za spremembo velikosti povleci piko v kotu.",
  "The price is the default from the floor plan. Change it for this event only, or switch a table off.": "Cena je privzeta iz tlorisa. Spremeni jo samo za ta dogodek ali mizo izklopi.",
+ "The table price has changed. Check the new price and try again.": "Cena mize se je spremenila. Preveri novo ceno in poskusi znova.",
  "This table is already booked.": "Ta miza je že rezervirana.",
  "This table is not available anymore.": "Ta miza ni več na voljo.",
  "Top": "Zgoraj",

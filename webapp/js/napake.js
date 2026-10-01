@@ -77,6 +77,7 @@ const PRAVILA = [
   ["not enough tickets", "Not enough tickets left."],
   // VIP mize (kupec): mizo je vmes kupil nekdo drug / paket ni izbran ali ni od tega kluba
   ["already booked", "This table is already booked."],
+  ["price has changed", "The table price has changed. Check the new price and try again."],
   ["table not found", "This table is not available anymore."],
   ["package", "Choose a bottle for your table."],
   ["add your date of birth", "Add your date of birth in Personal info to buy tickets."],
