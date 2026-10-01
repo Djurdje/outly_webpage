@@ -55,8 +55,14 @@ function besedilaSklepa(s) {
     case "drug-dogodek": return [t("WRONG EVENT"), t("This ticket is for a different event.")];
     case "neveljavna": return [t("INVALID CODE"), t("The signature does not match. Outly did not issue this code.")];
     case "ni-vstopnica": return [t("NOT A TICKET"), t("This is not an Outly ticket code.")];
-    case "stara-potrebna-povezava": return [t("OLD CODE - CONNECTION NEEDED"), t("This ticket was issued before offline scanning. Only the server can check it. Try again when the connection is back.")];
-    case "potrebna-povezava": return [t("CONNECTION NEEDED"), t("This phone cannot check the code yet. Connect once to download the key, then scan again.")];
+    case "neplacano": return [t("NOT PAID"), t("The order for this ticket is not paid.")];
+    case "ni-na-seznamu-potrebna-povezava": return [t("NOT ON THE LIST - CONNECTION NEEDED"), t("The code is genuine, but this ticket should already be on the list and is not. Only the server can tell why. Try again when the connection is back.")];
+    case "stara-potrebna-povezava": return [t("OLD CODE - CONNECTION NEEDED"), s.mogoceVpisana
+      ? t("The server did not answer in time. The ticket may already be checked in: scan it again - if it says Already scanned with the time just now, let the guest in.")
+      : t("This ticket was issued before offline scanning. Only the server can check it. Try again when the connection is back.")];
+    case "potrebna-povezava": return [t("CONNECTION NEEDED"), s.mogoceVpisana
+      ? t("The server did not answer in time. The ticket may already be checked in: scan it again - if it says Already scanned with the time just now, let the guest in.")
+      : t("This phone cannot check the code yet. Connect once to download the key, then scan again.")];
     case "streznik": return [naslovRezultata(s.streznik.result), opisRezultata(s.streznik)];
     case "napaka": return [t("Could not check the ticket"), s.opis || ""];
     default: return [t("REFUSED"), ""];
@@ -74,39 +80,81 @@ const RAZLOG_KONFLIKTA = {
   invalid: "Code rejected by the server"
 };
 
-/* jsQR (~130 KB) samo, ce brskalnik nima BarcodeDetector (Safari, Firefox). */
+/* jsQR (~130 KB) samo, ce brskalnik nima BarcodeDetector (Safari, Firefox).
+   M2 (pregled PR #24): dekodiranje sumne slike 1280 px traja ~1 s in bi blokiralo glavno nit (vrtavka, tipke, shranjevanje
+   skenov). Zato jsQR tece v Web Workerju (webapp/js/sken/jsqr-delavec.js; modul, CSP worker-src 'self'). Ce delavca ni
+   (starejsi brskalnik, napaka), jsQR tece na glavni niti, a samo na sredini slike (okvir, v polni locljivosti). */
 let jsqr = null;
 const naloziJsQR = () => (jsqr ||= import("/vendor/jsqr-1.4.0.mjs").then(m => m.default).catch(e => { jsqr = null; throw e; }));
 
+function ustvariDelavca() {
+  try {
+    const d = new Worker("/webapp/js/sken/jsqr-delavec.js", { type: "module" });
+    const cakajo = new Map();
+    let st = 0, mrtev = false;
+    const umri = () => { mrtev = true; try { d.terminate(); } catch { /* brez */ } for (const f of cakajo.values()) f(undefined); cakajo.clear(); };
+    d.onmessage = e => { const f = cakajo.get(e.data && e.data.id); if (f) { cakajo.delete(e.data.id); f(e.data.koda); } };
+    d.onerror = umri;
+    return {
+      beri: (data, w, h) => new Promise(ok => {
+        if (mrtev) { ok(undefined); return; }
+        const id = ++st;
+        const rok = setTimeout(() => { cakajo.delete(id); umri(); ok(undefined); }, 6000);   // delavec obvisel: nazaj na glavno nit
+        cakajo.set(id, v => { clearTimeout(rok); ok(v); });
+        d.postMessage({ id, data, w, h }, [data.buffer]);
+      }),
+      ustavi: () => { if (!mrtev) umri(); }
+    };
+  } catch { return null; }
+}
+
+/** Bralnik kode QR iz <video>: { beri(video) -> Promise<niz|null>, ustavi() }. */
 async function ustvariBralnik() {
   try {
     if ("BarcodeDetector" in window) {
       const f = await window.BarcodeDetector.getSupportedFormats();
       if (Array.isArray(f) && f.includes("qr_code")) {
         const d = new window.BarcodeDetector({ formats: ["qr_code"] });
-        return async video => {
+        return { beri: async video => {
           const r = await d.detect(video);
           return r && r[0] && r[0].rawValue ? r[0].rawValue : null;
-        };
+        }, ustavi() {} };
       }
     }
   } catch { /* pademo na jsQR */ }
-  const beri = await naloziJsQR();
   const platno = document.createElement("canvas");
   const ctx = platno.getContext("2d", { willReadFrequently: true });
-  return async video => {
-    const w = video.videoWidth, h = video.videoHeight;
-    if (!w || !h) return null;
-    // Koda v2 (~210 znakov, 57 modulov) je gostejsa od stare v1 (~120): s pomanjsavo na 640 px jsQR kode v obicajni razdalji
-    // ne prebere (preizkus 1. 10. 2026), zato slike ne manjsamo pod 1280 px (toliko tudi zahtevamo od kamere).
-    const k = Math.min(1, 1280 / Math.max(w, h));
-    const sw = Math.round(w * k), sh = Math.round(h * k);
-    if (platno.width !== sw) platno.width = sw;
-    if (platno.height !== sh) platno.height = sh;
-    ctx.drawImage(video, 0, 0, sw, sh);
-    const slika = ctx.getImageData(0, 0, sw, sh);
-    const r = beri(slika.data, sw, sh, { inversionAttempts: "dontInvert" });
-    return r && r.data ? r.data : null;
+  let delavec = ustvariDelavca();
+  let beriGlavna = null;
+  return {
+    async beri(video) {
+      const w = video.videoWidth, h = video.videoHeight;
+      if (!w || !h) return null;
+      // Koda v2 (~210 znakov, 57 modulov) je gostejsa od stare v1 (~120): s pomanjsavo na 640 px jsQR kode v obicajni razdalji
+      // ne prebere (preizkus 1. 10. 2026) - slike ne manjsamo pod 1280 px (toliko tudi zahtevamo od kamere).
+      const k = Math.min(1, 1280 / Math.max(w, h));
+      const sw = Math.round(w * k), sh = Math.round(h * k);
+      if (delavec) {
+        if (platno.width !== sw) platno.width = sw;
+        if (platno.height !== sh) platno.height = sh;
+        ctx.drawImage(video, 0, 0, sw, sh);
+        const slika = ctx.getImageData(0, 0, sw, sh);
+        const r = await delavec.beri(slika.data, sw, sh);
+        if (r !== undefined) return r;        // null = brez kode, niz = koda
+        delavec = null;                       // delavec odpovedal: ta in naslednji okvirji na glavni niti
+      }
+      // Glavna nit: samo sredina (okvir ~62 % vidnega polja + rob), v polni locljivosti.
+      const stranica = Math.round(Math.min(sw, sh) * 0.75);
+      const ox = Math.round((sw - stranica) / 2), oy = Math.round((sh - stranica) / 2);
+      if (platno.width !== stranica) platno.width = stranica;
+      if (platno.height !== stranica) platno.height = stranica;
+      ctx.drawImage(video, ox / k, oy / k, stranica / k, stranica / k, 0, 0, stranica, stranica);
+      const slika = ctx.getImageData(0, 0, stranica, stranica);
+      beriGlavna ||= await naloziJsQR();
+      const r = beriGlavna(slika.data, stranica, stranica, { inversionAttempts: "dontInvert" });
+      return r && r.data ? r.data : null;
+    },
+    ustavi() { if (delavec) delavec.ustavi(); delavec = null; }
   };
 }
 
@@ -216,6 +264,8 @@ function SkenerDogodka({ klub, dogodek, zapis, rezerva, naPromeni }) {
       if (video.current) video.current.srcObject = null;
       if (budnost) budnost.release().catch(() => {});
       budnost = null;
+      if (bralnik) bralnik.ustavi();
+      bralnik = null;
     };
 
     async function obravnavaj(koda) {
@@ -245,7 +295,7 @@ function SkenerDogodka({ klub, dogodek, zapis, rezerva, naPromeni }) {
       if (!zivo || !tok || moj !== zagon) return;
       const v = video.current;
       if (v && !zanka.current.zaseden && v.readyState >= 2) {
-        try { await obravnavaj(await bralnik(v)); } catch { /* posamezen okvir */ }
+        try { await obravnavaj(await bralnik.beri(v)); } catch { /* posamezen okvir */ }
       }
       if (zivo && tok && moj === zagon) casovnik = setTimeout(() => beri(moj), PREMOR);
     }

@@ -22,6 +22,7 @@ export const useSeja = (izb = s => s) => useStore(seja, izb);
 export const potrebujeOnboarding = me => !!me && (me.role || "user") === "user" && !me.onboarded_at;
 
 let zadnjiUid = null;
+const CAKANJE_SEJE_MS = 3000;
 
 export async function zacniSejo() {
   nastaviObZavrnjeniSeji(() => odjava("Your session has expired. Please log in again."));
@@ -35,7 +36,15 @@ export async function zacniSejo() {
     return;
   }
   let s = null;
-  try { s = (await supabase.auth.getSession()).data.session; } catch { s = null; }
+  // P2 (pregled PR #24): getSession() ob poteklem zetonu in mrtvem omrezju osvezuje 25-35 s (ali visi), aplikacija pa do
+  // takrat ne bi pokazala nicesar - vratar brez povezave skenerja ne bi odprl. Po ~3 s odloci imaShranjenoSejo() (I10: seja
+  // ostane, zeton se osvezi, ko bo omrezje); poznejsi rezultat ali dogodek onAuthStateChange stanje popravi.
+  try {
+    s = await Promise.race([
+      supabase.auth.getSession().then(r => r.data.session),
+      new Promise(ok => setTimeout(() => ok(null), CAKANJE_SEJE_MS))
+    ]);
+  } catch { s = null; }
   posodobiIzSeje(s);
   // Potekel zeton, ki ga zaradi omrezja zdaj ni mogoce osveziti: uporabnik ostane prijavljen (I10),
   // /me pa pove napako in "Try again".
@@ -79,11 +88,21 @@ export async function naloziMe() {
   }
 }
 
+/* M5: seznami vstopnic in dogodkov (webapp/js/sken/shramba.js) so podatki kluba - na skupni napravi ne smejo ostati.
+   Vrsta se nepoSlanih skenov NE brise (sicer bi odjava izgubila skene, ki jih vrata se niso poslala). Dinamicni uvoz:
+   modul skenerja ni del zagonskega grafa. Ne cakamo dlje kot 1,5 s. */
+async function pocistiSkener() {
+  try {
+    await Promise.race([import("./sken/shramba.js").then(m => m.pocistiPodatkeKluba()), new Promise(ok => setTimeout(ok, 1500))]);
+  } catch { /* najboljsi trud */ }
+}
+
 export async function odjava(obvestilo = "") {
   // Lokalne nastavitve niso vezane na racun - na skupni napravi jih ob odjavi pocistimo (zasebnost).
   try { localStorage.removeItem("outly_nastavitve"); } catch { /* brez */ }
   nastavitve.set({ genres: [], maxKm: 20, ageMin: 18, ageMax: 30, priceMin: 0, priceMax: 3000, shranjeno: false });
   nastaviObraz("club");   // obraz lastnika (klubski/osebni) je vezan na prijavljeno osebo
+  await pocistiSkener();
   try { await supabase.auth.signOut({ scope: "local" }); } catch { /* lokalno vseeno pocistimo */ }
   pocistiPredpomnilnik();
   seja.set({ prijavljen: false, me: null, meNapaka: null, obvestilo });

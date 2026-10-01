@@ -11,7 +11,7 @@
   var STREZNIK = "https://o4512176179773440.ingest.de.sentry.io";
   var PROJEKT = "4512176195764305";
   var NAJVEC = 5;
-  var RAZLICICA = "outly-app-5";   // uskladi z RAZLICICA v webapp/sw.js
+  var RAZLICICA = "outly-app-6";   // uskladi z RAZLICICA v webapp/sw.js
 
   if (location.hostname !== "outly.si") return;   // lokalni razvoj, predogledi: nic
   var poslano = 0;

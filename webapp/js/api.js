@@ -41,6 +41,9 @@ export async function trenutniZeton() {
 }
 
 async function surovKlic(path, { method, body, zeton, signal, klub }) {
+  // Klic, ki ga je klicatelj ze preklical (casovna meja, medtem ko je cakal na zeton), NE sme oditi na streznik:
+  // listener "abort" spodaj ne bi vec sprozil.
+  if (signal && signal.aborted) throw new DOMException("Aborted", "AbortError");
   const glave = {};
   if (zeton) glave["Authorization"] = "Bearer " + zeton;
   const k = klub || izbraniKlub;

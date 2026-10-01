@@ -28,7 +28,7 @@ export const vBase64url = bajti => {
 const izHex = h => Uint8Array.from(h.match(/../g), x => parseInt(x, 16));
 
 /** Razclenitev kode (brez preverjanja podpisa).
-    { vrsta: "v2", serial, dogodek, kid, sporocilo (Uint8Array), podpis (Uint8Array) } | { vrsta: "v1" } | { vrsta: "neznano" } */
+    { vrsta: "v2", serial, dogodek, kid, izdano, sporocilo (Uint8Array), podpis (Uint8Array) } | { vrsta: "v1" } | { vrsta: "neznano" } */
 export function razcleniQr(koda) {
   try {
     if (typeof koda !== "string") return { vrsta: "neznano" };
@@ -44,6 +44,8 @@ export function razcleniQr(koda) {
       if (podpis.length !== 64) return { vrsta: "neznano" };
       return {
         vrsta: "v2", serial: telo.t.toLowerCase(), dogodek: telo.e, kid: typeof telo.k === "string" ? telo.k : "",
+        izdano: Number.isFinite(telo.i) ? telo.i * 1000 : null,   // cas nastanka vstopnice (ms); iz telesa kode, ki ga podpis krije
+
         sporocilo: new TextEncoder().encode("o2." + b), podpis
       };
     }
