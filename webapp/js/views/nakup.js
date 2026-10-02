@@ -7,7 +7,7 @@ import { send, pocistiPredpomnilnik, kljucNakupa, pozabiKljucNakupa, nerazresenN
 import { uidSeje } from "../seja.js";
 import {
   jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo,
-  jeNakupVObdelavi, NAKUP_V_OBDELAVI_S, izidNakupa, nakupNapakaSporocilo, nakupBrezOdgovoraSporocilo
+  jeNakupVObdelavi, NAKUP_V_OBDELAVI_S, sporocilo, ApiError, izidNakupa, nakupNapakaSporocilo, nakupBrezOdgovoraSporocilo
 } from "../napake.js";
 import { denar, jeRazprodan, preostanek, danInUra } from "../oblika.js";
 import { List, Ikona, useZaklep } from "../ui.js";
@@ -45,11 +45,13 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
 
   async function kupi() {
     if (tece.current) return;
+    // Uid seje se ni znan (pocasen zagon, seja se osvezuje): nakup ne dovolimo - kljuc pod "" bi po pridobitvi uid ostal sirota.
+    const uid = uidSeje();
+    if (!uid) return setNapaka(sporocilo(new ApiError(-1, "Could not refresh session.")));
     tece.current = true;
     setPosiljam(true); setNapaka("");
     // Ista vsebina nakupa (uporabnik + dogodek + kolicina) = isti kljuc (api.js, 24 h od zadnje uporabe), tudi po
     // timeoutu/503/409 in po zaprtju ter ponovnem odprtju lista: backend vrne isto narocilo (201).
-    const uid = uidSeje();
     const kljuc = kljucNakupa("vstopnice", uid, e.id, String(kolicina), { dogodek: e.id, kolicina });
     try {
       const r = await send(`/events/${e.id}/orders`, { method: "POST", body: { quantity: kolicina }, auth: true, glave: { "Idempotency-Key": kljuc } });
@@ -109,9 +111,9 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
     <div class="nakup-vrsta">
       <div><strong>${brezplacno ? t("Free") : denar(cenaEna, e.currency)}</strong><span class="utisano"> ${t("per ticket")}</span></div>
       <div class="stevec" role="group" aria-label=${t("Number of tickets")}>
-        <button type="button" onClick=${() => setKolicina(k => Math.max(1, k - 1))} disabled=${kolicina <= 1} aria-label=${t("Fewer")}>−</button>
+        <button type="button" onClick=${() => { if (!tece.current) setKolicina(k => Math.max(1, k - 1)); }} disabled=${kolicina <= 1 || posiljam} aria-label=${t("Fewer")}>−</button>
         <output aria-live="polite">${kolicina}</output>
-        <button type="button" onClick=${() => setKolicina(k => Math.min(najvec, k + 1))} disabled=${kolicina >= najvec} aria-label=${t("More")}>+</button>
+        <button type="button" onClick=${() => { if (!tece.current) setKolicina(k => Math.min(najvec, k + 1)); }} disabled=${kolicina >= najvec || posiljam} aria-label=${t("More")}>+</button>
       </div>
     </div>
 

@@ -7,7 +7,7 @@ import { t, tn } from "../i18n.js";
 import { send, pocistiPredpomnilnik, kljucNakupa, pozabiKljucNakupa, nerazresenNakup, oznaciIzidNakupa } from "../api.js";
 import { uidSeje } from "../seja.js";
 import {
-  sporocilo, jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo,
+  sporocilo, ApiError, jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo,
   jeNakupVObdelavi, NAKUP_V_OBDELAVI_S, izidNakupa, jeNarociloNeaktivno, nakupNapakaSporocilo, nakupBrezOdgovoraSporocilo
 } from "../napake.js";
 import { navigiraj } from "../usmerjanje.js";
@@ -104,11 +104,14 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
       return;
     }
     if (imaPakete && !paket) return setNapaka(t("Choose your bottle"));
+    // Uid seje se ni znan (pocasen zagon, seja se osvezuje): nakup ne dovolimo - kljuc pod "" bi po pridobitvi uid ostal sirota.
+    const uid = uidSeje();
+    if (!uid) return setNapaka(sporocilo(new ApiError(-1, "Could not refresh session.")));
     tece.current = true;
     setPosiljam(true); setNapaka("");
     // Ista vsebina nakupa (uporabnik + dogodek + miza + paket) = isti kljuc (api.js, 24 h od zadnje uporabe), tudi po
     // timeoutu/503/409 request_in_progress in po zaprtju ter ponovnem odprtju lista.
-    const uid = uidSeje(), paketPrejsnji = paket ? paket.id : null;
+    const paketPrejsnji = paket ? paket.id : null;
     const kljuc = kljucNakupa("vip", uid, e.id, `${miza.id}|${paketPrejsnji ?? ""}`, { dogodek: e.id, miza: miza.id, paket: paketPrejsnji });
     try {
       const r = await send(`/events/${e.id}/tables/${miza.id}/orders`, {
@@ -177,10 +180,10 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
       </div>
       ${!d.onSale ? html`<p class="opomba oranzna" role="status">${t("Table reservations are closed for this event.")}</p>` : null}
       ${d.plan
-        ? html`<${TlorisKupec} plan=${d.plan} mize=${d.mize} valuta=${d.valuta} izbrana=${mizaId} ob=${m => { setMizaId(m.id); setNapaka(""); }} />`
+        ? html`<${TlorisKupec} plan=${d.plan} mize=${d.mize} valuta=${d.valuta} izbrana=${mizaId} ob=${m => { if (tece.current) return; setMizaId(m.id); setNapaka(""); }} />`
         : html`<div class="mreza-cipov" role="group" aria-label=${t("VIP tables")}>${d.mize.map(m => html`<button type="button" key=${m.id}
-            class=${"cip" + (m.id === mizaId ? " izbran" : "")} disabled=${m.available === false} aria-pressed=${m.id === mizaId}
-            onClick=${() => setMizaId(m.id)}>${m.label}</button>`)}</div>`}
+            class=${"cip" + (m.id === mizaId ? " izbran" : "")} disabled=${m.available === false || posiljam} aria-pressed=${m.id === mizaId}
+            onClick=${() => { if (!tece.current) setMizaId(m.id); }}>${m.label}</button>`)}</div>`}
       <${LegendaMiz} />
       ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}
       ${miza ? html`<div class="vip-kartica-mize">
@@ -191,7 +194,7 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
         ${imaPakete ? html`<div class="vip-paketi" role="radiogroup" aria-label=${t("Choose your bottle")}>
           <h3 class="nastavitev-naslov">${t("Choose your bottle")}</h3>
           ${d.paketi.map(p => html`<label class=${"vip-paket" + (p.id === paketId ? " izbran" : "")} key=${p.id}>
-            <input type="radio" name="vip-paket" checked=${p.id === paketId} onChange=${() => setPaketId(p.id)} />
+            <input type="radio" name="vip-paket" checked=${p.id === paketId} disabled=${posiljam} onChange=${() => { if (!tece.current) setPaketId(p.id); }} />
             <span class="vip-radio" aria-hidden="true"></span>
             <span class="kv-besedilo"><strong>${p.name}</strong>${p.description ? html`<span>${p.description}</span>` : null}</span>
           </label>`)}

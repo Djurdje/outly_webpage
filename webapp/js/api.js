@@ -7,9 +7,13 @@ import { ApiError } from "./napake.js";
 
 export const API_URL = "https://outly-backend-roy3.onrender.com";
 const CAKANJE_MS = 30000;
-/* Nakup (POST) brez casovne meje: ob hladnem zagonu Renderja bi prekinjen zahtevek lahko ze ustvaril
-   narocilo. Ponovni poskus je zdaj varen (glava Idempotency-Key, glej kljucNakupa), a prekinitev ob
-   casovni meji bi uporabnika po nepotrebnem pahnila v negotovost; odgovor pride ali pa povezava pade. */
+/* Nakup (POST .../orders) nima 30 s meje kot ostali klici: ob hladnem zagonu Renderja strezniku traja dlje (semafor 15 s +
+   idempotenca 10 s + DB 10 s, skupaj najvec ~35-40 s). Ker nakup nosi Idempotency-Key (glej kljucNakupa), je prekinitev
+   varna: ponovni klik z istim kljucem vrne isto narocilo. Skupna meja NAKUP_MEJA_MS (vkljucno s pridobitvijo zetona)
+   uporabnika ne pusti viseti v listu, ki se med nakupom ne da zapreti; ob izteku send() vrne ApiError(-1) = izid
+   "nerazresen" (isti kljuc, napotek "may have gone through"), kot iOS timeoutInterval 30 s s prostorom za zagon. */
+export const NAKUP_MEJA_MS = 50000;
+const JE_NAKUP = /\/orders$/;
 const BREZ_MEJE = /\/orders$|^\/me$|\/transfer$/;
 
 /* Seja nastavi, kaj se zgodi, ko Supabase sejo zavrne (odjava + obvestilo). */
@@ -73,7 +77,19 @@ async function preberi(odg) {
  * auth: false (javno) | "optional" (zeton, ce obstaja) | true (obvezen; brez njega 401 lokalno)
  * glave: dodatne glave zahtevka (npr. { "Idempotency-Key": uuid }); brez njih se klic ne spremeni.
  */
-export async function send(path, { method = "GET", body, auth = false, signal, klub, glave } = {}) {
+export function send(path, opcije = {}) {
+  if ((opcije.method || "GET") !== "POST" || !JE_NAKUP.test(path)) return posljiKlic(path, opcije);
+  // Nakup: skupna casovna meja za zeton + zahtevek. Po izteku se zahtevek prekine, pozne obljube pa se utisajo.
+  const krmilnik = new AbortController(), zunanji = opcije.signal;
+  if (zunanji) { if (zunanji.aborted) krmilnik.abort(); else zunanji.addEventListener("abort", () => krmilnik.abort(), { once: true }); }
+  let casovnik;
+  const iztek = new Promise((_, napaka) => { casovnik = setTimeout(() => { krmilnik.abort(); napaka(new ApiError(-1, "No response.")); }, NAKUP_MEJA_MS); });
+  const klic = posljiKlic(path, { ...opcije, signal: krmilnik.signal });
+  klic.catch(() => {});   // po izteku zavrnitev (AbortError) ni vec zanimiva
+  return Promise.race([klic, iztek]).finally(() => clearTimeout(casovnik));
+}
+
+async function posljiKlic(path, { method = "GET", body, auth = false, signal, klub, glave } = {}) {
   let zeton = auth ? await trenutniZeton() : "";
   if (auth === true && !zeton) throw new ApiError(401, "Missing token.");
 
@@ -145,7 +161,7 @@ export function kljucNakupa(vrsta, uporabnik, dogodek, vsebina, podatki = null) 
   const pot = potNakupa(vrsta, uporabnik, dogodek);
   let z = zivZapis(pot);
   if (!z || z.vsebina !== vsebina) z = { kljuc: novUUID(), izid: "dokoncen" };
-  z.prej = z.izid || "dokoncen";   // izid pred tem poskusom (za "neposlan")
+  z.prej = z.izid;   // izid pred tem poskusom (za "neposlan"; null = prejsnji poskus brez odgovora ostane nerazresen)
   Object.assign(z, { vsebina, podatki, izid: null, ob: Date.now() });   // izid null = odgovor se ni prisel (obravnavamo kot nerazresen)
   kljuciNakupov.set(pot, z);
   return z.kljuc;
