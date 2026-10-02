@@ -2,7 +2,7 @@
    Vloge odloca streznik; tu samo beremo, kaj je rekel. */
 import { supabase, odjemalec, koNalozen } from "./supabase.js";
 import { nastaviObraz } from "./posel.js";
-import { send, nastaviObZavrnjeniSeji, pocistiPredpomnilnik, imaShranjenoSejo } from "./api.js";
+import { send, nastaviObZavrnjeniSeji, pocistiPredpomnilnik, pozabiVseKljuceNakupa, imaShranjenoSejo } from "./api.js";
 import { ApiError } from "./napake.js";
 import { ustvariTrgovino, useStore } from "./store.js";
 import { nastavitve } from "./nastavitve.js";
@@ -15,6 +15,9 @@ export const seja = ustvariTrgovino({
   meNapaka: null,        // napaka zadnjega nalaganja /me (ne 401)
   obvestilo: ""          // npr. "seja je potekla" - pokaze prijava
 });
+
+/** Identiteta za Idempotency-Key nakupa: Supabase uid prijavljenega (drug uporabnik = nov kljuc). */
+export const uidSeje = () => zadnjiUid || "";
 
 export const useSeja = (izb = s => s) => useStore(seja, izb);
 
@@ -62,8 +65,11 @@ function poslusajSejo() {
   koNalozen(c => c.auth.onAuthStateChange((dogodek, nova) => {
     const prej = zadnjiUid;
     posodobiIzSeje(nova);
-    if (dogodek === "SIGNED_OUT") { seja.set({ me: null }); pocistiPredpomnilnik(); }
-    else if (nova && nova.user && nova.user.id !== prej) naloziMe();
+    if (dogodek === "SIGNED_OUT") { seja.set({ me: null }); pocistiPredpomnilnik(); pozabiVseKljuceNakupa(); }
+    else if (nova && nova.user && nova.user.id !== prej) {
+      if (prej) pozabiVseKljuceNakupa();   // drug uporabnik: kljuci nakupov prejsnjega ne smejo ostati
+      naloziMe();
+    }
   }));
 }
 
@@ -105,6 +111,7 @@ export async function odjava(obvestilo = "") {
   await pocistiSkener();
   try { await supabase.auth.signOut({ scope: "local" }); } catch { /* lokalno vseeno pocistimo */ }
   pocistiPredpomnilnik();
+  pozabiVseKljuceNakupa();   // Idempotency-Key nakupa je vezan na uporabnika: naslednji uporabnik ga ne sme podedovati
   seja.set({ prijavljen: false, me: null, meNapaka: null, obvestilo });
 }
 

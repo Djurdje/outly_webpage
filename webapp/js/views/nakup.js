@@ -3,8 +3,12 @@
    Kartice NIKOLI ne vnasamo v nas vmesnik (Stripe Checkout, ko pride). */
 import { html, useEffect, useRef, useState } from "../lib.js";
 import { t, tn } from "../i18n.js";
-import { send, pocistiPredpomnilnik } from "../api.js";
-import { sporocilo, jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo } from "../napake.js";
+import { send, pocistiPredpomnilnik, kljucNakupa, pozabiKljucNakupa, nerazresenNakup, oznaciIzidNakupa } from "../api.js";
+import { uidSeje } from "../seja.js";
+import {
+  jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo,
+  jeNakupVObdelavi, NAKUP_V_OBDELAVI_S, sporocilo, ApiError, izidNakupa, nakupNapakaSporocilo, nakupBrezOdgovoraSporocilo
+} from "../napake.js";
 import { denar, jeRazprodan, preostanek, danInUra } from "../oblika.js";
 import { List, Ikona, useZaklep } from "../ui.js";
 import { KodaQR } from "../qr.js";
@@ -16,7 +20,19 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
   const [nakup, setNakup] = useState(null);
   const tece = useRef(false);   // zascita pred dvojnim klikom v istem trenutku (stanje se posodobi prepozno)
   const [zaklenjeno, zakleni] = useZaklep();   // po 503 (semafor nakupov) je gumb nekaj sekund onemogocen
-  useEffect(() => { if (odprt) { setKolicina(1); setNapaka(""); setNakup(null); } }, [odprt]);
+  const ziv = useRef(true);   // komponenta je nameščena
+  const odprtRef = useRef(odprt);
+  odprtRef.current = odprt;
+  useEffect(() => () => { ziv.current = false; }, []);
+  useEffect(() => {
+    if (!odprt) return;
+    // Nerazresen nakup tega dogodka (timeout, brez odgovora ...): list se odpre z ISTO kolicino (isti kljuc) in z napotkom,
+    // da je narocilo morda ze nastalo; sicer bi sprememba kolicine dala nov kljuc = drugo narocilo.
+    const prej = nerazresenNakup("vstopnice", uidSeje(), e.id);
+    const ostane = preostanek(e), najvec = Math.max(1, Math.min(10, ostane == null ? 10 : ostane));
+    setKolicina(prej && prej.kolicina >= 1 ? Math.min(prej.kolicina, najvec) : 1);
+    setNapaka(prej ? nakupBrezOdgovoraSporocilo() : ""); setNakup(null);
+  }, [odprt]);
   // Cena null = vstopnic ni na Outlyju; tak dogodek nima nakupa (in NI "Free").
   if (!odprt || e.ticket_price_cents == null) return null;
 
@@ -29,26 +45,42 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
 
   async function kupi() {
     if (tece.current) return;
+    // Uid seje se ni znan (pocasen zagon, seja se osvezuje): nakup ne dovolimo - kljuc pod "" bi po pridobitvi uid ostal sirota.
+    const uid = uidSeje();
+    if (!uid) return setNapaka(sporocilo(new ApiError(-1, "Could not refresh session.")));
     tece.current = true;
     setPosiljam(true); setNapaka("");
+    // Ista vsebina nakupa (uporabnik + dogodek + kolicina) = isti kljuc (api.js, 24 h od zadnje uporabe), tudi po
+    // timeoutu/503/409 in po zaprtju ter ponovnem odprtju lista: backend vrne isto narocilo (201).
+    const kljuc = kljucNakupa("vstopnice", uid, e.id, String(kolicina), { dogodek: e.id, kolicina });
     try {
-      const r = await send(`/events/${e.id}/orders`, { method: "POST", body: { quantity: kolicina }, auth: true });
+      const r = await send(`/events/${e.id}/orders`, { method: "POST", body: { quantity: kolicina }, auth: true, glave: { "Idempotency-Key": kljuc } });
       pocistiPredpomnilnik();   // zaloga (sold_count) na karticah naj bo sveza
-      setNakup(r);
+      if (ziv.current && odprtRef.current) { pozabiKljucNakupa("vstopnice", uid, e.id, kljuc); setNakup(r); }   // uspeh: naslednji nakup dobi nov kljuc
+      // Uspeh, ki ga uporabnik ni videl (list se je medtem odmontiral): kljuca NE pozabimo - ponovitev vrne isto narocilo (Idempotent-Replayed).
+      else oznaciIzidNakupa("vstopnice", uid, e.id, kljuc, "nerazresen");
     } catch (err) {
-      // Streznik je zaseden (503): kratek premor; sporocilo o navalu samo za znano telo (napake.js). Nakupa NE ponavljamo sami (ni idempotentnega kljuca).
+      // Nakupa NE ponavljamo sami: uporabnik pritisne znova (isti kljuc, razen ob 422, 400 in 409 order_not_active).
+      const izid = izidNakupa(err);
+      if (izid === "zavrzen") pozabiKljucNakupa("vstopnice", uid, e.id, kljuc);   // nov nakup
+      else oznaciIzidNakupa("vstopnice", uid, e.id, kljuc, izid);   // nerazresen: predizpolnitev in napotek ob ponovnem odprtju
+      // Streznik je zaseden (503): kratek premor; sporocilo o navalu samo za znano telo (napake.js).
       if (jeNakup503(err)) zakleni(nakupPocakajS(err));   // gumb pri vsakem 503 na nakupu nekaj sekund onemogocen
+      else if (jeNakupVObdelavi(err)) zakleni(nakupPocakajS(err, NAKUP_V_OBDELAVI_S));   // 409 request_in_progress: isti nakup se obdeluje
       if (jeNakupZaseden(err)) setNapaka(nakupZasedenoSporocilo());
-      // Brez odgovora: narocilo je morda nastalo - preden kupi znova, naj pogleda vstopnice.
-      else setNapaka(err && err.status === -1 ? t("No response from the server. Check Profile → Tickets before you try again.") : sporocilo(err));
+      // Brez odgovora: narocilo je morda nastalo - ponovni pritisk z istim kljucem ga najde, ne ustvari drugega.
+      // (Neuspela osvezitev seje to NI: zahtevek ni odsel; nakupNapakaSporocilo ju loci.)
+      else setNapaka(nakupNapakaSporocilo(err));
     }
     tece.current = false;
     setPosiljam(false);
   }
+  // Med letecim nakupom lista ni mogoce zapreti (odgovor bi se izgubil, uporabnik bi placal znova).
+  const zapriVarno = () => { if (!tece.current) zapri(); };
 
   if (nakup) {
     const vst = (nakup.tickets || []).filter(v => v.qr);
-    return html`<${List} odprt=${true} zapri=${zapri} naslov=${t("Your tickets")}>
+    return html`<${List} odprt=${true} zapri=${zapriVarno} naslov=${t("Your tickets")}>
       <div class="uspeh">
         <span class="uspeh-krog"><${Ikona} ime="check" velikost=${28} debelina=${3} /></span>
         <strong>${t("You're in!")}</strong>
@@ -68,7 +100,7 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
     <//>`;
   }
 
-  return html`<${List} odprt=${true} zapri=${zapri} naslov=${t("Checkout")}>
+  return html`<${List} odprt=${true} zapri=${zapriVarno} brezZapiranja=${posiljam} naslov=${t("Checkout")}>
     <div class="nakup-dogodek">
       <span class="nadnapis">${(imeKluba || "").toUpperCase()}</span>
       <strong>${e.title}</strong>
@@ -79,9 +111,9 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
     <div class="nakup-vrsta">
       <div><strong>${brezplacno ? t("Free") : denar(cenaEna, e.currency)}</strong><span class="utisano"> ${t("per ticket")}</span></div>
       <div class="stevec" role="group" aria-label=${t("Number of tickets")}>
-        <button type="button" onClick=${() => setKolicina(k => Math.max(1, k - 1))} disabled=${kolicina <= 1} aria-label=${t("Fewer")}>−</button>
+        <button type="button" onClick=${() => { if (!tece.current) setKolicina(k => Math.max(1, k - 1)); }} disabled=${kolicina <= 1 || posiljam} aria-label=${t("Fewer")}>−</button>
         <output aria-live="polite">${kolicina}</output>
-        <button type="button" onClick=${() => setKolicina(k => Math.min(najvec, k + 1))} disabled=${kolicina >= najvec} aria-label=${t("More")}>+</button>
+        <button type="button" onClick=${() => { if (!tece.current) setKolicina(k => Math.min(najvec, k + 1)); }} disabled=${kolicina >= najvec || posiljam} aria-label=${t("More")}>+</button>
       </div>
     </div>
 
