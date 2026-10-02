@@ -5,7 +5,7 @@
 import { html, useEffect, useRef, useState } from "../lib.js";
 import { t, tn } from "../i18n.js";
 import { send, pocistiPredpomnilnik } from "../api.js";
-import { sporocilo, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo } from "../napake.js";
+import { sporocilo, jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo } from "../napake.js";
 import { navigiraj } from "../usmerjanje.js";
 import { denar, danInUra } from "../oblika.js";
 import { List, Ikona, Nalaganje, Napaka, useZaklep } from "../ui.js";
@@ -101,8 +101,9 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
       setNakup(r);
     } catch (err) {
       if (err && err.status === 409) { nalozi(true); setMizaId(null); }   // zasedeno ali prodaja zaprta: osvezi tloris
-      // Streznik je zaseden (503): sporocilo + kratek premor. Nakupa NE ponavljamo sami (ni idempotentnega kljuca).
-      if (jeNakupZaseden(err)) { zakleni(nakupPocakajS(err)); setNapaka(nakupZasedenoSporocilo()); }
+      // Streznik je zaseden (503): kratek premor; sporocilo o navalu samo za znano telo (napake.js). Nakupa NE ponavljamo sami (ni idempotentnega kljuca).
+      if (jeNakup503(err)) zakleni(nakupPocakajS(err));   // gumb pri vsakem 503 na nakupu nekaj sekund onemogocen
+      if (jeNakupZaseden(err)) setNapaka(nakupZasedenoSporocilo());
       // Brez odgovora: narocilo je morda nastalo - preden kupi znova, naj pogleda vstopnice.
       else setNapaka(err && err.status === -1 ? t("No response from the server. Check Profile → Tickets before you try again.") : sporocilo(err));
     }
