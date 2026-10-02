@@ -3,10 +3,11 @@
    Kartice NIKOLI ne vnasamo v nas vmesnik (Stripe Checkout, ko pride). */
 import { html, useEffect, useRef, useState } from "../lib.js";
 import { t, tn } from "../i18n.js";
-import { send, pocistiPredpomnilnik, kljuciNakupa } from "../api.js";
+import { send, pocistiPredpomnilnik, kljucNakupa, pozabiKljucNakupa, nerazresenNakup, oznaciNerazresenNakup } from "../api.js";
+import { uporabnikNakupa } from "../seja.js";
 import {
-  sporocilo, jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo,
-  jeNakupVObdelavi, NAKUP_V_OBDELAVI_S, jeKljucPonovljen, nakupBrezOdgovoraSporocilo
+  jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo,
+  jeNakupVObdelavi, NAKUP_V_OBDELAVI_S, jeKljucZavrzen, jeNerazresenIzid, nakupNapakaSporocilo
 } from "../napake.js";
 import { denar, jeRazprodan, preostanek, danInUra } from "../oblika.js";
 import { List, Ikona, useZaklep } from "../ui.js";
@@ -19,9 +20,14 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
   const [nakup, setNakup] = useState(null);
   const tece = useRef(false);   // zascita pred dvojnim klikom v istem trenutku (stanje se posodobi prepozno)
   const [zaklenjeno, zakleni] = useZaklep();   // po 503 (semafor nakupov) je gumb nekaj sekund onemogocen
-  const kljuci = useRef(null);   // Idempotency-Key: isti kljuc za ponovni poskus ISTEGA nakupa (dogodek + kolicina)
-  if (!kljuci.current) kljuci.current = kljuciNakupa();
-  useEffect(() => { if (odprt) { setKolicina(1); setNapaka(""); setNakup(null); } }, [odprt]);
+  useEffect(() => {
+    if (!odprt) return;
+    // Nerazresen nakup tega dogodka (timeout, brez odgovora ...): list se odpre z ISTO kolicino, da gre naslednji klik z istim kljucem.
+    const prej = nerazresenNakup("vstopnice", uporabnikNakupa(), e.id);
+    const ostane = preostanek(e), najvec = Math.max(1, Math.min(10, ostane == null ? 10 : ostane));
+    setKolicina(prej && prej.kolicina >= 1 ? Math.min(prej.kolicina, najvec) : 1);
+    setNapaka(""); setNakup(null);
+  }, [odprt]);
   // Cena null = vstopnic ni na Outlyju; tak dogodek nima nakupa (in NI "Free").
   if (!odprt || e.ticket_price_cents == null) return null;
 
@@ -37,21 +43,25 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
     tece.current = true;
     setPosiljam(true); setNapaka("");
     try {
-      // Ista vsebina nakupa (dogodek + kolicina) = isti kljuc, tudi po timeoutu/503/409: backend vrne isto narocilo (201).
-      const kljuc = kljuci.current.za(`${e.id}|${kolicina}`);
+      // Ista vsebina nakupa (uporabnik + dogodek + kolicina) = isti kljuc (api.js, 24 h od zadnje uporabe), tudi po
+      // timeoutu/503/409 in po zaprtju ter ponovnem odprtju lista: backend vrne isto narocilo (201).
+      const kljuc = kljucNakupa("vstopnice", uporabnikNakupa(), `${e.id}|${kolicina}`, { dogodek: e.id, kolicina });
       const r = await send(`/events/${e.id}/orders`, { method: "POST", body: { quantity: kolicina }, auth: true, glave: { "Idempotency-Key": kljuc } });
-      kljuci.current.pozabi();   // uspeh (tudi ponovitev): naslednji nakup dobi nov kljuc
+      pozabiKljucNakupa("vstopnice");   // uspeh (tudi ponovitev): naslednji nakup dobi nov kljuc
       pocistiPredpomnilnik();   // zaloga (sold_count) na karticah naj bo sveza
       setNakup(r);
     } catch (err) {
       // Nakupa NE ponavljamo sami: uporabnik pritisne znova (isti kljuc, razen ob 422).
-      if (jeKljucPonovljen(err)) kljuci.current.pozabi();   // kljuc je bil ze uporabljen z drugo vsebino: nov nakup
+      // 422 (kljuc z drugo vsebino), 400 neveljaven kljuc, 409 order_not_active (kljuc vezan na neaktivno narocilo): nov nakup.
+      if (jeKljucZavrzen(err)) pozabiKljucNakupa("vstopnice");
+      else oznaciNerazresenNakup("vstopnice", jeNerazresenIzid(err));   // predizpolnitev ob ponovnem odprtju samo po nerazresenem izidu
       // Streznik je zaseden (503): kratek premor; sporocilo o navalu samo za znano telo (napake.js).
       if (jeNakup503(err)) zakleni(nakupPocakajS(err));   // gumb pri vsakem 503 na nakupu nekaj sekund onemogocen
       else if (jeNakupVObdelavi(err)) zakleni(nakupPocakajS(err, NAKUP_V_OBDELAVI_S));   // 409 request_in_progress: isti nakup se obdeluje
       if (jeNakupZaseden(err)) setNapaka(nakupZasedenoSporocilo());
       // Brez odgovora: narocilo je morda nastalo - ponovni pritisk z istim kljucem ga najde, ne ustvari drugega.
-      else setNapaka(err && err.status === -1 ? nakupBrezOdgovoraSporocilo() : sporocilo(err));
+      // (Neuspela osvezitev seje to NI: zahtevek ni odsel; nakupNapakaSporocilo ju loci.)
+      else setNapaka(nakupNapakaSporocilo(err));
     }
     tece.current = false;
     setPosiljam(false);

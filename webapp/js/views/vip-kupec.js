@@ -4,10 +4,11 @@
    jih prijateljem z obstojecim prenosom (Profile -> Tickets). Ta modul se nalozi leno (event.js), ko dogodek ponuja VIP. */
 import { html, useEffect, useRef, useState } from "../lib.js";
 import { t, tn } from "../i18n.js";
-import { send, pocistiPredpomnilnik, kljuciNakupa } from "../api.js";
+import { send, pocistiPredpomnilnik, kljucNakupa, pozabiKljucNakupa, nerazresenNakup, oznaciNerazresenNakup } from "../api.js";
+import { uporabnikNakupa } from "../seja.js";
 import {
   sporocilo, jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo,
-  jeNakupVObdelavi, NAKUP_V_OBDELAVI_S, jeKljucPonovljen, nakupBrezOdgovoraSporocilo
+  jeNakupVObdelavi, NAKUP_V_OBDELAVI_S, jeKljucZavrzen, jeNerazresenIzid, jeNarociloNeaktivno, nakupNapakaSporocilo
 } from "../napake.js";
 import { navigiraj } from "../usmerjanje.js";
 import { denar, danInUra } from "../oblika.js";
@@ -52,8 +53,6 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
   const [nakup, setNakup] = useState(null);
   const tece = useRef(false);   // zascita pred dvojnim klikom (stanje se posodobi prepozno)
   const [zaklenjeno, zakleni] = useZaklep();   // po 503 (semafor nakupov) je gumb nekaj sekund onemogocen
-  const kljuci = useRef(null);   // Idempotency-Key: isti kljuc za ponovni poskus ISTEGA nakupa (dogodek + miza + paket)
-  if (!kljuci.current) kljuci.current = kljuciNakupa();
 
   /** Tloris + mize + paketi. tiho = brez vrtavke (osvezitev po 409: kupec ostane na istem mestu). */
   async function nalozi(tiho, izbor) {
@@ -78,7 +77,9 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
   useEffect(() => {
     if (!odprt) return;
     setNapaka(""); setNakup(null); setPosiljam(false);
-    nalozi(false, predizbor || null);
+    // Izbira po vrnitvi s prijave ima prednost; sicer nerazresen nakup tega dogodka (miza se obdrzi samo, ce je se prosta - nalozi()).
+    const prej = nerazresenNakup("vip", uporabnikNakupa(), e.id);
+    nalozi(false, predizbor || (prej ? { miza: prej.miza, paket: prej.paket } : null));
   }, [odprt]);
   if (!odprt) return null;
 
@@ -99,26 +100,32 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
     tece.current = true;
     setPosiljam(true); setNapaka("");
     try {
-      // Ista vsebina nakupa (dogodek + miza + paket) = isti kljuc, tudi po timeoutu/503/409 request_in_progress.
-      const kljuc = kljuci.current.za(`${e.id}|${miza.id}|${paket ? paket.id : ""}`);
+      // Ista vsebina nakupa (uporabnik + dogodek + miza + paket) = isti kljuc (api.js, 24 h od zadnje uporabe), tudi po
+      // timeoutu/503/409 request_in_progress in po zaprtju ter ponovnem odprtju lista.
+      const kljuc = kljucNakupa("vip", uporabnikNakupa(), `${e.id}|${miza.id}|${paket ? paket.id : ""}`, { dogodek: e.id, miza: miza.id, paket: paket ? paket.id : null });
       const r = await send(`/events/${e.id}/tables/${miza.id}/orders`, {
         method: "POST", body: paket ? { package_id: paket.id, expected_price_cents: miza.price_cents } : { expected_price_cents: miza.price_cents }, auth: true,
         glave: { "Idempotency-Key": kljuc }
       });
-      kljuci.current.pozabi();   // uspeh (tudi ponovitev): naslednji nakup dobi nov kljuc
+      pozabiKljucNakupa("vip");   // uspeh (tudi ponovitev): naslednji nakup dobi nov kljuc
       pocistiPredpomnilnik();
       setNakup(r);
     } catch (err) {
       // 409 request_in_progress NI "zasedeno": isti nakup se se obdeluje - izbiro mize obdrzimo (isti kljuc), samo pocakamo.
-      if (err && err.status === 409 && !jeNakupVObdelavi(err)) { nalozi(true); setMizaId(null); }   // zasedeno ali prodaja zaprta: osvezi tloris
-      // Nakupa NE ponavljamo sami: uporabnik pritisne znova (isti kljuc, razen ob 422).
-      if (jeKljucPonovljen(err)) kljuci.current.pozabi();   // kljuc je bil ze uporabljen z drugo vsebino: nov nakup
+      // 409 order_not_active tudi NI "zasedeno": prejsnje narocilo ni vec aktivno - izbira ostane, tloris se tiho osvezi (miza je morda spet prosta).
+      if (jeNarociloNeaktivno(err)) nalozi(true, { miza: miza.id, paket: paketId });
+      else if (err && err.status === 409 && !jeNakupVObdelavi(err)) { nalozi(true); setMizaId(null); }   // zasedeno ali prodaja zaprta: osvezi tloris
+      // Nakupa NE ponavljamo sami: uporabnik pritisne znova (isti kljuc, razen ob 422 in 409 order_not_active).
+      // 422 (kljuc z drugo vsebino), 400 neveljaven kljuc, 409 order_not_active (kljuc vezan na neaktivno narocilo): nov nakup.
+      if (jeKljucZavrzen(err)) pozabiKljucNakupa("vip");
+      else oznaciNerazresenNakup("vip", jeNerazresenIzid(err));   // predizpolnitev ob ponovnem odprtju samo po nerazresenem izidu
       // Streznik je zaseden (503): kratek premor; sporocilo o navalu samo za znano telo (napake.js).
       if (jeNakup503(err)) zakleni(nakupPocakajS(err));   // gumb pri vsakem 503 na nakupu nekaj sekund onemogocen
       else if (jeNakupVObdelavi(err)) zakleni(nakupPocakajS(err, NAKUP_V_OBDELAVI_S));
       if (jeNakupZaseden(err)) setNapaka(nakupZasedenoSporocilo());
       // Brez odgovora: narocilo je morda nastalo - ponovni pritisk z istim kljucem ga najde, ne ustvari drugega.
-      else setNapaka(err && err.status === -1 ? nakupBrezOdgovoraSporocilo() : sporocilo(err));
+      // (Neuspela osvezitev seje to NI: zahtevek ni odsel; nakupNapakaSporocilo ju loci.)
+      else setNapaka(nakupNapakaSporocilo(err));
     }
     tece.current = false;
     setPosiljam(false);

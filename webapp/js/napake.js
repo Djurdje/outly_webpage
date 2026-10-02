@@ -14,7 +14,7 @@ export class ApiError extends Error {
 
 /* Semafor nakupov (backend #111): POST .../orders vrne 503 + Retry-After, ko hkrati kupuje preveliko ljudi.
    Nakupa NE ponavljamo samodejno: uporabnik ponovno pritisne gumb, zaslon pa pri ponovitvi ISTEGA nakupa
-   poslje ISTI Idempotency-Key (api.js kljuciNakupa; backend #123), zato ponovni klik ne ustvari drugega narocila.
+   poslje ISTI Idempotency-Key (api.js kljucNakupa; backend #123), zato ponovni klik ne ustvari drugega narocila.
    Gumb za nakup je pri VSAKEM 503 na nakupu nekaj sekund onemogocen (jeNakup503), sporocilo o navalu pa se
    pokaze samo, ko telo 503 vsebuje "too many purchases", "server busy" ali "service temporarily unavailable"
    (jeNakupZaseden; usklajeno z iOS, outly-app #51). Vsak drug 503 (HTML ob izpadu, payments, auth) dobi svoje ali
@@ -42,9 +42,28 @@ export const jeNakupVObdelavi = e => e instanceof ApiError && e.status === 409 &
 export const NAKUP_V_OBDELAVI_S = 2;
 /* 422 idempotency_key_reused: isti kljuc z drugo vsebino - zaslon zamenja kljuc (nov nakup), uporabnik pritisne znova. */
 export const jeKljucPonovljen = e => e instanceof ApiError && e.status === 422 && kodaNapake(e) === "idempotency_key_reused";
+/* 409 order_not_active: kljuc je se vezan na narocilo, ki ni vec aktivno (refunded/cancelled/...). Zaslon kljuc ZAVRZE
+   (nov ob naslednjem kliku); razlocujemo samo po kodi `error`, drugi 409 ("already booked", request_in_progress) so svoji. */
+export const jeNarociloNeaktivno = e => e instanceof ApiError && e.status === 409 && kodaNapake(e) === "order_not_active";
+/* Osvezitev seje ni uspela (api.js trenutniZeton / osveziSejo): zahtevek na nakupu NI odsel (ali je dobil 401), torej
+   narocilo ni nastalo - "may have gone through" bi bilo napacno. */
+export const jeOsvezitevSeje = e => e instanceof ApiError && e.status === -1 && e.raw === "Could not refresh session.";
+/* 400 invalid_idempotency_key: kljuc je strezniku neveljaven - zavrzi, naslednji klik dobi nov. */
+export const jeKljucNeveljaven = e => e instanceof ApiError && e.status === 400 && kodaNapake(e) === "invalid_idempotency_key";
+/* Nerazresen izid: narocilo je morda nastalo (brez odgovora, timeout, prekinjena povezava, 409 request_in_progress).
+   Neuspela osvezitev seje to NI (zahtevek ni odsel). Samo po takem izidu se list ob ponovnem odprtju predizpolni. */
+export const jeNerazresenIzid = e => jeNakupVObdelavi(e) || (e instanceof ApiError && e.status === -1 && !jeOsvezitevSeje(e));
+/* Napake, po katerih se kljuc zavrze (nov nakup): 422, 400 neveljaven kljuc, 409 order_not_active. */
+export const jeKljucZavrzen = e => jeKljucPonovljen(e) || jeKljucNeveljaven(e) || jeNarociloNeaktivno(e);
 /* Brez odgovora (timeout, izgubljena povezava): narocilo je morda nastalo; ponovni klik z istim kljucem je varen. */
 export function nakupBrezOdgovoraSporocilo() {
-  return t("Your purchase may have gone through — tap Buy again to check (you won't be charged twice).");
+  return t("Your purchase may have gone through — tap the button again to check (you won't be charged twice).");
+}
+/* Sporocilo napake pri nakupu (vstopnice, VIP): loci "ni odgovora na nakupu" od neuspele osvezitve seje. */
+export function nakupNapakaSporocilo(e) {
+  if (jeOsvezitevSeje(e)) return t("Could not refresh your session. Check your connection and try again.");
+  if (e && e.status === -1) return nakupBrezOdgovoraSporocilo();
+  return sporocilo(e);
 }
 export function nakupZasedenoSporocilo() {
   return t("Lots of people are buying right now. Please try again in a few seconds.");
@@ -154,6 +173,7 @@ function prevediApi(e) {
   switch (kodaNapake(e)) {
     case "request_in_progress": return t("Your purchase is still being processed. Try again in a moment.");
     case "idempotency_key_reused": return t("Something changed, please try again.");
+    case "order_not_active": return t("Your previous order is no longer active. Tap again to buy anew.");
     case "invalid_idempotency_key": return t("Something went wrong. Please try again.");
   }
   const s = e.raw.toLowerCase();

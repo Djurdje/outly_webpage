@@ -8,7 +8,7 @@ import { ApiError } from "./napake.js";
 export const API_URL = "https://outly-backend-roy3.onrender.com";
 const CAKANJE_MS = 30000;
 /* Nakup (POST) brez casovne meje: ob hladnem zagonu Renderja bi prekinjen zahtevek lahko ze ustvaril
-   narocilo. Ponovni poskus je zdaj varen (glava Idempotency-Key, glej kljuciNakupa), a prekinitev ob
+   narocilo. Ponovni poskus je zdaj varen (glava Idempotency-Key, glej kljucNakupa), a prekinitev ob
    casovni meji bi uporabnika po nepotrebnem pahnila v negotovost; odgovor pride ali pa povezava pade. */
 const BREZ_MEJE = /\/orders$|^\/me$|\/transfer$/;
 
@@ -110,10 +110,15 @@ export async function send(path, { method = "GET", body, auth = false, signal, k
 }
 
 /* Idempotentni kljuc nakupa (backend #123, enaka pravila kot iOS). En UUID = en nakup. Ponovni poskus ISTEGA
-   nakupa (timeout, brez odgovora, 503, 409 request_in_progress, ponovni klik) poslje ISTI kljuc, zato backend
-   vrne isto narocilo namesto drugega. Nov kljuc: sprememba vsebine nakupa (dogodek, kolicina, miza, paket),
-   po uspehu in po 422 idempotency_key_reused. Zaslon dobi enega s kljuciNakupa() (useRef) in pokliche
-   za(vsebina) ob kliku, pozabi() po uspehu/422. Kljuc ostane v pomnilniku zaslona (nikoli v localStorage). */
+   nakupa (timeout, brez odgovora, 503, 409 request_in_progress, ponovni klik, zaprtje in ponovno odprtje lista)
+   poslje ISTI kljuc, zato backend vrne isto narocilo namesto drugega. Kljuc je v pomnilniku MODULA (ne zaslona, ne
+   localStorage): ce bi ga ob zaprtju lista pozabili, bi nakup brez odgovora (narocilo je na strezniku ze nastalo) ob
+   ponovnem odprtju ustvaril drugo narocilo. Vezan je na (uporabnik, vsebina: dogodek + kolicina oz. dogodek + miza +
+   paket); ena shramba na vrsto nakupa. Velja KLJUC_ZIVLJENJE_MS od zadnje uporabe (24 h: backend hrani kljuc trajno,
+   krajsi iztek bi po dolgem cakanju z odprtim listom dal nov kljuc in drugo narocilo). Shramba hrani tudi podatke
+   zadnjega nerazresenega nakupa (nerazresenNakup; samo ce je bil izid brez odgovora ali request_in_progress), da ponovno odprt list isti nakup predizpolni - sicer bi privzeta
+   kolicina/miza zamenjala kljuc. Zavrzi (pozabiKljucNakupa) ob uspehu, 422 idempotency_key_reused, 400 invalid_idempotency_key, 409 order_not_active, ob odjavi in po izteku. */
+export const KLJUC_ZIVLJENJE_MS = 24 * 60 * 60 * 1000;
 export function novUUID() {
   const c = globalThis.crypto;
   if (c && typeof c.randomUUID === "function") return c.randomUUID();
@@ -122,13 +127,27 @@ export function novUUID() {
   const h = [...b].map(x => x.toString(16).padStart(2, "0")).join("");
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
 }
-export function kljuciNakupa() {
-  let vsebina = null, kljuc = null;
-  return {
-    za(v) { if (kljuc === null || vsebina !== v) { vsebina = v; kljuc = novUUID(); } return kljuc; },
-    pozabi() { vsebina = null; kljuc = null; }
-  };
+const kljuciNakupov = new Map();   // vrsta ("vstopnice" | "vip") -> { uporabnik, vsebina, podatki, nerazresen, kljuc, ob }
+/** Kljuc za nakup te vsebine: isti, dokler se uporabnik in vsebina ne spremenita in kljuc ni potekel; sicer nov.
+    podatki = { dogodek, ... } (kolicina oz. miza + paket): za nerazresenNakup(). */
+export function kljucNakupa(vrsta, uporabnik, vsebina, podatki = null) {
+  const zdaj = Date.now(), v = kljuciNakupov.get(vrsta);
+  if (v && v.uporabnik === uporabnik && v.vsebina === vsebina && zdaj - v.ob < KLJUC_ZIVLJENJE_MS) { v.ob = zdaj; v.podatki = podatki; v.nerazresen = false; return v.kljuc; }
+  const nov = { uporabnik, vsebina, podatki, nerazresen: false, kljuc: novUUID(), ob: zdaj };
+  kljuciNakupov.set(vrsta, nov);
+  return nov.kljuc;
 }
+/** Zaslon po napaki nakupa: ali je izid NERAZRESEN (brez odgovora / timeout / 409 request_in_progress = narocilo je morda nastalo). */
+export function oznaciNerazresenNakup(vrsta, da) { const v = kljuciNakupov.get(vrsta); if (v) v.nerazresen = !!da; }
+/** Podatki zadnjega NERAZRESENEGA nakupa tega uporabnika za ta dogodek (zadnji izid brez odgovora / request_in_progress,
+    kljuc ni zavrzen ali potekel), sicer null. Po dokoncni napaki (403, razprodano, already booked, 503 ...) ne predizpolnjujemo. */
+export function nerazresenNakup(vrsta, uporabnik, dogodekId) {
+  const v = kljuciNakupov.get(vrsta);
+  if (!v || !v.nerazresen || v.uporabnik !== uporabnik || Date.now() - v.ob >= KLJUC_ZIVLJENJE_MS) return null;
+  return v.podatki && v.podatki.dogodek === dogodekId ? v.podatki : null;
+}
+/** Pozabi kljuc ene vrste (uspeh, 422, 400, 409 order_not_active) ali vse (odjava, brez argumenta). */
+export function pozabiKljucNakupa(vrsta) { if (vrsta) kljuciNakupov.delete(vrsta); else kljuciNakupov.clear(); }
 
 /* Ena osvezitev naenkrat, tudi ce jo zahteva vec klicev hkrati.
    Vrne nov zeton, "" (seja zavrnjena) ali null (zacasna napaka - seja ostane). */
