@@ -56,7 +56,6 @@ function besedilaSklepa(s) {
     case "neveljavna": return [t("INVALID CODE"), t("The signature does not match. Outly did not issue this code.")];
     case "ni-vstopnica": return [t("NOT A TICKET"), t("This is not an Outly ticket code.")];
     case "neplacano": return [t("NOT PAID"), t("The order for this ticket is not paid.")];
-    case "ni-na-seznamu-potrebna-povezava": return [t("NOT ON THE LIST - CONNECTION NEEDED"), t("The code is genuine, but this ticket should already be on the list and is not. Only the server can tell why. Try again when the connection is back.")];
     case "stara-potrebna-povezava": return [t("OLD CODE - CONNECTION NEEDED"), s.mogoceVpisana
       ? t("The server did not answer in time. The ticket may already be checked in: scan it again - if it says Already scanned with the time just now, let the guest in.")
       : t("This ticket was issued before offline scanning. Only the server can check it. Try again when the connection is back.")];

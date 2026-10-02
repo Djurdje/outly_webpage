@@ -865,8 +865,6 @@ export const SL = {
  "Code rejected by the server": "Strežnik je kodo zavrnil",
  "Server: {cas}": "Strežnik: {cas}",
  "Got it": "V redu",
- "NOT ON THE LIST - CONNECTION NEEDED": "NI NA SEZNAMU – POTREBNA POVEZAVA",
- "The code is genuine, but this ticket should already be on the list and is not. Only the server can tell why. Try again when the connection is back.": "Koda je pristna, a bi morala biti vstopnica že na seznamu, pa je ni. Zakaj, ve samo strežnik. Poskusi znova, ko bo povezava nazaj.",
  "The order for this ticket is not paid.": "Naročilo za to vstopnico ni plačano.",
  "The server did not answer in time. The ticket may already be checked in: scan it again - if it says Already scanned with the time just now, let the guest in.": "Strežnik ni odgovoril pravočasno. Vstopnica je morda že vpisana: skeniraj jo znova – če piše Že skenirano s časom pravkar, spusti gosta noter."
 };

@@ -23,7 +23,11 @@ function odpriIDB() {
         const sk = db.objectStoreNames.contains("skeni") ? zahteva.transaction.objectStore("skeni") : db.createObjectStore("skeni", { keyPath: "id" });
         if (!sk.indexNames.contains("serial")) sk.createIndex("serial", "serial");
       };
-      zahteva.onsuccess = () => konec(ok, zahteva.result);
+      zahteva.onsuccess = () => {
+        // M8: nova razlicica (druga stran/zavihek) hoce nadgraditi bazo - odpri jo, sicer ostane blokirana in skenerji obvisijo.
+        try { zahteva.result.onversionchange = () => { try { zahteva.result.close(); } catch { /* brez */ } }; } catch { /* brez */ }
+        konec(ok, zahteva.result);
+      };
       zahteva.onerror = () => konec(napaka, zahteva.error || new Error("IndexedDB"));
       zahteva.onblocked = () => konec(napaka, new Error("IndexedDB blokirana"));
     } catch (e) { konec(napaka, e); }
@@ -104,12 +108,32 @@ function pomnilnik() {
   };
 }
 
+/* M8: skeni, ki so pristali v localStorage (IndexedDB takrat ni delal), bi ob vrnitvi IndexedDB ostali osirotele in nikoli poslani.
+   Enkrat ob odprtju jih preselimo (add: obstojec zapis v IDB ima prednost) in sele nato odstranimo iz localStorage. */
+async function preseliOsirotele(db) {
+  const kljuci = [], zapisi = [];
+  for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith(LS_PREDPONA + "sken:")) kljuci.push(k); }
+  for (const k of kljuci) {
+    try { const o = JSON.parse(localStorage.getItem(k)); if (o && typeof o === "object" && typeof o.id === "string" && typeof o.serial === "string") zapisi.push(o); } catch { /* pokvarjen zapis: pusti */ }
+  }
+  if (!zapisi.length) return;
+  await transakcija(db, "skeni", "readwrite", tx => {
+    const st = tx.objectStore("skeni");
+    for (const o of zapisi) { const z = st.add(o); z.onerror = e => { e.preventDefault(); e.stopPropagation(); }; }   // ConstraintError (ze v IDB) ni napaka
+  });
+  for (const k of kljuci) { try { localStorage.removeItem(k); } catch { /* brez */ } }
+}
+
 let obljuba = null;
 /** Shramba (en objekt na stran). Nikoli ne vrze: ob napaki IndexedDB preide na localStorage, nato na pomnilnik. */
 export function odpriShrambo() {
   if (!obljuba) {
     obljuba = (async () => {
-      try { return shrambaIDB(await odpriIDB()); } catch { /* naprej */ }
+      try {
+        const db = await odpriIDB();
+        try { await Promise.race([preseliOsirotele(db), new Promise((_, n) => setTimeout(() => n(new Error("preselitev: cas")), 2000))]); } catch { /* ostanejo v localStorage do naslednjic */ }
+        return shrambaIDB(db);
+      } catch { /* naprej */ }
       try { return shrambaLS(); } catch { /* naprej */ }
       return pomnilnik();
     })();

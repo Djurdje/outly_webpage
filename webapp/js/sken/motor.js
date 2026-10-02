@@ -21,6 +21,8 @@ const JITTER_MS = 15000;
 const TIK_MS = 5000;
 const NAJVEC_ODLASANJA_MS = 30000;
 const KOS_PAKETA = 200;                 // backend sprejme <= 500
+const BRANJE_SERIAL_MS = 400;          // P3: najdlje cakamo na branje shrambe pri odlocitvi o skenu (pod Web Lockom) ...
+const BRANJE_VSE_MS = 1000;            // ... in pred posiljanjem vrste; potem naprej iz pomnilnika
 const ZAKAJ_SHRANI_MS = 1500;           // sken potrdimo, ko je trajno zapisan - a nikoli cakamo dlje
 const CAKANJE_STREZNIKA_MS = 8000;      // sken s kodo v1: vratar ne sme cakati 30 s na mrtvo omrezje
 const OBDRZI_POSLANE_MS = 3 * 24 * URA; // poslani skeni ostanejo za dvojni sken do osvezitve seznama
@@ -138,7 +140,6 @@ export function ustvariMotor({ klub, dogodek }) {
 
   let shramba = null, deviceId = "", kljuc = null;                // kljuc: { kid, javni: Uint8Array }
   let seznam = null, prenesene = new Set(), seznamCas = null;     // seznam: Map serial -> vrstica seznama
-  let seznamIzdan = null;                                         // generated_at (cas STREZNIKA, ms) zadnjega seznama - primerjava s casom nastanka vstopnice brez vpliva ure telefona
   const skeni = new Map();                                        // client_scan_id -> zapis (vsi skeni kluba na tej napravi)
   const poSerialu = new Map();                                    // serial -> zapis (prvi sken te vstopnice)
   let omrezje = jeOnline();
@@ -190,12 +191,15 @@ export function ustvariMotor({ klub, dogodek }) {
     if (!prvi || rec.scanned_at < prvi.scanned_at) poSerialu.set(rec.serial, rec);
     return true;
   };
+  /* P3: branje shrambe ima casovno mejo. Obvisel IndexedDB (iOS Safari po vrnitvi iz ozadja) sicer ustavi vse skene v vseh
+     zavihkih (uskladiSerial je pod Web Lockom) in posiljanje (posiljam ostane true). Ob izteku odlocimo iz pomnilnika. */
+  const meja = (obljuba, ms) => Promise.race([obljuba, zakasni(ms).then(() => { throw new Error("shramba: cas"); })]);
   async function uskladiSerial(serial) {
-    try { for (const r of await shramba.skeniPoSerialu(serial)) vkljuci(r); } catch { /* brez */ }
+    try { for (const r of await meja(shramba.skeniPoSerialu(serial), BRANJE_SERIAL_MS)) vkljuci(r); } catch { /* brez: odloci pomnilnik (poSerialu) */ }
   }
-  async function uskladi() {
+  async function uskladi(ms = BRANJE_VSE_MS) {
     let spremenjeno = false;
-    try { for (const r of await shramba.skeniVsi()) if (vkljuci(r)) spremenjeno = true; } catch { /* brez */ }
+    try { for (const r of await meja(shramba.skeniVsi(), ms)) if (vkljuci(r)) spremenjeno = true; } catch { /* brez */ }
     if (spremenjeno) objavi();
     return spremenjeno;
   }
@@ -227,8 +231,7 @@ export function ustvariMotor({ klub, dogodek }) {
       seznam = m;
       prenesene = new Set(odg.transferred_serials.filter(x => typeof x === "string").map(x => x.toLowerCase()));
       seznamCas = Date.now();
-      seznamIzdan = cas(odg.generated_at);
-      try { await shramba.kvSet(`seznam:${klub}:${dogodek}`, { kid: odg.kid || "", tickets: odg.tickets, transferred_serials: odg.transferred_serials, cas: seznamCas, izdan: seznamIzdan }); }
+      try { await shramba.kvSet(`seznam:${klub}:${dogodek}`, { kid: odg.kid || "", tickets: odg.tickets, transferred_serials: odg.transferred_serials, cas: seznamCas }); }
       catch { stanje.set({ shranjevanjeNapaka: true }); }
       omrezjeJe(true); napakOsvezi = 0;
       // Zasukan kljuc (past v backend STATE.md): primerjava po kid; seznam je ze shranjen, zato napaka tu ni usodna.
@@ -337,7 +340,7 @@ export function ustvariMotor({ klub, dogodek }) {
   /* Klic strezniku za kodo, ki je telefon ne more preveriti (v1, v2 brez kljuca/Ed25519, v2 ki "ni na seznamu").
      TEGA NIKOLI v verigi `veriga` (K1): vratar ne sme zaradi mrtvega omrezja izgubiti lokalnih skenov. */
   async function prekoStreznika(koda, vrsta) {
-    const rumeno = { tip: vrsta === "v1" ? "stara-potrebna-povezava" : vrsta === "seznam" ? "ni-na-seznamu-potrebna-povezava" : "potrebna-povezava", barva: "rumena" };
+    const rumeno = { tip: vrsta === "v1" ? "stara-potrebna-povezava" : "potrebna-povezava", barva: "rumena" };
     if (!povezava()) return rumeno;
     try {
       const odg = await zMejo(CAKANJE_STREZNIKA_MS, signal => skenirajVstopnico(klub, koda, { signal }));
@@ -354,9 +357,9 @@ export function ustvariMotor({ klub, dogodek }) {
   }
 
   /* Samo LOKALNA odlocitev (brez omrezja) - sme biti v verigi. Vrne sklep ali oznako za nadaljevanje zunaj verige:
-       { zunaj: "streznik", vrsta }  - telefon ne more preveriti, naj odloci streznik (ali rumeno brez povezave)
+       { zunaj: "streznik", vrsta }  - telefon ne more preveriti, naj odloci streznik (ali rumeno brez povezave; vrsta "seznam": zeleno v vrsto)
        { zunaj: "kljuc" }            - koda ima drug kid: najprej poskusi osveziti kljuc (omrezje), nato ponovi z kljucOsvezen */
-  async function odlociLokalno(r, koda, kljucOsvezen) {
+  async function odlociLokalno(r, koda, kljucOsvezen, brezStreznika = false) {
     const ver = await Promise.race([preverjevalnik(), zakasni(4000).then(() => undefined)]);   // dinamicni uvoz knjiznice sme viseti
     if (ver === null) stanje.set({ preverjanje: "ni" }); else if (ver && stanje.get().preverjanje !== ver.ime) stanje.set({ preverjanje: ver.ime });
     if (!ver || !kljuc) return { zunaj: "streznik", vrsta: "v2" };   // brez kljuca / brez Ed25519: kot prej, samo s povezavo
@@ -384,9 +387,10 @@ export function ustvariMotor({ klub, dogodek }) {
       if (v.status === "unpaid") return { tip: "neplacano", barva: "rdeca" };   // M1: seznam vsebuje tudi neplacana narocila
       return { tip: "zavrnjeno", barva: "rdeca" };
     }
-    // M1: koda je nastala PRED prenosom seznama (> 5 min), a je na seznamu ni: ce bi bila vstopnica placana, bi bila tam.
-    // Casovni primerjavi gre cas strezniske ure (generated_at), da ura telefona ne vpliva. Odloci streznik; brez povezave rumeno.
-    if (!v && seznam && r.izdano !== null && r.izdano < (seznamIzdan ?? seznamCas) - 5 * 60000) return { zunaj: "streznik", vrsta: "seznam" };
+    // M7: seznam vsebuje VSE vstopnice dogodka (tudi neplacane, vrnjene), zato "ni na seznamu" pomeni novo ali preneseno vstopnico
+    // (nov serial po prenosu seznama). Ugibanje po starosti kode bi taksne vstopnice zavrnilo, zato: s povezavo odloci streznik,
+    // brez povezave (ali ce streznik ne odgovori: brezStreznika) zeleno z opombo in v vrsto - streznik odloci ob posiljanju.
+    if (!v && !brezStreznika && povezava()) return { zunaj: "streznik", vrsta: "seznam" };
 
     const rec = {
       id: uuid(), klub, dogodek, serial: r.serial, qr: koda.trim(), scanned_at: new Date().toISOString(), device_id: deviceId,
@@ -400,6 +404,20 @@ export function ustvariMotor({ klub, dogodek }) {
     return v
       ? { tip: "dobrodosli", barva: "zelena", ...sklepIzSeznama(v) }
       : { tip: "dobrodosli-ni-na-seznamu", barva: "zelena", ticket: null, imetnik: "", brezSeznama: !seznam };
+  }
+
+  /* Streznik je sprejel vstopnico, ki je ni bilo na seznamu: zabelezimo jo kot ze poslano, da se ponovni sken (tudi brez povezave) zavrne. */
+  async function zabeleziStreznik(r, koda, odg) {
+    await uskladiSerial(r.serial);
+    if (poSerialu.has(r.serial)) return;
+    const rec = {
+      id: uuid(), klub, dogodek, serial: r.serial, qr: koda.trim(), scanned_at: new Date().toISOString(), device_id: deviceId,
+      stanje: "poslan", lokalno: "ni-na-seznamu", rezultat: "ok", used_at_streznik: (odg.ticket && odg.ticket.used_at) || null, konflikt: false, videl: true, poskusi: 0
+    };
+    skeni.set(rec.id, rec);
+    poSerialu.set(rec.serial, rec);
+    objavi();
+    await shrani(rec);
   }
 
   /* Lokalna odlocitev (preverjanje + zapis) je atomarna: v verigi (ta zavihek) in pod Web Lock (vsi zavihki). */
@@ -422,7 +440,17 @@ export function ustvariMotor({ klub, dogodek }) {
         try { await naloziKljuc(); omrezjeJe(true); osvezen = "da"; } catch (e) { if (jeIzpad(e)) omrezjeJe(false); }
         o = await vVerigi(() => odlociLokalno(r, koda, osvezen));
       }
-      if (o.zunaj === "streznik") return await prekoStreznika(koda, o.vrsta);
+      if (o.zunaj === "streznik") {
+        const odg = await prekoStreznika(koda, o.vrsta);
+        if (o.vrsta !== "seznam") return odg;
+        if (odg.tip === "streznik" && odg.streznik && odg.streznik.result === "ok") {
+          try { await vVerigi(() => zabeleziStreznik(r, koda, odg.streznik)); } catch { /* brez */ }   // naslednji sken iste kode je lokalno "ze skenirano"
+          return odg;
+        }
+        // Streznik ne odgovori (izpad): vrata ne smejo stati - zeleno z opombo in v vrsto; ce je zahteva vseeno dosegla streznik, se to pokaze kot konflikt.
+        if (odg.barva === "rumena") return await vVerigi(() => odlociLokalno(r, koda, "ne", true));
+        return odg;
+      }
       return o;
     } catch (e) {
       return { tip: "napaka", barva: "rdeca", opis: sporocilo(e) };
@@ -455,7 +483,6 @@ export function ustvariMotor({ klub, dogodek }) {
       for (const x of sez.tickets) if (x && typeof x.serial === "string") seznam.set(x.serial.toLowerCase(), x);
       prenesene = new Set(sez.transferred_serials.filter(x => typeof x === "string").map(x => x.toLowerCase()));
       seznamCas = Number.isFinite(sez.cas) ? sez.cas : null;
-      seznamIzdan = Number.isFinite(sez.izdan) ? sez.izdan : null;
     }
     const zdaj = Date.now();
     for (const r of Array.isArray(vsi) ? vsi : []) {
