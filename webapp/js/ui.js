@@ -139,10 +139,13 @@ export function Vrstica({ href, slikaUrl, ikona = "building", naslov, podnaslov,
 }
 
 /** Spodnji list (sheet). Zapre ga Escape, klik na ozadje ali gumb. Fokus gre v list. */
-export function List({ odprt, zapri, naslov, children }) {
+/** brezZapiranja: med letecim nakupom lista ni mogoce zapreti (gumb, ozadje, Escape) - uporabnik bi izgubil odgovor. */
+export function List({ odprt, zapri, naslov, children, brezZapiranja = false }) {
   const ref = useRef(null);
   const zapriRef = useRef(zapri);
-  zapriRef.current = zapri;   // Escape vedno poklice zadnji zapri (npr. po uspehu drug kot ob odprtju)
+  const brezRef = useRef(brezZapiranja);
+  brezRef.current = brezZapiranja;
+  zapriRef.current = () => { if (!brezRef.current) zapri(); };   // Escape vedno poklice zadnji zapri (npr. po uspehu drug kot ob odprtju)
   useEffect(() => {
     if (!odprt) return;
     const prej = document.activeElement;
@@ -157,12 +160,12 @@ export function List({ odprt, zapri, naslov, children }) {
     };
   }, [odprt]);
   if (!odprt) return null;
-  return html`<div class="list-ozadje" onClick=${e => { if (e.target === e.currentTarget) zapri(); }}>
+  return html`<div class="list-ozadje" onClick=${e => { if (e.target === e.currentTarget && !brezZapiranja) zapri(); }}>
     <div class="list" role="dialog" aria-modal="true" aria-label=${naslov} tabindex="-1" ref=${ref}>
       <div class="list-rocaj" aria-hidden="true"></div>
       <div class="list-glava">
         <h2>${naslov}</h2>
-        <button type="button" class="krog-gumb majhen" onClick=${zapri} aria-label=${t("Close")}><${Ikona} ime="x" velikost=${18} /></button>
+        <button type="button" class="krog-gumb majhen" onClick=${zapri} disabled=${brezZapiranja} aria-label=${t("Close")}><${Ikona} ime="x" velikost=${18} /></button>
       </div>
       <div class="list-vsebina">${children}</div>
     </div>

@@ -55,13 +55,20 @@ export const jeKljucNeveljaven = e => e instanceof ApiError && e.status === 400 
 export const jeNerazresenIzid = e => jeNakupVObdelavi(e) || (e instanceof ApiError && e.status === -1 && !jeOsvezitevSeje(e));
 /* Napake, po katerih se kljuc zavrze (nov nakup): 422, 400 neveljaven kljuc, 409 order_not_active. */
 export const jeKljucZavrzen = e => jeKljucPonovljen(e) || jeKljucNeveljaven(e) || jeNarociloNeaktivno(e);
+/* Izid napake nakupa za shrambo kljucev (api.js oznaciIzidNakupa): "zavrzen" (nov nakup), "neposlan" (zahtevek ni odsel),
+   "nerazresen" (narocilo je morda nastalo) ali "dokoncen". */
+export function izidNakupa(e) {
+  if (jeKljucZavrzen(e)) return "zavrzen";
+  if (jeOsvezitevSeje(e)) return "neposlan";
+  return jeNerazresenIzid(e) ? "nerazresen" : "dokoncen";
+}
 /* Brez odgovora (timeout, izgubljena povezava): narocilo je morda nastalo; ponovni klik z istim kljucem je varen. */
 export function nakupBrezOdgovoraSporocilo() {
   return t("Your purchase may have gone through — tap the button again to check (you won't be charged twice).");
 }
 /* Sporocilo napake pri nakupu (vstopnice, VIP): loci "ni odgovora na nakupu" od neuspele osvezitve seje. */
 export function nakupNapakaSporocilo(e) {
-  if (jeOsvezitevSeje(e)) return t("Could not refresh your session. Check your connection and try again.");
+  if (jeOsvezitevSeje(e)) return sporocilo(e);   // status -1: "No response from the server. Check your connection."
   if (e && e.status === -1) return nakupBrezOdgovoraSporocilo();
   return sporocilo(e);
 }
@@ -171,10 +178,10 @@ const PREDNOSTNA = [
 function prevediApi(e) {
   // Najprej kode novih primerov (JSON { error, message }): njihovo besedilo ne sme zadeti splosnih pravil spodaj.
   switch (kodaNapake(e)) {
-    case "request_in_progress": return t("Your purchase is still being processed. Try again in a moment.");
-    case "idempotency_key_reused": return t("Something changed, please try again.");
+    case "request_in_progress": return t("Your previous attempt is still being processed. Please try again in a moment.");
+    case "idempotency_key_reused":
+    case "invalid_idempotency_key": return t("Something changed, please try again.");
     case "order_not_active": return t("Your previous order is no longer active. Tap again to buy anew.");
-    case "invalid_idempotency_key": return t("Something went wrong. Please try again.");
   }
   const s = e.raw.toLowerCase();
   for (const [podniz, sporocilo] of PREDNOSTNA) if (s.includes(podniz)) return t(sporocilo);

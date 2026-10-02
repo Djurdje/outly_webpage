@@ -4,11 +4,11 @@
    jih prijateljem z obstojecim prenosom (Profile -> Tickets). Ta modul se nalozi leno (event.js), ko dogodek ponuja VIP. */
 import { html, useEffect, useRef, useState } from "../lib.js";
 import { t, tn } from "../i18n.js";
-import { send, pocistiPredpomnilnik, kljucNakupa, pozabiKljucNakupa, nerazresenNakup, oznaciNerazresenNakup } from "../api.js";
-import { uporabnikNakupa } from "../seja.js";
+import { send, pocistiPredpomnilnik, kljucNakupa, pozabiKljucNakupa, nerazresenNakup, oznaciIzidNakupa } from "../api.js";
+import { uidSeje } from "../seja.js";
 import {
   sporocilo, jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo,
-  jeNakupVObdelavi, NAKUP_V_OBDELAVI_S, jeKljucZavrzen, jeNerazresenIzid, jeNarociloNeaktivno, nakupNapakaSporocilo
+  jeNakupVObdelavi, NAKUP_V_OBDELAVI_S, izidNakupa, jeNarociloNeaktivno, nakupNapakaSporocilo, nakupBrezOdgovoraSporocilo
 } from "../napake.js";
 import { navigiraj } from "../usmerjanje.js";
 import { denar, danInUra } from "../oblika.js";
@@ -55,7 +55,7 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
   const [zaklenjeno, zakleni] = useZaklep();   // po 503 (semafor nakupov) je gumb nekaj sekund onemogocen
 
   /** Tloris + mize + paketi. tiho = brez vrtavke (osvezitev po 409: kupec ostane na istem mestu). */
-  async function nalozi(tiho, izbor) {
+  async function nalozi(tiho, izbor, nejasen) {
     if (!tiho) setS({ nalaga: true, napaka: "", d: null });
     try {
       const r = await send(`/events/${e.id}/vip`, { auth: "optional" });
@@ -69,17 +69,24 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
       setMizaId(miza ? miza.id : null);
       const paket = d.paketi.find(p => p.id === (izbor ? izbor.paket : null));
       setPaketId(paket ? paket.id : d.paketi.length === 1 ? d.paketi[0].id : null);
+      // Ponovno odprt list po nejasnem izidu: napotek, da je narocilo morda ze nastalo. Ce je lastna miza ze "Booked" (ni je
+      // vec mogoce izbrati), naj kupec pogleda Profil -> Vstopnice.
+      if (nejasen) setNapaka(miza && nejasen.miza === miza.id ? nakupBrezOdgovoraSporocilo() : t("No response from the server. Check Profile → Tickets before you try again."));
     } catch (err) {
       if (tiho) return;
       setS({ nalaga: false, napaka: sporocilo(err), d: null });
     }
   }
+  const ziv = useRef(true);   // komponenta je nameščena
+  const odprtRef = useRef(odprt);
+  odprtRef.current = odprt;
+  useEffect(() => () => { ziv.current = false; }, []);
   useEffect(() => {
     if (!odprt) return;
-    setNapaka(""); setNakup(null); setPosiljam(false);
+    setNapaka(""); setNakup(null); setPosiljam(tece.current);
     // Izbira po vrnitvi s prijave ima prednost; sicer nerazresen nakup tega dogodka (miza se obdrzi samo, ce je se prosta - nalozi()).
-    const prej = nerazresenNakup("vip", uporabnikNakupa(), e.id);
-    nalozi(false, predizbor || (prej ? { miza: prej.miza, paket: prej.paket } : null));
+    const prej = nerazresenNakup("vip", uidSeje(), e.id);
+    nalozi(false, predizbor || (prej ? { miza: prej.miza, paket: prej.paket } : null), prej);
   }, [odprt]);
   if (!odprt) return null;
 
@@ -99,26 +106,28 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
     if (imaPakete && !paket) return setNapaka(t("Choose your bottle"));
     tece.current = true;
     setPosiljam(true); setNapaka("");
+    // Ista vsebina nakupa (uporabnik + dogodek + miza + paket) = isti kljuc (api.js, 24 h od zadnje uporabe), tudi po
+    // timeoutu/503/409 request_in_progress in po zaprtju ter ponovnem odprtju lista.
+    const uid = uidSeje(), paketPrejsnji = paket ? paket.id : null;
+    const kljuc = kljucNakupa("vip", uid, e.id, `${miza.id}|${paketPrejsnji ?? ""}`, { dogodek: e.id, miza: miza.id, paket: paketPrejsnji });
     try {
-      // Ista vsebina nakupa (uporabnik + dogodek + miza + paket) = isti kljuc (api.js, 24 h od zadnje uporabe), tudi po
-      // timeoutu/503/409 request_in_progress in po zaprtju ter ponovnem odprtju lista.
-      const kljuc = kljucNakupa("vip", uporabnikNakupa(), `${e.id}|${miza.id}|${paket ? paket.id : ""}`, { dogodek: e.id, miza: miza.id, paket: paket ? paket.id : null });
       const r = await send(`/events/${e.id}/tables/${miza.id}/orders`, {
         method: "POST", body: paket ? { package_id: paket.id, expected_price_cents: miza.price_cents } : { expected_price_cents: miza.price_cents }, auth: true,
         glave: { "Idempotency-Key": kljuc }
       });
-      pozabiKljucNakupa("vip");   // uspeh (tudi ponovitev): naslednji nakup dobi nov kljuc
       pocistiPredpomnilnik();
-      setNakup(r);
+      if (ziv.current && odprtRef.current) { pozabiKljucNakupa("vip", uid, e.id, kljuc); setNakup(r); }   // uspeh: naslednji nakup dobi nov kljuc
+      // Uspeh, ki ga uporabnik ni videl (list se je medtem odmontiral): kljuca NE pozabimo - ponovitev vrne isto narocilo (Idempotent-Replayed).
+      else oznaciIzidNakupa("vip", uid, e.id, kljuc, "nerazresen");
     } catch (err) {
       // 409 request_in_progress NI "zasedeno": isti nakup se se obdeluje - izbiro mize obdrzimo (isti kljuc), samo pocakamo.
       // 409 order_not_active tudi NI "zasedeno": prejsnje narocilo ni vec aktivno - izbira ostane, tloris se tiho osvezi (miza je morda spet prosta).
       if (jeNarociloNeaktivno(err)) nalozi(true, { miza: miza.id, paket: paketId });
       else if (err && err.status === 409 && !jeNakupVObdelavi(err)) { nalozi(true); setMizaId(null); }   // zasedeno ali prodaja zaprta: osvezi tloris
-      // Nakupa NE ponavljamo sami: uporabnik pritisne znova (isti kljuc, razen ob 422 in 409 order_not_active).
-      // 422 (kljuc z drugo vsebino), 400 neveljaven kljuc, 409 order_not_active (kljuc vezan na neaktivno narocilo): nov nakup.
-      if (jeKljucZavrzen(err)) pozabiKljucNakupa("vip");
-      else oznaciNerazresenNakup("vip", jeNerazresenIzid(err));   // predizpolnitev ob ponovnem odprtju samo po nerazresenem izidu
+      // Nakupa NE ponavljamo sami: uporabnik pritisne znova (isti kljuc, razen ob 422, 400 in 409 order_not_active).
+      const izid = izidNakupa(err);
+      if (izid === "zavrzen") pozabiKljucNakupa("vip", uid, e.id, kljuc);   // nov nakup
+      else oznaciIzidNakupa("vip", uid, e.id, kljuc, izid);   // nerazresen: predizpolnitev in napotek ob ponovnem odprtju
       // Streznik je zaseden (503): kratek premor; sporocilo o navalu samo za znano telo (napake.js).
       if (jeNakup503(err)) zakleni(nakupPocakajS(err));   // gumb pri vsakem 503 na nakupu nekaj sekund onemogocen
       else if (jeNakupVObdelavi(err)) zakleni(nakupPocakajS(err, NAKUP_V_OBDELAVI_S));
@@ -130,13 +139,15 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
     tece.current = false;
     setPosiljam(false);
   }
+  // Med letecim nakupom lista ni mogoce zapreti (odgovor bi se izgubil, kupec bi rezerviral znova).
+  const zapriVarno = () => { if (!tece.current) zapri(); };
 
   /* ---- potrditev ---- */
   if (nakup) {
     const o = nakup.order || {};
     const vst = Array.isArray(nakup.tickets) ? nakup.tickets : [];
     const stevilo = vst.length || o.table_seats || (miza && miza.seats) || 0;
-    return html`<${List} odprt=${true} zapri=${zapri} naslov=${t("VIP tables")}>
+    return html`<${List} odprt=${true} zapri=${zapriVarno} naslov=${t("VIP tables")}>
       <div class="uspeh">
         <span class="uspeh-krog"><${Ikona} ime="check" velikost=${28} debelina=${3} /></span>
         <strong>${t("Your VIP table is booked")}</strong>
@@ -150,7 +161,7 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
   }
 
   const imaMize = d && d.enabled && d.mize.length > 0;
-  return html`<${List} odprt=${true} zapri=${zapri} naslov=${t("VIP tables")}>
+  return html`<${List} odprt=${true} zapri=${zapriVarno} brezZapiranja=${posiljam} naslov=${t("VIP tables")}>
     ${s.nalaga ? html`<${Nalaganje} />` : null}
     ${s.napaka ? html`<${Napaka} besedilo=${s.napaka} znova=${() => nalozi(false, null)} />` : null}
     ${d && !imaMize ? html`<div class="prazno"><${Ikona} ime="crown" velikost=${34} razred="modra" />
