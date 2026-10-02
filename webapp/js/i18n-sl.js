@@ -198,6 +198,7 @@ export const SL = {
  "IN": "NOTRI",
  "IN {n} DAYS": "ČEZ {n} DNI",
  "If that address has an account, we sent a code to:": "Če ima ta naslov račun, smo kodo poslali na:",
+ "If the event is cancelled, the refund goes to the original buyer, not to your friend.": "Če je dogodek odpovedan, vračilo dobi prvotni kupec, ne tvoj prijatelj.",
  "If tickets were already sold, the event will be cancelled instead of deleted so buyers keep proof of purchase.": "Če so bile vstopnice že prodane, se dogodek namesto izbrisa prekliče, da kupci obdržijo dokazilo o nakupu.",
  "In your area": "V tvoji bližini",
  "Instagram": "Instagram",

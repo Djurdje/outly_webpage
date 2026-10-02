@@ -112,6 +112,7 @@ function PrenosList({ vstopnica: v, zapri, koncano }) {
         <button type="button" class="gumb-glavni" onClick=${koncano}>${t("Done")}</button></div>`
     : izbran ? html`<p class="besedilo-opis">${t("Send your ticket for {event} to {name}?", { event: v.event_title, name: izbran.ime })}</p>
         <p class="opomba">${t("Your copy stops working.")}</p>
+        <p class="opomba">${t("If the event is cancelled, the refund goes to the original buyer, not to your friend.")}</p>
         <button type="button" class="gumb-glavni" onClick=${poslji} disabled=${tece}>${tece ? t("Sending...") : t("Send")}</button>
         <button type="button" class="gumb-siv" onClick=${() => setIzbran(null)}>${t("Cancel")}</button>`
     : html`
