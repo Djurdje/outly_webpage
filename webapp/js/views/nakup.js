@@ -4,9 +4,9 @@
 import { html, useEffect, useRef, useState } from "../lib.js";
 import { t, tn } from "../i18n.js";
 import { send, pocistiPredpomnilnik } from "../api.js";
-import { sporocilo } from "../napake.js";
+import { sporocilo, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo } from "../napake.js";
 import { denar, jeRazprodan, preostanek, danInUra } from "../oblika.js";
-import { List, Ikona } from "../ui.js";
+import { List, Ikona, useZaklep } from "../ui.js";
 import { KodaQR } from "../qr.js";
 
 export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
@@ -15,6 +15,7 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
   const [napaka, setNapaka] = useState("");
   const [nakup, setNakup] = useState(null);
   const tece = useRef(false);   // zascita pred dvojnim klikom v istem trenutku (stanje se posodobi prepozno)
+  const [zaklenjeno, zakleni] = useZaklep();   // po 503 (semafor nakupov) je gumb nekaj sekund onemogocen
   useEffect(() => { if (odprt) { setKolicina(1); setNapaka(""); setNakup(null); } }, [odprt]);
   // Cena null = vstopnic ni na Outlyju; tak dogodek nima nakupa (in NI "Free").
   if (!odprt || e.ticket_price_cents == null) return null;
@@ -35,8 +36,10 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
       pocistiPredpomnilnik();   // zaloga (sold_count) na karticah naj bo sveza
       setNakup(r);
     } catch (err) {
+      // Streznik je zaseden (503): sporocilo + kratek premor. Nakupa NE ponavljamo sami (ni idempotentnega kljuca).
+      if (jeNakupZaseden(err)) { zakleni(nakupPocakajS(err)); setNapaka(nakupZasedenoSporocilo()); }
       // Brez odgovora: narocilo je morda nastalo - preden kupi znova, naj pogleda vstopnice.
-      setNapaka(err && err.status === -1 ? t("No response from the server. Check Profile → Tickets before you try again.") : sporocilo(err));
+      else setNapaka(err && err.status === -1 ? t("No response from the server. Check Profile → Tickets before you try again.") : sporocilo(err));
     }
     tece.current = false;
     setPosiljam(false);
@@ -89,7 +92,7 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
     <p class="opomba">${t("Test mode — nothing is charged")}</p>
     ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}
 
-    <button type="button" class="gumb-glavni" onClick=${kupi} disabled=${posiljam || razprodano}>
+    <button type="button" class="gumb-glavni" onClick=${kupi} disabled=${posiljam || razprodano || zaklenjeno}>
       ${razprodano ? t("Sold out") : posiljam ? t("Processing...")
         : brezplacno ? (kolicina === 1 ? t("Get ticket") : t("Get tickets"))
         : t("Pay {amount}", { amount: denar(skupaj, e.currency) })}

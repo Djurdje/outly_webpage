@@ -248,6 +248,7 @@ export const SL = {
  "Location set. Drag the pin or tap elsewhere to move it.": "Lokacija nastavljena. Povleci oznako ali tapni drugam, da jo premakneš.",
  "Log out": "Odjava",
  "Logo upload failed.": "Nalaganje logotipa ni uspelo.",
+ "Lots of people are buying right now. Please try again in a few seconds.": "Trenutno kupuje veliko ljudi. Poskusi znova čez nekaj sekund.",
  "Longitude": "Zemljepisna dolžina",
  "Main": "Glavni meni",
  "Manager": "Upravitelj",
