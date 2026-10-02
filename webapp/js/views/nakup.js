@@ -4,7 +4,7 @@
 import { html, useEffect, useRef, useState } from "../lib.js";
 import { t, tn } from "../i18n.js";
 import { send, pocistiPredpomnilnik } from "../api.js";
-import { sporocilo, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo } from "../napake.js";
+import { sporocilo, jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo } from "../napake.js";
 import { denar, jeRazprodan, preostanek, danInUra } from "../oblika.js";
 import { List, Ikona, useZaklep } from "../ui.js";
 import { KodaQR } from "../qr.js";
@@ -36,8 +36,9 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
       pocistiPredpomnilnik();   // zaloga (sold_count) na karticah naj bo sveza
       setNakup(r);
     } catch (err) {
-      // Streznik je zaseden (503): sporocilo + kratek premor. Nakupa NE ponavljamo sami (ni idempotentnega kljuca).
-      if (jeNakupZaseden(err)) { zakleni(nakupPocakajS(err)); setNapaka(nakupZasedenoSporocilo()); }
+      // Streznik je zaseden (503): kratek premor; sporocilo o navalu samo za znano telo (napake.js). Nakupa NE ponavljamo sami (ni idempotentnega kljuca).
+      if (jeNakup503(err)) zakleni(nakupPocakajS(err));   // gumb pri vsakem 503 na nakupu nekaj sekund onemogocen
+      if (jeNakupZaseden(err)) setNapaka(nakupZasedenoSporocilo());
       // Brez odgovora: narocilo je morda nastalo - preden kupi znova, naj pogleda vstopnice.
       else setNapaka(err && err.status === -1 ? t("No response from the server. Check Profile → Tickets before you try again.") : sporocilo(err));
     }

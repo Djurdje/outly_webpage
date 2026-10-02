@@ -13,13 +13,16 @@ export class ApiError extends Error {
 }
 
 /* Semafor nakupov (backend #111): POST .../orders vrne 503 + Retry-After, ko hkrati kupuje preveliko ljudi.
-   NE ponavljamo samodejno (nakup nima idempotencnega kljuca) - uporabnik dobi sporocilo, gumb pa je nekaj
-   sekund onemogocen. Ta dva 503 imata svoje sporocilo (pravila spodaj), vsi 503 drugje ostanejo splosni.
+   NE ponavljamo samodejno (nakup nima idempotencnega kljuca). Gumb za nakup je pri VSAKEM 503 na nakupu nekaj
+   sekund onemogocen (jeNakup503), sporocilo o navalu pa se pokaze samo, ko telo 503 vsebuje "too many
+   purchases", "server busy" ali "service temporarily unavailable" (jeNakupZaseden; usklajeno z iOS, outly-app #51).
+   Vsak drug 503 (HTML ob izpadu, payments, auth) dobi svoje ali splosno sporocilo (sporocilo()).
    Pozor: brskalnik glave Retry-After cez CORS ne vidi, dokler je backend ne razkrije (Access-Control-Expose-
    Headers); brez nje velja privzetih 5 s (isto, kot streznik vedno poslje). */
 export const NAKUP_PREMOR_S = 5;
+export const jeNakup503 = e => e instanceof ApiError && e.status === 503;
 export function jeNakupZaseden(e) {
-  return e instanceof ApiError && e.status === 503 && !/payments are not available|auth service unavailable/i.test(e.raw);
+  return jeNakup503(e) && /too many purchases|server busy|service temporarily unavailable/i.test(e.raw);
 }
 export function nakupPocakajS(e) {
   const s = e instanceof ApiError ? Number(e.retryAfter) : 0;
