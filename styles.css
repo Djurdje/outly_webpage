@@ -20,6 +20,9 @@
   
     --accent:#4C76FF;
     --glow: rgba(76,118,255,.35);
+    /* Vse ostale modre so izpeljane iz --accent (ena barva znamke). Nadomestka za brskalnike brez color-mix. */
+    --accent-dark:#3B5CC7;   /* temnejsi konec preliva (avatar, kovanec) */
+    --accent-soft:#9DB4FF;   /* svetel odtenek za besedilo/ikone na temnem (povezave v predalu) */
   
     --radius: 18px;
     --radius2: 22px;
@@ -31,6 +34,13 @@
     --ease: cubic-bezier(.2,.9,.2,1);
   }
   
+  @supports (color: color-mix(in srgb, red, blue)) {
+    :root{
+      --accent-dark: color-mix(in srgb, var(--accent) 78%, black);
+      --accent-soft: color-mix(in srgb, var(--accent) 55%, white);
+    }
+  }
+
   *{ box-sizing:border-box; }
   html,body{ height:100%; }
   body{
@@ -743,7 +753,7 @@
     inset:-30%;
     background:
       radial-gradient(520px 360px at 20% 40%, rgba(76,118,255,.16), transparent 60%),
-      radial-gradient(520px 360px at 80% 20%, rgba(120,60,255,.10), transparent 60%);
+      radial-gradient(520px 360px at 80% 20%, rgba(76,118,255,.10), transparent 60%);
     pointer-events:none;
   }
   .waitlist__copy{ position:relative; }
@@ -893,12 +903,12 @@
   max-width: 680px;
   margin: 120px auto 160px;
   padding: 48px 40px;
-  background: radial-gradient(120% 120% at 0% 0%, rgba(79,124,255,0.08), transparent 40%),
+  background: radial-gradient(120% 120% at 0% 0%, rgba(76,118,255,0.08), transparent 40%),
               #0b0d12;
   border-radius: 24px;
   border: 1px solid rgba(255,255,255,0.06);
   box-shadow:
-    0 0 0 1px rgba(79,124,255,0.04),
+    0 0 0 1px rgba(76,118,255,0.04),
     0 40px 120px rgba(0,0,0,0.6);
 }
 
@@ -949,8 +959,8 @@
 .creator-wrapper input:focus {
   outline: none;
   background: rgba(255,255,255,0.04);
-  border-color: rgba(79,124,255,0.6);
-  box-shadow: 0 0 0 3px rgba(79,124,255,0.15);
+  border-color: rgba(76,118,255,0.6);
+  box-shadow: 0 0 0 3px rgba(76,118,255,0.15);
 }
 
 /* buttons spacing (reuse .btn from site) */
@@ -974,8 +984,8 @@
 }
 
 .creator-wrapper .upload-box:hover {
-  border-color: rgba(79,124,255,0.6);
-  box-shadow: 0 0 0 3px rgba(79,124,255,0.15);
+  border-color: rgba(76,118,255,0.6);
+  box-shadow: 0 0 0 3px rgba(76,118,255,0.15);
 }
 
 .creator-wrapper .upload-box span {
@@ -1904,12 +1914,12 @@ body.drawer-open { overflow: hidden; }
 .drawer .formMsg.is-error { color: #FF9B9B; }
 .drawer .formMsg.is-ok { color: #9DD5A6; }
 .drawer .linklike {
-  background: none; border: 0; padding: 0; color: rgba(155,176,255,.95);
+  background: none; border: 0; padding: 0; color: var(--accent-soft);
   font: inherit; font-weight: 700; cursor: pointer;
 }
 .drawer__switch { margin: 14px 0 0; font-size: 13px; color: rgba(255,255,255,.6); text-align: center; }
 .drawer__fine { margin: 12px 0 0; font-size: 11.5px; color: rgba(255,255,255,.45); line-height: 1.45; }
-.drawer__fine a { color: rgba(155,176,255,.9); }
+.drawer__fine a { color: var(--accent-soft); }
 
 /* profil */
 .profile__head { display: flex; flex-direction: column; align-items: center; padding: 4px 0 6px; }
@@ -1917,7 +1927,7 @@ body.drawer-open { overflow: hidden; }
   width: 72px; height: 72px; border-radius: 50%;
   display: inline-flex; align-items: center; justify-content: center;
   font-size: 28px; font-weight: 900; color: #fff;
-  background: linear-gradient(160deg, #5c82ff, #2f4fcf);
+  background: linear-gradient(160deg, var(--accent), var(--accent-dark));
   box-shadow: 0 0 0 5px rgba(76,118,255,.14), 0 16px 40px rgba(76,118,255,.25);
 }
 .profile__name { margin: 12px 0 2px; font-size: 20px; font-weight: 800; letter-spacing: -.01em; }
@@ -1932,7 +1942,7 @@ body.drawer-open { overflow: hidden; }
 .points__coin {
   width: 40px; height: 40px; border-radius: 50%;
   display: inline-flex; align-items: center; justify-content: center;
-  background: linear-gradient(160deg, #6f92ff, #3757d6);
+  background: linear-gradient(160deg, var(--accent), var(--accent-dark));
   box-shadow: 0 8px 22px rgba(76,118,255,.35);
   font-weight: 900; font-size: 18px; color: #fff;
 }
@@ -1958,7 +1968,7 @@ body.drawer-open { overflow: hidden; }
 .pointsMore__title { margin: 0 0 8px; font-size: 11.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.5); }
 .pointsMore .perks { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 8px; }
 .pointsMore .perk { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.03); }
-.pointsMore .perk__icon { flex: 0 0 auto; width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; color: #8FA8FF; background: rgba(76,118,255,.10); border: 1px solid rgba(76,118,255,.22); }
+.pointsMore .perk__icon { flex: 0 0 auto; width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; color: var(--accent-soft); background: rgba(76,118,255,.10); border: 1px solid rgba(76,118,255,.22); }
 .pointsMore .perk__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .pointsMore .perk__text strong { font-size: 13.5px; font-weight: 800; }
 .pointsMore .perk__text small { font-size: 12px; color: rgba(255,255,255,.62); line-height: 1.35; }
@@ -2070,7 +2080,7 @@ body.drawer-open { overflow: hidden; }
   height: 84px; position: relative;
   background:
     radial-gradient(60% 120% at 20% 100%, rgba(76,118,255,.55), transparent 60%),
-    radial-gradient(50% 100% at 90% 0%, rgba(160,80,255,.45), transparent 60%),
+    radial-gradient(50% 100% at 90% 0%, rgba(76,118,255,.30), transparent 60%),
     #0d0f16;
 }
 .clubCard__badge {
@@ -2142,7 +2152,7 @@ body.drawer-open { overflow: hidden; }
 .points__coin { width: 48px; height: 48px; border-radius: 0; background: none; box-shadow: none; object-fit: contain; filter: drop-shadow(0 8px 18px rgba(76,118,255,.45)); }
 .person__mail--name { color: rgba(255,255,255,.7); font-weight: 600; }
 .person__mail--name b { color: var(--text); font-weight: 800; }
-.person__avatar--user { background: linear-gradient(160deg, #5c82ff, #2f4fcf); border-color: rgba(120,150,255,.6); }
+.person__avatar--user { background: linear-gradient(160deg, var(--accent), var(--accent-dark)); border-color: rgba(76,118,255,.6); }
 
 /* Privolitev ob registraciji: majhna vrstica s kljukico, ne cel zaslon. */
 .drawer .consent { display: flex; gap: 10px; align-items: flex-start; margin: 4px 0 12px; font-size: 12.5px; line-height: 1.45; color: rgba(255,255,255,.7); cursor: pointer; }

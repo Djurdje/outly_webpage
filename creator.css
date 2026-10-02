@@ -36,7 +36,7 @@ input {
 
 input:focus {
   outline: none;
-  border-color: #4f7cff;
+  border-color: var(--accent, #4C76FF);
 }
 
 .btn {
@@ -50,7 +50,7 @@ input:focus {
 }
 
 .primary {
-  background: #4f7cff;
+  background: var(--accent, #4C76FF);
   color: #fff;
 }
 
