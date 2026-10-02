@@ -4,8 +4,11 @@
    jih prijateljem z obstojecim prenosom (Profile -> Tickets). Ta modul se nalozi leno (event.js), ko dogodek ponuja VIP. */
 import { html, useEffect, useRef, useState } from "../lib.js";
 import { t, tn } from "../i18n.js";
-import { send, pocistiPredpomnilnik } from "../api.js";
-import { sporocilo, jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo } from "../napake.js";
+import { send, pocistiPredpomnilnik, kljuciNakupa } from "../api.js";
+import {
+  sporocilo, jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo,
+  jeNakupVObdelavi, NAKUP_V_OBDELAVI_S, jeKljucPonovljen, nakupBrezOdgovoraSporocilo
+} from "../napake.js";
 import { navigiraj } from "../usmerjanje.js";
 import { denar, danInUra } from "../oblika.js";
 import { List, Ikona, Nalaganje, Napaka, useZaklep } from "../ui.js";
@@ -49,6 +52,8 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
   const [nakup, setNakup] = useState(null);
   const tece = useRef(false);   // zascita pred dvojnim klikom (stanje se posodobi prepozno)
   const [zaklenjeno, zakleni] = useZaklep();   // po 503 (semafor nakupov) je gumb nekaj sekund onemogocen
+  const kljuci = useRef(null);   // Idempotency-Key: isti kljuc za ponovni poskus ISTEGA nakupa (dogodek + miza + paket)
+  if (!kljuci.current) kljuci.current = kljuciNakupa();
 
   /** Tloris + mize + paketi. tiho = brez vrtavke (osvezitev po 409: kupec ostane na istem mestu). */
   async function nalozi(tiho, izbor) {
@@ -94,18 +99,26 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
     tece.current = true;
     setPosiljam(true); setNapaka("");
     try {
+      // Ista vsebina nakupa (dogodek + miza + paket) = isti kljuc, tudi po timeoutu/503/409 request_in_progress.
+      const kljuc = kljuci.current.za(`${e.id}|${miza.id}|${paket ? paket.id : ""}`);
       const r = await send(`/events/${e.id}/tables/${miza.id}/orders`, {
-        method: "POST", body: paket ? { package_id: paket.id, expected_price_cents: miza.price_cents } : { expected_price_cents: miza.price_cents }, auth: true
+        method: "POST", body: paket ? { package_id: paket.id, expected_price_cents: miza.price_cents } : { expected_price_cents: miza.price_cents }, auth: true,
+        glave: { "Idempotency-Key": kljuc }
       });
+      kljuci.current.pozabi();   // uspeh (tudi ponovitev): naslednji nakup dobi nov kljuc
       pocistiPredpomnilnik();
       setNakup(r);
     } catch (err) {
-      if (err && err.status === 409) { nalozi(true); setMizaId(null); }   // zasedeno ali prodaja zaprta: osvezi tloris
-      // Streznik je zaseden (503): kratek premor; sporocilo o navalu samo za znano telo (napake.js). Nakupa NE ponavljamo sami (ni idempotentnega kljuca).
+      // 409 request_in_progress NI "zasedeno": isti nakup se se obdeluje - izbiro mize obdrzimo (isti kljuc), samo pocakamo.
+      if (err && err.status === 409 && !jeNakupVObdelavi(err)) { nalozi(true); setMizaId(null); }   // zasedeno ali prodaja zaprta: osvezi tloris
+      // Nakupa NE ponavljamo sami: uporabnik pritisne znova (isti kljuc, razen ob 422).
+      if (jeKljucPonovljen(err)) kljuci.current.pozabi();   // kljuc je bil ze uporabljen z drugo vsebino: nov nakup
+      // Streznik je zaseden (503): kratek premor; sporocilo o navalu samo za znano telo (napake.js).
       if (jeNakup503(err)) zakleni(nakupPocakajS(err));   // gumb pri vsakem 503 na nakupu nekaj sekund onemogocen
+      else if (jeNakupVObdelavi(err)) zakleni(nakupPocakajS(err, NAKUP_V_OBDELAVI_S));
       if (jeNakupZaseden(err)) setNapaka(nakupZasedenoSporocilo());
-      // Brez odgovora: narocilo je morda nastalo - preden kupi znova, naj pogleda vstopnice.
-      else setNapaka(err && err.status === -1 ? t("No response from the server. Check Profile → Tickets before you try again.") : sporocilo(err));
+      // Brez odgovora: narocilo je morda nastalo - ponovni pritisk z istim kljucem ga najde, ne ustvari drugega.
+      else setNapaka(err && err.status === -1 ? nakupBrezOdgovoraSporocilo() : sporocilo(err));
     }
     tece.current = false;
     setPosiljam(false);

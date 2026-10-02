@@ -3,8 +3,11 @@
    Kartice NIKOLI ne vnasamo v nas vmesnik (Stripe Checkout, ko pride). */
 import { html, useEffect, useRef, useState } from "../lib.js";
 import { t, tn } from "../i18n.js";
-import { send, pocistiPredpomnilnik } from "../api.js";
-import { sporocilo, jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo } from "../napake.js";
+import { send, pocistiPredpomnilnik, kljuciNakupa } from "../api.js";
+import {
+  sporocilo, jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo,
+  jeNakupVObdelavi, NAKUP_V_OBDELAVI_S, jeKljucPonovljen, nakupBrezOdgovoraSporocilo
+} from "../napake.js";
 import { denar, jeRazprodan, preostanek, danInUra } from "../oblika.js";
 import { List, Ikona, useZaklep } from "../ui.js";
 import { KodaQR } from "../qr.js";
@@ -16,6 +19,8 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
   const [nakup, setNakup] = useState(null);
   const tece = useRef(false);   // zascita pred dvojnim klikom v istem trenutku (stanje se posodobi prepozno)
   const [zaklenjeno, zakleni] = useZaklep();   // po 503 (semafor nakupov) je gumb nekaj sekund onemogocen
+  const kljuci = useRef(null);   // Idempotency-Key: isti kljuc za ponovni poskus ISTEGA nakupa (dogodek + kolicina)
+  if (!kljuci.current) kljuci.current = kljuciNakupa();
   useEffect(() => { if (odprt) { setKolicina(1); setNapaka(""); setNakup(null); } }, [odprt]);
   // Cena null = vstopnic ni na Outlyju; tak dogodek nima nakupa (in NI "Free").
   if (!odprt || e.ticket_price_cents == null) return null;
@@ -32,15 +37,21 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
     tece.current = true;
     setPosiljam(true); setNapaka("");
     try {
-      const r = await send(`/events/${e.id}/orders`, { method: "POST", body: { quantity: kolicina }, auth: true });
+      // Ista vsebina nakupa (dogodek + kolicina) = isti kljuc, tudi po timeoutu/503/409: backend vrne isto narocilo (201).
+      const kljuc = kljuci.current.za(`${e.id}|${kolicina}`);
+      const r = await send(`/events/${e.id}/orders`, { method: "POST", body: { quantity: kolicina }, auth: true, glave: { "Idempotency-Key": kljuc } });
+      kljuci.current.pozabi();   // uspeh (tudi ponovitev): naslednji nakup dobi nov kljuc
       pocistiPredpomnilnik();   // zaloga (sold_count) na karticah naj bo sveza
       setNakup(r);
     } catch (err) {
-      // Streznik je zaseden (503): kratek premor; sporocilo o navalu samo za znano telo (napake.js). Nakupa NE ponavljamo sami (ni idempotentnega kljuca).
+      // Nakupa NE ponavljamo sami: uporabnik pritisne znova (isti kljuc, razen ob 422).
+      if (jeKljucPonovljen(err)) kljuci.current.pozabi();   // kljuc je bil ze uporabljen z drugo vsebino: nov nakup
+      // Streznik je zaseden (503): kratek premor; sporocilo o navalu samo za znano telo (napake.js).
       if (jeNakup503(err)) zakleni(nakupPocakajS(err));   // gumb pri vsakem 503 na nakupu nekaj sekund onemogocen
+      else if (jeNakupVObdelavi(err)) zakleni(nakupPocakajS(err, NAKUP_V_OBDELAVI_S));   // 409 request_in_progress: isti nakup se obdeluje
       if (jeNakupZaseden(err)) setNapaka(nakupZasedenoSporocilo());
-      // Brez odgovora: narocilo je morda nastalo - preden kupi znova, naj pogleda vstopnice.
-      else setNapaka(err && err.status === -1 ? t("No response from the server. Check Profile → Tickets before you try again.") : sporocilo(err));
+      // Brez odgovora: narocilo je morda nastalo - ponovni pritisk z istim kljucem ga najde, ne ustvari drugega.
+      else setNapaka(err && err.status === -1 ? nakupBrezOdgovoraSporocilo() : sporocilo(err));
     }
     tece.current = false;
     setPosiljam(false);

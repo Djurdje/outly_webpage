@@ -8,7 +8,8 @@ import { ApiError } from "./napake.js";
 export const API_URL = "https://outly-backend-roy3.onrender.com";
 const CAKANJE_MS = 30000;
 /* Nakup (POST) brez casovne meje: ob hladnem zagonu Renderja bi prekinjen zahtevek lahko ze ustvaril
-   narocilo, uporabnik pa bi kupil se enkrat (backend nima idempotencnega kljuca). */
+   narocilo. Ponovni poskus je zdaj varen (glava Idempotency-Key, glej kljuciNakupa), a prekinitev ob
+   casovni meji bi uporabnika po nepotrebnem pahnila v negotovost; odgovor pride ali pa povezava pade. */
 const BREZ_MEJE = /\/orders$|^\/me$|\/transfer$/;
 
 /* Seja nastavi, kaj se zgodi, ko Supabase sejo zavrne (odjava + obvestilo). */
@@ -40,11 +41,12 @@ export async function trenutniZeton() {
   return zeton;
 }
 
-async function surovKlic(path, { method, body, zeton, signal, klub }) {
+async function surovKlic(path, { method, body, zeton, signal, klub, glave: dodatne }) {
   // Klic, ki ga je klicatelj ze preklical (casovna meja, medtem ko je cakal na zeton), NE sme oditi na streznik:
   // listener "abort" spodaj ne bi vec sprozil.
   if (signal && signal.aborted) throw new DOMException("Aborted", "AbortError");
   const glave = {};
+  if (dodatne) Object.assign(glave, dodatne);   // npr. Idempotency-Key; spodnje glave (Authorization ...) jih ne povozijo
   if (zeton) glave["Authorization"] = "Bearer " + zeton;
   const k = klub || izbraniKlub;
   if (k) glave["X-Outly-Club"] = String(k);
@@ -69,13 +71,14 @@ async function preberi(odg) {
 /**
  * send("/me", { auth: true }) · send("/events/5", { auth: "optional" })
  * auth: false (javno) | "optional" (zeton, ce obstaja) | true (obvezen; brez njega 401 lokalno)
+ * glave: dodatne glave zahtevka (npr. { "Idempotency-Key": uuid }); brez njih se klic ne spremeni.
  */
-export async function send(path, { method = "GET", body, auth = false, signal, klub } = {}) {
+export async function send(path, { method = "GET", body, auth = false, signal, klub, glave } = {}) {
   let zeton = auth ? await trenutniZeton() : "";
   if (auth === true && !zeton) throw new ApiError(401, "Missing token.");
 
   let odg;
-  try { odg = await surovKlic(path, { method, body, zeton, signal, klub }); }
+  try { odg = await surovKlic(path, { method, body, zeton, signal, klub, glave }); }
   catch (e) {
     if (signal && signal.aborted) throw e;
     throw new ApiError(-1, "No response.");
@@ -90,7 +93,7 @@ export async function send(path, { method = "GET", body, auth = false, signal, k
       if (osvezeno === null) throw new ApiError(-1, "Could not refresh session.");
       if (osvezeno) {
         zeton = osvezeno;
-        try { odg = await surovKlic(path, { method, body, zeton, signal, klub }); }
+        try { odg = await surovKlic(path, { method, body, zeton, signal, klub, glave }); }
         catch { throw new ApiError(-1, "No response."); }
       }
     }
@@ -104,6 +107,27 @@ export async function send(path, { method = "GET", body, auth = false, signal, k
     throw new ApiError(odg.status, raw, Number.isFinite(cakaj) && cakaj > 0 ? cakaj : 0);
   }
   return podatki;
+}
+
+/* Idempotentni kljuc nakupa (backend #123, enaka pravila kot iOS). En UUID = en nakup. Ponovni poskus ISTEGA
+   nakupa (timeout, brez odgovora, 503, 409 request_in_progress, ponovni klik) poslje ISTI kljuc, zato backend
+   vrne isto narocilo namesto drugega. Nov kljuc: sprememba vsebine nakupa (dogodek, kolicina, miza, paket),
+   po uspehu in po 422 idempotency_key_reused. Zaslon dobi enega s kljuciNakupa() (useRef) in pokliche
+   za(vsebina) ob kliku, pozabi() po uspehu/422. Kljuc ostane v pomnilniku zaslona (nikoli v localStorage). */
+export function novUUID() {
+  const c = globalThis.crypto;
+  if (c && typeof c.randomUUID === "function") return c.randomUUID();
+  const b = new Uint8Array(16); c.getRandomValues(b);   // starejsi Safari (< 15.4)
+  b[6] = (b[6] & 0x0f) | 0x40; b[8] = (b[8] & 0x3f) | 0x80;
+  const h = [...b].map(x => x.toString(16).padStart(2, "0")).join("");
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+}
+export function kljuciNakupa() {
+  let vsebina = null, kljuc = null;
+  return {
+    za(v) { if (kljuc === null || vsebina !== v) { vsebina = v; kljuc = novUUID(); } return kljuc; },
+    pozabi() { vsebina = null; kljuc = null; }
+  };
 }
 
 /* Ena osvezitev naenkrat, tudi ce jo zahteva vec klicev hkrati.

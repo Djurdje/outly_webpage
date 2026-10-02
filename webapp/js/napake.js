@@ -13,20 +13,38 @@ export class ApiError extends Error {
 }
 
 /* Semafor nakupov (backend #111): POST .../orders vrne 503 + Retry-After, ko hkrati kupuje preveliko ljudi.
-   NE ponavljamo samodejno (nakup nima idempotencnega kljuca). Gumb za nakup je pri VSAKEM 503 na nakupu nekaj
-   sekund onemogocen (jeNakup503), sporocilo o navalu pa se pokaze samo, ko telo 503 vsebuje "too many
-   purchases", "server busy" ali "service temporarily unavailable" (jeNakupZaseden; usklajeno z iOS, outly-app #51).
-   Vsak drug 503 (HTML ob izpadu, payments, auth) dobi svoje ali splosno sporocilo (sporocilo()).
-   Pozor: brskalnik glave Retry-After cez CORS ne vidi, dokler je backend ne razkrije (Access-Control-Expose-
-   Headers); brez nje velja privzetih 5 s (isto, kot streznik vedno poslje). */
+   Nakupa NE ponavljamo samodejno: uporabnik ponovno pritisne gumb, zaslon pa pri ponovitvi ISTEGA nakupa
+   poslje ISTI Idempotency-Key (api.js kljuciNakupa; backend #123), zato ponovni klik ne ustvari drugega narocila.
+   Gumb za nakup je pri VSAKEM 503 na nakupu nekaj sekund onemogocen (jeNakup503), sporocilo o navalu pa se
+   pokaze samo, ko telo 503 vsebuje "too many purchases", "server busy" ali "service temporarily unavailable"
+   (jeNakupZaseden; usklajeno z iOS, outly-app #51). Vsak drug 503 (HTML ob izpadu, payments, auth) dobi svoje ali
+   splosno sporocilo (sporocilo()).
+   Retry-After brskalnik cez CORS vidi, odkar ga backend razkrije (#123, exposedHeaders); do takrat (in ce glave
+   ni) velja privzeto: 5 s za 503, 2 s za 409 request_in_progress. */
 export const NAKUP_PREMOR_S = 5;
 export const jeNakup503 = e => e instanceof ApiError && e.status === 503;
 export function jeNakupZaseden(e) {
   return jeNakup503(e) && /too many purchases|server busy|service temporarily unavailable/i.test(e.raw);
 }
-export function nakupPocakajS(e) {
+export function nakupPocakajS(e, privzeto = NAKUP_PREMOR_S) {
   const s = e instanceof ApiError ? Number(e.retryAfter) : 0;
-  return s >= 1 ? Math.min(Math.ceil(s), 30) : NAKUP_PREMOR_S;
+  return s >= 1 ? Math.min(Math.ceil(s), 30) : privzeto;
+}
+
+/* Napake idempotentnega kljuca (backend #123) so JSON { error, message }; ostali odgovori nakupa so navadno besedilo.
+   Koda se bere iz `raw` (ApiError hrani telo kot besedilo). */
+export function kodaNapake(e) {
+  if (!(e instanceof ApiError) || !e.raw || e.raw[0] !== "{") return "";
+  try { const o = JSON.parse(e.raw); return o && typeof o.error === "string" ? o.error : ""; } catch { return ""; }
+}
+/* 409 request_in_progress: isti nakup se se obdeluje - pocakaj Retry-After (privzeto 2 s) in pritisni znova z ISTIM kljucem. */
+export const jeNakupVObdelavi = e => e instanceof ApiError && e.status === 409 && kodaNapake(e) === "request_in_progress";
+export const NAKUP_V_OBDELAVI_S = 2;
+/* 422 idempotency_key_reused: isti kljuc z drugo vsebino - zaslon zamenja kljuc (nov nakup), uporabnik pritisne znova. */
+export const jeKljucPonovljen = e => e instanceof ApiError && e.status === 422 && kodaNapake(e) === "idempotency_key_reused";
+/* Brez odgovora (timeout, izgubljena povezava): narocilo je morda nastalo; ponovni klik z istim kljucem je varen. */
+export function nakupBrezOdgovoraSporocilo() {
+  return t("Your purchase may have gone through — tap Buy again to check (you won't be charged twice).");
 }
 export function nakupZasedenoSporocilo() {
   return t("Lots of people are buying right now. Please try again in a few seconds.");
@@ -132,6 +150,12 @@ const PREDNOSTNA = [
 ];
 
 function prevediApi(e) {
+  // Najprej kode novih primerov (JSON { error, message }): njihovo besedilo ne sme zadeti splosnih pravil spodaj.
+  switch (kodaNapake(e)) {
+    case "request_in_progress": return t("Your purchase is still being processed. Try again in a moment.");
+    case "idempotency_key_reused": return t("Something changed, please try again.");
+    case "invalid_idempotency_key": return t("Something went wrong. Please try again.");
+  }
   const s = e.raw.toLowerCase();
   for (const [podniz, sporocilo] of PREDNOSTNA) if (s.includes(podniz)) return t(sporocilo);
   if (s.includes("dateofbirth") || s.includes("date of birth")) {
