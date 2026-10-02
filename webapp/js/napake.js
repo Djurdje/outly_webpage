@@ -4,11 +4,29 @@
 import { t } from "./i18n.js";
 
 export class ApiError extends Error {
-  constructor(status, raw) {
+  constructor(status, raw, retryAfter = 0) {
     super(`API ${status}: ${raw}`);
     this.status = status;   // -1 = ni odgovora (omrezje)
     this.raw = raw || "";
+    this.retryAfter = retryAfter;   // sekunde iz glave Retry-After (0 = ni znana)
   }
+}
+
+/* Semafor nakupov (backend #111): POST .../orders vrne 503 + Retry-After, ko hkrati kupuje preveliko ljudi.
+   NE ponavljamo samodejno (nakup nima idempotencnega kljuca) - uporabnik dobi sporocilo, gumb pa je nekaj
+   sekund onemogocen. Ta dva 503 imata svoje sporocilo (pravila spodaj), vsi 503 drugje ostanejo splosni.
+   Pozor: brskalnik glave Retry-After cez CORS ne vidi, dokler je backend ne razkrije (Access-Control-Expose-
+   Headers); brez nje velja privzetih 5 s (isto, kot streznik vedno poslje). */
+export const NAKUP_PREMOR_S = 5;
+export function jeNakupZaseden(e) {
+  return e instanceof ApiError && e.status === 503 && !/payments are not available|auth service unavailable/i.test(e.raw);
+}
+export function nakupPocakajS(e) {
+  const s = e instanceof ApiError ? Number(e.retryAfter) : 0;
+  return s >= 1 ? Math.min(Math.ceil(s), 30) : NAKUP_PREMOR_S;
+}
+export function nakupZasedenoSporocilo() {
+  return t("Lots of people are buying right now. Please try again in a few seconds.");
 }
 
 export class AuthError extends Error {

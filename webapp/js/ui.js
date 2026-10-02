@@ -6,6 +6,17 @@ import { t } from "./i18n.js";
 import { nazaj } from "./usmerjanje.js";
 import { napisCene, znacka, jeRazprodan, danInUra, danKratek, zanrIme, slika } from "./oblika.js";
 
+/** Zaklep gumba po omejitvi streznika (503 semafor nakupov): [zaklenjeno, zakleni(sekunde)]. Samo cas, brez ponovitve zahteve. */
+export function useZaklep() {
+  const [konec, setKonec] = useState(0);
+  useEffect(() => {
+    if (!konec) return undefined;
+    const id = setTimeout(() => setKonec(0), Math.max(0, konec - Date.now()));
+    return () => clearTimeout(id);
+  }, [konec]);
+  return [konec > 0, sekunde => setKonec(Date.now() + sekunde * 1000)];
+}
+
 export function Ikona({ ime, velikost = 20, debelina = 2, razred = "" }) {
   const vozlisca = IKONE[ime] || [];
   return html`<svg class=${"ikona " + razred} width=${velikost} height=${velikost} viewBox="0 0 24 24"

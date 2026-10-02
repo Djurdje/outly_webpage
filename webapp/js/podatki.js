@@ -1,5 +1,8 @@
 /* Javni podatki (klubi, dogodki, zanri) - nalozeni in normalizirani enkrat, predpomnjeni za 60 s,
-   da vrnitev na Home ne nalaga vsega znova. Osebni podatki gredo mimo tega (send z auth). */
+   da vrnitev na Home ne nalaga vsega znova. Osebni podatki gredo mimo tega (send z auth).
+   Seznami dogodkov prosijo za lite=true (backend #114/#120: brez `description`, ki je vecina teze odgovora).
+   Zato objekt iz seznama NIKOLI ne gre naravnost na zaslon dogodka: ta vedno nalozi poln GET /events/:id
+   (dogodek() spodaj). Star backend parametra ne pozna in vrne poln odgovor - brez razlike za odjemalca. */
 import { javno, send } from "./api.js";
 import { normalizirajDogodek, normalizirajKlub } from "./oblika.js";
 
@@ -13,13 +16,13 @@ export const klubi = (sveze = false) =>
   preslikaj(javno("/clubs", { sveze }), r => (Array.isArray(r) ? r : []).map(normalizirajKlub));
 
 export const dogodki = ({ upcoming = true, clubId, sveze = false } = {}) => {
-  const q = new URLSearchParams({ upcoming: String(upcoming) });
+  const q = new URLSearchParams({ upcoming: String(upcoming), lite: "true" });
   if (clubId) q.set("clubId", String(clubId));
   return preslikaj(javno("/events?" + q, { sveze }), r => (Array.isArray(r) ? r : []).map(normalizirajDogodek));
 };
 
 export const popularniKluba = clubId =>
-  preslikaj(javno(`/events?clubId=${clubId}&popular=true`), r => (Array.isArray(r) ? r : []).map(normalizirajDogodek));
+  preslikaj(javno(`/events?clubId=${clubId}&popular=true&lite=true`), r => (Array.isArray(r) ? r : []).map(normalizirajDogodek));
 
 export const zanri = () =>
   preslikaj(javno("/genres", { ttl: 3600e3 }), r => (r && Array.isArray(r.genres) ? r.genres : []));

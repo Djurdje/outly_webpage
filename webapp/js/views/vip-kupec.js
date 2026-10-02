@@ -5,10 +5,10 @@
 import { html, useEffect, useRef, useState } from "../lib.js";
 import { t, tn } from "../i18n.js";
 import { send, pocistiPredpomnilnik } from "../api.js";
-import { sporocilo } from "../napake.js";
+import { sporocilo, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo } from "../napake.js";
 import { navigiraj } from "../usmerjanje.js";
 import { denar, danInUra } from "../oblika.js";
-import { List, Ikona, Nalaganje, Napaka } from "../ui.js";
+import { List, Ikona, Nalaganje, Napaka, useZaklep } from "../ui.js";
 import {
   C, doOseb, normalizirajTloris, normalizirajMize, normalizirajPakete, useSirina,
   TlorisPlatno, ElementTlorisa, OblikaMize, LegendaMiz, VipVrstica
@@ -48,6 +48,7 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
   const [napaka, setNapaka] = useState("");
   const [nakup, setNakup] = useState(null);
   const tece = useRef(false);   // zascita pred dvojnim klikom (stanje se posodobi prepozno)
+  const [zaklenjeno, zakleni] = useZaklep();   // po 503 (semafor nakupov) je gumb nekaj sekund onemogocen
 
   /** Tloris + mize + paketi. tiho = brez vrtavke (osvezitev po 409: kupec ostane na istem mestu). */
   async function nalozi(tiho, izbor) {
@@ -100,8 +101,10 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
       setNakup(r);
     } catch (err) {
       if (err && err.status === 409) { nalozi(true); setMizaId(null); }   // zasedeno ali prodaja zaprta: osvezi tloris
+      // Streznik je zaseden (503): sporocilo + kratek premor. Nakupa NE ponavljamo sami (ni idempotentnega kljuca).
+      if (jeNakupZaseden(err)) { zakleni(nakupPocakajS(err)); setNapaka(nakupZasedenoSporocilo()); }
       // Brez odgovora: narocilo je morda nastalo - preden kupi znova, naj pogleda vstopnice.
-      setNapaka(err && err.status === -1 ? t("No response from the server. Check Profile → Tickets before you try again.") : sporocilo(err));
+      else setNapaka(err && err.status === -1 ? t("No response from the server. Check Profile → Tickets before you try again.") : sporocilo(err));
     }
     tece.current = false;
     setPosiljam(false);
@@ -165,7 +168,7 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
       </div>` : html`<p class="opomba srednje">${t("Tap a free table to reserve it.")}</p>`}
       ${miza ? html`<div class="vip-pas-nakupa">
         <p class="opomba">${t("Test mode — nothing is charged")}</p>
-        <button type="button" class="gumb-glavni" onClick=${rezerviraj} disabled=${posiljam || !d.onSale || (imaPakete && !paket)}>
+        <button type="button" class="gumb-glavni" onClick=${rezerviraj} disabled=${posiljam || zaklenjeno || !d.onSale || (imaPakete && !paket)}>
           ${posiljam ? t("Processing...") : t("Reserve table") + " · " + denar(miza.price_cents, d.valuta)}</button>
       </div>` : null}` : null}
   <//>`;

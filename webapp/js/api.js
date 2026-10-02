@@ -99,7 +99,9 @@ export async function send(path, { method = "GET", body, auth = false, signal, k
   const podatki = await preberi(odg);
   if (!odg.ok) {
     const raw = typeof podatki === "string" ? podatki : JSON.stringify(podatki || {});
-    throw new ApiError(odg.status, raw);
+    // Retry-After (sekunde); cez CORS ga brskalnik vidi samo, ce ga backend razkrije - sicer null.
+    const cakaj = Number(odg.headers.get("Retry-After"));
+    throw new ApiError(odg.status, raw, Number.isFinite(cakaj) && cakaj > 0 ? cakaj : 0);
   }
   return podatki;
 }
