@@ -6,16 +6,62 @@
      shranjeno samo ob izpadu - po objavi nikoli stara koda.
    - /vendor/*, pisave, ikone (razlicica v imenu / se ne spreminjajo): shranjeno najprej.
    - API (backend, Supabase, Cloudinary), vstopnice, ploscice zemljevida: NE prestrezamo (vedno sveze, kot iOS). */
-const RAZLICICA = "outly-app-4";   // ob dvigu uskladi tudi webapp/porocilo.js
+const RAZLICICA = "outly-app-6";   // ob dvigu uskladi tudi webapp/porocilo.js
 const LUPINA = "/app/";
-const JEDRO = [
+/* Staticni graf uvozov main.js (vsi moduli, ki jih aplikacija nalozi ob zagonu). Generira ga webapp/orodja/predhodno-nalaganje.mjs
+   (isti izracun kot <link rel="modulepreload"> v app/index.html; `... --preveri` pade, ce se razideta). Brez tega bi po objavi
+   nova razlicica predpomnilnika imela samo rocni seznam spodaj, aplikacija pa se brez povezave ne bi odprla. */
+/* graf:zacetek (generira webapp/orodja/predhodno-nalaganje.mjs - isti izracun kot modulepreload v app/index.html) */
+const GRAF = [
+  "/webapp/js/main.js",
+  "/webapp/js/lib.js",
+  "/vendor/preact-10.29.8.module.js",
+  "/vendor/preact-hooks-10.29.8.module.js",
+  "/vendor/htm-3.1.1.module.js",
+  "/webapp/js/i18n.js",
+  "/webapp/js/store.js",
+  "/webapp/js/usmerjanje.js",
+  "/webapp/js/seja.js",
+  "/webapp/js/supabase.js",
+  "/webapp/js/posel.js",
+  "/webapp/js/api.js",
+  "/webapp/js/napake.js",
+  "/webapp/js/oblika.js",
+  "/webapp/js/nastavitve.js",
+  "/webapp/js/ui.js",
+  "/webapp/js/ikone.js",
+  "/webapp/js/views/home.js",
+  "/webapp/js/podatki.js",
+  "/webapp/js/lokacija.js",
+  "/webapp/js/views/prijatelji.js",
+  "/webapp/js/views/obvestila.js",
+  "/webapp/js/views/filtri.js",
+  "/webapp/js/views/search.js",
+  "/webapp/js/views/event.js",
+  "/webapp/js/views/nakup.js",
+  "/webapp/js/qr.js",
+  "/webapp/js/views/zemljevid.js",
+  "/webapp/js/karta.js",
+  "/webapp/js/views/club.js",
+  "/webapp/js/views/seznami.js",
+  "/webapp/js/pwa.js"
+];
+/* graf:konec */
+const JEDRO = [...new Set([
   LUPINA, "/webapp/app.css", "/webapp/zagon.js", "/webapp/porocilo.js", "/webapp/js/main.js", "/webapp/manifest.webmanifest",
   "/vendor/preact-10.29.8.module.js", "/vendor/preact-hooks-10.29.8.module.js", "/vendor/htm-3.1.1.module.js",
   "/vendor/qrcode-generator-2.0.4.mjs",
+  // Skener vstopnic mora delati tudi, ce se stran odpre brez povezave (issue outly-backend#86): njegova koda in knjiznici
+  // (jsQR za branje kode; noble-ed25519 za preverjanje podpisa v brskalnikih brez WebCrypto Ed25519) so vnaprej v predpomnilniku.
+  // Seznam vstopnic NI tu: API odgovorov SW ne predpomni, seznam hrani skener sam (IndexedDB, webapp/js/sken/shramba.js).
+  "/webapp/js/views/posel-skener.js", "/webapp/js/sken/motor.js", "/webapp/js/sken/podpis.js", "/webapp/js/sken/shramba.js", "/webapp/js/vip.js",
+  "/vendor/jsqr-1.4.0.mjs", "/vendor/noble-ed25519-3.2.0.mjs", "/webapp/js/sken/jsqr-delavec.js",
+  "/webapp/js/i18n-sl.js",   // slovenski prevodi (nalozijo se leno, a brez njih bi slovenski vratar brez povezave videl angleske napise)
   "/vendor/supabase-2.115.0.js", "/supabase-config.js",
   "/assets/fonts/inter-latin-wght-normal.woff2", "/assets/fonts/inter-latin-ext-wght-normal.woff2",
-  "/assets/icon-192.png", "/assets/icon-512.png"
-];
+  "/assets/icon-192.png", "/assets/icon-512.png",
+  ...GRAF
+])];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(RAZLICICA).then(c => c.addAll(JEDRO.map(u => new Request(u, { cache: "no-cache" })))).then(() => self.skipWaiting()));
