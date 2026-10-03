@@ -883,5 +883,15 @@ export const SL = {
  "Connect Stripe": "Poveži Stripe",
  "(Stripe test mode)": "(Stripe testni način)",
  "Could not open the payment page.": "Plačilne strani ni bilo mogoče odpreti.",
- "Payment received. Your tickets will appear here in a few seconds.": "Plačilo je prejeto. Vstopnice se bodo tu prikazale v nekaj sekundah."
+ "Payment received. Your tickets will appear here in a few seconds.": "Plačilo je prejeto. Vstopnice se bodo tu prikazale v nekaj sekundah.",
+ "Stripe is reviewing your details. Card payments switch on automatically when the review is done.": "Stripe preverja tvoje podatke. Plačila s kartico se vklopijo sama, ko je preverjanje končano.",
+ "Check again": "Preveri znova",
+ "Stripe still needs: {list}": "Stripe še potrebuje: {list}",
+ "bank account (IBAN)": "bančni račun (IBAN)",
+ "ID document": "osebni dokument",
+ "acceptance of Stripe terms": "sprejem Stripovih pogojev",
+ "company details": "podatke o podjetju",
+ "business details": "podatke o dejavnosti",
+ "representative details": "podatke o zastopniku",
+ "other details": "druge podatke"
 };
