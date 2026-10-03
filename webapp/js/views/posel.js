@@ -104,6 +104,18 @@ export function NastavitveLastnika({ klub }) {
 /* ---------- Placila kluba: Stripe Connect Express (backend #19) ----------
    GET /business/stripe/status (lastnik/manager), POST /business/stripe/onboard in /dashboard (samo lastnik -> 403 za ostale).
    Stripe vrne lastnika na ?stripe=vrnitev (koncal) ali ?stripe=osvezi (povezava potekla -> takoj nova). */
+// Stripova polja requirements.currently_due -> razumljiva skupina (lastnik ne pozna imen polj).
+function manjkajociPodatek(polje) {
+  const p = String(polje || "");
+  if (p.startsWith("external_account")) return t("bank account (IBAN)");
+  if (p.includes("verification.document") || p.includes("verification.additional_document")) return t("ID document");
+  if (p.startsWith("tos_acceptance")) return t("acceptance of Stripe terms");
+  if (p.startsWith("company")) return t("company details");
+  if (p.startsWith("business_profile")) return t("business details");
+  if (/^(individual|representative|person_|owners|directors|executives)/.test(p) || p.includes(".dob") || p.includes(".address")) return t("representative details");
+  return t("other details");
+}
+
 function PlacilaKluba({ klub }) {
   const [s, setS] = useState({ nalaga: true, napaka: null, st: null });
   const [posiljam, setPosiljam] = useState(false);
@@ -131,12 +143,19 @@ function PlacilaKluba({ klub }) {
   }, [klub]);
 
   const st = s.st;
-  let stanje = null, gumb = null;
+  let stanje = null, gumb = null, dodatno = null;
   if (st && !st.configured) stanje = t("Online payments are not switched on yet. Ticket sales run in test mode.");
   else if (st && st.charges_enabled) {
     stanje = t("Your club accepts card payments. Payouts go straight to your bank account.");
     gumb = html`<button type="button" class="gumb-siv" disabled=${posiljam} onClick=${() => odpri("/business/stripe/dashboard")}>${t("Open Stripe dashboard")}</button>`;
+  } else if (st && st.connected && st.details_submitted && !(st.requirements_due || []).length) {
+    // Obrazec je oddan, nic ne manjka: Stripe preverja (v testnem nacinu obicajno nekaj minut). Ponovni onboarding ne pomaga.
+    stanje = t("Stripe is reviewing your details. Card payments switch on automatically when the review is done.");
+    gumb = html`<button type="button" class="gumb-siv" disabled=${s.nalaga} onClick=${nalozi}>${t("Check again")}</button>
+      <button type="button" class="gumb-siv" disabled=${posiljam} onClick=${() => odpri("/business/stripe/dashboard")}>${t("Open Stripe dashboard")}</button>`;
   } else if (st) {
+    const manjka = [...new Set((st.requirements_due || []).map(manjkajociPodatek))];
+    if (manjka.length) dodatno = t("Stripe still needs: {list}", { list: manjka.join(", ") });
     stanje = st.connected ? t("Finish the Stripe setup so your club can accept card payments.")
       : t("Connect Stripe so your club can sell tickets with card payments. The money goes to your club; Outly keeps its commission.");
     gumb = html`<button type="button" class="gumb-glavni" disabled=${posiljam} onClick=${() => odpri("/business/stripe/onboard")}>
@@ -146,6 +165,7 @@ function PlacilaKluba({ klub }) {
     ${s.nalaga ? html`<${Nalaganje} />` : null}
     <${Napaka} besedilo=${s.napaka ? sporocilo(s.napaka) : null} znova=${nalozi} />
     ${stanje ? html`<p class="opomba">${stanje}${st && st.sandbox ? " " + t("(Stripe test mode)") : ""}</p>` : null}
+    ${dodatno ? html`<p class="opomba">${dodatno}</p>` : null}
     ${gumb}
     ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}`;
 }
