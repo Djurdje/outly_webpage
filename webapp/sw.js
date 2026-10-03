@@ -40,6 +40,7 @@ const GRAF = [
   "/webapp/js/views/event.js",
   "/webapp/js/views/nakup.js",
   "/webapp/js/qr.js",
+  "/webapp/js/stripe.js",
   "/webapp/js/views/zemljevid.js",
   "/webapp/js/karta.js",
   "/webapp/js/views/club.js",

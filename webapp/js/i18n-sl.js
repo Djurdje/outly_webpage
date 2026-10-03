@@ -872,5 +872,16 @@ export const SL = {
  "Server: {cas}": "Strežnik: {cas}",
  "Got it": "V redu",
  "The order for this ticket is not paid.": "Naročilo za to vstopnico ni plačano.",
- "The server did not answer in time. The ticket may already be checked in: scan it again - if it says Already scanned with the time just now, let the guest in.": "Strežnik ni odgovoril pravočasno. Vstopnica je morda že vpisana: skeniraj jo znova – če piše Že skenirano s časom pravkar, spusti gosta noter."
+ "The server did not answer in time. The ticket may already be checked in: scan it again - if it says Already scanned with the time just now, let the guest in.": "Strežnik ni odgovoril pravočasno. Vstopnica je morda že vpisana: skeniraj jo znova – če piše Že skenirano s časom pravkar, spusti gosta noter.",
+ "Payments": "Plačila",
+ "Online payments are not switched on yet. Ticket sales run in test mode.": "Spletna plačila še niso vklopljena. Prodaja vstopnic teče v testnem načinu.",
+ "Your club accepts card payments. Payouts go straight to your bank account.": "Tvoj klub sprejema plačila s kartico. Izplačila gredo neposredno na tvoj bančni račun.",
+ "Open Stripe dashboard": "Odpri Stripe pregled",
+ "Finish the Stripe setup so your club can accept card payments.": "Dokončaj nastavitev Stripa, da bo klub lahko sprejemal plačila s kartico.",
+ "Connect Stripe so your club can sell tickets with card payments. The money goes to your club; Outly keeps its commission.": "Poveži Stripe, da bo klub lahko prodajal vstopnice s plačilom s kartico. Denar gre klubu, Outly zadrži provizijo.",
+ "Continue Stripe setup": "Nadaljuj nastavitev Stripa",
+ "Connect Stripe": "Poveži Stripe",
+ "(Stripe test mode)": "(Stripe testni način)",
+ "Could not open the payment page.": "Plačilne strani ni bilo mogoče odpreti.",
+ "Payment received. Your tickets will appear here in a few seconds.": "Plačilo je prejeto. Vstopnice se bodo tu prikazale v nekaj sekundah."
 };

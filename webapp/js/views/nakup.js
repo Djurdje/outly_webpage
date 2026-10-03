@@ -12,6 +12,7 @@ import {
 import { denar, jeRazprodan, preostanek, danInUra } from "../oblika.js";
 import { List, Ikona, useZaklep } from "../ui.js";
 import { KodaQR } from "../qr.js";
+import { odpriStripe } from "../stripe.js";
 
 export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
   const [kolicina, setKolicina] = useState(1);
@@ -55,7 +56,13 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
     const kljuc = kljucNakupa("vstopnice", uid, e.id, String(kolicina), { dogodek: e.id, kolicina });
     try {
       const r = await send(`/events/${e.id}/orders`, { method: "POST", body: { quantity: kolicina }, auth: true, glave: { "Idempotency-Key": kljuc } });
-      pocistiPredpomnilnik();   // zaloga (sold_count) na karticah naj bo sveza
+      pocistiPredpomnilnik();
+      // Stripe (backend #19): narocilo caka na placilo na Stripovi strani. Kljuca NE pozabimo: ce se kupec vrne brez
+      // placila, ponovni pritisk vrne ISTO narocilo in isti checkout_url (ne rezervira se enkrat).
+      if (r && r.mode === "stripe" && r.checkout_url) {
+        if (odpriStripe(r.checkout_url)) return;   // stran se preusmerja; gumb ostane "Processing..."
+        throw new ApiError(-1, "Could not open the payment page.");
+      }   // zaloga (sold_count) na karticah naj bo sveza
       if (ziv.current && odprtRef.current) { pozabiKljucNakupa("vstopnice", uid, e.id, kljuc); setNakup(r); }   // uspeh: naslednji nakup dobi nov kljuc
       // Uspeh, ki ga uporabnik ni videl (list se je medtem odmontiral): kljuca NE pozabimo - ponovitev vrne isto narocilo (Idempotent-Replayed).
       else oznaciIzidNakupa("vstopnice", uid, e.id, kljuc, "nerazresen");

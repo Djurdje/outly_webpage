@@ -11,6 +11,7 @@ import {
   jeNakupVObdelavi, NAKUP_V_OBDELAVI_S, izidNakupa, jeNarociloNeaktivno, nakupNapakaSporocilo, nakupBrezOdgovoraSporocilo
 } from "../napake.js";
 import { navigiraj } from "../usmerjanje.js";
+import { odpriStripe } from "../stripe.js";
 import { denar, danInUra } from "../oblika.js";
 import { List, Ikona, Nalaganje, Napaka, useZaklep } from "../ui.js";
 import {
@@ -119,6 +120,12 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
         glave: { "Idempotency-Key": kljuc }
       });
       pocistiPredpomnilnik();
+      // Stripe (backend #19): narocilo caka na placilo na Stripovi strani. Kljuca NE pozabimo: ce se kupec vrne brez
+      // placila, ponovni pritisk vrne ISTO narocilo in isti checkout_url (ne rezervira se enkrat).
+      if (r && r.mode === "stripe" && r.checkout_url) {
+        if (odpriStripe(r.checkout_url)) return;   // stran se preusmerja; gumb ostane "Processing..."
+        throw new ApiError(-1, "Could not open the payment page.");
+      }
       if (ziv.current && odprtRef.current) { pozabiKljucNakupa("vip", uid, e.id, kljuc); setNakup(r); }   // uspeh: naslednji nakup dobi nov kljuc
       // Uspeh, ki ga uporabnik ni videl (list se je medtem odmontiral): kljuca NE pozabimo - ponovitev vrne isto narocilo (Idempotent-Replayed).
       else oznaciIzidNakupa("vip", uid, e.id, kljuc, "nerazresen");
