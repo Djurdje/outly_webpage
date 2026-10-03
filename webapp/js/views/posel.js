@@ -14,6 +14,7 @@ import * as P from "../podatki.js";
 import { zanrIme } from "../oblika.js";
 import { naloziKnjiznice, slog, povecavaZa, SLOVENIJA, LJUBLJANA } from "../karta.js";
 import { GlavaNazaj, Ikona, Slika, Nalaganje, Napaka, List } from "../ui.js";
+import { odpriStripe } from "../stripe.js";
 import { MenijskaVrstica } from "./racun.js";
 import { VrsticaNamestitve } from "./namestitev.js";
 import { imeVloge, lahkoUreja, idKluba, poslovno, useKlub, nastaviObraz, centiIz, evriBesedilo, NAJVEC_VIDEA } from "../posel.js";
@@ -96,7 +97,57 @@ export function NastavitveLastnika({ klub }) {
         onClick=${() => { nastaviObraz("personal"); navigiraj("/app/profile", { zamenjaj: true }); }} />
     </div>
     <p class="opomba">${t("Your personal account has tickets, friends and preferences. You can switch back any time in My Account.")}</p>
+    <${PlacilaKluba} klub=${id} />
   </div>`;
+}
+
+/* ---------- Placila kluba: Stripe Connect Express (backend #19) ----------
+   GET /business/stripe/status (lastnik/manager), POST /business/stripe/onboard in /dashboard (samo lastnik -> 403 za ostale).
+   Stripe vrne lastnika na ?stripe=vrnitev (koncal) ali ?stripe=osvezi (povezava potekla -> takoj nova). */
+function PlacilaKluba({ klub }) {
+  const [s, setS] = useState({ nalaga: true, napaka: null, st: null });
+  const [posiljam, setPosiljam] = useState(false);
+  const [napaka, setNapaka] = useState("");
+  const nalozi = () => {
+    setS(x => ({ ...x, nalaga: true, napaka: null }));
+    return poslovno(klub, "/business/stripe/status")
+      .then(st => setS({ nalaga: false, napaka: null, st }))
+      .catch(e => setS({ nalaga: false, napaka: e, st: null }));
+  };
+  async function odpri(pot) {
+    if (posiljam) return;
+    setPosiljam(true); setNapaka("");
+    try {
+      const r = await poslovno(klub, pot, { method: "POST", body: {} });
+      if (!odpriStripe(r && r.url)) { setNapaka(t("Something went wrong. Please try again.")); setPosiljam(false); }
+      // ob uspehu ostane "posiljam" (stran se ze preusmerja)
+    } catch (e) { setNapaka(sporocilo(e)); setPosiljam(false); }
+  }
+  useEffect(() => {
+    const stripe = new URLSearchParams(location.search).get("stripe");
+    if (stripe === "osvezi") { history.replaceState(history.state, "", location.pathname); odpri("/business/stripe/onboard"); }
+    else if (stripe === "vrnitev") history.replaceState(history.state, "", location.pathname);
+    nalozi();
+  }, [klub]);
+
+  const st = s.st;
+  let stanje = null, gumb = null;
+  if (st && !st.configured) stanje = t("Online payments are not switched on yet. Ticket sales run in test mode.");
+  else if (st && st.charges_enabled) {
+    stanje = t("Your club accepts card payments. Payouts go straight to your bank account.");
+    gumb = html`<button type="button" class="gumb-siv" disabled=${posiljam} onClick=${() => odpri("/business/stripe/dashboard")}>${t("Open Stripe dashboard")}</button>`;
+  } else if (st) {
+    stanje = st.connected ? t("Finish the Stripe setup so your club can accept card payments.")
+      : t("Connect Stripe so your club can sell tickets with card payments. The money goes to your club; Outly keeps its commission.");
+    gumb = html`<button type="button" class="gumb-glavni" disabled=${posiljam} onClick=${() => odpri("/business/stripe/onboard")}>
+      ${posiljam ? t("Processing...") : st.connected ? t("Continue Stripe setup") : t("Connect Stripe")}</button>`;
+  }
+  return html`<span class="podnaslov-sekcije">${t("Payments")}</span>
+    ${s.nalaga ? html`<${Nalaganje} />` : null}
+    <${Napaka} besedilo=${s.napaka ? sporocilo(s.napaka) : null} znova=${nalozi} />
+    ${stanje ? html`<p class="opomba">${stanje}${st && st.sandbox ? " " + t("(Stripe test mode)") : ""}</p>` : null}
+    ${gumb}
+    ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}`;
 }
 
 /* ---------- Prvi klub (sveze odobren lastnik) ---------- */

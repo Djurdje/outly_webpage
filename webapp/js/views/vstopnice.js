@@ -21,7 +21,15 @@ export function Vstopnice() {
       setS({ nalaga: false, napaka: null, vst: (Array.isArray(r) ? r : []).map(v => ({ ...v, _zacetek: v.start_at ? new Date(v.start_at) : null })) });
     } catch (e) { setS(x => ({ ...x, nalaga: false, napaka: sporocilo(e) })); }
   };
-  useEffect(() => { nalozi(); }, []);
+  // Povratek s Stripove placilne strani (backend #19): vstopnice nastanejo, ko Stripe potrdi placilo (webhook, nekaj sekund).
+  const [placano] = useState(() => new URLSearchParams(location.search).get("placilo") === "uspeh");
+  useEffect(() => {
+    nalozi();
+    if (!placano) return;
+    history.replaceState(history.state, "", location.pathname);
+    const casi = [2000, 5000, 10000].map(ms => setTimeout(nalozi, ms));
+    return () => casi.forEach(clearTimeout);
+  }, []);
 
   const zdaj = Date.now() - 8 * 3600e3;   // dogodek brez konca velja se 8 h po zacetku (kot backend)
   const prihajajoce = s.vst.filter(v => v.status === "valid" && v._zacetek && v._zacetek.getTime() >= zdaj);
@@ -29,6 +37,7 @@ export function Vstopnice() {
 
   return html`<div class="zaslon">
     <${GlavaNazaj} naslov=${t("Tickets")} rezerva="/app/profile" />
+    ${placano ? html`<p class="opomba-okvir" role="status"><${Ikona} ime="check" velikost=${18} />${t("Payment received. Your tickets will appear here in a few seconds.")}</p>` : null}
     ${s.nalaga ? html`<${Nalaganje} />` : null}
     <${Napaka} besedilo=${s.napaka} znova=${nalozi} />
     ${!s.nalaga && !s.napaka && !s.vst.length ? html`<div class="prazno">
