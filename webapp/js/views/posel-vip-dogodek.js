@@ -28,6 +28,7 @@ function normaliziraj(r) {
     const h = m.hold && typeof m.hold === "object" ? m.hold : null;
     return {
       ...m,
+      podporaHold: Object.prototype.hasOwnProperty.call(m, "hold"),   // star backend polja nima: ponudbe rezervacije po telefonu ne kazemo (POST bi vrnil 404)
       disabled: m.disabled === true,
       archived: m.archived === true,   // arhivirana miza z rezervacijo na tem dogodku: samo v seznamu rezervacij
       default_price_cents: celo(m.default_price_cents, m.price_cents),
@@ -58,8 +59,9 @@ function useVip(klub, dogodek) {
 /** Star backend (404) ali vloga brez pravice (403): razdelka ni - ne motimo. */
 const brezPodpore = e => !!e && (e.status === 404 || e.status === 403);
 
-/** Rezervacije: miza, kupec, paket, prisli X/N. */
-function SeznamRezervacij({ mize }) {
+/** Rezervacije: miza, kupec, paket, prisli X/N. sprosti (owner/manager): Release tudi pri telefonski rezervaciji na
+    arhivirani mizi, ki je drugje na zaslonu ni (aktivne mize imajo Release pod vrstico mize). */
+function SeznamRezervacij({ mize, sprosti = null }) {
   const rez = mize.filter(m => m.booking || m.hold);
   if (!rez.length) return html`<p class="opomba srednje">${t("No reservations yet")}</p>`;
   return html`<div class="vip-rezervacije">${rez.map(m => m.booking ? html`<div class="vip-rez" key=${m.id}>
@@ -71,7 +73,8 @@ function SeznamRezervacij({ mize }) {
     <span class="vip-rez-miza">${m.label}</span>
     <span class="vip-hold-tekst"><strong>${m.hold.guest_name || "-"}</strong>
       ${m.hold.note ? html`<span>${m.hold.note}</span>` : null}</span>
-    <span class="vip-rez-vstop vip-rez-tel"><${Ikona} ime="phone" velikost=${18} /><small>${t("Phone")}</small></span>
+    <span class="vip-rez-vstop vip-rez-tel"><${Ikona} ime="phone" velikost=${18} /><small>${t("Phone")}</small>
+      ${sprosti && m.archived ? html`<button type="button" class="vip-hold-gumb" onClick=${() => sprosti(m)}>${t("Release")}</button>` : null}</span>
   </div>`)}</div>`;
 }
 
@@ -132,7 +135,9 @@ export function VipDogodka({ klub, dogodek }) {
   // Rezervacija po telefonu: odprt obrazec pri eni mizi, potrditev sprostitve v listu.
   const [rez, setRez] = useState(null);   // { id, gost, opomba, napaka, posiljam }
   const [sprosti, setSprosti] = useState(null);   // { miza, napaka, posiljam }
-  const gostRef = useRef(null);
+  const [obvestilo, setObvestilo] = useState("");   // npr. 409: miza je medtem zasedena
+  const [fokus, setFokus] = useState(null);   // { k: kljuc elementa, n } - kam vrniti fokus po dejanju
+  const gostRef = useRef(null), koren = useRef(null);
   const d = v.d;
   const baza = `/app/business/${klub}`;
   const aktivne = d ? d.mize.filter(m => !m.archived) : [];   // arhiviranih ne urejamo in ne posiljamo v PUT
@@ -147,9 +152,22 @@ export function VipDogodka({ klub, dogodek }) {
 
   const odprtaId = rez ? rez.id : null;
   useEffect(() => { if (odprtaId != null && gostRef.current) gostRef.current.focus(); }, [odprtaId]);   // fokus v polje "Guest name"
+  // Po dejanju fokus na smiseln element (gumb iste mize, sicer naslov razdelka) - ne na body, ko element izgine.
+  // setTimeout: List ob zaprtju vrne fokus na element, ki ga ni vec; nas klic mora priti za njim.
+  useEffect(() => {
+    if (!fokus) return undefined;
+    const id = setTimeout(() => {
+      const r = koren.current;
+      if (!r) return;
+      const el = r.querySelector(`[data-fokus="${fokus.k}"]`) || r.querySelector('[data-fokus="naslov"]');
+      if (el) el.focus();
+    }, 0);
+    return () => clearTimeout(id);
+  }, [fokus]);
+  const fokusiraj = k => setFokus(f => ({ k, n: f ? f.n + 1 : 1 }));
 
   if (v.napaka && brezPodpore(v.napaka)) return null;
-  const naslov = html`<legend>${t("VIP tables")}</legend>`;
+  const naslov = html`<legend tabindex="-1" data-fokus="naslov">${t("VIP tables")}</legend>`;
   if (v.napaka) return html`<fieldset>${naslov}<${Napaka} besedilo=${sporocilo(v.napaka)} znova=${v.nalozi} /></fieldset>`;
   if (!d) return html`<fieldset>${naslov}<${Nalaganje} /></fieldset>`;
 
@@ -174,26 +192,34 @@ export function VipDogodka({ klub, dogodek }) {
   async function rezerviraj(m) {
     if (!rez || rez.posiljam) return;
     const ime = rez.gost.trim(), opomba = rez.opomba.trim();
-    if (!ime) return setRez(r => ({ ...r, napaka: t("Enter the guest name.") }));
-    if ([...ime].length > NAJVEC_IME || [...opomba].length > NAJVEC_OPOMBA) return setRez(r => ({ ...r, napaka: t("The name or note is too long.") }));
-    setRez(r => ({ ...r, posiljam: true, napaka: "" }));
+    if (!ime) return setRez(r => r && { ...r, napaka: t("Enter the guest name.") });
+    if ([...ime].length > NAJVEC_IME || [...opomba].length > NAJVEC_OPOMBA) return setRez(r => r && { ...r, napaka: t("The name or note is too long.") });
+    setObvestilo("");
+    setRez(r => r && { ...r, posiljam: true, napaka: "" });
     try {
       v.nastavi(await poslovno(klub, `/business/events/${dogodek}/tables/${m.id}/hold`, { method: "POST", body: { guest_name: ime, note: opomba || null } }), true);
       setRez(null);
+      fokusiraj("release-" + m.id);
     } catch (e) {
-      if (e instanceof ApiError && e.status === 409) v.osvezi();   // medtem rezervirana (kupec ali kolega): pokazi pravo stanje
-      setRez(r => r && { ...r, posiljam: false, napaka: sporociloVip(e) });
+      if (e instanceof ApiError && e.status === 409) {
+        // Medtem zasedena (kupec ali kolega): osvezi stanje, obrazec zapri (miza ni vec prosta), napako pokazi v razdelku.
+        await v.osvezi();
+        setRez(null); setObvestilo(sporociloVip(e)); fokusiraj("naslov");
+      } else setRez(r => r && { ...r, posiljam: false, napaka: sporociloVip(e) });
     }
   }
   async function sprostiMizo() {
     if (!sprosti || sprosti.posiljam) return;
-    setSprosti(x => ({ ...x, posiljam: true, napaka: "" }));
+    const miza = sprosti.miza;
+    setObvestilo("");
+    setSprosti(x => x && { ...x, posiljam: true, napaka: "" });
     try {
-      v.nastavi(await poslovno(klub, `/business/events/${dogodek}/tables/${sprosti.miza.id}/hold`, { method: "DELETE" }), true);
+      v.nastavi(await poslovno(klub, `/business/events/${dogodek}/tables/${miza.id}/hold`, { method: "DELETE" }), true);
       setSprosti(null);
+      fokusiraj("mark-" + miza.id);
     } catch (e) {
-      if (e instanceof ApiError && e.status === 404) { v.osvezi(); return setSprosti(null); }   // rezervacije ze ni (kolega jo je sprostil)
-      setSprosti(x => ({ ...x, posiljam: false, napaka: sporocilo(e) }));
+      if (e instanceof ApiError && e.status === 404) { v.osvezi(); setSprosti(null); return fokusiraj("mark-" + miza.id); }   // rezervacije ze ni (kolega jo je sprostil)
+      setSprosti(x => x && { ...x, posiljam: false, napaka: sporocilo(e) });
     }
   }
   const preklopi = id => setIzklopljene(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
@@ -203,32 +229,38 @@ export function VipDogodka({ klub, dogodek }) {
     <a class="gumb-siv" href=${baza + "/vip"}><${Ikona} ime="crown" velikost=${18} /> ${t("Set up VIP tables")}</a>
   </fieldset>`;
 
-  return html`<fieldset class="vip-dogodek">${naslov}
+  // Telefonska rezervacija je mogoca tudi, ko prodaja prek Outly NI vklopljena (klub, ki mize prodaja samo po telefonu).
+  // Cene in izklopi miz so samo pri vklopljeni prodaji. Prosta miza = ni arhivirana, brez booking, brez hold (tudi ce je za
+  // ta dogodek izklopljena za spletno prodajo).
+  const kazi = vklop || aktivne.some(m => m.podporaHold);
+  const odpriSprosti = m => setSprosti({ miza: m, napaka: "", posiljam: false });
+  return html`<fieldset class="vip-dogodek" ref=${koren}>${naslov}
     <label class="stikalo-vrstica"><span class="kv-besedilo"><strong>${t("Sell VIP tables for this event")}</strong>
       <span>${t("Guests book a table and choose a bottle package.")}</span></span>
       <input type="checkbox" role="switch" class="stikalo" checked=${vklop} onChange=${e => { setVklop(e.target.checked); setShranjeno(false); }} /></label>
-    ${vklop ? html`${d.plan ? html`<${TlorisDogodka} plan=${d.plan} mize=${d.mize} />` : null}
+    ${obvestilo ? html`<p class="napaka-besedilo" role="alert">${obvestilo}</p>` : null}
+    ${kazi ? html`${d.plan ? html`<${TlorisDogodka} plan=${d.plan} mize=${d.mize} />` : null}
     <div class="vip-mize-seznam">${aktivne.map(m => {
       const zasedena = !!m.booking || !!m.hold;
-      const odprta = rez && rez.id === m.id;
+      const odprta = !!rez && rez.id === m.id && !zasedena;
       return html`<div class="vip-miza-blok" key=${m.id}>
       <div class=${"vip-vrstica-mize" + (zasedena ? " zasedena" : "")}>
         <span class="kv-besedilo"><strong>${m.label}</strong>
           <span>${m.booking ? t("Booked") : m.hold ? t("Reserved by phone") : doOseb(m.seats)}</span></span>
-        <label class="polje vip-cena-polje"><span class="skrito">${t("Price") + " " + m.label}</span>
+        ${vklop ? html`<label class="polje vip-cena-polje"><span class="skrito">${t("Price") + " " + m.label}</span>
           <input inputmode="decimal" value=${cene[m.id] == null ? "" : cene[m.id]} disabled=${zasedena}
             placeholder=${evriBesedilo(m.default_price_cents).replace(/\.00$/, "")}
             onInput=${e => { const vr = e.target.value; setCene(c => ({ ...c, [m.id]: vr })); setShranjeno(false); }} /></label>
         <span class="utisano">€</span>
         <label class="vip-stikalo"><span class="skrito">${t("On sale") + " " + m.label}</span>
           <input type="checkbox" role="switch" class="stikalo" checked=${!izklopljene.has(m.id)} disabled=${zasedena}
-            onChange=${() => { preklopi(m.id); setShranjeno(false); }} /></label>
+            onChange=${() => { preklopi(m.id); setShranjeno(false); }} /></label>` : null}
       </div>
       ${m.hold ? html`<div class="vip-hold">
         <${Ikona} ime="phone" velikost=${18} />
         <span class="vip-hold-tekst"><strong>${m.hold.guest_name || "-"}</strong>${m.hold.note ? html`<span>${m.hold.note}</span>` : null}</span>
-        <button type="button" class="vip-hold-gumb" onClick=${() => setSprosti({ miza: m, napaka: "", posiljam: false })}>${t("Release")}</button>
-      </div>` : !m.booking && !odprta ? html`<button type="button" class="vip-hold-gumb" onClick=${() => odpriRez(m)}>
+        <button type="button" class="vip-hold-gumb" data-fokus=${"release-" + m.id} onClick=${() => odpriSprosti(m)}>${t("Release")}</button>
+      </div>` : m.podporaHold && !m.booking && !odprta ? html`<button type="button" class="vip-hold-gumb" data-fokus=${"mark-" + m.id} onClick=${() => odpriRez(m)}>
         <${Ikona} ime="phone" velikost=${16} />${t("Mark as reserved")}</button>` : null}
       ${odprta ? html`<form class="vip-hold-obrazec" onSubmit=${e => { e.preventDefault(); rezerviraj(m); }} noValidate>
         <label class="polje-oznaceno"><span>${t("Guest name")}</span>
@@ -238,24 +270,23 @@ export function VipDogodka({ klub, dogodek }) {
         ${rez.napaka ? html`<p class="napaka-besedilo" role="alert">${rez.napaka}</p>` : null}
         <div class="vip-hold-gumbi">
           <button type="submit" class="gumb-siv majhen poudarjen" disabled=${rez.posiljam}>${rez.posiljam ? t("Saving...") : t("Reserve")}</button>
-          <button type="button" class="gumb-siv majhen" disabled=${rez.posiljam} onClick=${() => setRez(null)}>${t("Cancel")}</button>
+          <button type="button" class="gumb-siv majhen" disabled=${rez.posiljam} onClick=${() => { setRez(null); fokusiraj("mark-" + m.id); }}>${t("Cancel")}</button>
         </div>
       </form>` : null}
       </div>`;
     })}</div>
-    <span class="opomba">${t("The price is the default from the floor plan. Change it for this event only, or switch a table off.")}</span>` : null}
+    ${vklop ? html`<span class="opomba">${t("The price is the default from the floor plan. Change it for this event only, or switch a table off.")}</span>` : null}` : null}
     ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}
     ${shranjeno ? html`<p class="uspeh-besedilo" role="status">${t("VIP settings saved.")}</p>` : null}
     <button type="button" class="gumb-siv" onClick=${shrani} disabled=${shranjujem}>${shranjujem ? t("Saving...") : t("Save VIP settings")}</button>
     <a class="povezava-modra" href=${baza + "/vip"}>${t("Edit floor plan and bottle packages")}</a>
     <h3 class="nastavitev-naslov">${t("VIP reservations")}</h3>
-    <${SeznamRezervacij} mize=${d.mize} />
-    <${List} odprt=${!!sprosti} zapri=${() => setSprosti(null)} naslov=${t("Release this reservation?")}>
+    <${SeznamRezervacij} mize=${d.mize} sprosti=${odpriSprosti} />
+    <${List} odprt=${!!sprosti} zapri=${() => setSprosti(null)} brezZapiranja=${!!sprosti && sprosti.posiljam} naslov=${t("Release this reservation?")}>
       ${sprosti ? html`<p class="besedilo-opis">${t("Table")} ${sprosti.miza.label} · ${sprosti.miza.hold ? sprosti.miza.hold.guest_name : ""}</p>` : null}
       ${sprosti && sprosti.napaka ? html`<p class="napaka-besedilo" role="alert">${sprosti.napaka}</p>` : null}
       <button type="button" class="gumb-rdec" disabled=${!!sprosti && sprosti.posiljam} onClick=${sprostiMizo}>${sprosti && sprosti.posiljam ? t("Saving...") : t("Release")}</button>
-      <button type="button" class="gumb-siv" onClick=${() => setSprosti(null)}>${t("Keep it")}</button>
+      <button type="button" class="gumb-siv" disabled=${!!sprosti && sprosti.posiljam} onClick=${() => setSprosti(null)}>${t("Keep it")}</button>
     <//>
   </fieldset>`;
 }
-

@@ -840,7 +840,10 @@ a.profil-ime{ white-space:normal; }
 .vip-hold-gumbi .poudarjen{ border:1px solid rgba(255,255,255,.5); }
 .vip-rez-tel{ align-items:center; gap:2px; color:var(--b70); }
 .vip-tloris-okvir{ border-radius:14px; background:var(--b04); border:1px solid var(--b10); padding:6px; }
-.tl-miza.telefon{ cursor:default; }
+/* tloris dogodka je samo za branje: brez kazalca "roka" in brez hover-poudarka proste mize */
+.vip-tloris-okvir .tl-miza, .vip-tloris-okvir .tl-miza.prodana{ cursor:default; }
+.vip-tloris-okvir .tl-miza.prosta:hover .tl-oblika{ fill:rgba(255,255,255,.06); stroke:rgba(255,255,255,.8); }
+.vip-rez-tel .vip-hold-gumb{ min-height:44px; padding:0; }
 .tl-miza.telefon .tl-oblika{ fill:rgba(255,255,255,.2); stroke:#fff; stroke-width:1.5; }
 .tl-miza.telefon .tl-nap{ fill:#fff; }
 .tl-tel{ color:#fff; }
