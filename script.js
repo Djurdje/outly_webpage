@@ -1,5 +1,15 @@
 document.getElementById("year").textContent = new Date().getFullYear();
 
+/* HERO video: brez samodejnega predvajanja, ce uporabnik zeli manj gibanja */
+(() => {
+  const v = document.querySelector(".phone__img video");
+  if (v && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    v.removeAttribute("autoplay");
+    v.pause();
+    v.controls = true;
+  }
+})();
+
 /* ---------------------------
    HERO: jump to creator features
 ---------------------------- */
