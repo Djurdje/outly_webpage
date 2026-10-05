@@ -3,11 +3,12 @@
 import { html, useEffect, useState } from "../lib.js";
 import { t, tn } from "../i18n.js";
 import { send } from "../api.js";
-import { sporocilo } from "../napake.js";
+import { sporocilo, kodaNapake } from "../napake.js";
 import { danInUra } from "../oblika.js";
 import { GlavaNazaj, Nalaganje, Napaka, Ikona, Slika, Avatar, List } from "../ui.js";
 import { KodaQR } from "../qr.js";
 import { VipVrstica, doOseb } from "../vip.js";
+import { useSeja } from "../seja.js";
 
 /* VIP miza = en nakup z vec vstopnicami (Martin 4. 10. 2026): vstopnice z is_vip === true in istim order_id se v
    razdelku zdruzijo v eno postavko na mestu prve (vrstni red iz GET /me/tickets ostane). Skupina z eno vstopnico
@@ -152,38 +153,78 @@ function Skupina({ vst, stara, razprta, preklopi, odprta, preklopiVstopnico, pos
 }
 
 /* Prenos vstopnice (TransferTicketView.swift): prijatelju s seznama ali na e-naslov Outly racuna.
-   Po prenosu dobi prijatelj novo QR kodo, tvoja preneha veljati (I7). Z vprasanjem pred prenosom (Martin 23. 9.). */
+   Po prenosu dobi prijatelj novo QR kodo, tvoja preneha veljati (I7). Z vprasanjem pred prenosom (Martin 23. 9.).
+   Prenos BREZ racuna (5. 10. 2026, backend GET /me can_transfer_to_guest): ko je vklopljen, e-naslov sprejme tudi prijatelja brez
+   racuna (telo { email, allow_guest: true, age_confirmed }); prejme mail z vstopnico, odpre jo na /app/guest/ticket. Pri dogodku s
+   starostno mejo pošiljatelj potrdi kljukico (ni vnaprej oznacena; pravno/2026-10-05-prenos-brez-racuna.md, razdelek 2), pred
+   posiljanjem je potrditveni korak z velikim e-naslovom (tipkarska napaka = vstopnica gre neznancu, prenos je dokoncen).
+   Vstopnica VIP mize s paketom pijace SME gostu (Martin 5. 10. 2026), a kljukica je vedno prikazana in obvezna z mejo
+   max(min_age, 18); ce odjemalec paketa ne prepozna, mejo vrne streznik (400 age_confirmation_required + min_age).
+   Kljukica starosti velja za VSE prenose z mejo > 0 (tudi prijatelj s seznama in prejemnik z racunom; Martin 5. 10. 2026,
+   "SPREMEMBA 2"), neodvisno od stikala can_transfer_to_guest (ta odloca samo o pošiljanju gostu brez racuna): telo vedno
+   vsebuje age_confirmed. Prejemnik z racunom in vpisanim datumom rojstva pod mejo dobi od streznika se vedno 403. */
 function PrenosList({ vstopnica: v, zapri, koncano }) {
   const [prijatelji, setPrijatelji] = useState(null);
   const [email, setEmail] = useState("");
   const [izbran, setIzbran] = useState(null);   // { user_id, ime } ali { email, ime }
   const [napaka, setNapaka] = useState("");
   const [tece, setTece] = useState(false);
-  const [uspeh, setUspeh] = useState("");
+  const [uspeh, setUspeh] = useState(null);   // { ime, gost }
+  const [starostOk, setStarostOk] = useState(false);
+  const [mejaStreznika, setMejaStreznika] = useState(0);   // min_age iz 400 age_confirmation_required
+  const me = useSeja(x => x.me);
   useEffect(() => {
     if (!v) return;
-    setIzbran(null); setNapaka(""); setUspeh(""); setEmail("");
+    setIzbran(null); setNapaka(""); setUspeh(null); setEmail(""); setStarostOk(false); setMejaStreznika(0);
     send("/me/friends", { auth: true }).then(r => setPrijatelji((r && r.friends) || [])).catch(() => setPrijatelji([]));
     // Po id, ne po objektu: osvezitev seznama vstopnic v ozadju ustvari nov objekt in bi sredi tipkanja pobrisala vnos.
   }, [v && v.id]);
   if (!v) return null;
 
+  const gostNacin = !!(me && me.can_transfer_to_guest === true);   // prenos na e-naslov brez racuna
+  const spaketom = v.package_id != null || !!v.package_name || !!v.package_description;
+  const minStarost = Math.max(Number(v.min_age) > 0 ? Number(v.min_age) : 0, spaketom ? 18 : 0, mejaStreznika);
+  const starostPotrebna = minStarost > 0;   // kljukica pri vsakem prenosu z mejo (tudi user_id in e-naslov Outly racuna)
+
   async function poslji() {
     setTece(true); setNapaka("");
     try {
-      await send(`/tickets/${v.id}/transfer`, { method: "POST", body: izbran.user_id ? { user_id: izbran.user_id } : { email: izbran.email }, auth: true });
-      setUspeh(izbran.ime); setIzbran(null);
-    } catch (e) { setNapaka(sporocilo(e)); setIzbran(null); }
+      const potrjeno = starostPotrebna && starostOk;
+      const telo = izbran.user_id ? { user_id: izbran.user_id, age_confirmed: potrjeno }
+        : gostNacin ? { email: izbran.email, allow_guest: true, age_confirmed: potrjeno }
+        : { email: izbran.email, age_confirmed: potrjeno };
+      await send(`/tickets/${v.id}/transfer`, { method: "POST", body: telo, auth: true });
+      setUspeh({ ime: izbran.ime, gost: gostNacin && !izbran.user_id }); setIzbran(null);
+    } catch (e) {
+      if (kodaNapake(e) === "age_confirmation_required") {
+        try { const n = Number(JSON.parse(e.raw).min_age); if (n > 0) setMejaStreznika(n); } catch { /* brez */ }
+        setStarostOk(false);
+      }
+      setNapaka(sporocilo(e)); setIzbran(null);
+    }
     setTece(false);
   }
-  const opis = v.min_age > 0
-    ? t("The ticket moves to your friend's account with a new QR code. Your copy stops working. Your friend needs an Outly account and must be {n}+.", { n: v.min_age })
-    : t("The ticket moves to your friend's account with a new QR code. Your copy stops working. Your friend needs an Outly account.");
+  const opis = gostNacin
+    ? (minStarost > 0
+      ? t("The ticket moves to your friend with a new QR code. Your copy stops working. Your friend must be {n}+.", { n: minStarost })
+      : t("The ticket moves to your friend with a new QR code. Your copy stops working."))
+    : minStarost > 0
+      ? t("The ticket moves to your friend's account with a new QR code. Your copy stops working. Your friend needs an Outly account and must be {n}+.", { n: minStarost })
+      : t("The ticket moves to your friend's account with a new QR code. Your copy stops working. Your friend needs an Outly account.");
+  const izbranGost = !!(izbran && izbran.email && gostNacin);
 
   return html`<${List} odprt=${true} zapri=${uspeh ? koncano : zapri} naslov=${t("Send to a friend")}>
     ${uspeh ? html`<div class="uspeh"><span class="uspeh-krog"><${Ikona} ime="check" velikost=${28} debelina=${3} /></span>
-        <strong>${t("Sent to {name}", { name: uspeh })}</strong><span class="utisano">${t("It will show up under Tickets in their app.")}</span>
+        ${uspeh.gost
+          ? html`<strong class="prenos-naslov">${t("Ticket sent to {email}.", { email: uspeh.ime })}</strong><span class="utisano">${t("Your friend will find the ticket in their email or, if they have an Outly account, under Tickets.")}</span>`
+          : html`<strong>${t("Sent to {name}", { name: uspeh.ime })}</strong><span class="utisano">${t("It will show up under Tickets in their app.")}</span>`}
         <button type="button" class="gumb-glavni" onClick=${koncano}>${t("Done")}</button></div>`
+    : izbranGost ? html`<p class="besedilo-opis prenos-naslov" role="alert">${t("Send ticket to {email}?", { email: izbran.email })}</p>
+        <p class="opomba">${t("Check the address – the ticket will be theirs and your QR code will stop working.")}</p>
+        <p class="opomba">${t("We'll email them the ticket with your username. Only enter the address of someone who is expecting it.")}</p>
+        <p class="opomba">${t("If the event is cancelled, the refund goes to the original buyer, not to your friend.")}</p>
+        <button type="button" class="gumb-glavni" onClick=${poslji} disabled=${tece}>${tece ? t("Sending...") : t("Send")}</button>
+        <button type="button" class="gumb-siv" onClick=${() => setIzbran(null)} disabled=${tece}>${t("Cancel")}</button>`
     : izbran ? html`<p class="besedilo-opis">${t("Send your ticket for {event} to {name}?", { event: v.event_title, name: izbran.ime })}</p>
         <p class="opomba">${t("Your copy stops working.")}</p>
         <p class="opomba">${t("If the event is cancelled, the refund goes to the original buyer, not to your friend.")}</p>
@@ -193,18 +234,28 @@ function PrenosList({ vstopnica: v, zapri, koncano }) {
       <div class="nakup-dogodek"><strong>${v.event_title}</strong><span class="utisano">${v.club_name} · ${v.public_ref}</span>
         ${v.is_vip === true ? html`<${VipVrstica} v=${v} />` : null}</div>
       <p class="opomba">${opis}</p>
+      ${starostPotrebna ? html`<label class="soglasje">
+        <input type="checkbox" checked=${starostOk} onChange=${e => { setStarostOk(e.target.checked); setNapaka(""); }} />
+        <span>${t("I confirm the person I'm sending this ticket to is at least {n} years old. They must show a valid photo ID at the door; if they are younger, the club will refuse entry.", { n: minStarost })}</span>
+      </label>` : null}
       ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}
       <h3 class="nastavitev-naslov">${t("Choose a friend")}</h3>
       ${prijatelji === null ? html`<div class="nalaganje"><span class="vrtavka"></span></div>`
         : !prijatelji.length ? html`<p class="utisano">${t("No friends yet")}</p>`
-        : prijatelji.map(f => html`<button type="button" class="vrstica-obvestila" key=${f.id} onClick=${() => setIzbran({ user_id: f.id, ime: f.username })}>
+        : prijatelji.map(f => html`<button type="button" class="vrstica-obvestila" key=${f.id} disabled=${starostPotrebna && !starostOk} onClick=${() => setIzbran({ user_id: f.id, ime: f.username })}>
             <${Avatar} url=${f.avatar_url} ime=${f.username} velikost=${40} /><span class="kv-besedilo"><strong>${f.username}</strong></span>
             <${Ikona} ime="send" velikost=${16} razred="utisano" /></button>`)}
-      <h3 class="nastavitev-naslov">${t("Your friend's Outly email")}</h3>
-      <form class="obrazec" onSubmit=${e => { e.preventDefault(); const m = email.trim().toLowerCase(); if (/^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(m)) setIzbran({ email: m, ime: m }); else setNapaka(t("Enter your friend's email address.")); }} novalidate>
-        <label class="polje"><span class="skrito">${t("Your friend's Outly email")}</span>
-          <input type="email" value=${email} placeholder="email@domain.com" onInput=${e => setEmail(e.target.value)} inputmode="email" autocomplete="off" /></label>
-        <button type="submit" class="gumb-siv">${t("Continue")}</button>
+      <h3 class="nastavitev-naslov">${gostNacin ? t("Your friend's email") : t("Your friend's Outly email")}</h3>
+      <form class="obrazec" onSubmit=${e => {
+        e.preventDefault();
+        if (starostPotrebna && !starostOk) return setNapaka(t("Please confirm that the person you are sending this ticket to is at least {n} years old.", { n: minStarost }));
+        const m = email.trim().toLowerCase();
+        if (/^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(m)) { setNapaka(""); setIzbran({ email: m, ime: m }); } else setNapaka(t("Enter your friend's email address."));
+      }} novalidate>
+        <label class="polje"><span class="skrito">${gostNacin ? t("Your friend's email") : t("Your friend's Outly email")}</span>
+          <input type="email" value=${email} placeholder="email@domain.com" onInput=${e => setEmail(e.target.value)} inputmode="email" autocomplete="off" autocapitalize="off" spellcheck="false" /></label>
+        ${gostNacin ? html`<p class="opomba">${t("If your friend doesn't have an Outly account, we'll email them the ticket with a QR code.")}</p>` : null}
+        <button type="submit" class="gumb-siv" disabled=${starostPotrebna && !starostOk}>${t("Continue")}</button>
       </form>`}
   <//>`;
 }
