@@ -5,7 +5,7 @@
    - stripe: preusmeritev na checkout_url, Stripe po placilu vrne na /app/guest/order?t=<guest_token>.
    Kartice NIKOLI ne vnasamo v nas vmesnik. Kljuc nakupa (api.js) je vezan na e-naslov: ponovni klik ali timeout = isto narocilo. */
 import { html, useEffect, useRef, useState } from "../lib.js";
-import { t } from "../i18n.js";
+import { t, useJezik } from "../i18n.js";
 import { send, pocistiPredpomnilnik, kljucNakupa, pozabiKljucNakupa, oznaciIzidNakupa } from "../api.js";
 import {
   jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo, jeNakupVObdelavi, NAKUP_V_OBDELAVI_S,
@@ -23,13 +23,15 @@ const danes = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
-export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, prijava }) {
+export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijava }) {
+  const koda = useJezik();
   const [email, setEmail] = useState("");
   const [dob, setDob] = useState("");
   const [kolicina, setKolicina] = useState(1);
   const [soglasje, setSoglasje] = useState(false);
   const [posiljam, setPosiljam] = useState(false);
   const [napaka, setNapaka] = useState("");
+  const polje = nastavi => v => { setNapaka(""); nastavi(v); };   // napaka velja za zadnjo oddajo: ob spremembi polja izgine
   const tece = useRef(false);   // zascita pred dvojnim klikom v istem trenutku (stanje se posodobi prepozno)
   const [zaklenjeno, zakleni] = useZaklep();   // po 503 (semafor nakupov) je gumb nekaj sekund onemogocen
   const ziv = useRef(true);
@@ -57,6 +59,7 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, prijava }) {
   const skupaj = cenaEna * kolicina;
   const razprodano = jeRazprodan(e) || ostane === 0;
   const potrebujeStarost = e.min_age > 0;
+  const zasebnost = koda === "sl" ? "/privacy-app" : "/privacy";   // politika v jeziku obrazca (pravno 2.2: EN /privacy, SL /privacy-app)
 
   async function kupi(ev) {
     ev.preventDefault();
@@ -67,7 +70,7 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, prijava }) {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(dob) || dob < "1900-01-01") return setNapaka(t("Enter a valid date of birth."));
       if (dob > danes()) return setNapaka(t("Date of birth cannot be in the future."));
     }
-    if (!soglasje) return setNapaka(t("Please accept the Terms of Use and Privacy Policy to continue."));
+    if (!soglasje) return setNapaka(t("Please confirm you are at least 15 and accept the Terms of Use."));
     tece.current = true;
     setPosiljam(true); setNapaka("");
     // Isti e-naslov + dogodek + vsebina (kolicina, datum rojstva) = isti kljuc (api.js, 24 h): backend vrne isto narocilo (201).
@@ -114,27 +117,30 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, prijava }) {
       <span class="nadnapis">${(imeKluba || "").toUpperCase()}</span>
       <strong>${e.title}</strong>
       <span class="utisano">${danInUra(e._zacetek)}</span>
+      ${kraj && kraj !== "-" ? html`<span class="utisano">${kraj}</span>` : null}
       ${e.min_age > 0 ? html`<span class="utisano">${t("{n}+ · ID at the door", { n: e.min_age })}</span>` : null}
+      ${imeKluba ? html`<span class="utisano">${t("Seller: {club}", { club: imeKluba })}</span>` : null}
     </div>
 
     <form class="obrazec" onSubmit=${kupi} novalidate>
       <label class="polje-oznaceno"><span>${t("Email")}</span>
-        <input type="email" name="email" value=${email} placeholder="email@domain.com" onInput=${x => setEmail(x.target.value)}
+        <input type="email" name="email" value=${email} placeholder="email@domain.com" onInput=${x => polje(setEmail)(x.target.value)}
           autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" required />
       </label>
-      <p class="opomba gost-opomba">${t("Your tickets will be sent to this email.")}</p>
+      <p class="opomba gost-opomba">${t("Your tickets will be sent to this email.")}${" "}
+        ${t("We use your email to send your tickets and receipt. Details in the")} <a href=${zasebnost} target="_blank" rel="noopener">${t("Privacy Policy")}</a>.</p>
 
       ${potrebujeStarost ? html`<label class="polje-oznaceno"><span>${t("Date of birth")}</span>
-        <input type="date" name="bday" value=${dob} max=${danes()} min="1900-01-01" onInput=${x => setDob(x.target.value)} autocomplete="bday" required />
+        <input type="date" name="bday" value=${dob} max=${danes()} min="1900-01-01" onInput=${x => polje(setDob)(x.target.value)} autocomplete="bday" required />
       </label>
       <p class="opomba gost-opomba">${t("This event is {n}+. We need your date of birth to check your age.", { n: e.min_age })}</p>` : null}
 
       <div class="nakup-vrsta">
         <div><strong>${brezplacno ? t("Free") : denar(cenaEna, e.currency)}</strong><span class="utisano"> ${t("per ticket")}</span></div>
         <div class="stevec" role="group" aria-label=${t("Number of tickets")}>
-          <button type="button" onClick=${() => { if (!tece.current) setKolicina(k => Math.max(1, k - 1)); }} disabled=${kolicina <= 1 || posiljam} aria-label=${t("Fewer")}>−</button>
+          <button type="button" onClick=${() => { if (!tece.current) setNapaka(""); setKolicina(k => Math.max(1, k - 1)); }} disabled=${kolicina <= 1 || posiljam} aria-label=${t("Fewer")}>−</button>
           <output aria-live="polite">${kolicina}</output>
-          <button type="button" onClick=${() => { if (!tece.current) setKolicina(k => Math.min(najvec, k + 1)); }} disabled=${kolicina >= najvec || posiljam} aria-label=${t("More")}>+</button>
+          <button type="button" onClick=${() => { if (!tece.current) setNapaka(""); setKolicina(k => Math.min(najvec, k + 1)); }} disabled=${kolicina >= najvec || posiljam} aria-label=${t("More")}>+</button>
         </div>
       </div>
 
@@ -143,16 +149,19 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, prijava }) {
         <strong>${brezplacno ? t("Free") : denar(skupaj, e.currency)}</strong>
       </div>
 
+      ${brezplacno ? null : html`<p class="opomba">${t("You pay by card on the next page. Your tickets are sent by email right after payment.")}</p>`}
+
       <label class="soglasje">
-        <input type="checkbox" checked=${soglasje} onChange=${x => setSoglasje(x.target.checked)} />
-        <span>${t("I accept the")} <a href="/terms" target="_blank" rel="noopener">${t("Terms of Use")}</a> ${t("and")} <a href="/privacy-app" target="_blank" rel="noopener">${t("Privacy Policy")}</a>.</span>
+        <input type="checkbox" checked=${soglasje} onChange=${x => polje(setSoglasje)(x.target.checked)} />
+        <span>${t("I am at least 15 years old and I accept the")} <a href="/terms" target="_blank" rel="noopener">${t("Terms of Use")}</a>.${" "}
+          ${t("I have read the")} <a href=${zasebnost} target="_blank" rel="noopener">${t("Privacy Policy")}</a>.</span>
       </label>
       ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}
 
       <button type="submit" class="gumb-glavni" disabled=${posiljam || razprodano || zaklenjeno}>
         ${razprodano ? t("Sold out") : posiljam ? t("Processing...")
           : brezplacno ? (kolicina === 1 ? t("Get ticket") : t("Get tickets"))
-          : t("Continue to payment")}
+          : t("Pay {amount}", { amount: denar(skupaj, e.currency) })}
       </button>
     </form>
     <button type="button" class="povezava-gumb" onClick=${prijava} disabled=${posiljam}>${t("Have an account? Sign in")}</button>

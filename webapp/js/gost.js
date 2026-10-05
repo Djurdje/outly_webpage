@@ -40,3 +40,22 @@ export function prevzemiZetonIzUrl() {
   shraniGostZeton(zeton, !!(prej && prej.t === zeton && prej.test));
   return zeton;
 }
+
+/* ZASTAVICA: nakup brez racuna je privzeto SKRIT (pravno: politika zasebnosti gosta, GDPR 13, se ni objavljena; pravno/2026-10-05-gostujoci-nakup.md 4.2).
+   Neprijavljen ob nakupu vidi stari tok (Sign in). Vklop: GOST_NAKUP_JAVNO = true (javna objava) ALI ekipni preklop
+   ?gost=1 v URL-ju (zapomni se v localStorage outly_gost=1), ?gost=0 ga izklopi. Stran /app/guest/order deluje vedno (povezava iz maila). */
+export const GOST_NAKUP_JAVNO = false;
+const KLJUC_ZASTAVICE = "outly_gost";
+export function gostNakupVklopljen() {
+  let q = null;
+  try { q = new URLSearchParams(location.search).get("gost"); } catch { /* brez */ }
+  try {
+    if (q === "1") localStorage.setItem(KLJUC_ZASTAVICE, "1");
+    else if (q === "0") localStorage.removeItem(KLJUC_ZASTAVICE);
+  } catch { /* brez shranjevanja: velja samo ta obisk */ }
+  if (GOST_NAKUP_JAVNO) return true;
+  if (q === "1") return true;
+  if (q === "0") return false;
+  try { return localStorage.getItem(KLJUC_ZASTAVICE) === "1"; } catch { return false; }
+}
+gostNakupVklopljen();   // ?gost=1 na kateremkoli /app naslovu se zapomni takoj ob zagonu

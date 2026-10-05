@@ -908,9 +908,6 @@ export const SL = {
  "business details": "podatke o dejavnosti",
  "representative details": "podatke o zastopniku",
  "other details": "druge podatke",
- "I accept the": "Sprejemam",
- "Please accept the Terms of Use and Privacy Policy to continue.": "Za nadaljevanje sprejmi pogoje uporabe in politiko zasebnosti.",
- "Continue to payment": "Nadaljuj na plačilo",
  "Have an account? Sign in": "Že imaš račun? Prijava",
  "Your tickets will be sent to this email.": "Vstopnice bomo poslali na ta e-naslov.",
  "This event is {n}+. We need your date of birth to check your age.": "Dogodek je {n}+. Za preverjanje starosti potrebujemo tvoj datum rojstva.",
@@ -925,5 +922,10 @@ export const SL = {
  "This usually takes a few seconds.": "To običajno traja nekaj sekund.",
  "Order status: {status}": "Stanje naročila: {status}",
  "Screenshot your QR code in case you have no signal at the door.": "Posnemi zaslon s kodo QR za primer, da pred vrati ne bo signala.",
- "Create an account to keep your tickets in the app": "Ustvari račun, da obdržiš vstopnice v aplikaciji"
+ "Create an account to keep your tickets in the app": "Ustvari račun, da obdržiš vstopnice v aplikaciji",
+ "I am at least 15 years old and I accept the": "Star sem vsaj 15 let in sprejemam",
+ "I have read the": "Prebral(a) sem:",
+ "We use your email to send your tickets and receipt. Details in the": "E-naslov uporabljamo za pošiljanje vstopnic in potrdila. Podrobnosti:",
+ "Seller: {club}": "Prodajalec: {club}",
+ "You pay by card on the next page. Your tickets are sent by email right after payment.": "Plačaš s kartico na naslednji strani. Vstopnice dobiš po e-pošti takoj po plačilu."
 };
