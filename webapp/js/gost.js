@@ -2,6 +2,7 @@
    (GET /guest/order, glava X-Guest-Token). Pride s Stripove vrnitve ali iz maila kot ?t=... v URL-ju; takoj ga shranimo
    v sessionStorage (osvezitev strani dela) in ga odstranimo iz naslovne vrstice (zgodovina, Referer). Brez localStorage:
    zeton ne ostane na napravi po zaprtju zavihka; kupec ima povezavo v mailu. */
+import "./usmerjanje.js";
 const KLJUC = "outly_gost_zeton";
 export const jeGostZeton = z => typeof z === "string" && /^[\x21-\x7E]{8,1024}$/.test(z);   // vidni ASCII brez presledka: varen kot vrednost glave
 
@@ -26,18 +27,24 @@ export function pozabiGostZeton() {
   try { sessionStorage.removeItem(KLJUC); } catch { /* brez */ }
 }
 
-/** ?t=<zeton> iz URL-ja: shrani ga in ga odstrani iz naslovne vrstice (replaceState). Vrne zeton ali null. */
+/** Zeton iz URL-ja: #t=<zeton> (prednostno; fragment nikoli ne gre na streznik ali v Referer) ali ?t=<zeton> (za vsak slucaj).
+    Shrani ga in ga takoj odstrani iz naslovne vrstice (replaceState); drugi parametri in fragment ostanejo. Vrne zeton ali null. */
 export function prevzemiZetonIzUrl() {
+  let zeton = null, najden = false;
+  const fr = new URLSearchParams(location.hash.replace(/^#/, ""));
   const q = new URLSearchParams(location.search);
-  if (!q.has("t")) return null;
-  const zeton = q.get("t");
-  q.delete("t");
-  const ostalo = q.toString();
-  history.replaceState(history.state, "", location.pathname + (ostalo ? "?" + ostalo : "") + location.hash);
+  if (fr.has("t")) { najden = true; zeton = fr.get("t"); fr.delete("t"); }
+  if (q.has("t")) { najden = true; if (!jeGostZeton(zeton)) zeton = q.get("t"); q.delete("t"); }
+  if (!najden) return null;
+  const iskanje = q.toString(), fragment = fr.toString();
+  history.replaceState(history.state, "", location.pathname + (iskanje ? "?" + iskanje : "") + (fragment ? "#" + fragment : ""));
   if (!jeGostZeton(zeton)) return null;
   shraniGostZeton(zeton);
   return zeton;
 }
+/* Ze ob uvozu (pred varovali v main.js App, ki bi pot z ?next= prepisala v prijavo/onboarding): zeton na strani narocila gre
+   iz URL-ja v sessionStorage, preden ga kdorkoli prebere. usmerjanje.js uvozimo zaradi vrstnega reda: najprej razresi ?pot=. */
+if (location.pathname === "/app/guest/order") prevzemiZetonIzUrl();
 
 /* Stripe: kupec gre na placilno stran in se lahko vrne (cancel_url /app/event/ID?placilo=preklic) - pomnilnik strani je takrat
    izgubljen. Backend dovoli samo 1 neplacano narocilo na e-naslov in dogodek (30 min), nov kljuc bi dal 409; ISTI kljuc
@@ -51,11 +58,19 @@ export function shraniGostNakup(zapis) {
 export function preberiGostNakup(dogodek) {
   try {
     const z = JSON.parse(sessionStorage.getItem(KLJUC_NAKUPA) || "null");
-    if (z && z.d === dogodek && typeof z.e === "string" && Number.isInteger(z.q) && /^[0-9a-f-]{36}$/i.test(z.k || "") && Date.now() - z.ob < ZIVLJENJE_NAKUPA_MS) return z;
-  } catch { /* brez */ }
+    if (!z) return null;
+    if (!(Date.now() - z.ob < ZIVLJENJE_NAKUPA_MS)) { pozabiGostNakup(); return null; }   // potekel: izbrisi (ne samo prezri)
+    if (z.d === dogodek && typeof z.e === "string" && Number.isInteger(z.q) && /^[0-9a-f-]{36}$/i.test(z.k || "")) return z;
+  } catch { pozabiGostNakup(); }
   return null;
 }
-export function pozabiGostNakup() { try { sessionStorage.removeItem(KLJUC_NAKUPA); } catch { /* brez */ } }
+/** kljuc (neobvezno): zapis se pobrise samo, ce vsebuje ta kljuc (zavrzen kljuc; zaostal odgovor ne sme pobrisati tujega zapisa). */
+export function pozabiGostNakup(kljuc) {
+  try {
+    if (kljuc) { const z = JSON.parse(sessionStorage.getItem(KLJUC_NAKUPA) || "null"); if (z && z.k !== kljuc) return; }
+    sessionStorage.removeItem(KLJUC_NAKUPA);
+  } catch { try { sessionStorage.removeItem(KLJUC_NAKUPA); } catch { /* brez */ } }
+}
 
 /* ZASTAVICA: nakup brez racuna je privzeto SKRIT (pravno: politika zasebnosti gosta, GDPR 13, se ni objavljena; pravno/2026-10-05-gostujoci-nakup.md 4.2).
    Neprijavljen ob nakupu vidi stari tok (Sign in). Vklop: GOST_NAKUP_JAVNO = true (javna objava) ALI ekipni preklop

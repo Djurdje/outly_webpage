@@ -25,7 +25,7 @@ export function GostNarocilo() {
   useEffect(() => { document.title = t("Your tickets") + " · Outly"; }, []);
   useEffect(() => {
     if (!zeton) return undefined;
-    let zivo = true, casovnik = null, krog = 0;
+    let zivo = true, casovnik = null, krog = 0, zadnji = null;
     setS(x => ({ ...x, napaka: "", poteklo: false, stanje: x.r ? x.stanje : "nalaga" }));
     const korak = async () => {
       let r;
@@ -33,10 +33,14 @@ export function GostNarocilo() {
       catch (err) {
         if (!zivo) return;
         if (err instanceof ApiError && err.status === 404) { pozabiGostZeton(); setS({ stanje: "neveljavno", r: null, napaka: "", poteklo: false }); return; }
-        setS(x => ({ ...x, stanje: x.r ? "ok" : "napaka", napaka: sporocilo(err) }));
+        // Prehodna napaka (503, 429, omrezje) med poizvedovanjem: znotraj meje poskusov tiho poskusimo znova; sicer sporocilo in
+        // "Try again" (stanje ostane, pending vsebina je se vidna).
+        if (zadnji && zadnji.order && zadnji.order.status === "pending" && krog < OSVEZITEV_STEVILO) { krog += 1; casovnik = setTimeout(korak, OSVEZITEV_MS); return; }
+        setS(x => ({ ...x, stanje: x.r ? "ok" : "napaka", napaka: sporocilo(err), poteklo: false }));
         return;
       }
       if (!zivo) return;
+      zadnji = r;
       const caka = !!(r && r.order && r.order.status === "pending");
       const naprej = caka && krog < OSVEZITEV_STEVILO;
       if (naprej) { krog += 1; casovnik = setTimeout(korak, OSVEZITEV_MS); }
@@ -49,10 +53,12 @@ export function GostNarocilo() {
   // Isto oko: prijavljen z istim e-naslovom -> GET /me je placano narocilo ze prevzel v racun in zeton ne velja vec (404).
   const glava = html`<${GlavaNazaj} naslov=${t("Your tickets")} rezerva="/app" />`;
   if (s.stanje === "neveljavno" && prijavljen) {
+    // 404 je tudi potekel ali tuj zeton: ne trdimo, da so vstopnice v racunu (GET /me jih prevzame samo ob istem potrjenem e-naslovu).
     return html`<div class="zaslon">${glava}
       <div class="prazno">
-        <span class="uspeh-krog"><${Ikona} ime="check" velikost=${28} debelina=${3} /></span>
-        <strong>${t("Your tickets are now in your account")}</strong>
+        <${Ikona} ime="ticket" velikost=${34} razred="modra" />
+        <strong>${t("This link is no longer valid")}</strong>
+        <span>${t("If you bought with your account's email, your tickets are in Tickets.")}</span>
         <a class="gumb-glavni" href="/app/tickets">${t("Open my tickets")}</a>
       </div></div>`;
   }
@@ -82,6 +88,7 @@ export function GostNarocilo() {
 
   if (o.status === "pending") {
     return html`<div class="zaslon">${glava}
+      <${Napaka} besedilo=${s.napaka} znova=${() => setPoskus(p => p + 1)} />
       <div class="prazno" role="status">
         ${s.poteklo ? html`<${Ikona} ime="clock" velikost=${34} razred="modra" />` : html`<div class="nalaganje"><span class="vrtavka"></span></div>`}
         <strong>${s.poteklo ? t("We are still waiting for your payment") : t("Payment is being confirmed…")}</strong>
@@ -115,6 +122,7 @@ export function GostNarocilo() {
     </div>
     <div class="gost-racun">
       <strong>${t("Create an account to keep your tickets in the app")}</strong>
+      <span class="utisano">${t("Use the same email you bought with.")}</span>
       <a class="gumb-siv" href="/app/register">${t("Create an account")}</a>
     </div>
   </div>`;

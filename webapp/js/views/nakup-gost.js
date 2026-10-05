@@ -105,7 +105,7 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
     } catch (err) {
       // Nakupa NE ponavljamo sami: uporabnik pritisne znova (isti kljuc, razen ob 422, 400 in 409 order_not_active).
       const izid = izidNakupa(err);
-      if (izid === "zavrzen") pozabiKljucNakupa("gost", m, e.id, kljuc);
+      if (izid === "zavrzen") { pozabiKljucNakupa("gost", m, e.id, kljuc); pozabiGostNakup(kljuc); }   // 409 order_not_active, 422, 400: nov kljuc ob naslednjem kliku
       else oznaciIzidNakupa("gost", m, e.id, kljuc, izid);
       if (jeNakup503(err)) zakleni(nakupPocakajS(err));
       else if (jeNakupVObdelavi(err)) zakleni(nakupPocakajS(err, NAKUP_V_OBDELAVI_S));
@@ -160,6 +160,8 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
 
       ${brezplacno ? null : html`<p class="opomba">${t("You pay by card on the next page. Your tickets are sent by email right after payment.")}</p>`}
 
+      <p class="opomba">${t("Tickets for a dated event cannot be returned after purchase (ZVPot-1, 135/12). The seller is the club; Outly is the intermediary.")}</p>
+
       <label class="soglasje">
         <input type="checkbox" checked=${soglasje} onChange=${x => polje(setSoglasje)(x.target.checked)} />
         <span>${t("I am at least 15 years old and I accept the")} <a href="/terms" target="_blank" rel="noopener">${t("Terms of Use")}</a>.${" "}
@@ -174,6 +176,5 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
       </button>
     </form>
     <button type="button" class="povezava-gumb" onClick=${prijava} disabled=${posiljam}>${t("Have an account? Sign in")}</button>
-    <p class="opomba">${t("Tickets for a dated event cannot be returned after purchase (ZVPot-1, 135/12). The seller is the club; Outly is the intermediary.")}</p>
   <//>`;
 }
