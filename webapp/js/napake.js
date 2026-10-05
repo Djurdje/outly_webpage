@@ -241,3 +241,18 @@ export function sporocilo(e) {
   if (e && (e.name === "TypeError" || e.name === "AbortError" || e.name === "AuthRetryableFetchError")) return t("No internet connection. Check your network and try again.");
   return t("Something went wrong. Please try again.");
 }
+
+/** Sporocilo za napako nakupa brez racuna (POST /guest/events/:id/orders): iste prevode kot sporocilo(), razen ob splosnih
+    sporocilih, ki bi pri gostu zavajala ("Enter your friend's email", "You do not have permission", "This is already in use"). */
+export function gostSporocilo(e) {
+  if (e instanceof ApiError) {
+    if (e.status === 400 && /e-?mail/i.test(e.raw) && !kodaNapake(e)) return t("Enter a valid email address.");
+    const s = sporocilo(e);
+    if (e.status === 403 && s === t("You do not have permission to do that.")) return t("You do not meet the age requirement for this event.");
+    if (e.status === 409 && s === t("This is already in use.")) {
+      return t("These tickets cannot be bought right now. You may already have an unpaid order for this event - try again in a few minutes.");
+    }
+    return s;
+  }
+  return sporocilo(e);
+}

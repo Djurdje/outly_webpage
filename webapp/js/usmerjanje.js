@@ -14,6 +14,7 @@ const POTI = [
   ["/app/event/:id", "event"],
   ["/app/club/:id", "club"],
   ["/app/tickets", "tickets"],
+  ["/app/guest/order", "guest-order"],   // vstopnice, kupljene brez racuna (?t=<zeton> iz maila / Stripove vrnitve)
   ["/app/login", "login"],
   ["/app/register", "register"],
   ["/app/verify", "verify"],

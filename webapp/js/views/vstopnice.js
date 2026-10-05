@@ -98,7 +98,7 @@ function Karta({ v, odprta, preklopi, stara, poslji }) {
 }
 
 /* QR, polja in "Send to a friend" ene vstopnice (v navadni karti in v skupini VIP mize). */
-function QrTelo({ v, poslji }) {
+export function QrTelo({ v, poslji }) {
   const vip = v.is_vip === true;
   return html`<div class="vstopnica-qr">
     ${vip && (v.package_description || v.table_seats) ? html`<div class="vip-paket-opis">

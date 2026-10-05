@@ -401,6 +401,9 @@ h1,h2,h3,p{ margin:0; }
 .stevec output{ min-width:28px; text-align:center; font-weight:700; font-size:17px; }
 .nakup-skupaj{ display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding-top:12px; border-top:1px solid var(--b10); }
 .nakup-skupaj strong{ font-size:22px; }
+.gost-opomba{ margin-top:-6px; }
+.gost-racun{ display:flex; flex-direction:column; align-items:stretch; gap:10px; padding:16px; border-radius:16px; background:var(--b06); text-align:center; }
+.gost-racun strong{ font-size:15px; }
 .uspeh{ display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; }
 .uspeh strong{ font-size:22px; }
 .uspeh-krog{ width:56px; height:56px; border-radius:50%; background:var(--modra); display:grid; place-items:center; color:#fff; }
