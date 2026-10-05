@@ -927,5 +927,11 @@ export const SL = {
  "I have read the": "Prebral(a) sem:",
  "We use your email to send your tickets and receipt. Details in the": "E-naslov uporabljamo za pošiljanje vstopnic in potrdila. Podrobnosti:",
  "Seller: {club}": "Prodajalec: {club}",
- "You pay by card on the next page. Your tickets are sent by email right after payment.": "Plačaš s kartico na naslednji strani. Vstopnice dobiš po e-pošti takoj po plačilu."
+ "You pay by card on the next page. Your tickets are sent by email right after payment.": "Plačaš s kartico na naslednji strani. Vstopnice dobiš po e-pošti takoj po plačilu.",
+ "Your tickets are now in your account": "Tvoje vstopnice so zdaj v tvojem računu",
+ "Complete payment": "Dokončaj plačilo",
+ "Payment cancelled. You have not been charged.": "Plačilo je preklicano. Nič ti ni bilo zaračunano.",
+ "You already have an unfinished payment for this event. Please wait up to 30 minutes for it to expire, then try again.": "Za ta dogodek že imaš nedokončano plačilo. Počakaj do 30 minut, da poteče, nato poskusi znova.",
+ "This club does not accept online payments yet.": "Ta klub še ne sprejema spletnih plačil.",
+ "Enter your date of birth to buy tickets for this event.": "Za nakup vstopnic za ta dogodek vnesi datum rojstva."
 };

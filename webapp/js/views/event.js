@@ -27,6 +27,7 @@ export function Dogodek({ id }) {
   const [plan, setPlan] = useState(null);
   const [posiljam, setPosiljam] = useState(false);
   const [list, setList] = useState(null);   // "nakup" | "cenik" | "vip"
+  const [preklic, setPreklic] = useState(false);   // vrnitev s Stripa brez placila (cancel_url ?placilo=preklic)
   const [vipIzbor, setVipIzbor] = useState(null);   // { miza, paket } po vrnitvi s prijave (?vip=1&table=..&pkg=..)
 
   async function nalozi() {
@@ -39,6 +40,11 @@ export function Dogodek({ id }) {
     } catch (err) { setNapaka(sporocilo(err)); }
   }
   useEffect(() => { nalozi(); }, [id, prijavljen]);
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get("placilo") !== "preklic") return;
+    history.replaceState(history.state, "", location.pathname);
+    setPreklic(true);
+  }, [id]);
   useEffect(() => { zabeleziOgled({ event_id: Number(id) }); }, [id]);   // en ogled na obisk
   // Po prijavi z namenom "kupi" odpremo nakup samodejno (?buy=1); enako VIP mize (?vip=1, z izbrano mizo in paketom).
   useEffect(() => {
@@ -108,6 +114,7 @@ export function Dogodek({ id }) {
 
     <${Prijatelji} gredo=${e.friends_going} zanima=${e.friends_interested} />
     <${Napaka} besedilo=${napaka} />
+    ${preklic ? html`<p class="opomba-okvir" role="status"><${Ikona} ime="info" velikost=${18} />${t("Payment cancelled. You have not been charged.")}</p>` : null}
 
     <a class="kartica-vrstica" href=${"/app/club/" + e.club_id}>
       <span class="okrogla-slika">${klub && klub.logo_url ? html`<${Slika} src=${klub.logo_url} sirina=${130} alt="" />` : html`<${Ikona} ime="building" velikost=${20} />`}</span>

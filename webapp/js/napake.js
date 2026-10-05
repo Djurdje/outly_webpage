@@ -247,6 +247,12 @@ export function sporocilo(e) {
 export function gostSporocilo(e) {
   if (e instanceof ApiError) {
     if (e.status === 400 && /e-?mail/i.test(e.raw) && !kodaNapake(e)) return t("Enter a valid email address.");
+    if (e.status === 409 && /unfinished payment/i.test(e.raw)) {
+      return t("You already have an unfinished payment for this event. Please wait up to 30 minutes for it to expire, then try again.");
+    }
+    if (e.status === 409 && /does not accept online payments/i.test(e.raw)) return t("This club does not accept online payments yet.");
+    if (e.status === 403 && /date of birth/i.test(e.raw)) return t("Enter your date of birth to buy tickets for this event.");
+    if (e.status === 400 && /accept the terms/i.test(e.raw)) return t("Please confirm you are at least 15 and accept the Terms of Use.");
     const s = sporocilo(e);
     if (e.status === 403 && s === t("You do not have permission to do that.")) return t("You do not meet the age requirement for this event.");
     if (e.status === 409 && s === t("This is already in use.")) {

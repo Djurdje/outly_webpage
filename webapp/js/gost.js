@@ -7,17 +7,16 @@ export const jeGostZeton = z => typeof z === "string" && /^[\x21-\x7E]{8,1024}$/
 
 let vPomnilniku = null;   // ce sessionStorage ni na voljo (zasebno okno, blokiran): vsaj do zaprtja strani
 
-/** test = nakup v testnem nacinu (nic se ni zaracunalo) - samo za napis na strani narocila. */
-export function shraniGostZeton(zeton, test = false) {
+export function shraniGostZeton(zeton) {
   if (!jeGostZeton(zeton)) return;
-  vPomnilniku = { t: zeton, test: !!test };
+  vPomnilniku = { t: zeton };
   try { sessionStorage.setItem(KLJUC, JSON.stringify(vPomnilniku)); } catch { /* brez */ }
 }
 
 export function preberiGostZeton() {
   try {
     const v = JSON.parse(sessionStorage.getItem(KLJUC) || "null");
-    if (v && jeGostZeton(v.t)) return { t: v.t, test: !!v.test };
+    if (v && jeGostZeton(v.t)) return { t: v.t };
   } catch { /* brez */ }
   return vPomnilniku && jeGostZeton(vPomnilniku.t) ? vPomnilniku : null;
 }
@@ -36,10 +35,27 @@ export function prevzemiZetonIzUrl() {
   const ostalo = q.toString();
   history.replaceState(history.state, "", location.pathname + (ostalo ? "?" + ostalo : "") + location.hash);
   if (!jeGostZeton(zeton)) return null;
-  const prej = preberiGostZeton();
-  shraniGostZeton(zeton, !!(prej && prej.t === zeton && prej.test));
+  shraniGostZeton(zeton);
   return zeton;
 }
+
+/* Stripe: kupec gre na placilno stran in se lahko vrne (cancel_url /app/event/ID?placilo=preklic) - pomnilnik strani je takrat
+   izgubljen. Backend dovoli samo 1 neplacano narocilo na e-naslov in dogodek (30 min), nov kljuc bi dal 409; ISTI kljuc
+   (isti e-naslov, dogodek, kolicina) vrne isto narocilo in isti checkout_url. Zato kljuc ob preusmeritvi shranimo v sessionStorage
+   ({ e-naslov, dogodek, kolicina, kljuc }; datuma rojstva NE) in ga obrazec ob ponovnem odprtju uporabi. */
+const KLJUC_NAKUPA = "outly_gost_nakup";
+const ZIVLJENJE_NAKUPA_MS = 6 * 3600e3;
+export function shraniGostNakup(zapis) {
+  try { sessionStorage.setItem(KLJUC_NAKUPA, JSON.stringify({ ...zapis, ob: Date.now() })); } catch { /* brez */ }
+}
+export function preberiGostNakup(dogodek) {
+  try {
+    const z = JSON.parse(sessionStorage.getItem(KLJUC_NAKUPA) || "null");
+    if (z && z.d === dogodek && typeof z.e === "string" && Number.isInteger(z.q) && /^[0-9a-f-]{36}$/i.test(z.k || "") && Date.now() - z.ob < ZIVLJENJE_NAKUPA_MS) return z;
+  } catch { /* brez */ }
+  return null;
+}
+export function pozabiGostNakup() { try { sessionStorage.removeItem(KLJUC_NAKUPA); } catch { /* brez */ } }
 
 /* ZASTAVICA: nakup brez racuna je privzeto SKRIT (pravno: politika zasebnosti gosta, GDPR 13, se ni objavljena; pravno/2026-10-05-gostujoci-nakup.md 4.2).
    Neprijavljen ob nakupu vidi stari tok (Sign in). Vklop: GOST_NAKUP_JAVNO = true (javna objava) ALI ekipni preklop

@@ -6,7 +6,7 @@
    Kartice NIKOLI ne vnasamo v nas vmesnik. Kljuc nakupa (api.js) je vezan na e-naslov: ponovni klik ali timeout = isto narocilo. */
 import { html, useEffect, useRef, useState } from "../lib.js";
 import { t, useJezik } from "../i18n.js";
-import { send, pocistiPredpomnilnik, kljucNakupa, pozabiKljucNakupa, oznaciIzidNakupa } from "../api.js";
+import { send, pocistiPredpomnilnik, kljucNakupa, pozabiKljucNakupa, oznaciIzidNakupa, zasejKljucNakupa } from "../api.js";
 import {
   jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo, jeNakupVObdelavi, NAKUP_V_OBDELAVI_S,
   ApiError, izidNakupa, nakupBrezOdgovoraSporocilo, gostSporocilo
@@ -16,7 +16,7 @@ import { List, useZaklep } from "../ui.js";
 import { navigiraj } from "../usmerjanje.js";
 import { odpriStripe } from "../stripe.js";
 import { TERMS_VERSION, EMAIL_RE } from "../pogoji.js";
-import { shraniGostZeton, jeGostZeton } from "../gost.js";
+import { shraniGostZeton, jeGostZeton, shraniGostNakup, preberiGostNakup, pozabiGostNakup } from "../gost.js";
 
 const danes = () => {
   const d = new Date();
@@ -47,7 +47,11 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
   useEffect(() => {
     if (!odprt) return;
     const ostane = preostanek(e), najvec = Math.max(1, Math.min(10, ostane == null ? 10 : ostane));
-    setKolicina(k => Math.min(k, najvec)); setNapaka("");
+    // Vrnitev s Stripove strani brez placila (cancel_url): e-naslov in kolicina ostaneta, ponovni nakup uporabi isti kljuc.
+    const prej = preberiGostNakup(e.id);
+    if (prej) { setEmail(prej.e); setKolicina(Math.max(1, Math.min(prej.q, najvec))); }
+    else setKolicina(k => Math.min(k, najvec));
+    setNapaka("");
   }, [odprt]);
   // Cena null = vstopnic ni na Outlyju; tak dogodek nima nakupa (in NI "Free").
   if (!odprt || e.ticket_price_cents == null) return null;
@@ -73,8 +77,11 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
     if (!soglasje) return setNapaka(t("Please confirm you are at least 15 and accept the Terms of Use."));
     tece.current = true;
     setPosiljam(true); setNapaka("");
-    // Isti e-naslov + dogodek + vsebina (kolicina, datum rojstva) = isti kljuc (api.js, 24 h): backend vrne isto narocilo (201).
-    const vsebina = `${kolicina}|${potrebujeStarost ? dob : ""}`;
+    // Isti e-naslov + dogodek + kolicina = isti kljuc (api.js, 24 h): backend vrne isto narocilo (201). Datum rojstva ni del
+    // vsebine (backend primerja dogodek in kolicino) in se nikjer ne shranjuje.
+    const vsebina = String(kolicina);
+    const prej = preberiGostNakup(e.id);
+    if (prej && prej.e === m && prej.q === kolicina) zasejKljucNakupa("gost", m, e.id, vsebina, prej.k);
     const kljuc = kljucNakupa("gost", m, e.id, vsebina, null);
     const telo = { email: m, quantity: kolicina, accept_terms: true, terms_version: TERMS_VERSION };
     if (potrebujeStarost) telo.date_of_birth = dob;
@@ -84,12 +91,14 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
       const zeton = r && r.guest_token;
       // Stripe: kljuca NE pozabimo - ce se kupec vrne brez placila, ponovni pritisk vrne ISTO narocilo in isti checkout_url.
       if (r && r.mode === "stripe" && r.checkout_url) {
-        shraniGostZeton(zeton, false);
+        shraniGostZeton(zeton);
+        shraniGostNakup({ e: m, d: e.id, q: kolicina, k: kljuc });
         if (odpriStripe(r.checkout_url)) return;   // stran se preusmerja; gumb ostane "Processing..."
         throw new ApiError(-1, "Could not open the payment page.");
       }
       if (!jeGostZeton(zeton)) throw new ApiError(500, "No guest token.");
-      shraniGostZeton(zeton, !!(r && r.mode === "test"));
+      shraniGostZeton(zeton);
+      pozabiGostNakup();
       pozabiKljucNakupa("gost", m, e.id, kljuc);   // uspeh: naslednji nakup dobi nov kljuc
       if (ziv.current && odprtRef.current) { navigiraj("/app/guest/order"); return; }
       // List se je medtem odmontiral: zeton je shranjen, kupec ga najde na /app/guest/order (in v mailu).
