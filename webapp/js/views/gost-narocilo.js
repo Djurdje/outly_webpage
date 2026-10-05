@@ -33,7 +33,7 @@ export function GostNarocilo() {
       try { r = await send("/guest/order", { glave: { "X-Guest-Token": zeton } }); }
       catch (err) {
         if (!zivo) return;
-        if (err instanceof ApiError && err.status === 404) { pozabiGostZeton(); setS({ stanje: "neveljavno", r: null, napaka: "", poteklo: false }); return; }
+        if (err instanceof ApiError && err.status === 404) { pozabiGostZeton(); if (zadnji && zadnji.order && zadnji.order.event) pozabiGostNakup({ dogodek: zadnji.order.event.id }); setS({ stanje: "neveljavno", r: null, napaka: "", poteklo: false }); return; }
         // Prehodna napaka (503, 429, omrezje) med poizvedovanjem: znotraj meje poskusov tiho poskusimo znova; sicer sporocilo in
         // "Try again" (stanje ostane, pending vsebina je se vidna).
         if (zadnji && zadnji.order && zadnji.order.status === "pending" && krog < OSVEZITEV_STEVILO) { krog += 1; casovnik = setTimeout(korak, OSVEZITEV_MS); return; }
@@ -58,7 +58,7 @@ export function GostNarocilo() {
     setPreklic({ tece: true, napaka: "", opravljen: null });
     try {
       await send("/guest/order/cancel", { method: "POST", glave: { "X-Guest-Token": zeton } });
-      pozabiGostNakup(); pozabiGostZeton();
+      pozabiGostNakup({ dogodek }); pozabiGostZeton();
       setPreklic({ tece: false, napaka: "", opravljen: { dogodek } });
     } catch (err) {
       // order_not_pending (placano/ze preklicano) ali 404: osvezi stanje. request_in_progress (seja se se ustvarja), 502, 429: sporocilo.
@@ -126,7 +126,7 @@ export function GostNarocilo() {
   }
 
   const placano = o.status === "paid";
-  if (placano) pozabiGostNakup();   // placano: shranjeni kljuc nakupa (vrnitev s Stripa) ni vec potreben
+  if (placano) pozabiGostNakup({ dogodek: e.id });   // placano: shranjeni kljuc nakupa (vrnitev s Stripa) ni vec potreben
   return html`<div class="zaslon">${glava}
     <div class="uspeh">
       ${placano ? html`<span class="uspeh-krog"><${Ikona} ime="check" velikost=${28} debelina=${3} /></span><strong>${t("You're in!")}</strong>`
@@ -145,10 +145,10 @@ export function GostNarocilo() {
           : html`<span class="cip-plan">${v.status === "used" ? t("ALREADY USED") : String(v.status || "").toUpperCase()}</span>`}
       </div>`)}
     </div>
-    <div class="gost-racun">
+    ${prijavljen ? null : html`<div class="gost-racun">
       <strong>${t("Create an account to keep your tickets in the app")}</strong>
       <span class="utisano">${t("Use the same email you bought with.")}</span>
       <a class="gumb-siv" href="/app/register">${t("Create an account")}</a>
-    </div>
+    </div>`}
   </div>`;
 }

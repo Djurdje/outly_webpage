@@ -102,21 +102,21 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
       }
       // Ponovitev kljuca po prevzemu v racun (GET /me z istim potrjenim e-naslovom): guest_token je null - zetonov ni vec, vstopnice so v racunu.
       if (r && r.guest_token === null && r.order && ["paid", "partially_refunded"].includes(r.order.status)) {
-        pozabiGostNakup(); pozabiKljucNakupa("gost", m, e.id, kljuc);
+        pozabiGostNakup({ dogodek: e.id }); pozabiKljucNakupa("gost", m, e.id, kljuc);
         if (ziv.current) setVRacunu(true);
         tece.current = false; if (ziv.current) setPosiljam(false);
         return;
       }
       if (!jeGostZeton(zeton)) throw new ApiError(500, "No guest token.");
       shraniGostZeton(zeton);
-      pozabiGostNakup();
+      pozabiGostNakup({ dogodek: e.id });
       pozabiKljucNakupa("gost", m, e.id, kljuc);   // uspeh: naslednji nakup dobi nov kljuc
       if (ziv.current && odprtRef.current) { navigiraj("/app/guest/order"); return; }
       // List se je medtem odmontiral: zeton je shranjen, kupec ga najde na /app/guest/order (in v mailu).
     } catch (err) {
       // Nakupa NE ponavljamo sami: uporabnik pritisne znova (isti kljuc, razen ob 422, 400 in 409 order_not_active).
       const izid = izidNakupa(err);
-      if (izid === "zavrzen") { pozabiKljucNakupa("gost", m, e.id, kljuc); pozabiGostNakup(kljuc); }   // 409 order_not_active, 422, 400: nov kljuc ob naslednjem kliku
+      if (izid === "zavrzen") { pozabiKljucNakupa("gost", m, e.id, kljuc); pozabiGostNakup({ kljuc }); }   // 409 order_not_active, 422, 400: nov kljuc ob naslednjem kliku
       else oznaciIzidNakupa("gost", m, e.id, kljuc, izid);
       if (jeNakup503(err)) zakleni(nakupPocakajS(err));
       else if (jeNakupVObdelavi(err)) zakleni(nakupPocakajS(err, NAKUP_V_OBDELAVI_S));

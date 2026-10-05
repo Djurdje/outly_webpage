@@ -44,10 +44,10 @@ export function prevzemiZetonIzUrl() {
 }
 /* Ze ob uvozu (pred varovali v main.js App, ki bi pot z ?next= prepisala v prijavo/onboarding): zeton na strani narocila gre
    iz URL-ja v sessionStorage, preden ga kdorkoli prebere. usmerjanje.js uvozimo zaradi vrstnega reda: najprej razresi ?pot=. */
-if (location.pathname === "/app/guest/order") prevzemiZetonIzUrl();
+if (/^\/app\/guest\/order\/?$/.test(location.pathname)) prevzemiZetonIzUrl();
 
-/* Stripe: kupec gre na placilno stran in se lahko vrne (cancel_url /app/event/ID?placilo=preklic) - pomnilnik strani je takrat
-   izgubljen. Backend dovoli samo 1 neplacano narocilo na e-naslov in dogodek (30 min), nov kljuc bi dal 409; ISTI kljuc
+/* Stripe: kupec gre na placilno stran in se lahko vrne (cancel_url gosta je /app/guest/order#t=<zeton>, ?placilo=preklic na strani
+   dogodka je le stara pot) - pomnilnik strani je takrat izgubljen. Backend dovoli samo 1 neplacano narocilo na e-naslov in dogodek (30 min), nov kljuc bi dal 409; ISTI kljuc
    (isti e-naslov, dogodek, kolicina) vrne isto narocilo in isti checkout_url. Zato kljuc ob preusmeritvi shranimo v sessionStorage
    ({ e-naslov, dogodek, kolicina, kljuc }; datuma rojstva NE) in ga obrazec ob ponovnem odprtju uporabi. */
 const KLJUC_NAKUPA = "outly_gost_nakup";
@@ -64,10 +64,14 @@ export function preberiGostNakup(dogodek) {
   } catch { pozabiGostNakup(); }
   return null;
 }
-/** kljuc (neobvezno): zapis se pobrise samo, ce vsebuje ta kljuc (zavrzen kljuc; zaostal odgovor ne sme pobrisati tujega zapisa). */
-export function pozabiGostNakup(kljuc) {
+/** Pobrise zapis nakupa. { kljuc }: samo ce vsebuje ta kljuc (zavrzen kljuc); { dogodek }: samo ce je za ta dogodek. Zaostal odgovor ali
+    drugo naročilo ne smeta pobrisati tujega zapisa. Brez pogojev pobrise vedno (potekel/pokvarjen zapis). */
+export function pozabiGostNakup({ kljuc, dogodek } = {}) {
   try {
-    if (kljuc) { const z = JSON.parse(sessionStorage.getItem(KLJUC_NAKUPA) || "null"); if (z && z.k !== kljuc) return; }
+    if (kljuc !== undefined || dogodek !== undefined) {
+      const z = JSON.parse(sessionStorage.getItem(KLJUC_NAKUPA) || "null");
+      if (z && ((kljuc !== undefined && z.k !== kljuc) || (dogodek !== undefined && z.d !== dogodek))) return;
+    }
     sessionStorage.removeItem(KLJUC_NAKUPA);
   } catch { try { sessionStorage.removeItem(KLJUC_NAKUPA); } catch { /* brez */ } }
 }

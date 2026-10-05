@@ -941,7 +941,8 @@ export const SL = {
  "Too many unfinished payments for this event right now, try again in a few minutes.": "Za ta dogodek je trenutno preveč nedokončanih plačil, poskusi znova čez nekaj minut.",
  "Order cancelled. You have not been charged.": "Naročilo je preklicano. Nič ti ni bilo zaračunano.",
  "Cancel order": "Prekliči naročilo",
- "Cancelling...": "Prekinjam …",
+ "Cancelling...": "Preklicujem …",
  "Your tickets are in your account": "Tvoje vstopnice so v tvojem računu",
- "Sign in with this email to see them under Tickets.": "Prijavi se s tem e-naslovom in jih najdeš pod Vstopnice."
+ "Sign in with this email to see them under Tickets.": "Prijavi se s tem e-naslovom in jih najdeš pod Vstopnice.",
+ "Choose between {a} and {b} tickets.": "Izberi od {a} do {b} vstopnic."
 };
