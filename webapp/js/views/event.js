@@ -1,6 +1,7 @@
 /* Zaslon dogodka (EventDetailView.swift). Glavni vhod za ljudi brez aplikacije (deljena povezava
-   /app/event/:id) - dela brez prijave. "I'm in" in nakup zahtevata prijavo; po prijavi se uporabnik
-   vrne sem. Cena null = vstopnic ni na Outlyju (zunanja povezava ali na vratih), Free samo pri 0. */
+   /app/event/:id) - dela brez prijave. "I'm in" in VIP mize zahtevajo prijavo; po prijavi se uporabnik vrne sem.
+   Navadne vstopnice lahko kupi tudi gost samo z e-naslovom (nakup-gost.js, /app/guest/order) - za zastavico gost.js (privzeto izklopljeno).
+   Cena null = vstopnic ni na Outlyju (zunanja povezava ali na vratih), Free samo pri 0. */
 import { html, useEffect, useState } from "../lib.js";
 import { t } from "../i18n.js";
 import { send, zabeleziOgled } from "../api.js";
@@ -13,6 +14,8 @@ import {
 } from "../oblika.js";
 import { Ikona, Slika, Avatar, GlavaNazaj, Nalaganje, Napaka, List } from "../ui.js";
 import { NakupList } from "./nakup.js";
+import { GostNakupList } from "./nakup-gost.js";
+import { gostNakupVklopljen } from "../gost.js";
 import { MiniKarta } from "./zemljevid.js";
 import { CenikList } from "./club.js";
 
@@ -24,6 +27,7 @@ export function Dogodek({ id }) {
   const [plan, setPlan] = useState(null);
   const [posiljam, setPosiljam] = useState(false);
   const [list, setList] = useState(null);   // "nakup" | "cenik" | "vip"
+  const [preklic, setPreklic] = useState(false);   // vrnitev s Stripa brez placila (cancel_url ?placilo=preklic)
   const [vipIzbor, setVipIzbor] = useState(null);   // { miza, paket } po vrnitvi s prijave (?vip=1&table=..&pkg=..)
 
   async function nalozi() {
@@ -36,6 +40,11 @@ export function Dogodek({ id }) {
     } catch (err) { setNapaka(sporocilo(err)); }
   }
   useEffect(() => { nalozi(); }, [id, prijavljen]);
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get("placilo") !== "preklic") return;
+    history.replaceState(history.state, "", location.pathname);
+    setPreklic(true);
+  }, [id]);
   useEffect(() => { zabeleziOgled({ event_id: Number(id) }); }, [id]);   // en ogled na obisk
   // Po prijavi z namenom "kupi" odpremo nakup samodejno (?buy=1); enako VIP mize (?vip=1, z izbrano mizo in paketom).
   useEffect(() => {
@@ -58,6 +67,7 @@ export function Dogodek({ id }) {
   if (napaka && !e) return html`<div class="zaslon"><${GlavaNazaj} /><${Napaka} besedilo=${napaka} znova=${nalozi} /></div>`;
   if (!e) return html`<div class="zaslon"><${GlavaNazaj} /><${Nalaganje} /></div>`;
 
+  const gostNakup = !prijavljen && gostNakupVklopljen();   // zastavica (gost.js): privzeto izklopljeno
   const povratek = `/app/login?next=${encodeURIComponent("/app/event/" + id)}`;
   async function preklopiZanimanje() {
     if (!prijavljen) { navigiraj(povratek); return; }
@@ -75,7 +85,8 @@ export function Dogodek({ id }) {
 
   function obVstopnicah() {
     if (e.ticket_price_cents != null) {
-      if (!prijavljen) { navigiraj(`/app/login?next=${encodeURIComponent(`/app/event/${id}?buy=1`)}`); return; }
+      // Prijavljen: navaden nakup; gost z vklopljeno zastavico: obrazec z e-naslovom; sicer prijava kot doslej.
+      if (!prijavljen && !gostNakup) { navigiraj(`/app/login?next=${encodeURIComponent(`/app/event/${id}?buy=1`)}`); return; }
       setList("nakup");
     } else if (varenUrl(e.ticket_url)) {
       window.open(varenUrl(e.ticket_url), "_blank", "noopener,noreferrer");
@@ -103,6 +114,7 @@ export function Dogodek({ id }) {
 
     <${Prijatelji} gredo=${e.friends_going} zanima=${e.friends_interested} />
     <${Napaka} besedilo=${napaka} />
+    ${preklic ? html`<p class="opomba-okvir" role="status"><${Ikona} ime="info" velikost=${18} />${t("Payment cancelled. You have not been charged.")}</p>` : null}
 
     <a class="kartica-vrstica" href=${"/app/club/" + e.club_id}>
       <span class="okrogla-slika">${klub && klub.logo_url ? html`<${Slika} src=${klub.logo_url} sirina=${130} alt="" />` : html`<${Ikona} ime="building" velikost=${20} />`}</span>
@@ -153,7 +165,11 @@ export function Dogodek({ id }) {
         <a href=${"tel:" + klub.contact_phone.replace(/[^\d+]/g, "")}>${klub.contact_phone}</a></p>` : null}
     </section>` : null}
 
-    <${NakupList} odprt=${list === "nakup"} zapri=${() => setList(null)} dogodek=${e} imeKluba=${klub ? klub.name : ""} />
+    ${!gostNakup
+      ? html`<${NakupList} odprt=${list === "nakup"} zapri=${() => setList(null)} dogodek=${e} imeKluba=${klub ? klub.name : ""} />`
+      : html`<${GostNakupList} odprt=${list === "nakup"} zapri=${() => setList(null)} dogodek=${e} imeKluba=${klub ? klub.name : ""}
+          kraj=${klub ? naslovKluba(klub) : ""}
+          prijava=${() => navigiraj(`/app/login?next=${encodeURIComponent(`/app/event/${id}?buy=1`)}`)} />`}
     <${CenikList} odprt=${list === "cenik"} zapri=${() => setList(null)} klub=${klub} />
     ${e.vip_enabled === true
       // Star backend (brez polja vip_enabled) ali dogodek brez VIP: kot doslej - list s telefonom kluba.

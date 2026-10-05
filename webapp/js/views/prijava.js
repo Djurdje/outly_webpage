@@ -10,10 +10,9 @@ import { navigiraj, usePot } from "../usmerjanje.js";
 import { lokalno } from "../store.js";
 import { GlavaNazaj, Ikona } from "../ui.js";
 import { JezikGumb } from "./jezik.js";
+import { TERMS_VERSION, EMAIL_RE } from "../pogoji.js";   // verzija pogojev kot auth.js na outly.si (terms.html)
 
-const TERMS_VERSION = "1.1";              // enako kot auth.js na outly.si (terms.html)
 const USER_RE = /^[A-Za-z0-9_]{3,20}$/;   // enako kot backend PATCH /me
-const EMAIL_RE = /^[^@\s]+@[^@\s.]+\.[^@\s]+$/;
 const KLJUC_MAIL = "outly_cakajoci_mail";
 
 /* Kam po prijavi: ?next=/app/... (samo poti znotraj aplikacije). */

@@ -166,6 +166,12 @@ export function kljucNakupa(vrsta, uporabnik, dogodek, vsebina, podatki = null) 
   kljuciNakupov.set(pot, z);
   return z.kljuc;
 }
+/** Nakup brez racuna po vrnitvi s Stripa: znan kljuc (iz sessionStorage) se vstavi v zapis, kot da bi bil ustvarjen v tej seji. Ne povozi zivega zapisa. */
+export function zasejKljucNakupa(vrsta, uporabnik, dogodek, vsebina, kljuc) {
+  const pot = potNakupa(vrsta, uporabnik, dogodek);
+  if (zivZapis(pot)) return;
+  kljuciNakupov.set(pot, { kljuc, vsebina, podatki: null, izid: "nerazresen", prej: "nerazresen", ob: Date.now() });
+}
 /** Izid poskusa s tem kljucem: "nerazresen" | "dokoncen" | "neposlan" (zahtevek ni odsel, npr. osvezitev seje ni uspela:
     zapis ostane, kakrsen je bil pred poskusom). Ne dela nic, ce je v zapisu ze drug kljuc. */
 export function oznaciIzidNakupa(vrsta, uporabnik, dogodek, kljuc, izid) {

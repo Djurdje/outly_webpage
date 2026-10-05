@@ -241,3 +241,30 @@ export function sporocilo(e) {
   if (e && (e.name === "TypeError" || e.name === "AbortError" || e.name === "AuthRetryableFetchError")) return t("No internet connection. Check your network and try again.");
   return t("Something went wrong. Please try again.");
 }
+
+/** Sporocilo za napako nakupa brez racuna (POST /guest/events/:id/orders): iste prevode kot sporocilo(), razen ob splosnih
+    sporocilih, ki bi pri gostu zavajala ("Enter your friend's email", "You do not have permission", "This is already in use"). */
+export function gostSporocilo(e) {
+  if (e instanceof ApiError) {
+    if (e.status === 400 && /e-?mail/i.test(e.raw) && !kodaNapake(e)) return t("Enter a valid email address.");
+    if (/guest checkout is not available/i.test(e.raw) && (e.status === 409 || e.status === 503)) return t("Guest checkout is not available yet.");
+    if (e.status === 409 && /too many unfinished payments/i.test(e.raw)) return t("Too many unfinished payments for this event right now, try again in a few minutes.");
+    if (/quantity must be/i.test(e.raw)) {
+      const k = /between (\d+) and (\d+)/i.exec(e.raw);
+      return t("Choose between {a} and {b} tickets.", { a: k ? k[1] : 1, b: k ? k[2] : 6 });
+    }
+    if (e.status === 409 && /unfinished payment/i.test(e.raw)) {
+      return t("You already have an unfinished payment for this event. Please wait up to 30 minutes for it to expire, then try again.");
+    }
+    if (e.status === 409 && /does not accept online payments/i.test(e.raw)) return t("This club does not accept online payments yet.");
+    if (e.status === 403 && /date of birth/i.test(e.raw)) return t("Enter your date of birth to buy tickets for this event.");
+    if (e.status === 400 && /accept the terms/i.test(e.raw)) return t("Please confirm you are at least 15 and accept the Terms of Use.");
+    const s = sporocilo(e);
+    if (e.status === 403 && s === t("You do not have permission to do that.")) return t("You do not meet the age requirement for this event.");
+    if (e.status === 409 && s === t("This is already in use.")) {
+      return t("These tickets cannot be bought right now. You may already have an unpaid order for this event - try again in a few minutes.");
+    }
+    return s;
+  }
+  return sporocilo(e);
+}
