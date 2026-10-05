@@ -1,4 +1,12 @@
 # Cloudflare Pages: glave odgovorov. Za zdaj samo spletna aplikacija (/app) - landing ostane, kot je.
+
+# Vse strani (pregled 5. 10. 2026): outly.si se ne sme prikazati v tujem okvirju (clickjacking - na index.html sta
+# sprememba gesla in brisanje racuna). Samo ta dva ukrepa, da landing ostane nespremenjen; /app ima spodaj svoj polni CSP
+# (Cloudflare ob vec ujemanjih glave zdruzi z vejico = dve politiki, obe veljata).
+/*
+  Content-Security-Policy: frame-ancestors 'none'
+  X-Frame-Options: DENY
+
 # CSP: skripte samo z nase domene (brez inline, brez eval, brez CDN-jev); povezave samo na backend, Sentry (porocila napak)
 # in Supabase; slike/video https (klubi nalagajo Cloudinary in druge https URL-je).
 /app
