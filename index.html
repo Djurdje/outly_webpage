@@ -33,6 +33,7 @@
   <meta name="twitter:description" content="Where should we go tonight? Outly finds what is on around you, tonight. Join the waitlist.">
   <meta name="twitter:image" content="https://outly.si/assets/og-image.png">
 
+  <link rel="preload" as="image" href="/assets/outly-app-poster.jpg" fetchpriority="high">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
@@ -84,7 +85,7 @@
       <aside class="phone" aria-label="App preview">
         <div class="phone__card">
           <div class="phone__img">
-            <video class="phone__bg" poster="/assets/outly-app-poster.jpg" width="720" height="1280" autoplay muted loop playsinline preload="auto" aria-label="Outly app preview video">
+            <video class="phone__bg" poster="/assets/outly-app-poster.jpg" width="720" height="1280" autoplay muted loop playsinline disablepictureinpicture disableremoteplayback preload="auto" aria-label="Outly app preview video (tap to pause)">
               <source src="/assets/outly-app.mp4" type="video/mp4">
               <source src="/assets/outly-app.webm" type="video/webm">
             </video>

@@ -1,13 +1,23 @@
 document.getElementById("year").textContent = new Date().getFullYear();
 
-/* HERO video: brez samodejnega predvajanja, ce uporabnik zeli manj gibanja */
+/* HERO video: tap = pavza/predvajaj; brez samodejnega predvajanja, ce uporabnik zeli manj gibanja
+   ali ce ga brskalnik blokira (iOS varcevanje baterije) - takrat pokazi gumbe */
 (() => {
   const v = document.querySelector(".phone__img video");
-  if (v && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  if (!v) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     v.removeAttribute("autoplay");
     v.pause();
     v.controls = true;
+    return;
   }
+  const p = v.play();
+  if (p) p.catch(() => { v.controls = true; });
+  v.addEventListener("click", () => {
+    if (v.controls) return;
+    if (v.paused) v.play().catch(() => { v.controls = true; });
+    else v.pause();
+  });
 })();
 
 /* ---------------------------
