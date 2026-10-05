@@ -18,6 +18,7 @@ import { odpriStripe } from "../stripe.js";
 import { TERMS_VERSION, EMAIL_RE } from "../pogoji.js";
 import { shraniGostZeton, jeGostZeton, shraniGostNakup, preberiGostNakup, pozabiGostNakup } from "../gost.js";
 
+const NAJVEC_GOST = 6;   // gost najvec 6 vstopnic na nakup (dogovor z backendom), tudi ce dogodek dovoli vec
 const danes = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -32,6 +33,7 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
   const [posiljam, setPosiljam] = useState(false);
   const [napaka, setNapaka] = useState("");
   const polje = nastavi => v => { setNapaka(""); nastavi(v); };   // napaka velja za zadnjo oddajo: ob spremembi polja izgine
+  const [brezGosta, setBrezGosta] = useState(false);   // backend: gostujoci nakup se ni vklopljen -> ponudi prijavo
   const tece = useRef(false);   // zascita pred dvojnim klikom v istem trenutku (stanje se posodobi prepozno)
   const [zaklenjeno, zakleni] = useZaklep();   // po 503 (semafor nakupov) je gumb nekaj sekund onemogocen
   const ziv = useRef(true);
@@ -46,7 +48,7 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
   }, []);
   useEffect(() => {
     if (!odprt) return;
-    const ostane = preostanek(e), najvec = Math.max(1, Math.min(10, ostane == null ? 10 : ostane));
+    const ostane = preostanek(e), najvec = Math.max(1, Math.min(NAJVEC_GOST, ostane == null ? NAJVEC_GOST : ostane));
     // Vrnitev s Stripove strani brez placila (cancel_url): e-naslov in kolicina ostaneta, ponovni nakup uporabi isti kljuc.
     const prej = preberiGostNakup(e.id);
     if (prej) { setEmail(prej.e); setKolicina(Math.max(1, Math.min(prej.q, najvec))); }
@@ -59,7 +61,7 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
   const cenaEna = e.ticket_price_cents;
   const brezplacno = cenaEna === 0;
   const ostane = preostanek(e);
-  const najvec = Math.max(1, Math.min(10, ostane == null ? 10 : ostane));
+  const najvec = Math.max(1, Math.min(NAJVEC_GOST, ostane == null ? NAJVEC_GOST : ostane));
   const skupaj = cenaEna * kolicina;
   const razprodano = jeRazprodan(e) || ostane === 0;
   const potrebujeStarost = e.min_age > 0;
@@ -76,7 +78,7 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
     }
     if (!soglasje) return setNapaka(t("Please confirm you are at least 15 and accept the Terms of Use."));
     tece.current = true;
-    setPosiljam(true); setNapaka("");
+    setPosiljam(true); setNapaka(""); setBrezGosta(false);
     // Isti e-naslov + dogodek + kolicina = isti kljuc (api.js, 24 h): backend vrne isto narocilo (201). Datum rojstva ni del
     // vsebine (backend primerja dogodek in kolicino) in se nikjer ne shranjuje.
     const vsebina = String(kolicina);
@@ -113,6 +115,7 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
         if (jeNakupZaseden(err)) setNapaka(nakupZasedenoSporocilo());
         else if (err instanceof ApiError && err.status === -1 && izid === "nerazresen") setNapaka(nakupBrezOdgovoraSporocilo());
         else setNapaka(gostSporocilo(err));
+        if (err instanceof ApiError && /guest checkout is not available/i.test(err.raw)) setBrezGosta(true);
       }
     }
     tece.current = false;
@@ -147,9 +150,9 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
       <div class="nakup-vrsta">
         <div><strong>${brezplacno ? t("Free") : denar(cenaEna, e.currency)}</strong><span class="utisano"> ${t("per ticket")}</span></div>
         <div class="stevec" role="group" aria-label=${t("Number of tickets")}>
-          <button type="button" onClick=${() => { if (!tece.current) setNapaka(""); setKolicina(k => Math.max(1, k - 1)); }} disabled=${kolicina <= 1 || posiljam} aria-label=${t("Fewer")}>−</button>
+          <button type="button" onClick=${() => { if (!tece.current) { setNapaka(""); setKolicina(k => Math.max(1, k - 1)); } }} disabled=${kolicina <= 1 || posiljam} aria-label=${t("Fewer")}>−</button>
           <output aria-live="polite">${kolicina}</output>
-          <button type="button" onClick=${() => { if (!tece.current) setNapaka(""); setKolicina(k => Math.min(najvec, k + 1)); }} disabled=${kolicina >= najvec || posiljam} aria-label=${t("More")}>+</button>
+          <button type="button" onClick=${() => { if (!tece.current) { setNapaka(""); setKolicina(k => Math.min(najvec, k + 1)); } }} disabled=${kolicina >= najvec || posiljam} aria-label=${t("More")}>+</button>
         </div>
       </div>
 
@@ -168,6 +171,7 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
           ${t("I have read the")} <a href=${zasebnost} target="_blank" rel="noopener">${t("Privacy Policy")}</a>.</span>
       </label>
       ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}
+      ${brezGosta ? html`<button type="button" class="gumb-siv" onClick=${prijava}>${t("Sign in to buy")}</button>` : null}
 
       <button type="submit" class="gumb-glavni" disabled=${posiljam || razprodano || zaklenjeno}>
         ${razprodano ? t("Sold out") : posiljam ? t("Processing...")

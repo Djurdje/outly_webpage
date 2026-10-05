@@ -935,5 +935,11 @@ export const SL = {
  "Enter your date of birth to buy tickets for this event.": "Za nakup vstopnic za ta dogodek vnesi datum rojstva.",
  "This link is no longer valid": "Ta povezava ni več veljavna",
  "If you bought with your account's email, your tickets are in Tickets.": "Če si kupil(a) z e-naslovom svojega računa, so tvoje vstopnice pod Vstopnice.",
- "Use the same email you bought with.": "Uporabi isti e-naslov kot pri nakupu."
+ "Use the same email you bought with.": "Uporabi isti e-naslov kot pri nakupu.",
+ "Sign in to buy": "Prijavi se za nakup",
+ "Guest checkout is not available yet.": "Nakup brez računa še ni na voljo.",
+ "Too many unfinished payments for this event right now, try again in a few minutes.": "Za ta dogodek je trenutno preveč nedokončanih plačil, poskusi znova čez nekaj minut.",
+ "Order cancelled. You have not been charged.": "Naročilo je preklicano. Nič ti ni bilo zaračunano.",
+ "Cancel order": "Prekliči naročilo",
+ "Cancelling...": "Prekinjam …"
 };

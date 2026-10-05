@@ -247,6 +247,8 @@ export function sporocilo(e) {
 export function gostSporocilo(e) {
   if (e instanceof ApiError) {
     if (e.status === 400 && /e-?mail/i.test(e.raw) && !kodaNapake(e)) return t("Enter a valid email address.");
+    if (/guest checkout is not available/i.test(e.raw) && (e.status === 409 || e.status === 503)) return t("Guest checkout is not available yet.");
+    if (e.status === 409 && /too many unfinished payments/i.test(e.raw)) return t("Too many unfinished payments for this event right now, try again in a few minutes.");
     if (e.status === 409 && /unfinished payment/i.test(e.raw)) {
       return t("You already have an unfinished payment for this event. Please wait up to 30 minutes for it to expire, then try again.");
     }
