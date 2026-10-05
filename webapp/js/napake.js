@@ -189,6 +189,8 @@ function prevediApi(e) {
       return n > 0 ? t("Please confirm that the person you are sending this ticket to is at least {n} years old.", { n }) : t("Please confirm the age of the person you are sending this ticket to.");
     }
     case "guest_transfer_disabled": return t("Sending a ticket to someone without an Outly account is not available yet.");
+    case "guest_transfer_limit": return t("You have sent too many tickets to people without an Outly account today. Try again later.");
+    case "invalid_email": return t("Enter your friend's email address.");
   }
   const s = e.raw.toLowerCase();
   for (const [podniz, sporocilo] of PREDNOSTNA) if (s.includes(podniz)) return t(sporocilo);

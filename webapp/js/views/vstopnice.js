@@ -1,6 +1,6 @@
 /* Moje vstopnice (TicketsView.swift): prihajajoce s QR kodo, pretekle in uporabljene zlozene.
    QR je podpisan niz iz backenda; po prenosu vstopnice stara koda ne velja vec (I7). */
-import { html, useEffect, useState } from "../lib.js";
+import { html, useEffect, useRef, useState } from "../lib.js";
 import { t, tn } from "../i18n.js";
 import { send } from "../api.js";
 import { sporocilo, kodaNapake } from "../napake.js";
@@ -170,6 +170,7 @@ function PrenosList({ vstopnica: v, zapri, koncano }) {
   const [izbran, setIzbran] = useState(null);   // { user_id, ime } ali { email, ime }
   const [napaka, setNapaka] = useState("");
   const [tece, setTece] = useState(false);
+  const teceRef = useRef(false);   // dva sinhrona klika vidita isti `tece` iz izrisa: ref zapre vrata takoj (prenos je dokoncen, en zahtevek)
   const [uspeh, setUspeh] = useState(null);   // { ime, gost }
   const [starostOk, setStarostOk] = useState(false);
   const [mejaStreznika, setMejaStreznika] = useState(0);   // min_age iz 400 age_confirmation_required
@@ -193,6 +194,8 @@ function PrenosList({ vstopnica: v, zapri, koncano }) {
   const nazajNaIzbiro = () => { setStarostOk(false); setIzbran(null); };
 
   async function poslji() {
+    if (teceRef.current) return;
+    teceRef.current = true;
     setTece(true); setNapaka("");
     try {
       const potrjeno = starostPotrebna && starostOk;
@@ -208,7 +211,7 @@ function PrenosList({ vstopnica: v, zapri, koncano }) {
       setStarostOk(false);   // po neuspelem posiljanju potrditev ne velja vec
       setNapaka(sporocilo(e)); setIzbran(null);
     }
-    setTece(false);
+    teceRef.current = false; setTece(false);
   }
   const opis = gostNacin
     ? (minStarost > 0

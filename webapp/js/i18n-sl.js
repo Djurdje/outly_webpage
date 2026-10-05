@@ -966,5 +966,6 @@ export const SL = {
  "We'll email them the ticket with your username. Only enter the address of someone who is expecting it.": "Prijatelju pošljemo e-pošto z vstopnico in tvojim uporabniškim imenom. Vpiši samo naslov osebe, ki vstopnico pričakuje.",
  "Your friend's email": "E-naslov tvojega prijatelja",
  "If your friend doesn't have an Outly account, we'll email them the ticket with a QR code.": "Če tvoj prijatelj nima računa Outly, mu vstopnico s kodo QR pošljemo po e-pošti.",
- "I confirm the person I'm sending this ticket to is at least {n} years old. They must show a valid photo ID at the door; if they are younger, the club will refuse entry.": "Potrjujem, da je oseba, ki ji pošiljam vstopnico, stara vsaj {n} let. Ob vstopu mora pokazati veljaven osebni dokument s fotografijo; če je mlajša, ji klub vstop zavrne."
+ "I confirm the person I'm sending this ticket to is at least {n} years old. They must show a valid photo ID at the door; if they are younger, the club will refuse entry.": "Potrjujem, da je oseba, ki ji pošiljam vstopnico, stara vsaj {n} let. Ob vstopu mora pokazati veljaven osebni dokument s fotografijo; če je mlajša, ji klub vstop zavrne.",
+ "You have sent too many tickets to people without an Outly account today. Try again later.": "Danes si poslal(a) preveč vstopnic osebam brez računa Outly. Poskusi znova pozneje."
 };
