@@ -5,7 +5,7 @@
 import { html, useEffect, useState } from "../lib.js";
 import { t, tn } from "../i18n.js";
 import { send } from "../api.js";
-import { ApiError, sporocilo } from "../napake.js";
+import { ApiError, sporocilo, kodaNapake } from "../napake.js";
 import { danInUra } from "../oblika.js";
 import { GlavaNazaj, Nalaganje, Napaka, Ikona, Slika } from "../ui.js";
 import { odpriStripe } from "../stripe.js";
@@ -61,7 +61,8 @@ export function GostNarocilo() {
       pozabiGostNakup(); pozabiGostZeton();
       setPreklic({ tece: false, napaka: "", opravljen: { dogodek } });
     } catch (err) {
-      if (err instanceof ApiError && (err.status === 409 || err.status === 404)) { setPreklic({ tece: false, napaka: "", opravljen: null }); setPoskus(p => p + 1); return; }   // ni vec cakajoce: osvezi stanje
+      // order_not_pending (placano/ze preklicano) ali 404: osvezi stanje. request_in_progress (seja se se ustvarja), 502, 429: sporocilo.
+      if (err instanceof ApiError && (err.status === 404 || (err.status === 409 && kodaNapake(err) !== "request_in_progress"))) { setPreklic({ tece: false, napaka: "", opravljen: null }); setPoskus(p => p + 1); return; }
       setPreklic({ tece: false, napaka: sporocilo(err), opravljen: null });
     }
   }

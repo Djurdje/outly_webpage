@@ -33,6 +33,7 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
   const [posiljam, setPosiljam] = useState(false);
   const [napaka, setNapaka] = useState("");
   const polje = nastavi => v => { setNapaka(""); nastavi(v); };   // napaka velja za zadnjo oddajo: ob spremembi polja izgine
+  const [vRacunu, setVRacunu] = useState(false);   // ponovitev nakupa, ki je ze prevzet v racun
   const [brezGosta, setBrezGosta] = useState(false);   // backend: gostujoci nakup se ni vklopljen -> ponudi prijavo
   const tece = useRef(false);   // zascita pred dvojnim klikom v istem trenutku (stanje se posodobi prepozno)
   const [zaklenjeno, zakleni] = useZaklep();   // po 503 (semafor nakupov) je gumb nekaj sekund onemogocen
@@ -70,6 +71,7 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
   async function kupi(ev) {
     ev.preventDefault();
     if (tece.current) return;
+    setVRacunu(false);
     const m = email.trim().toLowerCase();
     if (!EMAIL_RE.test(m)) return setNapaka(t("Enter a valid email address."));
     if (potrebujeStarost) {
@@ -98,6 +100,13 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
         if (odpriStripe(r.checkout_url)) return;   // stran se preusmerja; gumb ostane "Processing..."
         throw new ApiError(-1, "Could not open the payment page.");
       }
+      // Ponovitev kljuca po prevzemu v racun (GET /me z istim potrjenim e-naslovom): guest_token je null - zetonov ni vec, vstopnice so v racunu.
+      if (r && r.guest_token === null && r.order && ["paid", "partially_refunded"].includes(r.order.status)) {
+        pozabiGostNakup(); pozabiKljucNakupa("gost", m, e.id, kljuc);
+        if (ziv.current) setVRacunu(true);
+        tece.current = false; if (ziv.current) setPosiljam(false);
+        return;
+      }
       if (!jeGostZeton(zeton)) throw new ApiError(500, "No guest token.");
       shraniGostZeton(zeton);
       pozabiGostNakup();
@@ -124,6 +133,15 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
   // Med letecim nakupom lista ni mogoce zapreti (odgovor bi se izgubil, uporabnik bi placal znova).
   const zapriVarno = () => { if (!tece.current) zapri(); };
 
+  if (vRacunu) {
+    return html`<${List} odprt=${true} zapri=${() => { setVRacunu(false); zapri(); }} naslov=${t("Your tickets")}>
+      <div class="uspeh">
+        <strong>${t("Your tickets are in your account")}</strong>
+        <span class="utisano">${t("Sign in with this email to see them under Tickets.")}</span>
+      </div>
+      <button type="button" class="gumb-glavni" onClick=${() => navigiraj(`/app/login?next=${encodeURIComponent("/app/tickets")}`)}>${t("Sign in")}</button>
+    <//>`;
+  }
   return html`<${List} odprt=${true} zapri=${zapriVarno} brezZapiranja=${posiljam} naslov=${t("Checkout")}>
     <div class="nakup-dogodek">
       <span class="nadnapis">${(imeKluba || "").toUpperCase()}</span>
