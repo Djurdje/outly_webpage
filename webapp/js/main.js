@@ -18,6 +18,7 @@ import { registrirajSW } from "./pwa.js";
 const NALAGALNIKI = {
   "./views/vstopnice.js": () => import("./views/vstopnice.js"),
   "./views/gost-narocilo.js": () => import("./views/gost-narocilo.js"),
+  "./views/gost-vstopnica.js": () => import("./views/gost-vstopnica.js"),
   "./views/prijava.js": () => import("./views/prijava.js"),
   "./views/onboarding.js": () => import("./views/onboarding.js"),
   "./views/profil.js": () => import("./views/profil.js"),
@@ -34,6 +35,7 @@ const NALAGALNIKI = {
 };
 const Vstopnice = leno("./views/vstopnice.js", "Vstopnice");
 const GostNarocilo = leno("./views/gost-narocilo.js", "GostNarocilo");
+const GostVstopnica = leno("./views/gost-vstopnica.js", "GostVstopnica");
 const Prijava = leno("./views/prijava.js", "Prijava");
 const Registracija = leno("./views/prijava.js", "Registracija");
 const Potrditev = leno("./views/prijava.js", "Potrditev");
@@ -136,6 +138,7 @@ function Zaslon({ pot }) {
     case "genre": return html`<${Zanr} key=${p.genre} genre=${p.genre} />`;
     case "interested": return html`<${Zanimivi} />`;
     case "tickets": return html`<${Vstopnice} />`;
+    case "guest-ticket": return html`<${GostVstopnica} />`;   // NI v SAMO_PRIJAVLJENI: prijatelj brez racuna odpre vstopnico z zetonom iz maila
     case "guest-order": return html`<${GostNarocilo} />`;   // NI v SAMO_PRIJAVLJENI: gost odpre vstopnice z zetonom iz maila
     case "login": return html`<${Prijava} />`;
     case "register": return html`<${Registracija} />`;
@@ -229,7 +232,7 @@ function App() {
 
 function naslovPoti(ime) {
   return ({ search: "Search", map: "Map", profile: "Profile", events: "Events", interested: "Interested events",
-    tickets: "Tickets", "guest-order": "Your tickets", login: "Sign in", register: "Create an account", verify: "Verify your email",
+    tickets: "Tickets", "guest-order": "Your tickets", "guest-ticket": "Your ticket", login: "Sign in", register: "Create an account", verify: "Verify your email",
     forgot: "Forgot password?", onboarding: "Complete your account", language: "Language", genre: "Events",
     account: "My Account", personal: "Personal info", security: "Password and security", preferences: "Preferences",
     "my-preferences": "My preferences", delete: "Delete account", creator: "Request for creator", payment: "Payment",

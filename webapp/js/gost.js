@@ -1,35 +1,48 @@
 /* Nakup vstopnice brez racuna (gost): zeton narocila (guest_token) je skrivnost, s katero kupec odpre svoje vstopnice
    (GET /guest/order, glava X-Guest-Token). Pride s Stripove vrnitve ali iz maila kot ?t=... v URL-ju; takoj ga shranimo
    v sessionStorage (osvezitev strani dela) in ga odstranimo iz naslovne vrstice (zgodovina, Referer). Brez localStorage:
-   zeton ne ostane na napravi po zaprtju zavihka; kupec ima povezavo v mailu. */
+   zeton ne ostane na napravi po zaprtju zavihka; kupec ima povezavo v mailu.
+   Isti vzorec velja za vstopnico, ki jo je prijatelj prejel po e-naslovu (/app/guest/ticket#t=...; locen kljuc). */
 import "./usmerjanje.js";
-const KLJUC = "outly_gost_zeton";
 export const jeGostZeton = z => typeof z === "string" && /^[\x21-\x7E]{8,1024}$/.test(z);   // vidni ASCII brez presledka: varen kot vrednost glave
 
-let vPomnilniku = null;   // ce sessionStorage ni na voljo (zasebno okno, blokiran): vsaj do zaprtja strani
-
-export function shraniGostZeton(zeton) {
-  if (!jeGostZeton(zeton)) return;
-  vPomnilniku = { t: zeton };
-  try { sessionStorage.setItem(KLJUC, JSON.stringify(vPomnilniku)); } catch { /* brez */ }
+/* Shramba zetona v sessionStorage pod svojim kljucem: zeton narocila (/app/guest/order) in zeton vstopnice, prejete po e-naslovu
+   (/app/guest/ticket) sta LOCENA - enega ne sme prebrati ali pobrisati zaslon drugega. Ce sessionStorage ni na voljo (zasebno
+   okno, blokiran), zeton ostane vsaj do zaprtja strani. */
+function ustvariShrambo(kljuc) {
+  let vPomnilniku = null;
+  return {
+    shrani(zeton) {
+      if (!jeGostZeton(zeton)) return;
+      vPomnilniku = { t: zeton };
+      try { sessionStorage.setItem(kljuc, JSON.stringify(vPomnilniku)); } catch { /* brez */ }
+    },
+    preberi() {
+      try {
+        const v = JSON.parse(sessionStorage.getItem(kljuc) || "null");
+        if (v && jeGostZeton(v.t)) return { t: v.t };
+      } catch { /* brez */ }
+      return vPomnilniku && jeGostZeton(vPomnilniku.t) ? vPomnilniku : null;
+    },
+    pozabi() {
+      vPomnilniku = null;
+      try { sessionStorage.removeItem(kljuc); } catch { /* brez */ }
+    }
+  };
 }
-
-export function preberiGostZeton() {
-  try {
-    const v = JSON.parse(sessionStorage.getItem(KLJUC) || "null");
-    if (v && jeGostZeton(v.t)) return { t: v.t };
-  } catch { /* brez */ }
-  return vPomnilniku && jeGostZeton(vPomnilniku.t) ? vPomnilniku : null;
-}
-
-export function pozabiGostZeton() {
-  vPomnilniku = null;
-  try { sessionStorage.removeItem(KLJUC); } catch { /* brez */ }
-}
+const shrambaNarocila = ustvariShrambo("outly_gost_zeton");
+const shrambaVstopnice = ustvariShrambo("outly_gost_vstopnica");
+export const shraniGostZeton = shrambaNarocila.shrani;
+export const preberiGostZeton = shrambaNarocila.preberi;
+export const pozabiGostZeton = shrambaNarocila.pozabi;
+export const shraniVstopnicaZeton = shrambaVstopnice.shrani;
+export const preberiVstopnicaZeton = shrambaVstopnice.preberi;
+export const pozabiVstopnicaZeton = shrambaVstopnice.pozabi;
 
 /** Zeton iz URL-ja: #t=<zeton> (prednostno; fragment nikoli ne gre na streznik ali v Referer) ali ?t=<zeton> (za vsak slucaj).
-    Shrani ga in ga takoj odstrani iz naslovne vrstice (replaceState); drugi parametri in fragment ostanejo. Vrne zeton ali null. */
-export function prevzemiZetonIzUrl() {
+    Shrani ga (privzeto med zetone narocila; shrani: funkcija druge shrambe) in ga takoj odstrani iz naslovne vrstice (replaceState);
+    drugi parametri in fragment ostanejo. Vrne zeton ali null. */
+export function prevzemiZetonIzUrl(shrani = shraniGostZeton) {
   let zeton = null, najden = false;
   const fr = new URLSearchParams(location.hash.replace(/^#/, ""));
   const q = new URLSearchParams(location.search);
@@ -39,12 +52,13 @@ export function prevzemiZetonIzUrl() {
   const iskanje = q.toString(), fragment = fr.toString();
   history.replaceState(history.state, "", location.pathname + (iskanje ? "?" + iskanje : "") + (fragment ? "#" + fragment : ""));
   if (!jeGostZeton(zeton)) return null;
-  shraniGostZeton(zeton);
+  shrani(zeton);
   return zeton;
 }
-/* Ze ob uvozu (pred varovali v main.js App, ki bi pot z ?next= prepisala v prijavo/onboarding): zeton na strani narocila gre
-   iz URL-ja v sessionStorage, preden ga kdorkoli prebere. usmerjanje.js uvozimo zaradi vrstnega reda: najprej razresi ?pot=. */
+/* Ze ob uvozu (pred varovali v main.js App, ki bi pot z ?next= prepisala v prijavo/onboarding): zeton na strani narocila oz.
+   vstopnice gre iz URL-ja v sessionStorage, preden ga kdorkoli prebere. usmerjanje.js uvozimo zaradi vrstnega reda: najprej razresi ?pot=. */
 if (/^\/app\/guest\/order\/?$/.test(location.pathname)) prevzemiZetonIzUrl();
+else if (/^\/app\/guest\/ticket\/?$/.test(location.pathname)) prevzemiZetonIzUrl(shraniVstopnicaZeton);
 
 /* Stripe: kupec gre na placilno stran in se lahko vrne (cancel_url gosta je /app/guest/order#t=<zeton>, ?placilo=preklic na strani
    dogodka je le stara pot) - pomnilnik strani je takrat izgubljen. Backend dovoli samo 1 neplacano narocilo na e-naslov in dogodek (30 min), nov kljuc bi dal 409; ISTI kljuc

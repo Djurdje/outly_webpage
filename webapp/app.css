@@ -263,6 +263,7 @@ h1,h2,h3,p{ margin:0; }
 .kv-besedilo span{ font-size:13px; color:var(--b55); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .blok-besedila{ display:flex; flex-direction:column; gap:10px; }
 .besedilo-opis{ font-size:15px; color:rgba(255,255,255,.85); white-space:pre-line; overflow-wrap:anywhere; }
+.prenos-naslov{ font-size:18px; font-weight:700; color:#fff; overflow-wrap:anywhere; }   /* e-naslov prejemnika: velik, da se tipkarska napaka opazi */
 .cip-plan{ font-size:11px; font-weight:700; padding:0 10px; height:26px; display:inline-flex; align-items:center; border-radius:999px; border:1px solid rgba(255,255,255,.5); color:rgba(255,255,255,.85); white-space:nowrap; flex:none; }
 
 .iskalno-polje{ display:flex; align-items:center; gap:10px; padding:0 14px; height:50px; border-radius:12px; background:#1C1C1E; }
