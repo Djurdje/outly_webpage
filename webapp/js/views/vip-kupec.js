@@ -14,6 +14,7 @@ import { navigiraj } from "../usmerjanje.js";
 import { odpriStripe } from "../stripe.js";
 import { denar, danInUra } from "../oblika.js";
 import { List, Ikona, Nalaganje, Napaka, useZaklep } from "../ui.js";
+import { VipRazdeli, mejaStarostiVip, zapomniCakajocVip } from "./vip-razdeli.js";
 import {
   C, doOseb, normalizirajTloris, normalizirajMize, normalizirajPakete, useSirina,
   TlorisPlatno, ElementTlorisa, OblikaMize, LegendaMiz, VipVrstica
@@ -52,6 +53,7 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
   const [posiljam, setPosiljam] = useState(false);
   const [napaka, setNapaka] = useState("");
   const [nakup, setNakup] = useState(null);
+  const [razdeljujem, setRazdeljujem] = useState(false);   // prenosi prijateljem tecejo: list se ne da zapreti
   const tece = useRef(false);   // zascita pred dvojnim klikom (stanje se posodobi prepozno)
   const [zaklenjeno, zakleni] = useZaklep();   // po 503 (semafor nakupov) je gumb nekaj sekund onemogocen
 
@@ -123,6 +125,8 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
       // Stripe (backend #19): narocilo caka na placilo na Stripovi strani. Kljuca NE pozabimo: ce se kupec vrne brez
       // placila, ponovni pritisk vrne ISTO narocilo in isti checkout_url (ne rezervira se enkrat).
       if (r && r.mode === "stripe" && r.checkout_url) {
+        // Po placilu Stripe vrne na /app/tickets?placilo=uspeh: tam se razdelitev ponudi vnovic (vip-razdeli.js).
+        zapomniCakajocVip(uid, r.order && r.order.id);
         if (odpriStripe(r.checkout_url)) return;   // stran se preusmerja; gumb ostane "Processing..."
         throw new ApiError(-1, "Could not open the payment page.");
       }
@@ -157,7 +161,10 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
     const o = nakup.order || {};
     const vst = Array.isArray(nakup.tickets) ? nakup.tickets : [];
     const stevilo = vst.length || o.table_seats || (miza && miza.seats) || 0;
-    return html`<${List} odprt=${true} zapri=${zapriVarno} naslov=${t("VIP tables")}>
+    // Razdelitev prijateljem: samo, ce streznik vrne vsaj dve vstopnici (ena vedno ostane kupcu).
+    const razdeli = vst.length >= 2;
+    const meja = mejaStarostiVip(vst[0], e.min_age, !!(paket || o.package_name || o.package_id != null));
+    return html`<${List} odprt=${true} zapri=${zapriVarno} brezZapiranja=${razdeljujem} naslov=${t("VIP tables")}>
       <div class="uspeh">
         <span class="uspeh-krog"><${Ikona} ime="check" velikost=${28} debelina=${3} /></span>
         <strong>${t("Your VIP table is booked")}</strong>
@@ -165,8 +172,10 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
         <span>${t("Order {ref}", { ref: o.public_ref || "" })} · ${tn("1 VIP ticket", "{n} VIP tickets", stevilo)}</span>
         ${nakup.mode === "test" ? html`<span class="opomba">${t("Test purchase — nothing was charged")}</span>` : null}
       </div>
-      <p class="opomba srednje">${t("Send the VIP tickets to your friends from Tickets.")}</p>
-      <a class="gumb-glavni" href="/app/tickets">${t("Open my tickets")}</a>
+      ${razdeli
+        ? html`<${VipRazdeli} vstopnice=${vst} meja=${meja} zapri=${zapriVarno} obZaposlen=${setRazdeljujem} />`
+        : html`<p class="opomba srednje">${t("Send the VIP tickets to your friends from Tickets.")}</p>
+          <a class="gumb-glavni" href="/app/tickets">${t("Open my tickets")}</a>`}
     <//>`;
   }
 

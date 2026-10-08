@@ -12,7 +12,7 @@ import { idKluba } from "../posel.js";
 import { useStore } from "../store.js";
 import { navigiraj } from "../usmerjanje.js";
 import { danInUra } from "../oblika.js";
-import { VipVrstica } from "../vip.js";
+import { VipVrstica, OznakaGuestList } from "../vip.js";
 import { skenirajVstopnico, ustvariMotor, dogodkiKluba, privzetiDogodek, izbranDogodek, shraniIzbiro } from "../sken/motor.js";
 
 export { skenirajVstopnico };
@@ -396,6 +396,7 @@ function SkenerDogodka({ klub, dogodek, zapis, rezerva, naPromeni }) {
           </div>
           <button type="button" class="gumb-siv majhen skener-naprej" onClick=${naprej}>${t("Next")}</button>
           ${rezultat.ticket && rezultat.ticket.is_vip === true ? html`<div class="skener-vip"><${VipVrstica} v=${rezultat.ticket} velika=${true} /></div>` : null}
+          ${rezultat.ticket && rezultat.ticket.is_guest_list === true ? html`<div class="skener-vip"><${OznakaGuestList} v=${rezultat.ticket} skener=${true} /></div>` : null}
         </div>` : null}
       </div>
     </div>

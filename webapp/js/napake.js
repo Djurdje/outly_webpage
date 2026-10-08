@@ -1,7 +1,7 @@
 /* Razumljiva sporocila napak - prevod iOS APIErrorMessages.swift in SupabaseAuthError.
    Surovega besedila streznika uporabnik nikoli ne vidi (razen izjeme "you must be at least",
    kot na iOS). Pravila so podnizi v besedilu odgovora, v istem vrstnem redu kot na iOS. */
-import { t } from "./i18n.js";
+import { t, tn } from "./i18n.js";
 
 export class ApiError extends Error {
   constructor(status, raw, retryAfter = 0) {
@@ -154,6 +154,10 @@ const PRAVILA = [
 
 /* Pravila, ki morajo pred splosnim "date of birth" (prenos vstopnice govori o prijateljevem datumu). */
 const PREDNOSTNA = [
+  ["you can only invite friends", "You can only invite friends."],
+  ["guest list is closed", "This guest list is closed."],
+  ["already checked in", "Already checked in."],
+  ["guest list tickets can't be transferred", "Guest list tickets can't be transferred."],
   ["valid email is required", "Enter your friend's email address."],
   ["no outly account with this email", "No Outly account with this email. Ask your friend to sign up first."],
   ["no outly account with this username", "No Outly account with this username."],
@@ -193,6 +197,13 @@ function prevediApi(e) {
     case "invalid_email": return t("Enter your friend's email address.");
   }
   const s = e.raw.toLowerCase();
+  // Guest lista (pogodba 8. 10. 2026): besedila s spremenljivko (stevilo mest, uporabnisko ime) pred splosnimi pravili.
+  const mesta = /only (\d+) spots? left/.exec(s);
+  if (mesta) return tn("Only 1 spot left.", "Only {n} spots left.", Number(mesta[1]));
+  const ze = /^"?(.+?) is already on your guest list/i.exec(e.raw.trim());
+  if (ze) return t("{name} is already on your guest list.", { name: ze[1] });
+  const mlad = /^"?(.+?) is under (\d+)/i.exec(e.raw.trim());
+  if (mlad) return t("{name} is under {n}.", { name: mlad[1], n: mlad[2] });
   for (const [podniz, sporocilo] of PREDNOSTNA) if (s.includes(podniz)) return t(sporocilo);
   if (s.includes("dateofbirth") || s.includes("date of birth")) {
     if (s.includes("future")) return t("Date of birth cannot be in the future.");
