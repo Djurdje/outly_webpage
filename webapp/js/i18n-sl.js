@@ -861,6 +861,7 @@ export const SL = {
  "Event {n}": "Dogodek {n}",
  "Connect to the internet once to download the events.": "Poveži se z internetom, da se dogodki prenesejo.",
  "Reload events": "Osveži dogodke",
+ "Could not reload events": "Dogodkov ni bilo mogoče osvežiti",
  "Online": "Na spletu",
  "Offline": "Brez povezave",
  "Waiting: {n}": "Čaka: {n}",

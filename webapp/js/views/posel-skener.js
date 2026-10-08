@@ -237,6 +237,7 @@ function StatusVrstica({ ms, motor, zdaj, brezSeznama }) {
     ${brezSeznama ? null : html`<span class=${"znacka-stanja" + (seznamStar ? " opozorilo" : "")} data-testid="seznam">${seznamBesedilo}</span>`}
     ${brezSeznama ? null : html`<button type="button" class="znacka-stanja gumb-znacka" data-testid="znova-dogodki" disabled=${ms.nalagamDogodke} onClick=${() => motor.znovuNaloziDogodke()}>
       ${ms.nalagamDogodke ? html`<span class="vrtavka majhna" aria-hidden="true"></span>` : html`<${Ikona} ime="refresh-cw" velikost=${13} />`}${t("Reload events")}</button>`}
+    ${brezSeznama || !ms.znovuNapaka ? null : html`<span class="znacka-stanja opozorilo" role="status" data-testid="znova-napaka">${t("Could not reload events")}</span>`}
   </div>`;
 }
 
