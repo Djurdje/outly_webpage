@@ -718,6 +718,8 @@ a.profil-ime{ white-space:normal; }
 .skener-rezultat .skener-naprej{ width:auto; flex:none; }
 .gumb-vstopa{ flex:none; height:32px; padding:0 12px; border-radius:999px; background:#fff; color:#000; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:6px; }
 .gumb-vstopa:disabled{ opacity:.6; }
+.gumb-znacka{ border:0; font-family:inherit; cursor:pointer; }
+.gumb-znacka:disabled{ opacity:.6; }
 .skener-pasica{ display:flex; align-items:center; gap:10px; padding:12px; border-radius:12px; margin-bottom:12px; }
 .skener-pasica.ok{ background:rgba(53,199,122,.15); }
 .skener-pasica.ne{ background:rgba(255,90,90,.15); }
@@ -727,13 +729,7 @@ a.profil-ime{ white-space:normal; }
 .skener-dogodek{ display:flex; align-items:center; gap:12px; }
 .skener-dogodek .kv-besedilo{ flex:1; min-width:0; }
 .skener-dogodek .kv-besedilo strong{ display:block; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.skener-dogodek .kv-besedilo span{ display:block; font-size:12.5px; color:var(--b70); }
-.skener-dogodek .gumb-siv{ width:auto; flex:none; }
-.skener-dogodki{ display:flex; flex-direction:column; gap:8px; }
-.skener-dogodek-gumb{ display:flex; flex-direction:column; align-items:flex-start; gap:2px; width:100%; padding:12px 14px; border-radius:14px; background:var(--b06); color:#fff; text-align:left; }
-.skener-dogodek-gumb strong{ font-size:16px; }
-.skener-dogodek-gumb span{ font-size:13px; color:var(--b70); }
-.skener-dogodek-gumb.izbran{ box-shadow:inset 0 0 0 1.5px var(--b55); }
+.skener-dogodek .kv-besedilo span{ display:block; font-size:12.5px; color:var(--b70); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .skener-stanje-prazno{ display:flex; justify-content:center; padding:48px 0; }
 .skener-stanje-vrstica{ display:flex; flex-wrap:wrap; gap:6px; padding-right:6px; }
 .znacka-stanja{ display:inline-flex; align-items:center; gap:6px; min-height:28px; padding:0 10px; border-radius:999px; background:var(--b10); font-size:13px; font-weight:600; color:var(--b70); }

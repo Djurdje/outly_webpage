@@ -14,6 +14,7 @@ import { GlavaNazaj, Ikona, Slika, Nalaganje, List } from "../ui.js";
 import { idKluba, poslovno, normalizirajDogodke, centiIz, evriBesedilo, NAJVEC_VIDEA } from "../posel.js";
 import { PoslovnaNapaka } from "./posel.js";
 import { skenirajVstopnico, naslovRezultata, opisRezultata } from "./posel-skener.js";
+import { jeAktiven } from "../sken/okno.js";
 import { VipVrstica, OznakaGuestList } from "../vip.js";
 import { VipDogodka, RezervacijeVip } from "./posel-vip-dogodek.js";
 
@@ -275,7 +276,7 @@ export function ObrazecDogodka({ klub, dogodek }) {
 export function VstopniceDogodkaKluba({ klub, dogodek }) {
   const id = idKluba(klub);
   const idDogodka = idKluba(dogodek);
-  const [s, setS] = useState({ nalaga: true, napaka: null, vstopnice: [], naslov: "" });
+  const [s, setS] = useState({ nalaga: true, napaka: null, vstopnice: [], naslov: "", dogodek: null });
   const [delujoc, setDelujoc] = useState(null);
   const [zadnji, setZadnji] = useState(null);   // zadnji odgovor skenerja (pasica nad seznamom)
   const [vstopi, setVstopi] = useState(0);   // stevec rocnih vstopov: osvezi "prisli X/N" pri VIP rezervacijah
@@ -283,7 +284,7 @@ export function VstopniceDogodkaKluba({ klub, dogodek }) {
     setS(x => ({ ...x, nalaga: !x.vstopnice.length, napaka: null }));
     return Promise.all([
       poslovno(id, `/business/events/${idDogodka}/tickets`),
-      poslovno(id, "/business/events").catch(() => [])
+      poslovno(id, "/business/events").catch(() => null)   // null = branje ni uspelo (N2: vstop brez znanega dogodka se ne dovoli)
     ]).then(([v, dogodki]) => {
       const e = (Array.isArray(dogodki) ? dogodki : []).find(x => x.id === idDogodka);
       // Obdrzimo samo, kar rabimo: podpisan QR za rocni vstop (kot iOS), brez celotne serijske in e-naslovov.
@@ -291,12 +292,27 @@ export function VstopniceDogodkaKluba({ klub, dogodek }) {
         public_ref: x.public_ref || "", kratka: String(x.serial || "").slice(0, 8).toUpperCase(),
         is_vip: x.is_vip === true, table_label: x.table_label || "", package_name: x.package_name || "",
         is_guest_list: x.is_guest_list === true, guest_list_host_username: x.guest_list_host_username || "" }));
-      setS({ nalaga: false, napaka: null, vstopnice, naslov: e ? e.title : "" });
+      setS(x => ({ nalaga: false, napaka: null, vstopnice, naslov: e ? e.title : x.naslov,
+        // Ob padlem branju obdrzimo prej znan dogodek (sicer bi po vsakem vstopu zgubili okno).
+        dogodek: e ? { start_at: e.start_at, end_at: e.end_at, status: e.status } : (Array.isArray(dogodki) ? null : x.dogodek) }));
     }).catch(e => setS(x => ({ ...x, nalaga: false, napaka: e })));
   };
   useEffect(() => { if (id && idDogodka) nalozi(); }, [id, idDogodka]);
 
   async function vstop(v) {
+    // Isto casovno okno kot skener (okno.js): rocni vstop samo za aktiven dogodek (12 h pred zacetkom do 6 h po koncu).
+    // Ce dogodka ne poznamo (branje /business/events je padlo), vstopa NE dovolimo (fail-closed, N2): ponovno poskusimo prebrati.
+    let dog = s.dogodek;
+    if (!dog) {
+      setDelujoc(v.id); setZadnji(null);
+      try {
+        const e = (await poslovno(id, "/business/events") || []).find(x => x.id === idDogodka);
+        if (e) { dog = { start_at: e.start_at, end_at: e.end_at, status: e.status }; setS(x => ({ ...x, naslov: e.title || x.naslov, dogodek: dog })); }
+      } catch { /* sporocilo spodaj */ }
+      setDelujoc(null);
+      if (!dog) { setZadnji({ napaka: t("Could not check the event time. Check your connection and try again.") }); return; }
+    }
+    if (!jeAktiven(dog)) { setZadnji({ result: "not_today", message: "This ticket is not for today's event." }); return; }
     setDelujoc(v.id); setZadnji(null);
     try {
       const r = await skenirajVstopnico(id, v.qr);

@@ -6,7 +6,7 @@
      shranjeno samo ob izpadu - po objavi nikoli stara koda.
    - /vendor/*, pisave, ikone (razlicica v imenu / se ne spreminjajo): shranjeno najprej.
    - API (backend, Supabase, Cloudinary), vstopnice, ploscice zemljevida: NE prestrezamo (vedno sveze, kot iOS). */
-const RAZLICICA = "outly-app-7";   // ob dvigu uskladi tudi webapp/porocilo.js
+const RAZLICICA = "outly-app-8";   // ob dvigu uskladi tudi webapp/porocilo.js
 const LUPINA = "/app/";
 /* Staticni graf uvozov main.js (vsi moduli, ki jih aplikacija nalozi ob zagonu). Generira ga webapp/orodja/predhodno-nalaganje.mjs
    (isti izracun kot <link rel="modulepreload"> v app/index.html; `... --preveri` pade, ce se razideta). Brez tega bi po objavi
@@ -58,7 +58,7 @@ const JEDRO = [...new Set([
   // Skener vstopnic mora delati tudi, ce se stran odpre brez povezave (issue outly-backend#86): njegova koda in knjiznici
   // (jsQR za branje kode; noble-ed25519 za preverjanje podpisa v brskalnikih brez WebCrypto Ed25519) so vnaprej v predpomnilniku.
   // Seznam vstopnic NI tu: API odgovorov SW ne predpomni, seznam hrani skener sam (IndexedDB, webapp/js/sken/shramba.js).
-  "/webapp/js/views/posel-skener.js", "/webapp/js/sken/motor.js", "/webapp/js/sken/podpis.js", "/webapp/js/sken/shramba.js", "/webapp/js/vip.js",
+  "/webapp/js/views/posel-skener.js", "/webapp/js/sken/motor.js", "/webapp/js/sken/okno.js", "/webapp/js/sken/podpis.js", "/webapp/js/sken/shramba.js", "/webapp/js/vip.js",
   "/vendor/jsqr-1.4.0.mjs", "/vendor/noble-ed25519-3.2.0.mjs", "/webapp/js/sken/jsqr-delavec.js",
   "/webapp/js/i18n-sl.js",   // slovenski prevodi (nalozijo se leno, a brez njih bi slovenski vratar brez povezave videl angleske napise)
   "/vendor/supabase-2.115.0.js", "/supabase-config.js",

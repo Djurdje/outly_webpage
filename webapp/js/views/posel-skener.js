@@ -10,10 +10,10 @@ import { t, locale } from "../i18n.js";
 import { GlavaNazaj, Ikona } from "../ui.js";
 import { idKluba } from "../posel.js";
 import { useStore } from "../store.js";
-import { navigiraj } from "../usmerjanje.js";
-import { danInUra } from "../oblika.js";
+import { danInUra, steviloDogodkov } from "../oblika.js";
 import { VipVrstica, OznakaGuestList } from "../vip.js";
-import { skenirajVstopnico, ustvariMotor, dogodkiKluba, privzetiDogodek, izbranDogodek, shraniIzbiro } from "../sken/motor.js";
+import { skenirajVstopnico, ustvariMotor } from "../sken/motor.js";
+import { odpreSeOb } from "../sken/okno.js";
 
 export { skenirajVstopnico };
 
@@ -24,6 +24,7 @@ export const naslovRezultata = r => {
     case "wrong_club": return t("WRONG CLUB");
     case "unknown": return t("UNKNOWN TICKET");
     case "unpaid": return t("NOT PAID");
+    case "not_today": return t("NOT TODAY'S EVENT");
     default: return t("REFUSED");
   }
 };
@@ -52,7 +53,7 @@ function besedilaSklepa(s) {
     case "preneseno": return [t("TICKET TRANSFERRED"), t("The holder passed this ticket on and has a new code. Ask for the new one.")];
     case "vrnjeno": return [t("REFUNDED"), t("This ticket was refunded.")];
     case "preklicano": return [t("CANCELLED"), t("This ticket was cancelled.")];
-    case "drug-dogodek": return [t("WRONG EVENT"), t("This ticket is for a different event.")];
+    case "ne-danes": return [t("NOT TODAY'S EVENT"), t("This ticket is not for today's event.")];
     case "neveljavna": return [t("INVALID CODE"), t("The signature does not match. Outly did not issue this code.")];
     case "ni-vstopnica": return [t("NOT A TICKET"), t("This is not an Outly ticket code.")];
     case "neplacano": return [t("NOT PAID"), t("The order for this ticket is not paid.")];
@@ -170,65 +171,106 @@ function kdajBesedilo(ms, zdaj) {
   } catch { return min < 1 ? "0 min" : `${min} min`; }
 }
 
-/* ---------- izbira dogodka ---------- */
+/* ---------- skener kluba (brez izbire dogodka) ----------
+   Od 8. 10. 2026 (Martin) vratar dogodka NE izbira: motor sam ugotovi aktivne dogodke kluba (okno.js: 12 h pred zacetkom do
+   6 h po koncu, tudi brez povezave iz shranjenih dogodkov in ure naprave), dogodek vstopnice pa se prebere iz kode QR.
+   Povezava ?dogodek= (stari zaznamki, gumb pri vstopnicah dogodka) se ignorira. */
 
-export function Skener({ klub, dogodek }) {
+export function Skener({ klub }) {
   const id = idKluba(klub);
-  const izUrl = idKluba(dogodek);
-  const [dog, setDog] = useState({ nalaga: true, dogodki: [], izOmrezja: true, shranjen: null });
-  const [izbira, setIzbira] = useState(false);   // vratar je pritisnil "Change"
-  const [poskus, setPoskus] = useState(0);
-
-  useEffect(() => {
-    if (!id) return undefined;
-    let zivo = true;
-    setDog(d => ({ ...d, nalaga: true }));
-    Promise.all([dogodkiKluba(id), izbranDogodek(id)]).then(([r, shranjen]) => {
-      if (zivo) setDog({ nalaga: false, dogodki: r.dogodki, izOmrezja: r.izOmrezja, shranjen });
-    });
-    return () => { zivo = false; };
-  }, [id, poskus]);
-
   const rezerva = id ? `/app/business/${id}` : "/app/profile";
   if (!id) return html`<div class="zaslon"><${GlavaNazaj} naslov=${t("Scan tickets")} rezerva=${rezerva} /></div>`;
-
-  // Prednost: povezava (?dogodek=) > izbira vratarja (do 12 h) > dogodek, ki zdaj poteka.
-  const sveza = dog.shranjen && Date.now() - dog.shranjen.cas < 12 * 3600 * 1000 && (!dog.dogodki.length || dog.dogodki.some(e => e.id === dog.shranjen.id));
-  const izbranId = izUrl || (sveza ? dog.shranjen.id : null) || (dog.nalaga ? null : privzetiDogodek(dog.dogodki));
-  const izbranZapis = dog.dogodki.find(e => e.id === izbranId) || null;
-
-  const izberi = e => {
-    shraniIzbiro(id, e);
-    setIzbira(false);
-    navigiraj(`/app/business/${id}/scan?dogodek=${e}`, { zamenjaj: true });
-  };
-
-  if (dog.nalaga && !izUrl) return html`<div class="zaslon"><${GlavaNazaj} naslov=${t("Scan tickets")} rezerva=${rezerva} />
-    <div class="skener-stanje-prazno"><span class="vrtavka" aria-hidden="true"></span></div></div>`;
-
-  if (!izbranId || izbira) {
-    return html`<div class="zaslon skener-zaslon">
-      <${GlavaNazaj} naslov=${t("Scan tickets")} rezerva=${rezerva} />
-      <h2 class="podnaslov">${t("Which event are you scanning?")}</h2>
-      <p class="opomba">${t("The ticket list of the event is saved on this phone, so scanning keeps working without internet.")}</p>
-      ${!dog.izOmrezja ? html`<p class="opomba oranzna">${t("No connection - showing the events saved on this phone.")}</p>` : null}
-      ${dog.dogodki.length ? html`<div class="skener-dogodki">
-        ${dog.dogodki.map(e => html`<button type="button" key=${e.id} class=${"skener-dogodek-gumb" + (e.id === izbranId ? " izbran" : "")} onClick=${() => izberi(e.id)}>
-          <strong>${e.title || t("Event {n}", { n: e.id })}</strong><span>${danInUra(new Date(e.start_at))}</span></button>`)}
-      </div>` : html`<div class="prazno"><strong>${t("No events to scan")}</strong>
-        <p class="opomba">${dog.izOmrezja ? t("There are no events in the last 3 days or the next 30 days.") : t("Connect to the internet once to download the events.")}</p></div>`}
-      <button type="button" class="gumb-siv" onClick=${() => { setIzbira(false); setPoskus(p => p + 1); }}>
-        <${Ikona} ime="refresh-cw" velikost=${16} />${t("Reload events")}</button>
-    </div>`;
-  }
-
-  return html`<${SkenerDogodka} key=${id + "/" + izbranId} klub=${id} dogodek=${izbranId} zapis=${izbranZapis} rezerva=${rezerva} naPromeni=${() => setIzbira(true)} />`;
+  return html`<${SkenerKluba} key=${id} klub=${id} rezerva=${rezerva} />`;
 }
 
-/* ---------- skener za en dogodek ---------- */
+function SkenerKluba({ klub, rezerva }) {
+  const [motor] = useState(() => ustvariMotor({ klub }));
+  const ms = useStore(motor.stanje);
+  const [zdaj, setZdaj] = useState(Date.now());
+  useEffect(() => {
+    motor.zacni();
+    const ura = setInterval(() => setZdaj(Date.now()), 15000);
+    return () => { clearInterval(ura); motor.ustavi(); };
+  }, [motor]);
 
-function SkenerDogodka({ klub, dogodek, zapis, rezerva, naPromeni }) {
-  const id = klub;
+  if (!ms.dogodkiPripravljeni) return html`<div class="zaslon"><${GlavaNazaj} naslov=${t("Scan tickets")} rezerva=${rezerva} />
+    <div class="skener-stanje-prazno"><span class="vrtavka" aria-hidden="true"></span></div></div>`;
+  if (!ms.aktivni.length) return html`<${NiDogodka} motor=${motor} ms=${ms} zdaj=${zdaj} rezerva=${rezerva} />`;
+  return html`<${SkenerDogodkov} motor=${motor} ms=${ms} zdaj=${zdaj} rezerva=${rezerva} />`;
+}
+
+/* "No event right now": namesto izbire dogodka (+ naslednji dogodek, ce ga imamo). */
+function NiDogodka({ motor, ms, zdaj, rezerva }) {
+  const n = ms.naslednji;
+  const naslov = n ? (n.title || t("Event {n}", { n: n.id })) : "";
+  return html`<div class="zaslon skener-zaslon">
+    <${GlavaNazaj} naslov=${t("Scan tickets")} rezerva=${rezerva} />
+    <div class="skener-glava"><${StatusVrstica} ms=${ms} motor=${motor} zdaj=${zdaj} brezSeznama=${true} /></div>
+    <${UraOpozorilo} ms=${ms} />
+    <div class="prazno" data-testid="ni-dogodka"><strong>${t("No event right now")}</strong>
+      <p class="opomba">${t("Scanning opens 12 hours before the event starts.")}</p>
+      ${n ? html`<p class="opomba" data-testid="naslednji">${t("Next: {naslov} · scanning from {cas}", { naslov, cas: danInUra(new Date(odpreSeOb(n))) })}</p>` : null}
+      ${ms.dogodkiOmrezje === "napaka" ? html`<p class="opomba oranzna">${ms.dogodkov > 0 ? t("No connection - showing the events saved on this phone.") : t("Connect to the internet once to download the events.")}</p>` : null}
+    </div>
+    <button type="button" class="gumb-siv" disabled=${ms.nalagamDogodke} onClick=${() => motor.znovuNaloziDogodke()}>
+      ${ms.nalagamDogodke ? html`<span class="vrtavka majhna" aria-hidden="true"></span>` : html`<${Ikona} ime="refresh-cw" velikost=${16} />`}${t("Reload events")}</button>
+    <${Konflikti} ms=${ms} motor=${motor} />
+  </div>`;
+}
+
+/* Ura telefona se razlikuje od strezniske (> 5 min): okno skeniranja bi bilo napacno. Samo opozorilo. */
+function UraOpozorilo({ ms }) {
+  return ms.uraNapacna ? html`<p class="opomba-okvir ne" role="alert" data-testid="ura"><${Ikona} ime="circle-alert" velikost=${16} /><span>${t("The time on this phone is wrong — check date and time settings.")}</span></p>` : null;
+}
+
+/* Povezava, cakajoci skeni, cas zadnjega prenosa seznama (najstarejsi med aktivnimi). */
+function StatusVrstica({ ms, motor, zdaj, brezSeznama }) {
+  const seznamBesedilo = ms.seznamCas
+    ? t("List: {n} · {kdaj}", { n: ms.seznamStevilo, kdaj: kdajBesedilo(ms.seznamCas, zdaj) })
+    : t("List: not downloaded");
+  const seznamStar = !ms.seznamCas || zdaj - ms.seznamCas > 15 * 60000;
+  return html`<div class="skener-stanje-vrstica" aria-live="polite" data-testid="stanje">
+    <span class=${"znacka-stanja " + (ms.povezava ? "online" : "offline")} data-testid="povezava"><i class="pika" aria-hidden="true"></i>${ms.povezava ? t("Online") : t("Offline")}</span>
+    <span class=${"znacka-stanja" + (ms.caka > 0 ? (ms.povezava ? " caka" : " opozorilo") : "")} data-testid="caka">${t("Waiting: {n}", { n: ms.caka })}</span>
+    ${ms.caka > 0 ? html`<button type="button" class="gumb-vstopa" disabled=${ms.sinhroniziram || !ms.povezava} onClick=${() => motor.takojPoslji()}>
+      ${ms.sinhroniziram ? html`<span class="vrtavka majhna" aria-hidden="true"></span>` : html`<${Ikona} ime="refresh-cw" velikost=${14} />`}${t("Send now")}</button>` : null}
+    ${brezSeznama ? null : html`<span class=${"znacka-stanja" + (seznamStar ? " opozorilo" : "")} data-testid="seznam">${seznamBesedilo}</span>`}
+    ${brezSeznama ? null : html`<button type="button" class="znacka-stanja gumb-znacka" data-testid="znova-dogodki" disabled=${ms.nalagamDogodke} onClick=${() => motor.znovuNaloziDogodke()}>
+      ${ms.nalagamDogodke ? html`<span class="vrtavka majhna" aria-hidden="true"></span>` : html`<${Ikona} ime="refresh-cw" velikost=${13} />`}${t("Reload events")}</button>`}
+    ${brezSeznama || !ms.znovuNapaka ? null : html`<span class="znacka-stanja opozorilo" role="status" data-testid="znova-napaka">${t("Could not reload events")}</span>`}
+  </div>`;
+}
+
+/* Glava: en aktivni dogodek -> njegov naslov in cas; vec -> "2 events" in naslovi. */
+function GlavaDogodkov({ aktivni }) {
+  const ime = e => (e.title || t("Event {n}", { n: e.id }));
+  if (aktivni.length === 1) {
+    const e = aktivni[0];
+    return html`<span class="kv-besedilo" data-testid="dogodki"><strong>${ime(e)}</strong>${e.start_at ? html`<span>${danInUra(new Date(e.start_at))}</span>` : null}</span>`;
+  }
+  return html`<span class="kv-besedilo" data-testid="dogodki"><strong>${steviloDogodkov(aktivni.length)}</strong><span>${aktivni.map(ime).join(" · ")}</span></span>`;
+}
+
+/* Konflikti: gost spusten s tega telefona, streznik pa se ne strinja (viden tudi, ko dogodka ni vec). */
+function Konflikti({ ms, motor }) {
+  if (!ms.konflikti.length) return null;
+  return html`<section class="skener-konflikti" role="alert" data-testid="konflikti">
+    <div class="skener-konflikti-glava"><${Ikona} ime="circle-alert" velikost=${18} />
+      <strong>${t("Conflicts: {n}", { n: ms.konflikti.length })}</strong></div>
+    <p class="opomba">${t("These guests were let in from this phone, but the server disagrees - for example another phone scanned the same ticket first.")}</p>
+    ${ms.konflikti.slice(0, 20).map(k => html`<div class="skener-konflikt" key=${k.id}>
+      <span class="kv-besedilo">
+        <strong class="mono">${k.serial.slice(0, 8).toUpperCase()}${k.imetnik ? " · " + k.imetnik : ""}</strong>
+        <span>${t(RAZLOG_KONFLIKTA[k.rezultat] || "Code rejected by the server")} · ${t("Scanned at {cas}", { cas: uraMinute(new Date(k.scanned_at)) })}${k.rezultat === "already_used" && k.used_at_streznik ? " · " + t("Server: {cas}", { cas: uraMinute(new Date(k.used_at_streznik)) }) : ""}</span>
+      </span>
+      <button type="button" class="gumb-siv majhen" onClick=${() => motor.potrdiKonflikt(k.id)}>${t("Got it")}</button>
+    </div>`)}
+  </section>`;
+}
+
+/* ---------- kamera in rezultat (vsaj en aktiven dogodek) ---------- */
+
+function SkenerDogodkov({ motor, ms, zdaj, rezerva }) {
   const video = useRef(null);
   // faza: prosim | dela | zavrnjeno | ni-kamere | ni-podpore | napaka
   const [faza, setFaza] = useState("prosim");
@@ -236,17 +278,8 @@ function SkenerDogodka({ klub, dogodek, zapis, rezerva, naPromeni }) {
   const [preverjam, setPreverjam] = useState(false);
   const [rezultat, setRezultat] = useState(null);   // sklep motorja
   const [stevec, setStevec] = useState({ streznik: 0, zavrnjeno: 0 });
-  const [zdaj, setZdaj] = useState(Date.now());
   // Stanje, ki ga bere zanka branja (ne sme cakati na izris).
   const zanka = useRef({ zadnja: "", zaseden: false });
-  const [motor] = useState(() => ustvariMotor({ klub: id, dogodek }));
-  const ms = useStore(motor.stanje);
-
-  useEffect(() => {
-    motor.zacni();
-    const ura = setInterval(() => setZdaj(Date.now()), 15000);
-    return () => { clearInterval(ura); motor.ustavi(); };
-  }, [motor]);
 
   useEffect(() => {
     // zagon: vsak zagon kamere dobi svojo stevilko; ustavi() jo poveca, zato zamujen getUserMedia/zanka starega
@@ -339,34 +372,19 @@ function SkenerDogodka({ klub, dogodek, zapis, rezerva, naPromeni }) {
     document.addEventListener("visibilitychange", vidnost);
     zacni();
     return () => { zivo = false; document.removeEventListener("visibilitychange", vidnost); ustavi(); };
-  }, [id, poskus, motor]);
+  }, [poskus, motor]);
 
   const naprej = () => { setRezultat(null); zanka.current = { zadnja: "", zaseden: false }; };
   const barva = rezultat ? rezultat.barva : "";
   const [naslovR, opisR] = rezultat ? besedilaSklepa(rezultat) : ["", ""];
-  const naslovDogodka = zapis && zapis.title ? zapis.title : t("Event {n}", { n: dogodek });
-  const kdajDogodka = zapis && zapis.start_at ? danInUra(new Date(zapis.start_at)) : "";
-
-  const seznamBesedilo = ms.seznamCas
-    ? t("List: {n} · {kdaj}", { n: ms.seznamStevilo, kdaj: kdajBesedilo(ms.seznamCas, zdaj) })
-    : t("List: not downloaded");
-  const seznamStar = !ms.seznamCas || zdaj - ms.seznamCas > 15 * 60000;
 
   return html`<div class="zaslon skener-zaslon">
     <${GlavaNazaj} naslov=${t("Scan tickets")} rezerva=${rezerva} />
     <div class="skener-glava">
-      <div class="skener-dogodek">
-        <span class="kv-besedilo"><strong>${naslovDogodka}</strong>${kdajDogodka ? html`<span>${kdajDogodka}</span>` : null}</span>
-        <button type="button" class="gumb-siv majhen" onClick=${naPromeni}>${t("Change")}</button>
-      </div>
-      <div class="skener-stanje-vrstica" aria-live="polite" data-testid="stanje">
-        <span class=${"znacka-stanja " + (ms.povezava ? "online" : "offline")} data-testid="povezava"><i class="pika" aria-hidden="true"></i>${ms.povezava ? t("Online") : t("Offline")}</span>
-        <span class=${"znacka-stanja" + (ms.caka > 0 ? (ms.povezava ? " caka" : " opozorilo") : "")} data-testid="caka">${t("Waiting: {n}", { n: ms.caka })}</span>
-        ${ms.caka > 0 ? html`<button type="button" class="gumb-vstopa" disabled=${ms.sinhroniziram || !ms.povezava} onClick=${() => motor.takojPoslji()}>
-          ${ms.sinhroniziram ? html`<span class="vrtavka majhna" aria-hidden="true"></span>` : html`<${Ikona} ime="refresh-cw" velikost=${14} />`}${t("Send now")}</button>` : null}
-        <span class=${"znacka-stanja" + (seznamStar ? " opozorilo" : "")} data-testid="seznam">${seznamBesedilo}</span>
-      </div>
+      <div class="skener-dogodek"><${GlavaDogodkov} aktivni=${ms.aktivni} /></div>
+      <${StatusVrstica} ms=${ms} motor=${motor} zdaj=${zdaj} />
     </div>
+    <${UraOpozorilo} ms=${ms} />
     <div class="skener">
       <video ref=${video} class=${"skener-video" + (faza === "dela" ? "" : " skrito-video")} playsinline muted autoplay aria-hidden="true"></video>
       ${faza === "dela" ? html`<div class="skener-plast" aria-hidden="true">
@@ -407,23 +425,14 @@ function SkenerDogodka({ klub, dogodek, zapis, rezerva, naPromeni }) {
     </div>
     ${ms.preverjanje === "ni" ? html`<p class="opomba-okvir"><${Ikona} ime="info" velikost=${16} /><span>${t("This browser cannot check codes without the server. Scanning works only with a connection - use a newer Chrome, Safari or Firefox.")}</span></p>` : null}
     ${ms.pripravljen && !ms.imaKljuc && ms.preverjanje !== "ni" ? html`<p class="opomba-okvir"><${Ikona} ime="info" velikost=${16} /><span>${t("The check key is not on this phone yet. Codes are checked by the server until it is downloaded.")}</span></p>` : null}
-    ${ms.pripravljen && !ms.seznamCas ? html`<p class="opomba-okvir"><${Ikona} ime="info" velikost=${16} /><span>${t("The ticket list is not on this phone yet. Codes are checked by signature only until it is downloaded.")}</span></p>` : null}
+    ${ms.pripravljen && ms.seznamManjka.length ? html`<p class="opomba-okvir" data-testid="manjka-seznam"><${Ikona} ime="info" velikost=${16} /><span>${ms.seznamManjka.length === 1
+      ? t("The ticket list for {naslov} is not on this phone yet. Codes are checked by signature only until it is downloaded.", { naslov: ms.seznamManjka[0].title || t("Event {n}", { n: ms.seznamManjka[0].id }) })
+      : t("The ticket lists for {naslovi} are not on this phone yet. Codes are checked by signature only until they are downloaded.", { naslovi: ms.seznamManjka.map(e => e.title || t("Event {n}", { n: e.id })).join(", ") })}</span></p>` : null}
     ${ms.nacinShrambe === "pomnilnik" || ms.shranjevanjeNapaka ? html`<p class="opomba-okvir ne" role="alert"><${Ikona} ime="circle-alert" velikost=${16} /><span>${t("This phone cannot save scans. If you close or reload this page, scans that are still waiting are lost.")}</span></p>` : null}
     ${ms.napakaSinh ? html`<p class="opomba-okvir ne" role="alert"><${Ikona} ime="circle-alert" velikost=${16} /><span>${t("Could not send scans: {napaka}", { napaka: ms.napakaSinh })}</span></p>` : null}
     ${ms.napakaSeznama ? html`<p class="opomba-okvir ne" role="alert"><${Ikona} ime="circle-alert" velikost=${16} /><span>${t("Could not download the ticket list: {napaka}", { napaka: ms.napakaSeznama })}</span></p>` : null}
 
-    ${ms.konflikti.length ? html`<section class="skener-konflikti" role="alert" data-testid="konflikti">
-      <div class="skener-konflikti-glava"><${Ikona} ime="circle-alert" velikost=${18} />
-        <strong>${t("Conflicts: {n}", { n: ms.konflikti.length })}</strong></div>
-      <p class="opomba">${t("These guests were let in from this phone, but the server disagrees - for example another phone scanned the same ticket first.")}</p>
-      ${ms.konflikti.slice(0, 20).map(k => html`<div class="skener-konflikt" key=${k.id}>
-        <span class="kv-besedilo">
-          <strong class="mono">${k.serial.slice(0, 8).toUpperCase()}${k.imetnik ? " · " + k.imetnik : ""}</strong>
-          <span>${t(RAZLOG_KONFLIKTA[k.rezultat] || "Code rejected by the server")} · ${t("Scanned at {cas}", { cas: uraMinute(new Date(k.scanned_at)) })}${k.rezultat === "already_used" && k.used_at_streznik ? " · " + t("Server: {cas}", { cas: uraMinute(new Date(k.used_at_streznik)) }) : ""}</span>
-        </span>
-        <button type="button" class="gumb-siv majhen" onClick=${() => motor.potrdiKonflikt(k.id)}>${t("Got it")}</button>
-      </div>`)}
-    </section>` : null}
+    <${Konflikti} ms=${ms} motor=${motor} />
   </div>`;
 }
 
