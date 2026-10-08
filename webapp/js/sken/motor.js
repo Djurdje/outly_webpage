@@ -126,7 +126,7 @@ export function ustvariMotor({ klub }) {
   let posiljam = false, osvezujem = false, zivo = false, nalagamDogodke = false;
   let casovnik = 0, odloziPosiljanje = 0, aktivniKljuc = "", zadnjeOsvezitevNeDanes = 0, dogodkiCas = 0;
   const zadnjiGen = new Map();   // id dogodka -> zadnji generated_at (predpomnjeno telo ob 304 ne sme biti merilo ure)
-  let uraPrejsnja = 0;           // predznak zadnje sveze meritve ure (0 = v mejah)
+  const uraPrejsnja = new Map(); // id dogodka -> predznak prejsnje sveze meritve ure TEGA dogodka (0 = v mejah)
   let naslednjiPoslji = 0, naslednjiOsvezi = 0, napakPoslji = 0, napakOsvezi = 0, naslednjiUskladi = 0, naslednjiDogodki = 0, napakDogodki = 0;
   let veriga = Promise.resolve();
 
@@ -205,7 +205,8 @@ export function ustvariMotor({ klub }) {
   async function naloziKljuc() {
     const k = sprejmiKljuc(await zMejo(10000, signal => poslovno(klub, "/business/scan-key", { signal })));
     kljuc = { kid: k.kid, javni: k.javni };
-    try { await shramba.kvSet("kljuc", { kid: k.kid, public_key: k.surov, cas: Date.now() }); } catch { /* brez */ }
+    // Casovna meja: obvisel IndexedDB ne sme zadrzati skena (klic iz sken() ob kodi z drugim kid) ne osvezevanja (osvezujem).
+    try { await meja(shramba.kvSet("kljuc", { kid: k.kid, public_key: k.surov, cas: Date.now() }), 1500); } catch { /* brez */ }
     objavi();
   }
 
@@ -226,9 +227,12 @@ export function ustvariMotor({ klub }) {
     if (Number.isFinite(sr) && zadnjiGen.get(id) !== sr) {
       zadnjiGen.set(id, sr);
       const znak = sr < t0 - URA_NAPAKA_MS ? -1 : sr > t1 + URA_NAPAKA_MS ? 1 : 0;
-      const napacna = znak !== 0 && znak === uraPrejsnja;
-      uraPrejsnja = znak;
-      if (znak === 0 || napacna) { if (napacna !== stanje.get().uraNapacna) stanje.set({ uraNapacna: napacna }); }
+      // Potrditev samo z dvema zaporednima meritvama ISTEGA dogodka (po en predpomnjen odgovor vsakega izmed dveh dogodkov
+      // sicer steje za dve sveži meritvi). Sveza meritev v mejah (znak 0) opozorilo umakne.
+      const prej = uraPrejsnja.get(id) || 0;
+      uraPrejsnja.set(id, znak);
+      if (znak === 0) { if (stanje.get().uraNapacna) stanje.set({ uraNapacna: false }); }
+      else if (znak === prej && !stanje.get().uraNapacna) stanje.set({ uraNapacna: true });
     }
     const cas0 = Date.now();
     const e = seznami.get(id);
@@ -619,10 +623,10 @@ export function ustvariMotor({ klub }) {
   async function pridobiNapravo() {
     let id = null;
     try { id = localStorage.getItem("outly_sken_naprava"); } catch { /* brez */ }
-    if (!UUID_NAPRAVE.test(id || "")) { try { id = await shramba.kvGet("naprava"); } catch { id = null; } }
+    if (!UUID_NAPRAVE.test(id || "")) { try { id = await meja(shramba.kvGet("naprava"), 1500); } catch { id = null; } }
     if (!UUID_NAPRAVE.test(id || "")) id = uuid();
     try { localStorage.setItem("outly_sken_naprava", id); } catch { /* brez */ }
-    try { await shramba.kvSet("naprava", id); } catch { /* brez */ }
+    try { await meja(shramba.kvSet("naprava", id), 1500); } catch { /* brez */ }
     return id;
   }
 
@@ -631,7 +635,7 @@ export function ustvariMotor({ klub }) {
     shramba = await odpriShrambo();
     zahtevajTrajno();
     deviceId = await pridobiNapravo();
-    const bere = async f => { try { return await f(); } catch { return undefined; } };
+    const bere = async f => { try { return await meja(f(), 3000); } catch { return undefined; } };   // obvisel IndexedDB ne sme zadrzati odprtja skenerja
     const [k, shranjeniDogodki, vsi] = await Promise.all([
       bere(() => shramba.kvGet("kljuc")), bere(() => shramba.kvGet("dogodki:" + klub)), bere(() => shramba.skeniVsi())
     ]);
