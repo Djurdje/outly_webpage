@@ -7,8 +7,10 @@ import { sporocilo, kodaNapake } from "../napake.js";
 import { danInUra } from "../oblika.js";
 import { GlavaNazaj, Nalaganje, Napaka, Ikona, Slika, Avatar, List } from "../ui.js";
 import { KodaQR } from "../qr.js";
-import { VipVrstica, doOseb } from "../vip.js";
-import { useSeja } from "../seja.js";
+import { VipVrstica, OznakaGuestList, doOseb } from "../vip.js";
+import { useSeja, uidSeje } from "../seja.js";
+import { GuestListSekcija } from "./guest-lists.js";
+import { VipRazdeli, mejaStarostiVip, vzemiCakajocVip } from "./vip-razdeli.js";
 
 /* VIP miza = en nakup z vec vstopnicami (Martin 4. 10. 2026): vstopnice z is_vip === true in istim order_id se v
    razdelku zdruzijo v eno postavko na mestu prve (vrstni red iz GET /me/tickets ostane). Skupina z eno vstopnico
@@ -31,6 +33,7 @@ export function Vstopnice() {
   const [pokaziStare, setPokaziStare] = useState(false);
   const [razprte, setRazprte] = useState({});   // skupine VIP miz, privzeto zaprte; kljuc = razdelek + order_id
   const [prenos, setPrenos] = useState(null);
+  const [razdeli, setRazdeli] = useState(null);   // vstopnice VIP mize, ki jih kupec razdeljuje prijateljem
   const nalozi = async () => {
     setS(x => ({ ...x, nalaga: true, napaka: null }));
     try {
@@ -48,6 +51,21 @@ export function Vstopnice() {
     return () => casi.forEach(clearTimeout);
   }, []);
 
+  // Vrnitev s Stripa po nakupu VIP mize: ko vstopnice nastanejo (webhook), kupcu ponudimo razdelitev prijateljem (kot po nakupu v testnem nacinu).
+  const [cakajoc] = useState(() => (placano ? vzemiCakajocVip(uidSeje()) : null));
+  const ponujeno = useRef(!cakajoc);
+  useEffect(() => {
+    if (ponujeno.current || s.nalaga) return;
+    const skupine = zdruzi(s.vst.filter(v => v.status === "valid" && v._zacetek && v._zacetek.getTime() >= Date.now() - 8 * 3600e3))
+      .filter(p => p.skupina && !p.vst.some(x => x.transferred) && p.vst.filter(x => x.transferable !== false).length >= 2
+        && String(p.id) === String(cakajoc.narocilo));
+    if (!skupine.length) return;
+    ponujeno.current = true;
+    const nova = skupine.reduce((a, b) => (Number(b.id) > Number(a.id) ? b : a));
+    setRazdeli(nova.vst);
+    setRazprte(x => ({ ...x, ["p" + nova.id]: true }));
+  }, [s.vst, s.nalaga]);
+
   const zdaj = Date.now() - 8 * 3600e3;   // dogodek brez konca velja se 8 h po zacetku (kot backend)
   const prihajajoce = s.vst.filter(v => v.status === "valid" && v._zacetek && v._zacetek.getTime() >= zdaj);
   const stare = s.vst.filter(v => !prihajajoce.includes(v));
@@ -55,7 +73,7 @@ export function Vstopnice() {
   const preklopiSkupino = k => setRazprte(x => ({ ...x, [k]: !x[k] }));
   const vsaka = (postavke, razdelek, stara) => postavke.map(p => p.skupina
     ? html`<${Skupina} key=${razdelek + p.id} vst=${p.vst} stara=${stara} razprta=${!!razprte[razdelek + p.id]} preklopi=${() => preklopiSkupino(razdelek + p.id)}
-        odprta=${odprta} preklopiVstopnico=${id => setOdprta(odprta === id ? null : id)} poslji=${v => setPrenos(v)} />`
+        odprta=${odprta} preklopiVstopnico=${id => setOdprta(odprta === id ? null : id)} poslji=${v => setPrenos(v)} razdeli=${setRazdeli} />`
     : stara
       ? html`<${Karta} key=${p.v.id} v=${p.v} odprta=${false} stara=${true} />`
       : html`<${Karta} key=${p.v.id} v=${p.v} odprta=${odprta === p.v.id || postavkePrih.length === 1} preklopi=${() => setOdprta(odprta === p.v.id ? null : p.v.id)} poslji=${() => setPrenos(p.v)} />`);
@@ -63,6 +81,7 @@ export function Vstopnice() {
   return html`<div class="zaslon">
     <${GlavaNazaj} naslov=${t("Tickets")} rezerva="/app/profile" />
     ${placano ? html`<p class="opomba-okvir" role="status"><${Ikona} ime="check" velikost=${18} />${t("Payment received. Your tickets will appear here in a few seconds.")}</p>` : null}
+    <${GuestListSekcija} />
     ${s.nalaga ? html`<${Nalaganje} />` : null}
     <${Napaka} besedilo=${s.napaka} znova=${nalozi} />
     ${!s.nalaga && !s.napaka && !s.vst.length ? html`<div class="prazno">
@@ -78,11 +97,13 @@ export function Vstopnice() {
       <${Ikona} ime=${pokaziStare ? "chevron-down" : "chevron-right"} velikost=${16} razred="utisano" />
     </button>` : null}
     ${pokaziStare ? html`<div class="vstopnice-seznam">${vsaka(postavkeStare, "s", true)}</div>` : null}
+    <${RazdeliList} vst=${razdeli} zapri=${() => { setRazdeli(null); nalozi(); }} />
     <${PrenosList} vstopnica=${prenos} zapri=${() => setPrenos(null)} koncano=${() => { setPrenos(null); nalozi(); }} />
   </div>`;
 }
 
 function Karta({ v, odprta, preklopi, stara, poslji }) {
+  const jaz = useSeja(x => (x.me && x.me.username) || "");
   const uporabljena = v.status === "used";
   const stanje = uporabljena ? t("ALREADY USED") : v.status === "valid" ? (stara ? t("ENDED") : "") : v.status.toUpperCase();
   const vip = v.is_vip === true;
@@ -91,7 +112,8 @@ function Karta({ v, odprta, preklopi, stara, poslji }) {
       <span class="vd-slika"><${Slika} src=${v.poster_url} sirina=${150} alt="" /></span>
       <span class="kv-besedilo"><span class="nadnapis">${(v.club_name || "").toUpperCase()}</span><strong>${v.event_title}</strong>
         <span>${danInUra(v._zacetek)}</span>
-        ${vip ? html`<${VipVrstica} v=${v} />` : null}</span>
+        ${vip ? html`<${VipVrstica} v=${v} />` : null}
+        <${OznakaGuestList} v=${v} jaz=${jaz} /></span>
       ${stanje ? html`<span class="cip-plan">${stanje}</span>` : null}
     </button>
     ${odprta && !stara ? html`<${QrTelo} v=${v} poslji=${poslji} />` : null}
@@ -113,14 +135,15 @@ export function QrTelo({ v, poslji }) {
       ${v.min_age > 0 ? html`<span><small>${t("AGE")}</small>${v.min_age}+</span>` : null}
     </div>
     <p class="opomba srednje">${t("Show this QR code at the door. Turn your screen brightness up.")}</p>
-    ${v.transferable && poslji ? html`<button type="button" class="gumb-siv" onClick=${() => poslji(v)}><${Ikona} ime="send" velikost=${16} /> ${t("Send to a friend")}</button>` : null}
+    ${v.transferable && v.is_guest_list !== true && poslji ? html`<button type="button" class="gumb-siv" onClick=${() => poslji(v)}><${Ikona} ime="send" velikost=${16} /> ${t("Send to a friend")}</button>` : null}
   </div>`;
 }
 
 /* Vstopnice ene VIP mize (en nakup) v eni postavki: glava (plakat, dogodek, miza, stevilo) in spustni seznam
    kompaktnih vrstic "Ticket N"; klik na vrstico pokaze QR te vstopnice. */
-function Skupina({ vst, stara, razprta, preklopi, odprta, preklopiVstopnico, poslji }) {
+function Skupina({ vst, stara, razprta, preklopi, odprta, preklopiVstopnico, poslji, razdeli }) {
   const v = vst[0];
+  const razdeljive = vst.filter(x => x.status === "valid" && x.transferable !== false);
   const id = "skupina-" + v.order_id + (stara ? "-s" : "-p");
   return html`<div class=${"vstopnica vip skupina" + (stara ? " stara" : "")}>
     <button type="button" class="vstopnica-glava-gumb" onClick=${preklopi} aria-expanded=${razprta} aria-controls=${id}>
@@ -132,6 +155,8 @@ function Skupina({ vst, stara, razprta, preklopi, odprta, preklopiVstopnico, pos
       <${Ikona} ime="chevron-down" velikost=${18} razred=${"utisano skupina-puscica" + (razprta ? " odprta" : "")} />
     </button>
     ${razprta ? html`<div class="skupina-seznam" id=${id}>
+      ${!stara && razdeljive.length >= 2 ? html`<button type="button" class="gumb-siv majhen" onClick=${() => razdeli(razdeljive)}>
+        <${Ikona} ime="users" velikost=${16} /> ${t("Send to friends")}</button>` : null}
       ${vst.map((x, i) => {
         const stanje = x.status === "used" ? t("USED") : x.status === "valid" ? (stara ? t("ENDED") : t("VALID")) : String(x.status || "").toUpperCase();
         const naVoljo = !stara && x.status === "valid";
@@ -269,5 +294,17 @@ function PrenosList({ vstopnica: v, zapri, koncano }) {
         ${gostNacin ? html`<p class="opomba">${t("If your friend doesn't have an Outly account, we'll email them the ticket with a QR code.")}</p>` : null}
         <button type="submit" class="gumb-siv">${t("Continue")}</button>
       </form>`}
+  <//>`;
+}
+
+/* Razdelitev VIP vstopnic prijateljem iz Tickets (isti gradnik kot po nakupu; views/vip-razdeli.js). */
+function RazdeliList({ vst, zapri }) {
+  const [zaposlen, setZaposlen] = useState(false);
+  if (!vst || !vst.length) return null;
+  const v = vst[0];
+  return html`<${List} odprt=${true} zapri=${zapri} brezZapiranja=${zaposlen} naslov=${t("Send to friends")}>
+    <div class="nakup-dogodek"><strong>${v.event_title}</strong><span class="utisano">${v.club_name} · ${v.public_ref}</span>
+      <${VipVrstica} v=${v} /></div>
+    <${VipRazdeli} key=${v.order_id} vstopnice=${vst} meja=${mejaStarostiVip(v, v.min_age)} zapri=${zapri} obZaposlen=${setZaposlen} povezavaVstopnice=${false} />
   <//>`;
 }

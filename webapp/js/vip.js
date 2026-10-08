@@ -68,6 +68,16 @@ export function VipVrstica({ v, velika = false }) {
   </div>`;
 }
 
+/** Oznaka vstopnice guest liste (pogodba 8. 10. 2026). Imetnik: "Guest list" + (pri povabljencu) "Invited by @host";
+    skener (skener=true): "Guest list · @host". Vstopnica gostitelja ima host = on sam (jaz === host: brez "Invited by"). */
+export function OznakaGuestList({ v, jaz = "", skener = false }) {
+  if (!v || v.is_guest_list !== true) return null;
+  const gostitelj = typeof v.guest_list_host_username === "string" ? v.guest_list_host_username : "";
+  if (skener) return html`<div class="gl-vrstica"><b class="znacka-gl">${t("Guest list")}${gostitelj ? " · @" + gostitelj : ""}</b></div>`;
+  return html`<div class="gl-vrstica"><b class="znacka-gl">${t("Guest list")}</b>
+    ${gostitelj && gostitelj !== jaz ? html`<em class="vip-besedilo">${t("Invited by @{name}", { name: gostitelj })}</em>` : null}</div>`;
+}
+
 /* ---------- izris tlorisa ---------- */
 
 /** Sirina elementa v pikslih (za merilo: min. velikost tarce za dotik). */

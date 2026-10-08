@@ -14,6 +14,7 @@ const POTI = [
   ["/app/event/:id", "event"],
   ["/app/club/:id", "club"],
   ["/app/tickets", "tickets"],
+  ["/app/guest-lists/:id", "guest-list"],   // guest lista (gostitelj): QR, povabljeni, povabi prijatelje
   ["/app/guest/order", "guest-order"],   // vstopnice, kupljene brez racuna (?t=<zeton> iz maila / Stripove vrnitve)
   ["/app/guest/ticket", "guest-ticket"],   // vstopnica, prejeta po e-naslovu brez racuna (#t=<zeton> iz maila)
   ["/app/login", "login"],

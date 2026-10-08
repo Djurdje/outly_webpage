@@ -334,7 +334,8 @@ export function ustvariMotor({ klub, dogodek }) {
 
   /* --- sken --- */
   function sklepIzSeznama(v) {
-    return { ticket: { is_vip: v.is_vip === true, table_label: v.table_label || "", package_name: v.package_name || "" }, imetnik: v.holder_username || "" };
+    return { ticket: { is_vip: v.is_vip === true, table_label: v.table_label || "", package_name: v.package_name || "",
+      is_guest_list: v.is_guest_list === true, guest_list_host_username: v.guest_list_host_username || "" }, imetnik: v.holder_username || "" };
   }
 
   /* Klic strezniku za kodo, ki je telefon ne more preveriti (v1, v2 brez kljuca/Ed25519, v2 ki "ni na seznamu").

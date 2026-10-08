@@ -14,7 +14,7 @@ import { GlavaNazaj, Ikona, Slika, Nalaganje, List } from "../ui.js";
 import { idKluba, poslovno, normalizirajDogodke, centiIz, evriBesedilo, NAJVEC_VIDEA } from "../posel.js";
 import { PoslovnaNapaka } from "./posel.js";
 import { skenirajVstopnico, naslovRezultata, opisRezultata } from "./posel-skener.js";
-import { VipVrstica } from "../vip.js";
+import { VipVrstica, OznakaGuestList } from "../vip.js";
 import { VipDogodka, RezervacijeVip } from "./posel-vip-dogodek.js";
 
 const datumDogodka = d => (d ? new Intl.DateTimeFormat(locale(), { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }).format(d) : "");
@@ -289,7 +289,8 @@ export function VstopniceDogodkaKluba({ klub, dogodek }) {
       // Obdrzimo samo, kar rabimo: podpisan QR za rocni vstop (kot iOS), brez celotne serijske in e-naslovov.
       const vstopnice = (Array.isArray(v) ? v : []).map(x => ({ id: x.id, status: x.status, qr: typeof x.qr === "string" ? x.qr : "",
         public_ref: x.public_ref || "", kratka: String(x.serial || "").slice(0, 8).toUpperCase(),
-        is_vip: x.is_vip === true, table_label: x.table_label || "", package_name: x.package_name || "" }));
+        is_vip: x.is_vip === true, table_label: x.table_label || "", package_name: x.package_name || "",
+        is_guest_list: x.is_guest_list === true, guest_list_host_username: x.guest_list_host_username || "" }));
       setS({ nalaga: false, napaka: null, vstopnice, naslov: e ? e.title : "" });
     }).catch(e => setS(x => ({ ...x, nalaga: false, napaka: e })));
   };
@@ -329,7 +330,8 @@ export function VstopniceDogodkaKluba({ klub, dogodek }) {
         <${Ikona} ime=${ok ? "circle-check" : "circle-x"} velikost=${20} razred=${ok ? "zelena-besedilo" : "rdeca-besedilo"} />
         <span class="kv-besedilo"><strong>${zadnji.napaka ? t("Could not check the ticket") : naslovRezultata(zadnji.result)}</strong>
           <span>${zadnji.napaka || opisRezultata(zadnji)}</span></span>
-        ${zadnji.ticket && zadnji.ticket.is_vip === true ? html`<div class="skener-vip"><${VipVrstica} v=${zadnji.ticket} velika=${true} /></div>` : null}</div>` : null}</div>
+        ${zadnji.ticket && zadnji.ticket.is_vip === true ? html`<div class="skener-vip"><${VipVrstica} v=${zadnji.ticket} velika=${true} /></div>` : null}
+        ${zadnji.ticket && zadnji.ticket.is_guest_list === true ? html`<div class="skener-vip"><${OznakaGuestList} v=${zadnji.ticket} skener=${true} /></div>` : null}</div>` : null}</div>
       <${RezervacijeVip} klub=${id} dogodek=${idDogodka} osvezi=${vstopi} />
       <h2 class="podnaslov">${t("Door check-in")}</h2>
       ${!s.vstopnice.length ? html`<p class="opomba srednje">${t("No tickets sold for this event yet.")}</p>` : html`<div class="seznam">
@@ -337,7 +339,8 @@ export function VstopniceDogodkaKluba({ klub, dogodek }) {
           const noterJe = v.status === "used";
           return html`<div class="vrstica-vstopnice" key=${v.id}>
             <span class="kv-besedilo"><strong class="mono">${v.kratka}</strong><span>${v.public_ref || ""}</span>
-              ${v.is_vip ? html`<${VipVrstica} v=${v} />` : null}</span>
+              ${v.is_vip ? html`<${VipVrstica} v=${v} />` : null}
+              ${v.is_guest_list ? html`<${OznakaGuestList} v=${v} skener=${true} />` : null}</span>
             ${noterJe || !v.qr
               ? html`<span class=${"oznaka-vstopa" + (noterJe ? " noter" : "")}>${noterJe ? t("IN") : t("Not yet")}</span>`
               : html`<button type="button" class="gumb-vstopa" disabled=${delujoc !== null} onClick=${() => vstop(v)}
