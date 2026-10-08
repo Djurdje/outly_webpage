@@ -166,7 +166,7 @@ function Zaslon({ pot }) {
     case "invites": return html`<${VabilaKlubov} />`;
     case "biz": return html`<${SredisceKluba} key=${p.klub} klub=${p.klub} />`;
     // Skener: vse vloge v klubu (tudi vratar) - brez SamoUredniki.
-    case "biz-scan": return html`<${Skener} key=${p.klub} klub=${p.klub} dogodek=${pot.iskanje.get("dogodek")} />`;
+    case "biz-scan": return html`<${Skener} key=${p.klub} klub=${p.klub} />`;
     case "biz-settings": return html`<${SamoUredniki} klub=${p.klub}><${NastavitveLastnika} key=${p.klub} klub=${p.klub} /><//>`;
     case "biz-dashboard": return html`<${SamoUredniki} klub=${p.klub}><${NadzornaPlosca} key=${p.klub} klub=${p.klub} /><//>`;
     case "biz-staff": return html`<${SamoUredniki} klub=${p.klub}><${SkeniranjaClana} key=${p.klub + "/" + p.clan} klub=${p.klub} clan=${p.clan} /><//>`;

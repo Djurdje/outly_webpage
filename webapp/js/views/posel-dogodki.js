@@ -14,6 +14,7 @@ import { GlavaNazaj, Ikona, Slika, Nalaganje, List } from "../ui.js";
 import { idKluba, poslovno, normalizirajDogodke, centiIz, evriBesedilo, NAJVEC_VIDEA } from "../posel.js";
 import { PoslovnaNapaka } from "./posel.js";
 import { skenirajVstopnico, naslovRezultata, opisRezultata } from "./posel-skener.js";
+import { jeAktiven } from "../sken/okno.js";
 import { VipVrstica, OznakaGuestList } from "../vip.js";
 import { VipDogodka, RezervacijeVip } from "./posel-vip-dogodek.js";
 
@@ -275,7 +276,7 @@ export function ObrazecDogodka({ klub, dogodek }) {
 export function VstopniceDogodkaKluba({ klub, dogodek }) {
   const id = idKluba(klub);
   const idDogodka = idKluba(dogodek);
-  const [s, setS] = useState({ nalaga: true, napaka: null, vstopnice: [], naslov: "" });
+  const [s, setS] = useState({ nalaga: true, napaka: null, vstopnice: [], naslov: "", dogodek: null });
   const [delujoc, setDelujoc] = useState(null);
   const [zadnji, setZadnji] = useState(null);   // zadnji odgovor skenerja (pasica nad seznamom)
   const [vstopi, setVstopi] = useState(0);   // stevec rocnih vstopov: osvezi "prisli X/N" pri VIP rezervacijah
@@ -291,12 +292,14 @@ export function VstopniceDogodkaKluba({ klub, dogodek }) {
         public_ref: x.public_ref || "", kratka: String(x.serial || "").slice(0, 8).toUpperCase(),
         is_vip: x.is_vip === true, table_label: x.table_label || "", package_name: x.package_name || "",
         is_guest_list: x.is_guest_list === true, guest_list_host_username: x.guest_list_host_username || "" }));
-      setS({ nalaga: false, napaka: null, vstopnice, naslov: e ? e.title : "" });
+      setS({ nalaga: false, napaka: null, vstopnice, naslov: e ? e.title : "", dogodek: e ? { start_at: e.start_at, end_at: e.end_at, status: e.status } : null });
     }).catch(e => setS(x => ({ ...x, nalaga: false, napaka: e })));
   };
   useEffect(() => { if (id && idDogodka) nalozi(); }, [id, idDogodka]);
 
   async function vstop(v) {
+    // Isto casovno okno kot skener (okno.js): rocni vstop samo za aktiven dogodek (12 h pred zacetkom do 6 h po koncu).
+    if (s.dogodek && !jeAktiven(s.dogodek)) { setZadnji({ result: "not_today", message: "This ticket is not for today's event." }); return; }
     setDelujoc(v.id); setZadnji(null);
     try {
       const r = await skenirajVstopnico(id, v.qr);
