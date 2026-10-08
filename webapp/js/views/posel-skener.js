@@ -206,6 +206,7 @@ function NiDogodka({ motor, ms, zdaj, rezerva }) {
   return html`<div class="zaslon skener-zaslon">
     <${GlavaNazaj} naslov=${t("Scan tickets")} rezerva=${rezerva} />
     <div class="skener-glava"><${StatusVrstica} ms=${ms} motor=${motor} zdaj=${zdaj} brezSeznama=${true} /></div>
+    <${UraOpozorilo} ms=${ms} />
     <div class="prazno" data-testid="ni-dogodka"><strong>${t("No event right now")}</strong>
       <p class="opomba">${t("Scanning opens 12 hours before the event starts.")}</p>
       ${n ? html`<p class="opomba" data-testid="naslednji">${t("Next: {naslov} · scanning from {cas}", { naslov, cas: danInUra(new Date(odpreSeOb(n))) })}</p>` : null}
@@ -215,6 +216,11 @@ function NiDogodka({ motor, ms, zdaj, rezerva }) {
       ${ms.nalagamDogodke ? html`<span class="vrtavka majhna" aria-hidden="true"></span>` : html`<${Ikona} ime="refresh-cw" velikost=${16} />`}${t("Reload events")}</button>
     <${Konflikti} ms=${ms} motor=${motor} />
   </div>`;
+}
+
+/* Ura telefona se razlikuje od strezniske (> 5 min): okno skeniranja bi bilo napacno. Samo opozorilo. */
+function UraOpozorilo({ ms }) {
+  return ms.uraNapacna ? html`<p class="opomba-okvir ne" role="alert" data-testid="ura"><${Ikona} ime="circle-alert" velikost=${16} /><span>${t("The time on this phone is wrong — check date and time settings.")}</span></p>` : null;
 }
 
 /* Povezava, cakajoci skeni, cas zadnjega prenosa seznama (najstarejsi med aktivnimi). */
@@ -229,6 +235,8 @@ function StatusVrstica({ ms, motor, zdaj, brezSeznama }) {
     ${ms.caka > 0 ? html`<button type="button" class="gumb-vstopa" disabled=${ms.sinhroniziram || !ms.povezava} onClick=${() => motor.takojPoslji()}>
       ${ms.sinhroniziram ? html`<span class="vrtavka majhna" aria-hidden="true"></span>` : html`<${Ikona} ime="refresh-cw" velikost=${14} />`}${t("Send now")}</button>` : null}
     ${brezSeznama ? null : html`<span class=${"znacka-stanja" + (seznamStar ? " opozorilo" : "")} data-testid="seznam">${seznamBesedilo}</span>`}
+    ${brezSeznama ? null : html`<button type="button" class="znacka-stanja gumb-znacka" data-testid="znova-dogodki" disabled=${ms.nalagamDogodke} onClick=${() => motor.znovuNaloziDogodke()}>
+      ${ms.nalagamDogodke ? html`<span class="vrtavka majhna" aria-hidden="true"></span>` : html`<${Ikona} ime="refresh-cw" velikost=${13} />`}${t("Reload events")}</button>`}
   </div>`;
 }
 
@@ -375,6 +383,7 @@ function SkenerDogodkov({ motor, ms, zdaj, rezerva }) {
       <div class="skener-dogodek"><${GlavaDogodkov} aktivni=${ms.aktivni} /></div>
       <${StatusVrstica} ms=${ms} motor=${motor} zdaj=${zdaj} />
     </div>
+    <${UraOpozorilo} ms=${ms} />
     <div class="skener">
       <video ref=${video} class=${"skener-video" + (faza === "dela" ? "" : " skrito-video")} playsinline muted autoplay aria-hidden="true"></video>
       ${faza === "dela" ? html`<div class="skener-plast" aria-hidden="true">
@@ -415,7 +424,9 @@ function SkenerDogodkov({ motor, ms, zdaj, rezerva }) {
     </div>
     ${ms.preverjanje === "ni" ? html`<p class="opomba-okvir"><${Ikona} ime="info" velikost=${16} /><span>${t("This browser cannot check codes without the server. Scanning works only with a connection - use a newer Chrome, Safari or Firefox.")}</span></p>` : null}
     ${ms.pripravljen && !ms.imaKljuc && ms.preverjanje !== "ni" ? html`<p class="opomba-okvir"><${Ikona} ime="info" velikost=${16} /><span>${t("The check key is not on this phone yet. Codes are checked by the server until it is downloaded.")}</span></p>` : null}
-    ${ms.pripravljen && !ms.seznamCas ? html`<p class="opomba-okvir"><${Ikona} ime="info" velikost=${16} /><span>${t("The ticket list is not on this phone yet. Codes are checked by signature only until it is downloaded.")}</span></p>` : null}
+    ${ms.pripravljen && ms.seznamManjka.length ? html`<p class="opomba-okvir" data-testid="manjka-seznam"><${Ikona} ime="info" velikost=${16} /><span>${ms.seznamManjka.length === 1
+      ? t("The ticket list for {naslov} is not on this phone yet. Codes are checked by signature only until it is downloaded.", { naslov: ms.seznamManjka[0].title || t("Event {n}", { n: ms.seznamManjka[0].id }) })
+      : t("The ticket lists for {naslovi} are not on this phone yet. Codes are checked by signature only until they are downloaded.", { naslovi: ms.seznamManjka.map(e => e.title || t("Event {n}", { n: e.id })).join(", ") })}</span></p>` : null}
     ${ms.nacinShrambe === "pomnilnik" || ms.shranjevanjeNapaka ? html`<p class="opomba-okvir ne" role="alert"><${Ikona} ime="circle-alert" velikost=${16} /><span>${t("This phone cannot save scans. If you close or reload this page, scans that are still waiting are lost.")}</span></p>` : null}
     ${ms.napakaSinh ? html`<p class="opomba-okvir ne" role="alert"><${Ikona} ime="circle-alert" velikost=${16} /><span>${t("Could not send scans: {napaka}", { napaka: ms.napakaSinh })}</span></p>` : null}
     ${ms.napakaSeznama ? html`<p class="opomba-okvir ne" role="alert"><${Ikona} ime="circle-alert" velikost=${16} /><span>${t("Could not download the ticket list: {napaka}", { napaka: ms.napakaSeznama })}</span></p>` : null}

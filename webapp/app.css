@@ -718,6 +718,8 @@ a.profil-ime{ white-space:normal; }
 .skener-rezultat .skener-naprej{ width:auto; flex:none; }
 .gumb-vstopa{ flex:none; height:32px; padding:0 12px; border-radius:999px; background:#fff; color:#000; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:6px; }
 .gumb-vstopa:disabled{ opacity:.6; }
+.gumb-znacka{ border:0; font-family:inherit; cursor:pointer; }
+.gumb-znacka:disabled{ opacity:.6; }
 .skener-pasica{ display:flex; align-items:center; gap:10px; padding:12px; border-radius:12px; margin-bottom:12px; }
 .skener-pasica.ok{ background:rgba(53,199,122,.15); }
 .skener-pasica.ne{ background:rgba(255,90,90,.15); }

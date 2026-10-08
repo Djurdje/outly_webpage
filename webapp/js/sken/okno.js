@@ -1,6 +1,6 @@
 /* Casovno okno skeniranja (8. 10. 2026, Martin): vratar NE izbira dogodka - dogodek se prebere iz kode QR.
    Vstopnica velja za skeniranje, ce je njen dogodek AKTIVEN: zdaj je med 12 h pred zacetkom in 6 h po koncu.
-   Konec = end_at, ce ga ni, zacetek + 12 h (enako kot prej privzetiDogodek). Vse konstante in pravila so samo tu
+   Konec = end_at, ce je berljiv in po zacetku, sicer zacetek + 12 h (kot iOS). Vse konstante in pravila so samo tu
    (cista datoteka brez uvozov, da jo preizkusi tudi node); iOS dela isto vzporedno. Vrata se odprejo 12 h pred
    zacetkom kot na backendu (SKEN_REZERVA_PRED_ZACETKOM_MS). */
 
@@ -14,12 +14,12 @@ const cas = v => { const m = Date.parse(v); return Number.isFinite(m) ? m : null
 /** Samo objavljeni dogodki. Ce odgovor statusa ne vsebuje (starejsi zapis v shrambi), dogodka ne zavrnemo. */
 export const jeObjavljen = e => !e || typeof e.status !== "string" || e.status === "published";
 
-/** Konec dogodka v ms (end_at, sicer zacetek + 12 h); null, ce zacetka ni. */
+/** Konec dogodka v ms: end_at, ce je berljiv IN po zacetku; sicer zacetek + 12 h (kot iOS). Null, ce zacetka ni. */
 export function konecDogodka(e) {
   const z = cas(e && e.start_at);
   if (z === null) return null;
   const k = cas(e.end_at);
-  return k !== null ? k : z + PRIVZETO_TRAJANJE_MS;
+  return k !== null && k > z ? k : z + PRIVZETO_TRAJANJE_MS;
 }
 
 /** Ali je dogodek zdaj v oknu [zacetek - 12 h, konec + 6 h] (meji sta vkljuceni). */

@@ -16,9 +16,12 @@ import { poslovno } from "../posel.js";
 import { ApiError, sporocilo } from "../napake.js";
 import { razcleniQr, izBase64url, preverjevalnik, podpisVeljaven } from "./podpis.js";
 import { odpriShrambo, zahtevajTrajno } from "./shramba.js";
-import { aktivniDogodki, naslednjiDogodek, jeAktiven } from "./okno.js";
+import { aktivniDogodki, naslednjiDogodek, jeAktiven, konecDogodka, OKNO_PO_MS } from "./okno.js";
 
 const URA = 3600 * 1000;
+const PRVI_PRENOS_JITTER_MS = 30000;   // dogodek vstopi v okno med delovanjem: prvi prenos seznama cez 0-30 s (ne vsi skenerji hkrati)
+const PO_POVEZAVI_JITTER_MS = 15000;    // osvezitev ob vrnitvi povezave cez 0-15 s
+const URA_NAPAKA_MS = 5 * 60000;          // razlika ure telefona in streznika, od katere opozorimo
 const OSVEZI_DOGODKE_MS = 30 * 60000;   // seznam dogodkov kluba (tezji poizvedba, 1000+ telefonov): redko; okno pa se preracuna vsak tik
 const OSVEZI_SEZNAM_MS = 120000;       // ~vsake 2 min (+- jitter, da 1000 telefonov ne trka hkrati)
 const JITTER_MS = 15000;
@@ -87,12 +90,13 @@ const UUID_NAPRAVE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 
 /* ---------- dogodki kluba ---------- */
 
-/** Dogodki, ki jih vratar utegne skenirati: od 3 dni nazaj do 30 dni naprej (odgovor GET /business/events -> kratek seznam). */
+/** Dogodki, ki jih vratar utegne skenirati: katerih okno (konec + 6 h) se ni zaprlo (tudi veckdnevni, ki se traja) in ki se
+    zacnejo v 30 dneh (odgovor GET /business/events -> kratek seznam). */
 export function obdelajDogodke(v, zdaj = Date.now()) {
   return (Array.isArray(v) ? v : [])
     .map(e => ({ id: Number(e && e.id), title: String((e && e.title) || ""), start_at: (e && e.start_at) || null, end_at: (e && e.end_at) || null,
       status: e && typeof e.status === "string" ? e.status : "" }))
-    .filter(e => Number.isInteger(e.id) && e.id > 0 && cas(e.start_at) !== null && cas(e.start_at) >= zdaj - 3 * 24 * URA && cas(e.start_at) <= zdaj + 30 * 24 * URA && (!e.status || e.status === "published"))
+    .filter(e => Number.isInteger(e.id) && e.id > 0 && cas(e.start_at) !== null && konecDogodka(e) + OKNO_PO_MS >= zdaj && cas(e.start_at) <= zdaj + 30 * 24 * URA && (!e.status || e.status === "published"))
     .sort((a, b) => cas(a.start_at) - cas(b.start_at));
 }
 
@@ -107,7 +111,8 @@ export function ustvariMotor({ klub }) {
     seznamCas: null, seznamStevilo: 0, imaKljuc: false,
     sinhroniziram: false, osvezujem: false, napakaSinh: "", napakaSeznama: "", shranjevanjeNapaka: false,
     aktivni: [], naslednji: null, dogodkov: 0, dogodkiPripravljeni: false,    // pripravljeni: seznam dogodkov je znan (iz shrambe ali omrezja)
-    dogodkiOmrezje: "", nalagamDogodke: false                     // dogodkiOmrezje: "" (se ne vemo) | "ok" | "napaka"
+    dogodkiOmrezje: "", nalagamDogodke: false,                    // dogodkiOmrezje: "" (se ne vemo) | "ok" | "napaka"
+    seznamManjka: [], uraNapacna: false                            // seznamManjka: aktivni dogodki brez seznama [{ id, title }]; uraNapacna: ura telefona se razlikuje od strezniske
   });
 
   let shramba = null, deviceId = "", kljuc = null;                // kljuc: { kid, javni: Uint8Array }
@@ -117,7 +122,7 @@ export function ustvariMotor({ klub }) {
   const poSerialu = new Map();                                    // serial -> zapis (prvi sken te vstopnice)
   let omrezje = jeOnline();
   let posiljam = false, osvezujem = false, zivo = false, nalagamDogodke = false;
-  let casovnik = 0, odloziPosiljanje = 0, aktivniKljuc = "";
+  let casovnik = 0, odloziPosiljanje = 0, aktivniKljuc = "", zadnjeOsvezitevNeDanes = 0;
   let naslednjiPoslji = 0, naslednjiOsvezi = 0, napakPoslji = 0, napakOsvezi = 0, naslednjiUskladi = 0, naslednjiDogodki = 0, napakDogodki = 0;
   let veriga = Promise.resolve();
 
@@ -138,7 +143,9 @@ export function ustvariMotor({ klub }) {
       if (x.cas === null) vsi = false; else if (seznamCas === null || x.cas < seznamCas) seznamCas = x.cas;
       if (x.seznam) seznamStevilo += x.seznam.size;
     }
-    stanje.set({ povezava: povezava(), caka, vstopilo, konflikti, seznamCas: vsi ? seznamCas : null, seznamStevilo, imaKljuc: !!kljuc, ...delno });
+    const akt = delno.aktivni || stanje.get().aktivni;
+    const manjka = akt.filter(e => { const x = seznami.get(e.id); return x && x.cas === null; }).map(e => ({ id: e.id, title: e.title }));
+    stanje.set({ povezava: povezava(), caka, vstopilo, konflikti, seznamCas: vsi ? seznamCas : null, seznamStevilo, imaKljuc: !!kljuc, seznamManjka: manjka, ...delno });
   };
   const konfliktZaIzris = r => {
     const e = seznami.get(r.dogodek);
@@ -200,10 +207,20 @@ export function ustvariMotor({ klub }) {
 
   /* Seznam vstopnic ENEGA aktivnega dogodka; napaka se vrze klicatelju (osvezi), ki loci izpad od odgovora streznika. */
   async function osveziSeznam(id) {
+    const t0 = Date.now();
     const odg = await zMejo(20000, signal => poslovno(klub, `/business/events/${id}/scan-list`, { signal }));
+    const t1 = Date.now();
     if (!odg || typeof odg !== "object" || !Array.isArray(odg.tickets) || !Array.isArray(odg.transferred_serials) || Number(odg.event_id) !== id) throw new Error("seznam");
     const m = new Map();
     for (const x of odg.tickets) if (x && typeof x.serial === "string") m.set(x.serial.toLowerCase(), x);
+    // Ura telefona (N4): generated_at je cas strezniku; mora biti med t0 in t1 (+- kratek zamik). Glave Date CORS ne razkrije
+    // (backend izpostavi samo Retry-After in Idempotent-Replayed), zato telo odgovora. Samo opozorilo - okna ne popravljamo.
+    const sr = Date.parse(odg.generated_at);
+    if (Number.isFinite(sr)) {
+      const razlika = sr < t0 ? t0 - sr : sr > t1 ? sr - t1 : 0;
+      const napacna = razlika > URA_NAPAKA_MS;
+      if (napacna !== stanje.get().uraNapacna) stanje.set({ uraNapacna: napacna });
+    }
     const cas0 = Date.now();
     const e = seznami.get(id);
     if (e) { e.seznam = m; e.prenesene = new Set(odg.transferred_serials.filter(x => typeof x === "string").map(x => x.toLowerCase())); e.cas = cas0; }   // dogodek je medtem lahko izstopil iz okna
@@ -224,6 +241,8 @@ export function ustvariMotor({ klub }) {
       if (!kljuc) await naloziKljuc();
       for (const id of [...seznami.keys()]) {
         if (!zivo) break;
+        const vnos = seznami.get(id);
+        if (vnos && vnos.od > Date.now()) continue;   // dogodek, ki je pravkar vstopil v okno: prenos se ni na vrsti (jitter)
         try { await osveziSeznam(id); omrezjeJe(true); objavi(); }
         catch (e) {
           if (jeIzpad(e)) { izpad = true; break; }
@@ -237,7 +256,9 @@ export function ustvariMotor({ klub }) {
     }
     if (izpad || napaka) {
       napakOsvezi++;
-      naslednjiOsvezi = Date.now() + Math.min(NAJVEC_ODLASANJA_MS * 2, 5000 * 2 ** napakOsvezi) * (0.8 + Math.random() * 0.4);
+      // Izpad omrezja: hitro ponovno (do 60 s). Trajen odgovor 4xx za dogodek (izbrisan, vloga odvzeta): najmanj 2 min.
+      const odlog = Math.min(NAJVEC_ODLASANJA_MS * 2, 5000 * 2 ** napakOsvezi);
+      naslednjiOsvezi = Date.now() + (izpad ? odlog : Math.max(OSVEZI_SEZNAM_MS, odlog)) * (0.8 + Math.random() * 0.4);
       if (izpad) omrezjeJe(false); else omrezjeJe(true);
       objavi(izpad ? { osvezujem: false } : { osvezujem: false, napakaSeznama: napaka });
     } else {
@@ -245,13 +266,17 @@ export function ustvariMotor({ klub }) {
       naslednjiOsvezi = Date.now() + OSVEZI_SEZNAM_MS + (Math.random() * 2 - 1) * JITTER_MS;
       objavi({ osvezujem: false, napakaSeznama: "" });
     }
+    // Dogodek z odlozenim prvim prenosom: krog ga ni vzel, zato naj pride na vrsto takoj, ko mine njegov jitter.
+    let najprej = Infinity;
+    for (const x of seznami.values()) if (x.od > Date.now() && x.cas === null) najprej = Math.min(najprej, x.od);
+    if (najprej < naslednjiOsvezi) naslednjiOsvezi = najprej;
   }
 
   /* --- dogodki kluba in aktivno okno --- */
 
   /* Preracun aktivnih dogodkov iz seznama `dogodki` in ure naprave (deluje tudi brez povezave). Klic ob vsakem tiku (5 s):
      dogodek, ki vstopi v okno med vecerom, se doda (seznam iz shrambe, takoj nato prenos); ki izstopi, se odstrani. */
-  function preracunaj(delno = {}) {
+  function preracunaj(delno = {}, jitter = false) {
     const zdaj = Date.now();
     const akt = aktivniDogodki(dogodki, zdaj);
     const naslednji = naslednjiDogodek(dogodki, zdaj);
@@ -261,9 +286,11 @@ export function ustvariMotor({ klub }) {
     for (const id of [...seznami.keys()]) if (!ids.has(id)) seznami.delete(id);
     for (const e of akt) {
       if (seznami.has(e.id)) continue;
-      const vnos = { seznam: null, prenesene: new Set(), cas: null };
+      // jitter (samo ob tiku, ko dogodek vstopi v okno med vecerom): prvi prenos cez 0-30 s; ob odprtju skenerja in na zahtevo takoj.
+      const vnos = { seznam: null, prenesene: new Set(), cas: null, od: jitter ? Date.now() + Math.random() * PRVI_PRENOS_JITTER_MS : 0 };
       seznami.set(e.id, vnos);
       dodan = true;
+      if (jitter) naslednjiOsvezi = Math.min(naslednjiOsvezi, vnos.od);
       // Shranjen seznam (brez povezave): prebere se asinhrono, a samo, ce ga osvezitev medtem ni ze nadomestila.
       if (shramba) (async () => {
         let sez = null;
@@ -276,22 +303,24 @@ export function ustvariMotor({ klub }) {
         objavi();
       })();
     }
-    if (dodan) naslednjiOsvezi = 0;   // nov dogodek: seznam cim prej
+    if (dodan && !jitter) naslednjiOsvezi = 0;   // nov dogodek: seznam cim prej
     if (kljucNovi !== aktivniKljuc || dodan || Object.keys(delno).length) {
       aktivniKljuc = kljucNovi;
       objavi({ aktivni: akt, naslednji, dogodkov: dogodki.length, ...delno });
     }
   }
 
-  /** Dogodki iz omrezja (GET /business/events); v ozadju, vratar zaradi tega NE caka (skener se odpre iz shranjenih). */
-  async function osveziDogodke() {
-    if (nalagamDogodke || !zivo) return;
+  /** Dogodki iz omrezja (GET /business/events); v ozadju, vratar zaradi tega NE caka (skener se odpre iz shranjenih).
+      Vrne true, ce je seznam uspesno prenesen. Odgovor, ki ni polje, je napaka: predpomnilnika NE prepisemo (N1). */
+  async function osveziDogodke(mejaMs = 0) {
+    if (nalagamDogodke || !zivo) return false;
     nalagamDogodke = true;
     stanje.set({ nalagamDogodke: true });
     let ok = false;
     try {
       const imaShranjene = dogodki.length > 0;
-      const v = await zMejo(imaShranjene ? 5000 : 15000, signal => poslovno(klub, "/business/events", { signal }));
+      const v = await zMejo(mejaMs || (imaShranjene ? 5000 : 15000), signal => poslovno(klub, "/business/events", { signal }));
+      if (!Array.isArray(v)) throw new ApiError(422, "Invalid response.");
       const zdaj = Date.now();
       dogodki = obdelajDogodke(v, zdaj);
       try { await shramba.kvSet("dogodki:" + klub, { cas: zdaj, dogodki }); } catch { /* brez */ }
@@ -306,6 +335,16 @@ export function ustvariMotor({ klub }) {
       nalagamDogodke = false;
     }
     preracunaj({ nalagamDogodke: false, dogodkiPripravljeni: true, dogodkiOmrezje: ok ? "ok" : "napaka" });
+    return ok;
+  }
+
+  /* Rdece "ne-danes": seznam dogodkov na telefonu je lahko zastarel (dogodek dodan ali premaknjen po zadnjem prenosu).
+     S povezavo ga prenesemo znova (najvec 1x na 60 s, kratka casovna meja) in sklep se enkrat sprejmemo. Klic je zunaj verige. */
+  async function osveziZaNeDanes() {
+    const zdaj = Date.now();
+    if (!zivo || !povezava() || zdaj - zadnjeOsvezitevNeDanes < 60000) return false;
+    zadnjeOsvezitevNeDanes = zdaj;
+    return await osveziDogodke(4000);
   }
 
   /** Gumb "Reload events". */
@@ -384,7 +423,7 @@ export function ustvariMotor({ klub }) {
   function tik() {
     if (!zivo) return;
     const zdaj = Date.now();
-    preracunaj();   // okno se premika s casom (dogodek vstopi/izstopi) - deluje tudi brez povezave
+    preracunaj({}, true);   // okno se premika s casom (dogodek vstopi/izstopi) - deluje tudi brez povezave
     if (!jeOnline()) { objavi(); return; }
     if (zdaj >= naslednjiDogodki) osveziDogodke();
     if (zdaj >= naslednjiUskladi) { naslednjiUskladi = zdaj + 15000; uskladi(); }
@@ -392,7 +431,14 @@ export function ustvariMotor({ klub }) {
     if (zdaj >= naslednjiOsvezi) osvezi();
     if (stanje.get().povezava !== povezava()) objavi();
   }
-  const naPovezavi = () => { omrezje = true; naslednjiPoslji = 0; naslednjiOsvezi = 0; napakPoslji = 0; napakOsvezi = 0; objavi(); tik(); };
+  // Povezava je nazaj: skeni se posljejo takoj (vrata), osvezitev seznamov in dogodkov cez 0-15 s (1000 telefonov ne trka hkrati).
+  const naPovezavi = () => {
+    omrezje = true; naslednjiPoslji = 0; napakPoslji = 0; napakOsvezi = 0;
+    const zdaj = Date.now();
+    naslednjiOsvezi = zdaj + Math.random() * PO_POVEZAVI_JITTER_MS;
+    if (napakDogodki > 0) { naslednjiDogodki = zdaj + Math.random() * PO_POVEZAVI_JITTER_MS; napakDogodki = 0; }
+    objavi(); tik();
+  };
   const naIzpadu = () => objavi();
   const naVidnosti = () => { if (document.visibilityState === "visible") { naslednjiPoslji = 0; naslednjiOsvezi = Math.min(naslednjiOsvezi, Date.now()); tik(); } };
 
@@ -504,6 +550,13 @@ export function ustvariMotor({ klub }) {
   /** En sken. Vedno vrne sklep (nikoli izjeme). Samo lokalna odlocitev je v verigi; klici strezniku (v1, osvezitev kljuca,
       "ni na seznamu") tecejo zunaj nje in imajo casovno mejo na celoten klic - en mrtev klic ne zadrzi naslednjih skenov (K1). */
   async function sken(koda) {
+    const s = await skenEn(koda);
+    if (s.tip !== "ne-danes") return s;
+    try { if (await osveziZaNeDanes()) return await skenEn(koda); } catch { /* ostane prvotni sklep */ }
+    return s;
+  }
+
+  async function skenEn(koda) {
     try {
       const r = razcleniQr(koda);
       if (r.vrsta === "neznano") return { tip: "ni-vstopnica", barva: "rdeca" };
