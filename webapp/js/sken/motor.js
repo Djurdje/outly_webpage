@@ -507,7 +507,11 @@ export function ustvariMotor({ klub }) {
     try {
       const r = razcleniQr(koda);
       if (r.vrsta === "neznano") return { tip: "ni-vstopnica", barva: "rdeca" };
-      if (r.vrsta === "v1") return await prekoStreznika(koda, "v1");
+      if (r.vrsta === "v1") {
+        // Dogodek v kodi v1 ni preverjen (HMAC zna samo streznik), zato ga uporabimo SAMO za zavrnitev izven okna.
+        if (r.dogodek !== null && !jeAktivenDogodek(r.dogodek)) return { tip: "ne-danes", barva: "rdeca" };
+        return await prekoStreznika(koda, "v1");
+      }
       let o = await vVerigi(() => odlociLokalno(r, koda, false));
       if (o.zunaj === "kljuc") {
         let osvezen = "ne";

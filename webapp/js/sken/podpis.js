@@ -28,7 +28,7 @@ export const vBase64url = bajti => {
 const izHex = h => Uint8Array.from(h.match(/../g), x => parseInt(x, 16));
 
 /** Razclenitev kode (brez preverjanja podpisa).
-    { vrsta: "v2", serial, dogodek, kid, izdano, sporocilo (Uint8Array), podpis (Uint8Array) } | { vrsta: "v1" } | { vrsta: "neznano" } */
+    { vrsta: "v2", serial, dogodek, kid, izdano, sporocilo (Uint8Array), podpis (Uint8Array) } | { vrsta: "v1", dogodek (nepreverjen, number | null) } | { vrsta: "neznano" } */
 export function razcleniQr(koda) {
   try {
     if (typeof koda !== "string") return { vrsta: "neznano" };
@@ -50,7 +50,17 @@ export function razcleniQr(koda) {
       };
     }
     // v1: base64url(JSON) + "." + HMAC (32 znakov). Telefon je ne more preveriti.
-    if (deli.length === 2 && deli[0] && B64URL.test(deli[0]) && /^[A-Za-z0-9_-]{16,64}$/.test(deli[1])) return { vrsta: "v1" };
+    if (deli.length === 2 && deli[0] && B64URL.test(deli[0]) && /^[A-Za-z0-9_-]{16,64}$/.test(deli[1])) {
+      // JSON v1 vsebuje { t: serial, e: event_id }. HMAC se tu NE preverja: podatek sluzi samo za ZAVRNITEV (okno skeniranja),
+      // nikoli za sprejem. Necitljiv JSON ali manjkajoc `e` -> dogodek: null (dosedanji tok, odloci streznik).
+      let dogodek = null;
+      try {
+        const telo = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(izBase64url(deli[0])));
+        const e = telo && (typeof telo.e === "string" && /^\d{1,9}$/.test(telo.e) ? Number(telo.e) : telo.e);
+        if (Number.isInteger(e) && e > 0) dogodek = e;
+      } catch { /* dogodek ostane null */ }
+      return { vrsta: "v1", dogodek };
+    }
   } catch { /* poskodovana koda = neznano */ }
   return { vrsta: "neznano" };
 }
