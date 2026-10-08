@@ -653,6 +653,7 @@ export const SL = {
  "{club} posted a new event: {event}": "{club} je objavil nov dogodek: {event}",
  "{i} OF {n}": "{i} OD {n}",
  "{name} sent you a ticket for {event}": "{name} ti je poslal vstopnico za {event}",
+ "{name} added you to their guest list": "{name} te je dodal na svojo guest listo",
  "{name} wants to be your friend": "{name} želi biti tvoj prijatelj",
  "{n} LEFT": "ŠE {n}",
  "{n} events": {
