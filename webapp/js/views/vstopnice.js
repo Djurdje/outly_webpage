@@ -58,7 +58,7 @@ export function Vstopnice() {
     if (ponujeno.current || s.nalaga) return;
     const skupine = zdruzi(s.vst.filter(v => v.status === "valid" && v._zacetek && v._zacetek.getTime() >= Date.now() - 8 * 3600e3))
       .filter(p => p.skupina && !p.vst.some(x => x.transferred) && p.vst.filter(x => x.transferable !== false).length >= 2
-        && (cakajoc.narocilo == null || String(p.id) === String(cakajoc.narocilo)));
+        && String(p.id) === String(cakajoc.narocilo));
     if (!skupine.length) return;
     ponujeno.current = true;
     const nova = skupine.reduce((a, b) => (Number(b.id) > Number(a.id) ? b : a));

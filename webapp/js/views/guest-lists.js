@@ -163,7 +163,7 @@ function PovabiList({ g, zapri, posodobi, osvezi }) {
       }
       setStarostOk(false);   // po neuspelem posiljanju potrditev ne velja vec
       setNapaka(sporocilo(e));
-      if (e && (e.status === 409 || e.status === 404)) osvezi();   // stanje liste se je spremenilo (mesta, zaprta lista)
+      if (e && (e.status === 409 || e.status === 404 || e.status === -1)) osvezi();   // stanje liste se je spremenilo (mesta, zaprta lista; brez odgovora so povabila morda nastala)
     }
     teceRef.current = false; setTece(false);
   }

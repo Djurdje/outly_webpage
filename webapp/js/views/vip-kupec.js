@@ -161,8 +161,10 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
     const o = nakup.order || {};
     const vst = Array.isArray(nakup.tickets) ? nakup.tickets : [];
     const stevilo = vst.length || o.table_seats || (miza && miza.seats) || 0;
-    // Razdelitev prijateljem: samo, ce streznik vrne vsaj dve vstopnici (ena vedno ostane kupcu).
-    const razdeli = vst.length >= 2;
+    // Razdelitev prijateljem: samo, ce streznik vrne vsaj dve vstopnici (ena vedno ostane kupcu). Ponovitev nakupa (isti
+    // Idempotency-Key) vrne TRENUTNO stanje: ze poslane (`transferred`) niso vec kupceve in ne smejo v razdelitev.
+    const svoje = vst.filter(x => x && x.transferred !== true);
+    const razdeli = svoje.length >= 2;
     const meja = mejaStarostiVip(vst[0], e.min_age, !!(paket || o.package_name || o.package_id != null));
     return html`<${List} odprt=${true} zapri=${zapriVarno} brezZapiranja=${razdeljujem} naslov=${t("VIP tables")}>
       <div class="uspeh">
@@ -173,7 +175,7 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
         ${nakup.mode === "test" ? html`<span class="opomba">${t("Test purchase — nothing was charged")}</span>` : null}
       </div>
       ${razdeli
-        ? html`<${VipRazdeli} vstopnice=${vst} meja=${meja} zapri=${zapriVarno} obZaposlen=${setRazdeljujem} />`
+        ? html`<${VipRazdeli} vstopnice=${svoje} meja=${meja} zapri=${zapriVarno} obZaposlen=${setRazdeljujem} />`
         : html`<p class="opomba srednje">${t("Send the VIP tickets to your friends from Tickets.")}</p>
           <a class="gumb-glavni" href="/app/tickets">${t("Open my tickets")}</a>`}
     <//>`;

@@ -20,9 +20,11 @@ export function zapomniCakajocVip(uid, narocilo) {
 /** Prebere zastavico in jo pobrise. Vrne { narocilo } ali null. */
 export function vzemiCakajocVip(uid) {
   try {
+    if (!uid) return null;   // seja se ni znana: zastavico pustimo za naslednje odprtje Tickets
     const z = JSON.parse(sessionStorage.getItem(KLJUC_CAKAJOCE_VIP) || "null");
     sessionStorage.removeItem(KLJUC_CAKAJOCE_VIP);
-    if (z && z.uid === uid && Date.now() - Number(z.cas) < 2 * 3600e3) return { narocilo: z.narocilo ?? null };
+    // Brez id-ja narocila ne ugibamo (lahko bi ponudili starejso skupino, ce webhook se ni ustvaril novih vstopnic).
+    if (z && z.uid === uid && z.narocilo != null && Date.now() - Number(z.cas) < 2 * 3600e3) return { narocilo: z.narocilo };
   } catch { /* brez */ }
   return null;
 }
@@ -75,6 +77,10 @@ export function VipRazdeli({ vstopnice, meja: mejaZacetna = 0, zapri, obZaposlen
         } else if (e instanceof ApiError && e.status === -1) {
           // Brez odgovora: prenos je morda dokoncan. Ne ponavljamo - kupec naj pogleda Tickets.
           neuspeli.push({ id: f.id, username: f.username, napaka: t("No response from the server. Check Profile → Tickets before you try again.") });
+          ustavi = true;
+        } else if (e instanceof ApiError && (e.status === 429 || e.status === 503)) {
+          // Omejitev ali zaseden streznik: preostali bi dobili isto napako.
+          neuspeli.push({ id: f.id, username: f.username, napaka: sporocilo(e) });
           ustavi = true;
         } else neuspeli.push({ id: f.id, username: f.username, napaka: sporocilo(e) });
       }
