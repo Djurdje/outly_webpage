@@ -3,7 +3,10 @@
    pri vsakem dogodku nato VIP mize vklopi (views/posel-vip-dogodek.js). Shrani -> PUT /business/vip (celoten nadomestek).
    Urejevalnik je samo na spletu (iOS ga nima). Vlecenje s pointer events (miska in dotik), velikost z rocajem ali +/-,
    tipkovnica: puscice premaknejo, Shift+puscice spremenijo velikost, Delete izbrise.
-   Cena se vnese v evrih in poslje v CELIH CENTIH (nikoli plavajoca vejica). */
+   Cena se vnese v evrih in poslje v CELIH CENTIH (nikoli plavajoca vejica).
+   Isti urejevalnik ureja tudi LASTEN razpored dogodka organizatorja (/app/business/:klub/events/:dogodek/vip):
+   GET|PUT /business/events/:id/vip-layout ({ source: "event", floor_plan, tables }); paketi steklenic so vedno
+   klubovi/organizatorjevi (urejajo se v /vip), zato jih v tem nacinu ni. */
 import { html, useEffect, useRef, useState } from "../lib.js";
 import { t } from "../i18n.js";
 import { nastaviVarovalo } from "../usmerjanje.js";
@@ -25,15 +28,17 @@ let stevec = 0;   // lokalni kljuc predmeta (id mize/paketa ima samo, kar je ze 
 const kljuc = () => ++stevec;
 
 /** Streznikov odgovor (GET/PUT /business/vip) -> stanje urejevalnika. Elementi in mize so en seznam "predmetov". */
-function izStreznika(r) {
-  const plan = normalizirajTloris(r && r.plan);
+function izStreznika(r, dogodek = false) {
+  // Razpored dogodka: tloris je v floor_plan; ce dogodek se uporablja klubski tloris (source != "event"), je urejevalnik prazen.
+  const jeDogodek = dogodek && r && r.source === "event";
+  const plan = dogodek ? (jeDogodek ? normalizirajTloris(r.floor_plan) : null) : normalizirajTloris(r && r.plan);
   const predmeti = [];
   if (plan) plan.elements.forEach(e => predmeti.push({ k: kljuc(), tip: e.type, x: e.x, y: e.y, w: e.w, h: e.h, label: e.label }));
-  normalizirajMize(r && r.tables).forEach(m => predmeti.push({
+  normalizirajMize(dogodek && !jeDogodek ? [] : r && r.tables).filter(m => !(dogodek && m.archived === true)).forEach(m => predmeti.push({
     k: kljuc(), tip: "table", id: m.id, x: m.x, y: m.y, w: m.w, h: m.h, label: m.label, shape: m.shape,
     seats: String(m.seats), cena: evri(m.price_cents)
   }));
-  const paketi = normalizirajPakete(r && r.packages).map(p => ({ k: kljuc(), id: p.id, name: p.name, description: p.description }));
+  const paketi = normalizirajPakete(dogodek ? [] : r && r.packages).map(p => ({ k: kljuc(), id: p.id, name: p.name, description: p.description }));
   return { sirina: plan ? plan.width : 24, visina: plan ? plan.height : 16, predmeti, paketi, imaTloris: !!plan };
 }
 
@@ -59,24 +64,28 @@ function vMrezi(p, sirina, visina) {
   return { ...p, w, h, x: omeji(p.x, 0, sirina - w), y: omeji(p.y, 0, visina - h) };
 }
 
-export function UrejevalnikVip({ klub }) {
+export function UrejevalnikVip({ klub, dogodek = null }) {
   const id = idKluba(klub);
+  const idDogodka = dogodek != null ? idKluba(dogodek) : null;
+  const jeDogodek = dogodek != null;
+  const pot = jeDogodek ? `/business/events/${idDogodka}/vip-layout` : "/business/vip";
   const [s, setS] = useState({ nalaga: true, napaka: null, st: null });
   const nalozi = () => {
     setS(x => ({ ...x, nalaga: true, napaka: null }));
-    poslovno(id, "/business/vip")
-      .then(r => setS({ nalaga: false, napaka: null, st: izStreznika(r) }))
+    poslovno(id, pot)
+      .then(r => setS({ nalaga: false, napaka: null, st: izStreznika(r, jeDogodek) }))
       .catch(e => setS({ nalaga: false, napaka: e, st: null }));
   };
-  useEffect(() => { if (id) nalozi(); }, [id]);
-  const rezerva = `/app/business/${id}`;
+  useEffect(() => { if (id && (!jeDogodek || idDogodka)) nalozi(); }, [id, idDogodka]);
+  const rezerva = jeDogodek ? `/app/business/${id}/events/${idDogodka}/edit` : `/app/business/${id}`;
   const glava = html`<${GlavaNazaj} naslov=${t("VIP tables")} rezerva=${rezerva} />`;
-  if (!id || s.napaka) return html`<div class="zaslon">${glava}<${PoslovnaNapaka} napaka=${s.napaka || { status: 404 }} znova=${nalozi} rezerva=${rezerva} /></div>`;
+  if (!id || (jeDogodek && !idDogodka) || s.napaka) return html`<div class="zaslon">${glava}<${PoslovnaNapaka} napaka=${s.napaka || { status: 404 }} znova=${nalozi} rezerva=${rezerva} /></div>`;
   if (!s.st) return html`<div class="zaslon">${glava}<${Nalaganje} /></div>`;
-  return html`<${Platno} klub=${id} zacetno=${s.st} glava=${glava} />`;
+  return html`<${Platno} klub=${id} dogodek=${idDogodka} zacetno=${s.st} glava=${glava} />`;
 }
 
-function Platno({ klub, zacetno, glava }) {
+function Platno({ klub, dogodek, zacetno, glava }) {
+  const jeDogodek = dogodek != null;
   const [st, setSt] = useState({ sirina: zacetno.sirina, visina: zacetno.visina, predmeti: zacetno.predmeti, paketi: zacetno.paketi });
   const [izbran, setIzbran] = useState(null);
   const [napaka, setNapaka] = useState("");
@@ -194,18 +203,17 @@ function Platno({ klub, zacetno, glava }) {
     }
     const elementi = st.predmeti.filter(p => p.tip !== "table")
       .map(p => ({ type: p.tip, x: p.x, y: p.y, w: p.w, h: p.h, label: p.tip === "wall" ? "" : [...p.label.trim()].slice(0, 30).join("") }));
-    const body = {
-      // plan: null je dovoljen samo brez miz; kdor tloris ze ima, ga ohrani (tudi prazen).
-      plan: elementi.length || mize.length || imaTloris.current ? { width: st.sirina, height: st.visina, elements: elementi } : null,
-      tables: mize.map(m => ({
-        ...(m.id ? { id: m.id } : {}), label: m.label.trim(), x: m.x, y: m.y, w: m.w, h: m.h, shape: m.shape,
-        seats: Number(m.seats), price_cents: centiIz(m.cena, 100000)
-      })),
-      packages: st.paketi.map(p => ({ ...(p.id ? { id: p.id } : {}), name: p.name.trim(), description: p.description.trim() }))
-    };
+    // plan: null je dovoljen samo brez miz; kdor tloris ze ima, ga ohrani (tudi prazen).
+    const plan = elementi.length || mize.length || imaTloris.current ? { width: st.sirina, height: st.visina, elements: elementi } : null;
+    const tables = mize.map(m => ({
+      ...(m.id ? { id: m.id } : {}), label: m.label.trim(), x: m.x, y: m.y, w: m.w, h: m.h, shape: m.shape,
+      seats: Number(m.seats), price_cents: centiIz(m.cena, 100000)
+    }));
+    const body = jeDogodek ? { source: "event", floor_plan: plan, tables }
+      : { plan, tables, packages: st.paketi.map(p => ({ ...(p.id ? { id: p.id } : {}), name: p.name.trim(), description: p.description.trim() })) };
     setShranjujem(true);
     try {
-      const r = izStreznika(await poslovno(klub, "/business/vip", { method: "PUT", body }));
+      const r = izStreznika(await poslovno(klub, jeDogodek ? `/business/events/${dogodek}/vip-layout` : "/business/vip", { method: "PUT", body }), jeDogodek);
       imaTloris.current = r.imaTloris;
       izhodisce.current = vsebina(r);
       setSt({ sirina: r.sirina, visina: r.visina, predmeti: r.predmeti, paketi: r.paketi });
@@ -248,7 +256,8 @@ function Platno({ klub, zacetno, glava }) {
 
   return html`<div class="zaslon vip-zaslon">
     ${glava}
-    <p class="besedilo-opis">${t("Draw your floor plan once: add the bar, stage and tables, set seats and the default price. Then switch VIP tables on for each event.")}</p>
+    <p class="besedilo-opis">${jeDogodek ? t("Draw a floor plan just for this event: add the bar, stage and tables, set seats and the price of each table.")
+      : t("Draw your floor plan once: add the bar, stage and tables, set seats and the default price. Then switch VIP tables on for each event.")}</p>
     <div class="vip-urejevalnik">
       <div class="vip-platno-stolpec">
         <div class="vip-paleta" role="group" aria-label=${t("Add to the floor plan")}>
@@ -269,7 +278,7 @@ function Platno({ klub, zacetno, glava }) {
             <${Stevec} oznaka=${t("Floor height")} vrednost=${st.visina} min=${najmanjVisina} max=${MAX_MREZA} ob=${v => nastaviMrezo(st.sirina, v)} />
           </div>
         </section>
-        <section class="vip-skupina">
+        ${jeDogodek ? html`<p class="opomba"><a class="povezava-modra" href=${`/app/business/${klub}/vip`}>${t("Edit bottle packages")}</a> ${t("Bottle packages are shared by all your events.")}</p>` : html`<section class="vip-skupina">
           <h3 class="nastavitev-naslov">${t("Bottle packages")}</h3>
           <p class="opomba">${t("Included in the table price. Guests pick one when they book a table.")}</p>
           ${st.paketi.map((p, i) => html`<div class="vip-paket-urejanje" key=${p.k}>
@@ -285,9 +294,9 @@ function Platno({ klub, zacetno, glava }) {
           </div>`)}
           ${st.paketi.length < NAJVEC_PAKETOV ? html`<button type="button" class="gumb-siv" onClick=${() => { spremeni(); setSt(x => ({ ...x, paketi: [...x.paketi, { k: kljuc(), name: "", description: "" }] })); }}>
             <${Ikona} ime="circle-plus" velikost=${18} /> ${t("Add package")}</button>` : null}
-        </section>
+        </section>`}
         ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}
-        ${shranjeno ? html`<p class="uspeh-besedilo" role="status">${t("Saved. You can now switch VIP tables on for each event.")}</p>` : null}
+        ${shranjeno ? html`<p class="uspeh-besedilo" role="status">${jeDogodek ? t("Saved.") : t("Saved. You can now switch VIP tables on for each event.")}</p>` : null}
         ${neshranjeno ? html`<p class="opomba oranzna" role="status">${t("Unsaved changes")}</p>` : null}
         <button type="button" class="gumb-glavni" onClick=${shrani} disabled=${shranjujem || !neshranjeno}>${shranjujem ? t("Saving...") : t("Save")}</button>
       </div>

@@ -47,6 +47,7 @@ const POTI = [
   ["/app/business/:klub/events/new", "biz-event-new"],
   ["/app/business/:klub/events/:dogodek/edit", "biz-event-edit"],
   ["/app/business/:klub/events/:dogodek/tickets", "biz-event-tickets"],
+  ["/app/business/:klub/events/:dogodek/vip", "biz-event-vip"],   // lasten razpored VIP miz dogodka (organizator)
   ["/app/business/:klub/team", "biz-team"],
   ["/app/business/:klub/info", "biz-info"],
   ["/app/business/:klub/location", "biz-location"],

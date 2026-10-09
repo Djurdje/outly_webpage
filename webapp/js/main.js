@@ -80,7 +80,7 @@ const UrejevalnikVip = leno("./views/posel-vip.js", "UrejevalnikVip");
 const AVT = new Set(["login", "register", "verify", "forgot"]);
 const SAMO_PRIJAVLJENI = new Set(["tickets", "guest-list", "interested", "onboarding", "account", "personal", "security", "preferences",
   "delete", "creator", "friends", "friends-plans", "my-clubs", "invites", "biz", "biz-settings", "biz-dashboard", "biz-staff",
-  "biz-events", "biz-event-new", "biz-event-edit", "biz-event-tickets", "biz-team", "biz-info", "biz-location", "biz-bar-prices", "biz-scan", "biz-service", "biz-vip"]);
+  "biz-events", "biz-event-new", "biz-event-edit", "biz-event-tickets", "biz-event-vip", "biz-team", "biz-info", "biz-location", "biz-bar-prices", "biz-scan", "biz-service", "biz-vip"]);
 const ZAVIHKI = [
   { ime: "home", href: "/app", ikona: "house", napis: "Home" },
   { ime: "search", href: "/app/search", ikona: "search", napis: "Search" },
@@ -182,6 +182,7 @@ function Zaslon({ pot }) {
     case "biz-info": return html`<${SamoUredniki} klub=${p.klub}><${PodatkiKluba} key=${p.klub} klub=${p.klub} /><//>`;
     case "biz-location": return html`<${SamoUredniki} klub=${p.klub}><${LokacijaKluba} key=${p.klub} klub=${p.klub} /><//>`;
     case "biz-bar-prices": return html`<${SamoUredniki} klub=${p.klub}><${UrejanjeCenika} key=${p.klub} klub=${p.klub} /><//>`;
+    case "biz-event-vip": return html`<${SamoUredniki} klub=${p.klub}><${UrejevalnikVip} key=${p.klub + "/" + p.dogodek} klub=${p.klub} dogodek=${p.dogodek} /><//>`;
     case "biz-vip": return html`<${SamoUredniki} klub=${p.klub}><${UrejevalnikVip} key=${p.klub} klub=${p.klub} /><//>`;
     default: return html`<div class="zaslon"><${GlavaNazaj} />
       <div class="prazno"><strong>${t("Page not found")}</strong><a class="gumb-siv" href="/app">${t("Go to Home")}</a></div></div>`;
@@ -230,7 +231,7 @@ function App() {
 
   return html`<div class="okvir-aplikacije" key=${koda}>
     ${pot.ime === "home" ? html`<${OzadjeHome} />` : null}
-    <main id="vsebina" class=${"okvir" + (brezVrstice ? "" : " z-vrstico") + (pot.ime === "biz-vip" ? " siroko" : "")} key=${pot.kljuc} data-smer=${pot.smer}>
+    <main id="vsebina" class=${"okvir" + (brezVrstice ? "" : " z-vrstico") + (pot.ime === "biz-vip" || pot.ime === "biz-event-vip" ? " siroko" : "")} key=${pot.kljuc} data-smer=${pot.smer}>
       <${Zaslon} pot=${pot} />
     </main>
     ${brezVrstice ? null : html`<${SpodnjaVrstica} aktiven=${ZAVIHKI.some(z => z.ime === pot.ime) ? pot.ime : pot.ime.startsWith("biz") ? "profile" : zadnjiZavihek} />`}
@@ -247,7 +248,7 @@ function naslovPoti(ime) {
     "my-clubs": "My clubs", invites: "Notifications", biz: "My clubs", "biz-settings": "Settings", "biz-dashboard": "Dashboard",
     "biz-staff": "Staff activity", "biz-events": "Events", "biz-event-new": "New event", "biz-event-edit": "Edit event",
     "biz-event-tickets": "Tickets", "biz-team": "Team", "biz-info": "Club info", "biz-location": "Location on the map",
-    "biz-bar-prices": "Bar prices", "biz-service": "Table service", "biz-vip": "VIP tables" })[ime] || "Outly";
+    "biz-bar-prices": "Bar prices", "biz-service": "Table service", "biz-vip": "VIP tables", "biz-event-vip": "VIP tables" })[ime] || "Outly";
 }
 
 zacniSejo();
