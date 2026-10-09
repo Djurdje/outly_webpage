@@ -63,7 +63,7 @@ export function Zemljevid() {
     const k = karta.current;
     if (!k || !klubi) return;
     k.oznake.forEach(o => o.remove());
-    k.oznake = klubi.filter(c => c.lat != null && c.lng != null).map(c => {
+    k.oznake = klubi.filter(c => c.lat != null && c.lng != null && c.is_organizer !== true).map(c => {
       const el = document.createElement("button");
       el.type = "button";
       el.className = "oznaka-kluba";
@@ -137,7 +137,8 @@ function ciljIzNaslova() {
 
 /* Nadomestek brez WebGL: klubi po razdalji (prejsnji zaslon faze 1). */
 function SeznamKlubov({ klubi, lok, napaka }) {
-  const seznam = (klubi || []).map(k => ({ k, d: razdaljaKm(lok.polozaj, k) }))
+  // Organizator nima naslova ne pina: v nadomestnem seznamu ga ni (stran ima na /app/club/:id).
+  const seznam = (klubi || []).filter(k => k.is_organizer !== true).map(k => ({ k, d: razdaljaKm(lok.polozaj, k) }))
     .sort((a, b) => (a.d ?? 1e9) - (b.d ?? 1e9) || a.k.name.localeCompare(b.k.name));
   return html`<div class="zaslon">
     <h1 class="velik-naslov">${t("Map")}</h1>

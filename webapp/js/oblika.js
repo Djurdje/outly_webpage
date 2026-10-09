@@ -28,6 +28,16 @@ export function normalizirajDogodek(e) {
     sold_count: e.sold_count ?? 0,
     lifecycle: e.lifecycle || "upcoming",
     recap_video_url: e.recap_video_url || "",
+    // Organizatorji brez prizorisca (backend 037): star backend polj nima -> kot doslej (klubov naslov).
+    venue_club_id: e.venue_club_id ?? null,
+    venue_club_name: e.venue_club_name || null,
+    venue_club_logo_url: e.venue_club_logo_url || null,
+    venue_name: e.venue_name || "",
+    venue_address: e.venue_address || "",
+    venue_city: e.venue_city || "",
+    venue_lat: e.venue_lat ?? null,
+    venue_lng: e.venue_lng ?? null,
+    hosted: e.hosted === true,
     _zacetek: datum(e.start_at),
     _konec: datum(e.end_at)
   };
@@ -43,11 +53,30 @@ export function normalizirajKlub(c) {
     genres: Array.isArray(c.genres) ? c.genres : [],
     bar_prices: Array.isArray(c.bar_prices) ? c.bar_prices : [],
     min_age: c.min_age ?? 18,
+    is_organizer: c.is_organizer === true,
+    is_official: c.is_official === true,
     followers_count: c.followers_count ?? 0,
     // Slideshow; stari klubi brez galerije pokazejo pasico (DECISIONS 22. 9.).
     _slike: galerija.length ? galerija : (c.banner_url ? [c.banner_url] : [])
   };
 }
+
+/** Prizorisce dogodka: gostiteljski klub (klubId) ali prosto vpisana lokacija; null = klubov lastni naslov. */
+export function prizorisce(e) {
+  if (e.venue_club_id != null) return { klubId: e.venue_club_id, ime: e.venue_club_name || "", naslov: "", mesto: "" };
+  const ime = (e.venue_name || "").trim(), naslov = (e.venue_address || "").trim(), mesto = (e.venue_city || "").trim();
+  return ime || mesto ? { klubId: null, ime, naslov, mesto } : null;
+}
+
+/** Kratek napis prizorisca ("Klub K4" / "Ime, Mesto"); prazen, ce dogodek prizorisca nima. */
+export function napisPrizorisca(e) {
+  const p = prizorisce(e);
+  if (!p) return "";
+  return p.klubId != null ? p.ime : [p.ime, p.mesto].filter(Boolean).join(", ");
+}
+
+/** Koordinate iz API-ja: veljavno stevilo ali null (niz, NaN in prazno ne pridejo na zemljevid). */
+export const koordinata = v => (typeof v === "number" && Number.isFinite(v) ? v : null);
 
 /* ---------- denar (celi centi, EUR) ---------- */
 export function denar(centi, valuta = "EUR") {

@@ -181,13 +181,14 @@ export function NastavitevKluba({ ob }) {
   const [zanri, setZanri] = useState(new Set());
   const [logo, setLogo] = useState("");
   const [lokacija, setLokacija] = useState(null);
+  const [organizator, setOrganizator] = useState(false);   // organizator dogodkov brez lastnega prizorisca (backend 037)
   const [nalagam, setNalagam] = useState(false);
   const [shranjujem, setShranjujem] = useState(false);
   const [napaka, setNapaka] = useState("");
   const vnos = useRef(null);
   const naloziZanre = () => { setVsiZanri(null); P.zanri().then(setVsiZanri).catch(() => setVsiZanri([])); };
   useEffect(naloziZanre, []);
-  const lahko = ime.trim() && mesto.trim() && !shranjujem && !nalagam;
+  const lahko = ime.trim() && (organizator || mesto.trim()) && !shranjujem && !nalagam;
 
   async function izberiLogo(ev) {
     const d = ev.target.files && ev.target.files[0];
@@ -201,8 +202,9 @@ export function NastavitevKluba({ ob }) {
   }
   async function ustvari() {
     setShranjujem(true); setNapaka("");
-    const body = { name: ime.trim(), logoUrl: logo, address: naslov.trim(), city: mesto.trim(), minAge: starost, genres: [...zanri].sort() };
-    if (lokacija) { body.lat = lokacija.lat; body.lng = lokacija.lng; }
+    const body = { name: ime.trim(), logoUrl: logo, address: organizator ? "" : naslov.trim(), city: mesto.trim(), minAge: starost, genres: [...zanri].sort() };
+    if (organizator) body.isOrganizer = true;
+    else if (lokacija) { body.lat = lokacija.lat; body.lng = lokacija.lng; }
     try { await send("/clubs", { method: "POST", body, auth: true }); ob(); return; }
     catch (e) {
       if (e.status === -1) {
@@ -224,12 +226,15 @@ export function NastavitevKluba({ ob }) {
       <span class="kv-besedilo"><strong>${t("Club logo")}</strong><span>${nalagam ? t("Uploading...") : t("Square image works best. Optional.")}</span></span>
     </div>
     <label class="polje-oznaceno">${t("Club name")}<input value=${ime} maxlength="80" placeholder=${t("e.g. Klub K4")} onInput=${e => setIme(e.target.value)} /></label>
-    <label class="polje-oznaceno">${t("Address")}<input value=${naslov} maxlength="120" placeholder=${t("Street and number")} autocomplete="street-address" onInput=${e => setNaslov(e.target.value)} /></label>
-    <label class="polje-oznaceno">${t("City")}<input value=${mesto} maxlength="60" placeholder=${t("e.g. Ljubljana")} autocomplete="address-level2" onInput=${e => setMesto(e.target.value)} /></label>
-    <div class="skupina-polj"><span class="oznaka-polja">${t("Location on the map")}</span>
+    <label class="stikalo-vrstica"><span class="kv-besedilo"><strong>${t("I organize events without my own venue")}</strong>
+      <span>${t("No address or map pin. Every event gets its own venue.")}</span></span>
+      <input type="checkbox" role="switch" class="stikalo" checked=${organizator} onChange=${e => setOrganizator(e.target.checked)} /></label>
+    ${organizator ? null : html`<label class="polje-oznaceno">${t("Address")}<input value=${naslov} maxlength="120" placeholder=${t("Street and number")} autocomplete="street-address" onInput=${e => setNaslov(e.target.value)} /></label>`}
+    <label class="polje-oznaceno">${organizator ? t("City (optional)") : t("City")}<input value=${mesto} maxlength="60" placeholder=${t("e.g. Ljubljana")} autocomplete="address-level2" onInput=${e => setMesto(e.target.value)} /></label>
+    ${organizator ? null : html`<div class="skupina-polj"><span class="oznaka-polja">${t("Location on the map")}</span>
       <${IzbiraLokacije} lat=${lokacija && lokacija.lat} lng=${lokacija && lokacija.lng} ob=${setLokacija} visina=${240} />
       <span class="opomba">${lokacija ? t("Location set. Drag the pin or tap elsewhere to move it.") : t("Tap the map where your club is. Without a location the club is not on the map.")}</span>
-    </div>
+    </div>`}
     <div class="skupina-polj"><span class="oznaka-polja">${t("Minimum age")}</span>
       <div class="vrsta-izbir">${STAROSTI.map(a => html`<button type="button" class=${"cip" + (starost === a ? " izbran" : "")} aria-pressed=${starost === a} onClick=${() => setStarost(a)}>${a === 0 ? t("All ages") : a + "+"}</button>`)}</div>
     </div>
@@ -398,11 +403,11 @@ export function PodatkiKluba({ klub }) {
       <span class="opomba srednje">${nalaga === "logo" ? t("Uploading...") : t("Add a profile photo so people can recognise you")}</span>
     </div>
     ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}
-    ${Object.entries(POLJA).map(([polje, p]) => html`<${KarticaPolja} key=${polje} ikona=${p.ikona} naslov=${p.naslov()}
+    ${Object.entries(POLJA).filter(([polje]) => !(c.is_organizer && polje === "address")).map(([polje, p]) => html`<${KarticaPolja} key=${polje} ikona=${p.ikona} naslov=${p.naslov()}
       vrednost=${c[polje] || t("Not set")} opis=${p.opis()} gumb=${t("Edit")} ob=${() => odpri(polje)} />`)}
-    <${KarticaPolja} ikona="map-pin" naslov=${t("Location on the map")}
+    ${c.is_organizer ? null : html`<${KarticaPolja} ikona="map-pin" naslov=${t("Location on the map")}
       vrednost=${naKarti ? t("On the map") : t("Not on the map yet")}
-      opis=${t("Guests find your club on the map and see how far it is.")} gumb=${naKarti ? t("Change") : t("Set on map")} href=${baza + "/location"} />
+      opis=${t("Guests find your club on the map and see how far it is.")} gumb=${naKarti ? t("Change") : t("Set on map")} href=${baza + "/location"} />`}
     <${KarticaPolja} ikona="images" naslov=${t("Slideshow")}
       vrednost=${galerija.length ? t("{n} of 3 photos", { n: galerija.length }) : t("No photos yet")}
       opis=${t("Up to 3 photos shown at the top of your club page (recommended 1200x800).")}
@@ -419,9 +424,9 @@ export function PodatkiKluba({ klub }) {
       gumb=${nalaga === "video" ? t("Uploading...") : c.video_url ? t("Replace") : t("Upload")} ob=${() => vnosVideo.current && vnosVideo.current.click()} onemogoceno=${!!nalaga} />
     <input ref=${vnosVideo} type="file" accept="video/*" class="skrito" onChange=${izberiVideo} tabindex="-1" aria-hidden="true" />
     ${c.video_url ? html`<button type="button" class="povezava-gumb rdeca" disabled=${!!nalaga} onClick=${() => odstrani({ gallery_urls: galerija, video_url: "" })}>${t("Remove video")}</button>` : null}
-    <${KarticaPolja} ikona="wine" naslov=${t("Bar prices")}
+    ${c.is_organizer ? null : html`<${KarticaPolja} ikona="wine" naslov=${t("Bar prices")}
       vrednost=${c.bar_prices.length ? t("{n} items", { n: c.bar_prices.length }) : t("Not added yet")}
-      opis=${t("Guests see the list under \"Bar prices\" on every event of your club.")} gumb=${t("Edit")} href=${baza + "/bar-prices"} />
+      opis=${t("Guests see the list under \"Bar prices\" on every event of your club.")} gumb=${t("Edit")} href=${baza + "/bar-prices"} />`}
 
     <${List} odprt=${!!urejam} zapri=${() => setUrejam(null)} naslov=${urejam ? POLJA[urejam].naslov() : ""}>
       ${urejam ? html`<label class="polje"><span class="skrito">${POLJA[urejam].naslov()}</span>

@@ -10,7 +10,8 @@ import { sporocilo } from "../napake.js";
 import { navigiraj } from "../usmerjanje.js";
 import * as P from "../podatki.js";
 import {
-  denar, cena, jeMimo, jeRazprodan, jeMaloVstopnic, preostanek, seJeKoncal, danDolg, ura, mesecKratko, relativno, varenUrl
+  denar, cena, jeMimo, jeRazprodan, jeMaloVstopnic, preostanek, seJeKoncal, danDolg, ura, mesecKratko, relativno, varenUrl,
+  prizorisce, koordinata
 } from "../oblika.js";
 import { Ikona, Slika, Avatar, GlavaNazaj, Nalaganje, Napaka, List } from "../ui.js";
 import { NakupList } from "./nakup.js";
@@ -23,6 +24,7 @@ export function Dogodek({ id }) {
   const prijavljen = useSeja(s => s.prijavljen);
   const [e, setE] = useState(null);
   const [klub, setKlub] = useState(null);
+  const [gostitelj, setGostitelj] = useState(null);   // klub prizorisca (venue_club_id), ce ga dogodek ima
   const [napaka, setNapaka] = useState(null);
   const [plan, setPlan] = useState(null);
   const [posiljam, setPosiljam] = useState(false);
@@ -37,6 +39,8 @@ export function Dogodek({ id }) {
       setE(d); setPlan(d.my_plan || null);
       document.title = d.title + " · Outly";
       P.klub(d.club_id).then(setKlub).catch(() => {});
+      setGostitelj(null);
+      if (d.venue_club_id != null) P.klub(d.venue_club_id).then(setGostitelj).catch(() => {});
     } catch (err) { setNapaka(sporocilo(err)); }
   }
   useEffect(() => { nalozi(); }, [id, prijavljen]);
@@ -93,6 +97,10 @@ export function Dogodek({ id }) {
     }
   }
 
+  const lok = lokacijaDogodka(e, klub, gostitelj);
+  const organizator = !!(klub && klub.is_organizer);
+  const cenikKluba = e.venue_club_id != null ? gostitelj : (organizator ? null : klub);   // cenik bara ima prizorisce, ne organizator
+  const pokaziCenik = e.venue_club_id != null ? !!gostitelj : !organizator;
   const naslovnaSlika = e.poster_url || (klub && klub._slike[0]) || "";
   const posnetek = seJeKoncal(e) && e.recap_video_url ? e.recap_video_url : "";
 
@@ -118,30 +126,39 @@ export function Dogodek({ id }) {
 
     <a class="kartica-vrstica" href=${"/app/club/" + e.club_id}>
       <span class="okrogla-slika">${klub && klub.logo_url ? html`<${Slika} src=${klub.logo_url} sirina=${130} alt="" />` : html`<${Ikona} ime="building" velikost=${20} />`}</span>
-      <span class="kv-besedilo"><strong>${klub ? klub.name : t("Club")}</strong><span>${t("View club")}</span></span>
+      <span class="kv-besedilo">
+        <strong>${organizator ? t("Organizer: {name}", { name: klub.name }) : klub ? klub.name : t("Club")}</strong>
+        <span>${organizator ? t("View organizer") : t("View club")}</span></span>
       ${e.min_age > 0 ? html`<span class="cip-starost">${e.min_age}+</span>` : null}
       <${Ikona} ime="chevron-right" velikost=${16} razred="utisano" />
     </a>
 
+    ${e.venue_club_id != null ? html`<a class="kartica-vrstica" href=${"/app/club/" + Number(e.venue_club_id)}>
+      <span class="okrogla-slika">${logoGostitelja(e, gostitelj) ? html`<${Slika} src=${logoGostitelja(e, gostitelj)} sirina=${130} alt="" />` : html`<${Ikona} ime="map-pin" velikost=${20} />`}</span>
+      <span class="kv-besedilo"><strong>${t("at {club}", { club: lok.ime || t("Club") })}</strong><span>${t("View club")}</span></span>
+      <${Ikona} ime="chevron-right" velikost=${16} razred="utisano" />
+    </a>` : null}
+
     <${KarticaKdaj} e=${e} />
 
     <div class="kartica-info">
-      <div class="info-vrstica"><span class="info-oznaka">${t("ADDRESS")}:</span><span>${naslovKluba(klub)}</span></div>
+      ${e.venue_club_id == null && lok.ime ? html`<div class="info-vrstica"><span class="info-oznaka">${t("VENUE")}:</span><span>${lok.ime}</span></div>` : null}
+      <div class="info-vrstica"><span class="info-oznaka">${t("ADDRESS")}:</span><span>${lok.naslov}</span></div>
       <div class="info-vrstica"><span class="info-oznaka">${t("PHONE")}:</span>
         ${klub && klub.contact_phone ? html`<a href=${"tel:" + klub.contact_phone.replace(/[^\d+]/g, "")}>${klub.contact_phone}</a>` : html`<span>-</span>`}
       </div>
-      ${klub && klub.lat != null && klub.lng != null ? html`<${MiniKarta} lat=${klub.lat} lng=${klub.lng} ime=${klub.name} />` : null}
-      ${klub && klub.lat != null && klub.lng != null ? html`<a class="povezava-zemljevid" target="_blank" rel="noopener noreferrer"
-        href=${`https://www.openstreetmap.org/?mlat=${klub.lat}&mlon=${klub.lng}#map=17/${klub.lat}/${klub.lng}`}>
+      ${lok.lat != null ? html`<${MiniKarta} lat=${lok.lat} lng=${lok.lng} ime=${lok.ime || (klub && klub.name)} />` : null}
+      ${lok.lat != null ? html`<a class="povezava-zemljevid" target="_blank" rel="noopener noreferrer"
+        href=${`https://www.openstreetmap.org/?mlat=${lok.lat}&mlon=${lok.lng}#map=17/${lok.lat}/${lok.lng}`}>
         <${Ikona} ime="map-pin" velikost=${16} /> ${t("Open in maps")}</a>` : null}
     </div>
 
-    <button type="button" class="kartica-vrstica" onClick=${() => setList("cenik")}>
+    ${pokaziCenik ? html`<button type="button" class="kartica-vrstica" onClick=${() => setList("cenik")}>
       <${Ikona} ime="wine" velikost=${20} />
       <span class="kv-besedilo"><strong>${t("Bar prices")}</strong></span>
-      <span class="utisano">${klub && klub.bar_prices.length ? t("{n} items", { n: klub.bar_prices.length }) : t("Not added yet")}</span>
+      <span class="utisano">${cenikKluba && cenikKluba.bar_prices.length ? t("{n} items", { n: cenikKluba.bar_prices.length }) : t("Not added yet")}</span>
       <${Ikona} ime="chevron-right" velikost=${16} razred="utisano" />
-    </button>
+    </button>` : null}
 
     ${e.description.trim() ? html`<section class="blok-besedila">
       <h2 class="nadnapis">${t("ABOUT")}</h2><p class="besedilo-opis">${e.description}</p>
@@ -168,9 +185,9 @@ export function Dogodek({ id }) {
     ${!gostNakup
       ? html`<${NakupList} odprt=${list === "nakup"} zapri=${() => setList(null)} dogodek=${e} imeKluba=${klub ? klub.name : ""} />`
       : html`<${GostNakupList} odprt=${list === "nakup"} zapri=${() => setList(null)} dogodek=${e} imeKluba=${klub ? klub.name : ""}
-          kraj=${klub ? naslovKluba(klub) : ""}
+          kraj=${lok.naslov === "-" ? "" : lok.naslov}
           prijava=${() => navigiraj(`/app/login?next=${encodeURIComponent(`/app/event/${id}?buy=1`)}`)} />`}
-    <${CenikList} odprt=${list === "cenik"} zapri=${() => setList(null)} klub=${klub} />
+    <${CenikList} odprt=${list === "cenik"} zapri=${() => setList(null)} klub=${cenikKluba} />
     ${e.vip_enabled === true
       // Star backend (brez polja vip_enabled) ali dogodek brez VIP: kot doslej - list s telefonom kluba.
       ? html`<${VipLoader} odprt=${list === "vip"} zapri=${() => setList(null)} dogodek=${e} imeKluba=${klub ? klub.name : ""}
@@ -202,6 +219,23 @@ function VipLoader(props) {
 
 /* Nakup na Outlyju: cena mora obstajati (null = ne prodaja se pri nas), dogodek ni mimo ali razprodan. */
 const moznoKupiti = e => e.ticket_price_cents != null && !jeMimo(e) && !jeRazprodan(e);
+
+/* Kje je dogodek: gostiteljski klub (venue_club_id) > prosto vpisano prizorisce (venue_*) > naslov kluba (kot doslej).
+   Naslov "-" = ni znan; koordinate samo veljavna stevila (star backend polj nima). */
+function lokacijaDogodka(e, klub, gostitelj) {
+  const p = prizorisce(e);
+  if (p && p.klubId != null) {
+    return { ime: p.ime || (gostitelj && gostitelj.name) || "", naslov: gostitelj ? naslovKluba(gostitelj) : "-",
+      lat: koordinata(gostitelj && gostitelj.lat), lng: koordinata(gostitelj && gostitelj.lng) };
+  }
+  if (p) {
+    const lat = koordinata(e.venue_lat), lng = koordinata(e.venue_lng);
+    return { ime: p.ime, naslov: [p.naslov, p.mesto].filter(Boolean).join(", ") || "-", lat: lat != null && lng != null ? lat : null, lng };
+  }
+  const lat = koordinata(klub && klub.lat), lng = koordinata(klub && klub.lng);
+  return { ime: "", naslov: naslovKluba(klub), lat: lat != null && lng != null ? lat : null, lng };
+}
+const logoGostitelja = (e, gostitelj) => e.venue_club_logo_url || (gostitelj && gostitelj.logo_url) || "";
 
 function naslovKluba(k) {
   if (!k) return "-";

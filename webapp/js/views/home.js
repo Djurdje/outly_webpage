@@ -10,7 +10,7 @@ import { sporocilo } from "../napake.js";
 import * as P from "../podatki.js";
 import {
   jeDanes, jeTaVikend, jeRazprodan, razdaljaKm, napisRazdalje, pozdrav, danInUra,
-  cena, znacka, zanrIme, steviloDogodkov, normalizirajDogodek
+  cena, znacka, zanrIme, steviloDogodkov, normalizirajDogodek, napisPrizorisca
 } from "../oblika.js";
 import {
   Ikona, Slika, Avatar, NaslovSekcije, Skeleton, Napaka, VrstaDogodkov, KarticaPredloga,
@@ -99,6 +99,12 @@ export function Home() {
 function Sekcije({ i, lok, prijavljen, nacrti }) {
   const { klubiPoId } = i;
   return html`
+    ${i.uradni.length ? html`<section class="sekcija">
+      <${NaslovSekcije} naslov="Organized by Outly" />
+      <${KarticaVelika} dogodek=${i.uradni[0]} klub=${klubiPoId.get(i.uradni[0].club_id)} napis=${napisPrizorisca(i.uradni[0])} />
+      ${i.uradni.length > 1 ? html`<div class="vrsta-drsna">${i.uradni.slice(1).map(e => html`<${KarticaDogodka} key=${e.id} dogodek=${e} klub=${klubiPoId.get(e.club_id)?.name} />`)}</div>` : null}
+    </section>` : null}
+
     ${i.predlogi.length ? html`<section class="sekcija">
       <${NaslovSekcije} naslov=${t("Suggestions")} />
       <div class="vrsta-drsna">${i.predlogi.map(k => html`<${KarticaPredloga} key=${k.id} klub=${k} />`)}</div>
@@ -185,8 +191,14 @@ function izpelji(s, me, lok, f, moji, maxKm) {
   const trending = s.prihajajoci.filter(e => e.sold_count > 0 || jeRazprodan(e))
     .sort((a, b) => b.sold_count - a.sold_count || casZ(a) - casZ(b)).slice(0, 8);
 
+  // "Organized by Outly": prihajajoci dogodki klubov z is_official (najblizji najprej); v "Big events" se ne ponovijo.
+  const uradni = s.prihajajoci.filter(e => { const k = klubiPoId.get(e.club_id); return k && k.is_official === true && ustrezaDogodek(f, e); })
+    .sort((a, b) => casZ(a) - casZ(b));
+  const uradniId = new Set(uradni.map(e => e.id));
+
   let velik = null;
   for (const e of razvrsceni) {
+    if (uradniId.has(e.id)) continue;
     if (!velik) { velik = e; continue; }
     const a = [e.capacity || 0, e.sold_count, -casZ(e)], b = [velik.capacity || 0, velik.sold_count, -casZ(velik)];
     if (a[0] > b[0] || (a[0] === b[0] && (a[1] > b[1] || (a[1] === b[1] && a[2] > b[2])))) velik = e;
@@ -198,8 +210,10 @@ function izpelji(s, me, lok, f, moji, maxKm) {
   const hit = hitPretekli ? { dogodek: hitPretekli, napis: t("Last week's biggest hit") }
     : trending[0] ? { dogodek: trending[0], napis: t("Trending right now") } : null;
 
-  const blizu = lok.polozaj ? s.klubi.filter(k => razdalje.has(k.id)).sort((a, b) => razdalje.get(a.id) - razdalje.get(b.id)).slice(0, 10) : [];
-  const obmocje = blizu.length ? blizu : s.klubi.slice(0, 10);
+  // Organizator nima naslova ne pina - v "In your area" ni.
+  const prizorisca = s.klubi.filter(k => !k.is_organizer);
+  const blizu = lok.polozaj ? prizorisca.filter(k => razdalje.has(k.id)).sort((a, b) => razdalje.get(a.id) - razdalje.get(b.id)).slice(0, 10) : [];
+  const obmocje = blizu.length ? blizu : prizorisca.slice(0, 10);
 
   const vsiZanri = s.zanri.length ? s.zanri : [...new Set(s.prihajajoci.flatMap(e => e.genres.map(g => g.toLowerCase())))].sort();
   const zanri = [...vsiZanri].sort((a, b) => {
@@ -214,7 +228,7 @@ function izpelji(s, me, lok, f, moji, maxKm) {
   const mesta = [...new Set(s.klubi.map(k => k.city).filter(Boolean))].sort();
 
   return {
-    klubiPoId, predlogi, nocoj, tedenl, vikend, trending, velik, hit, obmocje, razdalje: blizu.length ? razdalje : new Map(),
+    klubiPoId, predlogi, uradni, nocoj, tedenl, vikend, trending, velik, hit, obmocje, razdalje: blizu.length ? razdalje : new Map(),
     zanri, zanimivi, mesta, imaKaj: s.prihajajoci.length > 0 || s.klubi.length > 0 || s.nalaga || !!s.napaka
   };
 }
@@ -251,7 +265,7 @@ function KarticaHit({ dogodek: e, klub, napis }) {
   </a>`;
 }
 
-function KarticaVelika({ dogodek: e, klub }) {
+function KarticaVelika({ dogodek: e, klub, napis = t("BIG EVENT COMING UP") }) {
   const z = znacka(e);
   const napisGumba = jeRazprodan(e) ? t("Sold out") : cena(e) || (e.ticket_url ? t("Tickets") : t("Free"));
   return html`<a class="kartica-velika" href=${"/app/event/" + e.id}>
@@ -259,7 +273,7 @@ function KarticaVelika({ dogodek: e, klub }) {
     <span class="kv-senca" aria-hidden="true"></span>
     <div class="kv-vrh">
       <span class="kv-logo">${klub && klub.logo_url ? html`<${Slika} src=${klub.logo_url} sirina=${130} alt="" />` : html`<${Ikona} ime="building" velikost=${20} />`}</span>
-      <div><strong>${klub ? klub.name : ""}</strong><span class="nadnapis">${t("BIG EVENT COMING UP")}</span></div>
+      <div><strong>${klub ? klub.name : ""}</strong>${napis ? html`<span class="nadnapis">${napis}</span>` : null}</div>
       ${z ? html`<span class=${"znacka staticna" + (jeRazprodan(e) ? " rdeca" : "")}>${z}</span>` : null}
     </div>
     <div class="kv-dno">
