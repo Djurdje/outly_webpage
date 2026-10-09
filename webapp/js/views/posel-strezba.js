@@ -80,6 +80,8 @@ export function Strezba({ klub }) {
   const [s, setS] = useState({ nalaga: false, napaka: null, items: [] });
   const [zaseden, setZaseden] = useState(null);
   const [napakaAkcije, setNapakaAkcije] = useState("");
+  const zasedenRef = useRef(false);   // PUT tece: tihe osvezitve ne smejo teci (pozen GET bi povozil Delivered)
+  const vsiDogodki = useRef([]);
   const stevec = useRef(0);   // zadnji klic zmaga: pozni odgovor osvezitve ne povozi oznacitve Delivered
 
   const rezerva = `/app/business/${id}`;
@@ -89,6 +91,7 @@ export function Strezba({ klub }) {
     poslovno(id, "/business/events")
       .then(r => {
         const vsi = normalizirajDogodke(r);
+        vsiDogodki.current = vsi;
         const seznam = dogodkiZaIzbiro(vsi);
         // Dogodek iz zvonca (?dogodek=ID) ostane izbran, tudi ce ni med predlogi.
         if (zahtevan && !seznam.some(e => e.id === zahtevan)) { const e = vsi.find(v => v.id === zahtevan); if (e) seznam.push(e); }
@@ -104,6 +107,7 @@ export function Strezba({ klub }) {
 
   const nalozi = tiho => {
     if (!id || !izbran) return;
+    if (tiho && zasedenRef.current) return;
     const zeton = ++stevec.current;
     if (!tiho) setS(x => ({ ...x, nalaga: true, napaka: null }));
     poslovno(id, `/business/events/${izbran}/table-service`)
@@ -118,6 +122,7 @@ export function Strezba({ klub }) {
   useEffect(() => {
     if (!id || !izbran || vratar) return undefined;
     setNapakaAkcije("");
+    setS({ nalaga: true, napaka: null, items: [] });   // seznam starega dogodka se ne sme kazati
     nalozi(false);
     const vidno = () => document.visibilityState === "visible";
     const kolo = setInterval(() => { if (vidno()) nalozi(true); }, OSVEZITEV_MS);
@@ -126,7 +131,18 @@ export function Strezba({ klub }) {
     return () => { clearInterval(kolo); document.removeEventListener("visibilitychange", ob); stevec.current += 1; };
   }, [id, izbran, vratar]);
 
+  /* ?dogodek se spremeni, ko komponenta ostane (npr. dotik v zvoncu na drug dogodek istega kluba). */
+  useEffect(() => {
+    if (!zahtevan) return;
+    setDogodki(d => (d.seznam.some(e => e.id === zahtevan) ? d : (() => {
+      const e = vsiDogodki.current.find(v => v.id === zahtevan);
+      return e ? { ...d, seznam: [...d.seznam, e].sort((a, b) => a._zacetek - b._zacetek || a.id - b.id) } : d;
+    })()));
+    setIzbran(zahtevan);
+  }, [zahtevan]);
+
   async function oznaci(x, dostavljeno) {
+    zasedenRef.current = true;
     setZaseden(x.id); setNapakaAkcije("");
     stevec.current += 1;   // odgovor osvezitve, ki je ze na poti, zavrzemo
     try {
@@ -136,6 +152,7 @@ export function Strezba({ klub }) {
         ? { ...y, ...(novo && novo.id === x.id ? novo : {}), delivered_at: novo && novo.id === x.id ? novo.delivered_at : (dostavljeno ? new Date().toISOString() : null) }
         : y)) }));
     } catch (e) { setNapakaAkcije(sporocilo(e)); }
+    finally { zasedenRef.current = false; stevec.current += 1; }
     setZaseden(null);
   }
 

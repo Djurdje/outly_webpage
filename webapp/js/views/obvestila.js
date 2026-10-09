@@ -84,7 +84,7 @@ export function MeniObvestil({ odprt, zapri }) {
       <span class="kv-besedilo"><strong>${t("{club} posted a new event: {event}", { club: n.club_name, event: n.event_title })}</strong>
         <span>${t("Open the event")}</span></span></button>`)}
     ${s.strezba.map(x => html`<button type="button" class="vrstica-obvestila" key=${"s" + x.id}
-        onClick=${() => pojdi(`/app/business/${x.club_id}/service?dogodek=${x.event_id}`)}>
+        onClick=${() => pojdi(`/app/business/${Number(x.club_id)}/service?dogodek=${Number(x.event_id)}`)}>
       <span class="okrogla-slika"><${Ikona} ime="wine" velikost=${18} /></span>
       <span class="kv-besedilo"><strong>${besediloStrezbe(x)}</strong>
         <span>${[x.event_title, x.club_name, casSkena(x.scanned_at)].filter(Boolean).join(" · ")}</span></span></button>`)}
