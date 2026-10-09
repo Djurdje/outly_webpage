@@ -431,6 +431,8 @@ export const SL = {
  "Share my plans with friends": "Deli moje načrte s prijatelji",
  "Short description shown on your club page.": "Kratek opis, prikazan na strani kluba.",
  "Short intro video shown on your club page (up to 100 MB, plays muted in a loop).": "Kratek predstavitveni video na strani kluba (do 100 MB, predvaja se brez zvoka v zanki).",
+ "Show less": "Pokaži manj",
+ "Show more": "Pokaži več",
  "Show password": "Pokaži geslo",
  "Show this QR code at the door. Turn your screen brightness up.": "Kodo QR pokaži pri vhodu. Povečaj svetlost zaslona.",
  "Show {name} on the map": "Pokaži {name} na zemljevidu",
