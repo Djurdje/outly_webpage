@@ -10,7 +10,7 @@ import { sporocilo } from "../napake.js";
 import * as P from "../podatki.js";
 import {
   jeDanes, jeTaVikend, jeRazprodan, razdaljaKm, napisRazdalje, pozdrav, danInUra,
-  cena, znacka, zanrIme, steviloDogodkov, normalizirajDogodek, napisPrizorisca
+  cena, znacka, zanrIme, steviloDogodkov, normalizirajDogodek, napisPrizorisca, prizorisce
 } from "../oblika.js";
 import {
   Ikona, Slika, Avatar, NaslovSekcije, Skeleton, Napaka, VrstaDogodkov, KarticaPredloga,
@@ -182,7 +182,7 @@ function izpelji(s, me, lok, f, moji, maxKm) {
 
   const casZ = e => (e._zacetek ? e._zacetek.getTime() : Infinity);
   const razvrsceni = s.prihajajoci
-    .filter(e => ustrezaDogodek(f, e) && (!klubiPoId.get(e.club_id) || ustrezaKlub(f, klubiPoId.get(e.club_id), razdalje.get(e.club_id))))
+    .filter(e => ustrezaDogodek(f, e) && ustrezaKlubuDogodka(f, e, klubiPoId, razdalje))
     .sort((a, b) => casZ(a) - casZ(b));
   const zdaj = Date.now();
   const nocoj = razvrsceni.filter(jeDanes);
@@ -192,6 +192,8 @@ function izpelji(s, me, lok, f, moji, maxKm) {
     .sort((a, b) => b.sold_count - a.sold_count || casZ(a) - casZ(b)).slice(0, 8);
 
   // "Organized by Outly": prihajajoci dogodki klubov z is_official (najblizji najprej); v "Big events" se ne ponovijo.
+  // NAMERNO ignorira filter mesta (in razdalje): Outlyjevi dogodki so vedno na vrhu (odlocitev 9. 10. 2026); filtri zanrov,
+  // starosti in cene veljajo (ustrezaDogodek).
   const uradni = s.prihajajoci.filter(e => { const k = klubiPoId.get(e.club_id); return k && k.is_official === true && ustrezaDogodek(f, e); })
     .sort((a, b) => casZ(a) - casZ(b));
   const uradniId = new Set(uradni.map(e => e.id));
@@ -225,12 +227,27 @@ function izpelji(s, me, lok, f, moji, maxKm) {
   });
 
   const zanimivi = moji.filter(e => e.my_plan === "interested" && casZ(e) >= zdaj - 6 * 3600e3).sort((a, b) => casZ(a) - casZ(b));
-  const mesta = [...new Set(s.klubi.map(k => k.city).filter(Boolean))].sort();
+  // Mesta: klubi + prizorisca dogodkov organizatorjev (venue_city); mesto gostiteljskega kluba je ze med klubi.
+  const mesta = [...new Set([...s.klubi.map(k => k.city), ...s.prihajajoci.map(e => e.venue_city)].map(m => (m || "").trim()).filter(Boolean))].sort();
 
   return {
     klubiPoId, predlogi, uradni, nocoj, tedenl, vikend, trending, velik, hit, obmocje, razdalje: blizu.length ? razdalje : new Map(),
     zanri, zanimivi, mesta, imaKaj: s.prihajajoci.length > 0 || s.klubi.length > 0 || s.nalaga || !!s.napaka
   };
+}
+
+/** Filter mesta/razdalje za dogodek: dogodek organizatorja (ali z navedenim prizoriscem) velja za mesto PRIZORISCA
+    (klub gostitelj iz seznama klubov ali venue_city), ne za organizatorjev klub (ta nima mesta). */
+function ustrezaKlubuDogodka(f, e, klubiPoId, razdalje) {
+  const k = klubiPoId.get(e.club_id);
+  if (!k) return true;
+  const p = prizorisce(e);
+  if (p && p.klubId != null) {
+    const g = klubiPoId.get(p.klubId);
+    return g ? ustrezaKlub(f, { ...k, city: g.city }, razdalje.get(g.id)) : ustrezaKlub(f, { ...k, city: "" }, undefined);
+  }
+  if (p) return ustrezaKlub(f, { ...k, city: p.mesto }, undefined);
+  return ustrezaKlub(f, k, razdalje.get(k.id));
 }
 
 function letaIz(dob) {

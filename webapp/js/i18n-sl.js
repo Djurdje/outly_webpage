@@ -1047,5 +1047,6 @@ export const SL = {
  "Venue name": "Ime prizorišča",
  "View organizer": "Ogled organizatorja",
  "at {club}": "pri {club}",
- "the club": "klub"
+ "the club": "klub",
+ "Could not load your club details, so the venue cannot be checked.": "Podatkov kluba ni bilo mogoče naložiti, zato prizorišča ni mogoče preveriti."
 };

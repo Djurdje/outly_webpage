@@ -240,6 +240,8 @@ export function ObrazecDogodka({ klub, dogodek }) {
           <input type="checkbox" role="switch" class="stikalo" checked=${p.imaKonec} onChange=${e => nastavi("imaKonec", e.target.checked)} /></label>
         ${p.imaKonec ? html`<label class="polje-oznaceno">${t("Ends")}<input type="datetime-local" value=${p.end} min=${p.start} onInput=${e => nastavi("end", e.target.value)} /></label>` : null}
       </fieldset>
+      ${k.napaka ? html`<div class="napaka-blok" role="alert"><p>${t("Could not load your club details, so the venue cannot be checked.")}</p>
+        <button type="button" class="povezava-gumb" onClick=${k.nalozi}>${t("Try again")}</button></div>` : null}
       ${organizator ? html`<${PrizoriscaDogodka} p=${p} nastavi=${nastavi} lastniId=${id} />` : null}
       <fieldset><legend>${t("Who")}</legend>
         <label class="polje-oznaceno">${t("Minimum age")}<input type="number" inputmode="numeric" min="0" max="99" value=${p.minAge} onInput=${e => nastavi("minAge", e.target.value)} /></label>
@@ -282,7 +284,7 @@ export function ObrazecDogodka({ klub, dogodek }) {
       </fieldset>
       ${urejam && obstojeci ? html`<${VipDogodka} klub=${id} dogodek=${idDogodka} />` : null}
       ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}
-      <button type="button" class="gumb-glavni" onClick=${shrani} disabled=${shranjujem || nalagaPlakat || k.nalaga || !p.title.trim()}>${shranjujem ? t("Saving...") : t("Save")}</button>
+      <button type="button" class="gumb-glavni" onClick=${shrani} disabled=${shranjujem || nalagaPlakat || k.nalaga || !!k.napaka || !p.title.trim()}>${shranjujem ? t("Saving...") : t("Save")}</button>
       ${urejam ? html`<button type="button" class="gumb-rdec" disabled=${shranjujem} onClick=${() => setBrisem(true)}>${t("Cancel or delete event")}</button>` : null}
     </div>
     <${List} odprt=${brisem} zapri=${() => setBrisem(false)} naslov=${t("Remove this event?")}>
