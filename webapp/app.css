@@ -316,6 +316,15 @@ h1,h2,h3,p{ margin:0; }
 .info-vrstica.razmaknjena > :last-child{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .info-oznaka{ font-size:12px; font-weight:600; color:var(--utisano); }
 .info-vrstica a{ color:var(--modra-besedilo); font-weight:600; }
+.zanri-vec{ font-size:12px; font-weight:500; color:var(--b55); text-decoration:underline; text-underline-offset:2px; padding:2px 0; }
+.zanri-vec:hover{ color:var(--b70); }
+.kontakti{ display:flex; flex-direction:column; border-radius:18px; background:var(--b06); overflow:hidden; }
+.kontakt-vrstica{ display:flex; align-items:center; gap:12px; padding:12px 14px; min-height:56px; color:var(--b70); }
+.kontakt-vrstica + .kontakt-vrstica{ border-top:1px solid var(--b08); }
+.kontakt-besedilo{ flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
+.kontakt-vrednost{ font-size:15px; font-weight:600; color:#fff; overflow-wrap:anywhere; }
+.kontakt-vrstica.brez-povezave .kontakt-vrednost{ font-weight:500; color:var(--besedilo); }
+@media (hover:hover){ a.kontakt-vrstica:hover{ background:var(--b08); } }
 .povezava-zemljevid{ display:inline-flex; gap:6px; align-items:center; font-weight:600; font-size:14px; color:var(--modra-besedilo); }
 .kartica-vip{ position:relative; display:grid; place-items:center; width:100%; min-height:200px; border-radius:18px; overflow:hidden; border:1px solid var(--b10); text-align:center; background:#222; }
 .vip-ozadje{ position:absolute; inset:0; transform:scale(1.15); }

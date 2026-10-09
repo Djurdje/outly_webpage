@@ -62,7 +62,7 @@ export function Klub({ id }) {
       <span class="okrogla-slika velika">${k.logo_url ? html`<${Slika} src=${k.logo_url} sirina=${190} alt="" />` : html`<${Ikona} ime="building" velikost=${24} />`}</span>
       <div class="klub-meta">
         ${kraj ? html`<span>${kraj}</span>` : null}
-        ${k.genres.length ? html`<span>${k.genres.map(zanrIme).join(" • ")}</span>` : null}
+        <${Zanri} zanri=${k.genres} />
         <span>${t("Min age: {n}+", { n: k.min_age })}</span>
       </div>
       <div class="klub-sledenje">
@@ -98,13 +98,7 @@ export function Klub({ id }) {
       <${Ikona} ime="chevron-right" velikost=${16} razred="utisano" />
     </a>` : null}`}
 
-    <section class="blok-besedila">
-      <h2 class="podnaslov">${t("Contact")}</h2>
-      <${Kontakt} oznaka=${t("Email")} vrednost=${k.contact_email} href=${k.contact_email ? "mailto:" + k.contact_email : null} />
-      <${Kontakt} oznaka=${t("Phone")} vrednost=${k.contact_phone} href=${k.contact_phone ? "tel:" + k.contact_phone.replace(/[^\d+]/g, "") : null} />
-      <${Kontakt} oznaka=${t("Instagram")} vrednost=${k.instagram} href=${instagram(k.instagram)} />
-      <${Kontakt} oznaka=${t("Website")} vrednost=${k.website} href=${spletna(k.website)} />
-    </section>
+    <${Kontakti} klub=${k} />
 
     ${(k.description || "").trim() ? html`<section class="blok-besedila">
       <h2 class="podnaslov">${org ? t("About the organizer") : t("About the club")}</h2><p class="besedilo-opis">${k.description}</p>
@@ -116,8 +110,14 @@ export function Klub({ id }) {
 
 const kratko = n => (n < 1000 ? String(n) : n < 10000 ? (n / 1000).toFixed(1) + "k" : Math.round(n / 1000) + "k");
 
-/* Povezave iz podatkov kluba: samo http(s), nikoli javascript: ipd. (varenUrl v oblika.js). */
+/* Povezave iz podatkov kluba: samo http(s), mailto, tel - nikoli javascript: ipd. Vrednosti gredo v DOM
+   samo prek htm (besedilo/atribut). Neveljavno -> null (vrstica se pokaze kot besedilo brez povezave). */
 const spletna = varenUrl;
+const DOVOLJENE_SHEME = ["http:", "https:", "mailto:", "tel:"];
+function varnaShema(href) {
+  if (!href) return null;
+  try { return DOVOLJENE_SHEME.includes(new URL(href).protocol) ? href : null; } catch { return null; }
+}
 function instagram(v) {
   const s = (v || "").trim();
   if (!s) return null;
@@ -125,12 +125,43 @@ function instagram(v) {
   const ime = s.replace(/^@/, "");
   return /^[A-Za-z0-9._]{1,30}$/.test(ime) ? "https://instagram.com/" + ime : null;
 }
+const eposta = v => { const s = (v || "").trim(); return /^[^\s@<>"?&#]+@[^\s@<>"?&#]+$/.test(s) ? varnaShema("mailto:" + s) : null; };
+const telefon = v => { const s = (v || "").replace(/[^\d+]/g, ""); return /\d/.test(s) ? varnaShema("tel:" + s) : null; };
 
-function Kontakt({ oznaka, vrednost, href }) {
-  const v = (vrednost || "").trim();
-  return html`<div class="info-vrstica razmaknjena"><span class="info-oznaka">${oznaka}:</span>
-    ${v && href ? html`<a href=${href} target=${href.startsWith("http") ? "_blank" : null} rel="noopener noreferrer">${v}</a>` : html`<span>${v || "-"}</span>`}
-  </div>`;
+/* Zanri: prvih 4, nato "Show more" / "Show less" (enako kot iOS). */
+const ZANROV_ZAPRTO = 4;
+function Zanri({ zanri }) {
+  const [vse, setVse] = useState(false);
+  if (!zanri.length) return null;
+  const vec = zanri.length > ZANROV_ZAPRTO;
+  const prikaz = vec && !vse ? zanri.slice(0, ZANROV_ZAPRTO) : zanri;
+  return html`<span class="klub-zanri">${prikaz.map(zanrIme).join(" • ")}${vec ? html` <button type="button" class="zanri-vec"
+    aria-expanded=${vse} onClick=${() => setVse(!vse)}>${vse ? t("Show less") : t("Show more")}</button>` : null}</span>`;
+}
+
+/* Kontakt: kartica z vrsticami ikona + vrednost; vsaka vrstica je povezava. Prazne se skrijejo. */
+function Kontakti({ klub: k }) {
+  const vrstice = [
+    { ikona: "mail", oznaka: t("Email"), vrednost: (k.contact_email || "").trim(), href: eposta(k.contact_email) },
+    { ikona: "phone", oznaka: t("Phone"), vrednost: (k.contact_phone || "").trim(), href: telefon(k.contact_phone) },
+    { ikona: "at-sign", oznaka: t("Instagram"), vrednost: (k.instagram || "").trim(), href: instagram(k.instagram) },
+    { ikona: "globe", oznaka: t("Website"), vrednost: (k.website || "").trim(), href: spletna(k.website) },
+  ].filter(v => v.vrednost);
+  if (!vrstice.length) return null;
+  return html`<section class="blok-besedila">
+    <h2 class="podnaslov">${t("Contact")}</h2>
+    <div class="kontakti">
+      ${vrstice.map(v => {
+        const zunaj = !!v.href && v.href.startsWith("http");
+        const vsebina = html`<${Ikona} ime=${v.ikona} velikost=${18} />
+          <span class="kontakt-besedilo"><span class="info-oznaka">${v.oznaka}</span><span class="kontakt-vrednost">${v.vrednost}</span></span>
+          ${v.href ? html`<${Ikona} ime="chevron-right" velikost=${16} razred="utisano" />` : null}`;
+        return v.href
+          ? html`<a class="kontakt-vrstica" key=${v.ikona} href=${v.href} target=${zunaj ? "_blank" : null} rel=${zunaj ? "noopener noreferrer" : null}>${vsebina}</a>`
+          : html`<div class="kontakt-vrstica brez-povezave" key=${v.ikona}>${vsebina}</div>`;
+      })}
+    </div>
+  </section>`;
 }
 
 function SeznamDogodkov({ naslov, dogodki, ime, nalaga }) {
