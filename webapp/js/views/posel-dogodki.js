@@ -18,6 +18,9 @@ import { jeAktiven } from "../sken/okno.js";
 import { VipVrstica, OznakaGuestList } from "../vip.js";
 import { VipDogodka, RezervacijeVip, RazporedDogodka } from "./posel-vip-dogodek.js";
 
+/** Vsebina obrazca za primerjavo "neshranjeno" (zanri so Set). */
+const vsebinaObrazca = p => JSON.stringify({ ...p, genres: [...p.genres].sort() });
+
 const datumDogodka = d => (d ? new Intl.DateTimeFormat(locale(), { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }).format(d) : "");
 
 function stanje(e) {
@@ -113,6 +116,7 @@ export function ObrazecDogodka({ klub, dogodek }) {
   const [napaka, setNapaka] = useState("");
   const [brisem, setBrisem] = useState(false);
   const vnosPlakat = useRef(null), vnosVideo = useRef(null);
+  const izhodisce = useRef(null);   // vsebina obrazca ob nalaganju/shranjevanju (urejanje); null = se ni nalozeno
   const nastavi = (k, v) => setP(x => ({ ...x, [k]: v }));
 
   const naloziZanre = () => { setZanriNapaka(false); P.zanri().then(setVsiZanri).catch(() => setZanriNapaka(true)); };
@@ -124,7 +128,7 @@ export function ObrazecDogodka({ klub, dogodek }) {
       if (!e) { setNapakaNalaganja({ status: 404 }); setNalaga(false); return; }
       setObstojeci(e);
       setPosnetek(e.recap_video_url || "");
-      setP({
+      const np = {
         title: e.title, description: e.description,
         start: e._zacetek ? vLokalno(e._zacetek) : vLokalno(privzetZacetek),
         imaKonec: !!e._konec, end: e._konec ? vLokalno(e._konec) : vLokalno(new Date((e._zacetek || privzetZacetek).getTime() + 5 * 3600e3)),
@@ -136,7 +140,9 @@ export function ObrazecDogodka({ klub, dogodek }) {
         gostitelj: e.venue_club_id != null ? { id: e.venue_club_id, name: e.venue_club_name || "", city: "" } : null,
         vName: e.venue_name, vAddress: e.venue_address, vCity: e.venue_city,
         vTocka: koordinata(e.venue_lat) != null && koordinata(e.venue_lng) != null ? { lat: e.venue_lat, lng: e.venue_lng } : null
-      });
+      };
+      setP(np);
+      izhodisce.current = vsebinaObrazca(np);
       setNalaga(false);
     }).catch(e => { setNapakaNalaganja(e); setNalaga(false); });
   };
@@ -282,9 +288,10 @@ export function ObrazecDogodka({ klub, dogodek }) {
           <input type="checkbox" role="switch" class="stikalo" checked=${p.objavljen} onChange=${e => nastavi("objavljen", e.target.checked)} /></label>
         ${obstojeci && obstojeci.status === "cancelled" ? html`<p class="napaka-besedilo">${t("This event is cancelled.")}</p>` : null}
       </fieldset>
-      ${organizator ? (urejam && obstojeci ? html`<${RazporedDogodka} klub=${id} dogodek=${idDogodka} />`
-        : !urejam ? html`<fieldset><legend>${t("VIP tables")}</legend><span class="opomba">${t("Save the event first, then set up its VIP tables.")}</span></fieldset>` : null)
-      : urejam && obstojeci ? html`<${VipDogodka} klub=${id} dogodek=${idDogodka} />` : null}
+      ${!k.klub ? null   /* brez utripa: razlicico izberemo sele, ko vemo, ali je klub organizator */
+        : organizator ? (urejam && obstojeci ? html`<${RazporedDogodka} klub=${id} dogodek=${idDogodka} neshranjeno=${vsebinaObrazca(p) !== izhodisce.current} />`
+          : !urejam ? html`<fieldset><legend>${t("VIP tables")}</legend><span class="opomba">${t("Save the event first, then set up its VIP tables.")}</span></fieldset>` : null)
+        : urejam && obstojeci ? html`<${VipDogodka} klub=${id} dogodek=${idDogodka} />` : null}
       ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}
       <button type="button" class="gumb-glavni" onClick=${shrani} disabled=${shranjujem || nalagaPlakat || k.nalaga || !!k.napaka || !p.title.trim()}>${shranjujem ? t("Saving...") : t("Save")}</button>
       ${urejam ? html`<button type="button" class="gumb-rdec" disabled=${shranjujem} onClick=${() => setBrisem(true)}>${t("Cancel or delete event")}</button>` : null}

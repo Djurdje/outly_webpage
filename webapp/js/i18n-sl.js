@@ -1102,7 +1102,10 @@ export const SL = {
  "This event's current tables are replaced with a fresh copy of {venue}'s layout. Tables with orders are archived.": "Trenutne mize tega dogodka se zamenjajo s svežo kopijo razporeda: {venue}. Mize z naročili se arhivirajo.",
  "Replace with a copy": "Zamenjaj s kopijo",
  "Remove VIP tables from this event?": "Odstranim VIP mize s tega dogodka?",
- "Guests will not be able to book tables. Tables with orders are archived, so tickets already sold stay valid.": "Gostje ne bodo mogli rezervirati miz. Mize z naročili se arhivirajo, zato že prodane vstopnice ostanejo veljavne.",
+ "The floor plan, tables and prices you drew for this event will be lost. Guests will not be able to book tables.": "Tloris, mize in cene, ki si jih narisal za ta dogodek, bodo izgubljeni. Gostje ne bodo mogli rezervirati miz.",
+ "Tables with orders stay archived and the orders remain valid. Phone reservations on these tables are released.": "Mize z naročili ostanejo arhivirane, naročila pa veljajo. Telefonske rezervacije na teh mizah se sprostijo.",
+ "If your club has its own floor plan, the event goes back to it. Otherwise it has no VIP tables.": "Če ima tvoj klub svoj tloris, se dogodek vrne nanj. Sicer dogodek nima VIP miz.",
+ "Save changes first": "Najprej shrani spremembe",
  "Remove VIP tables": "Odstrani VIP mize",
  "Save the event first, then set up its VIP tables.": "Najprej shrani dogodek, nato nastavi njegove VIP mize."
 };

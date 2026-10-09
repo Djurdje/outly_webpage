@@ -299,7 +299,7 @@ export function VipDogodka({ klub, dogodek, organizator = false }) {
 
 /** Razpored VIP miz dogodka za organizatorja: kopija tlorisa gostitelja, lasten razpored ali brez VIP miz.
     Razdelek se pokaze samo, ko dogodek ze obstaja (pri novem: namig v obrazcu). */
-export function RazporedDogodka({ klub, dogodek }) {
+export function RazporedDogodka({ klub, dogodek, neshranjeno = false }) {
   const [s, setS] = useState({ nalaga: true, napaka: null, d: null, ver: 0 });
   const [napaka, setNapaka] = useState("");
   const [posiljam, setPosiljam] = useState(false);
@@ -314,7 +314,8 @@ export function RazporedDogodka({ klub, dogodek }) {
   };
   useEffect(() => { if (klub && dogodek) nalozi(); }, [klub, dogodek]);
 
-  if (s.napaka && brezPodpore(s.napaka)) return null;   // star backend (404) ali brez pravice (403)
+  // Star backend (404) ali brez pravice (403): brez izbire razporeda, prodaja/rezervacije kot pri navadnem klubu.
+  if (s.napaka && brezPodpore(s.napaka)) return html`<${VipDogodka} klub=${klub} dogodek=${dogodek} />`;
   const naslov = html`<legend>${t("VIP tables")}</legend>`;
   if (s.napaka) return html`<fieldset>${naslov}<${Napaka} besedilo=${sporocilo(s.napaka)} znova=${nalozi} /></fieldset>`;
   if (!s.d) return html`<fieldset>${naslov}<${Nalaganje} /></fieldset>`;
@@ -338,6 +339,7 @@ export function RazporedDogodka({ klub, dogodek }) {
   }
   const kopiraj = () => poslji({ source: "event", copy_from_venue: true }, true);
   const brez = () => poslji({ source: "club" }, false);
+  // Neshranjen obrazec dogodka: odhod v urejevalnik bi izgubil spremembe (in kopija bi vzela staro prizorisce) - najprej Save.
   const izberiGostitelja = () => { if (lasten) setPotrdi("kopija"); else kopiraj(); };
   const izberiLastnega = () => navigiraj(urejevalnik);
   const izberiBrez = () => { if (lasten) setPotrdi("brez"); };
@@ -351,13 +353,15 @@ export function RazporedDogodka({ klub, dogodek }) {
   return html`<fieldset class="vip-razpored"><legend>${t("VIP tables")}</legend>
     <div class="vip-viri" role="group" aria-label=${t("VIP tables")}>
       ${imaGostitelja ? vir(izvor, izberiGostitelja, t("Use {venue}'s layout", { venue: gostitelj || t("the venue") }),
-        t("Copies the floor plan and tables. You can change prices and tables afterwards.")) : null}
-      ${vir(lasten && !izvor, izberiLastnega, t("Own layout for this event"), t("Draw a floor plan and tables just for this event."))}
+        t("Copies the floor plan and tables. You can change prices and tables afterwards."), neshranjeno) : null}
+      ${vir(lasten && !izvor, izberiLastnega, t("Own layout for this event"), t("Draw a floor plan and tables just for this event."), neshranjeno)}
       ${vir(!lasten, izberiBrez, t("No VIP tables"), t("Guests cannot book tables at this event."), !lasten)}
     </div>
+    ${neshranjeno ? html`<p class="opomba oranzna" role="status">${t("Save changes first")}</p>` : null}
     ${lasten ? html`<div class="vip-razpored-stanje">
       <span class="opomba">${tn("1 table", "{n} tables", miz)}${izvor && d.from_club_name ? " · " + t("Copied from {club}", { club: String(d.from_club_name) }) : ""}</span>
-      <a class="gumb-siv" href=${urejevalnik}><${Ikona} ime="pencil" velikost=${16} /> ${t("Edit layout and tables")}</a>
+      ${neshranjeno ? html`<button type="button" class="gumb-siv" disabled><${Ikona} ime="pencil" velikost=${16} /> ${t("Edit layout and tables")}</button>`
+        : html`<a class="gumb-siv" href=${urejevalnik}><${Ikona} ime="pencil" velikost=${16} /> ${t("Edit layout and tables")}</a>`}
     </div>` : null}
     ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}
     <${List} odprt=${potrdi === "kopija"} zapri=${() => setPotrdi(null)} brezZapiranja=${posiljam}
@@ -368,10 +372,12 @@ export function RazporedDogodka({ klub, dogodek }) {
     <//>
     <${List} odprt=${potrdi === "brez"} zapri=${() => setPotrdi(null)} brezZapiranja=${posiljam}
       naslov=${t("Remove VIP tables from this event?")}>
-      <p class="besedilo-opis">${t("Guests will not be able to book tables. Tables with orders are archived, so tickets already sold stay valid.")}</p>
+      <p class="besedilo-opis">${t("The floor plan, tables and prices you drew for this event will be lost. Guests will not be able to book tables.")}</p>
+      <p class="besedilo-opis">${t("Tables with orders stay archived and the orders remain valid. Phone reservations on these tables are released.")}</p>
+      <p class="besedilo-opis">${t("If your club has its own floor plan, the event goes back to it. Otherwise it has no VIP tables.")}</p>
       <button type="button" class="gumb-rdec" disabled=${posiljam} onClick=${brez}>${posiljam ? t("Saving...") : t("Remove VIP tables")}</button>
       <button type="button" class="gumb-siv" disabled=${posiljam} onClick=${() => setPotrdi(null)}>${t("Keep it")}</button>
     <//>
   </fieldset>
-  <${VipDogodka} key=${s.ver} klub=${klub} dogodek=${dogodek} organizator=${true} />`;
+  ${lasten ? html`<${VipDogodka} key=${s.ver} klub=${klub} dogodek=${dogodek} organizator=${true} />` : null}`;
 }

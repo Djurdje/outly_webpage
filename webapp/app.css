@@ -859,7 +859,8 @@ a.profil-ime{ white-space:normal; }
 .vip-vir .kv-besedilo span{ white-space:normal; font-size:13px; color:var(--b55); }
 .vip-vir.izbran{ border-color:rgba(255,255,255,.7); background:var(--b08); }
 .vip-vir > .ikona{ flex:none; }
-.vip-vir:disabled{ opacity:1; cursor:default; }
+.vip-vir:disabled{ opacity:.5; cursor:default; }
+.vip-vir.izbran:disabled{ opacity:1; }
 .vip-razpored-stanje{ display:flex; flex-direction:column; gap:8px; }
 .vip-rez-tel{ align-items:center; gap:2px; color:var(--b70); }
 .vip-tloris-okvir{ border-radius:14px; background:var(--b04); border:1px solid var(--b10); padding:6px; }
