@@ -1,6 +1,6 @@
-/* Ekipa kluba (TeamView + AddTeamMemberView): lastnik + managerji + vratarji (GET /business/team) in cakajoca vabila.
+/* Ekipa kluba (TeamView + AddTeamMemberView): lastnik + managerji + vratarji + natakarji (GET /business/team) in cakajoca vabila.
    Lastnik vabi in odstranjuje vse; manager samo vratarje (streznik to uveljavi, tu samo skrijemo gumbe).
-   Dodajanje poslje VABILO: clan nastane, ko ga povabljeni sprejme (Profil -> My clubs -> Notifications). */
+   Vloge: manager, vratar, natakar (bartender). Dodajanje poslje VABILO: clan nastane, ko ga povabljeni sprejme (Profil -> My clubs -> Notifications). */
 import { html, useEffect, useState } from "../lib.js";
 import { t } from "../i18n.js";
 import { sporocilo } from "../napake.js";
@@ -36,8 +36,8 @@ export function Ekipa({ klub }) {
   };
   useEffect(() => { if (id) nalozi(); }, [id]);
   const lastnik = s.vloga === "owner" || s.vloga === "admin";
-  const lahkoOdstrani = m => m.role !== "owner" && (lastnik || m.role === "doorman");
-  const lahkoPreklice = v => lastnik || v.role === "doorman";
+  const lahkoOdstrani = m => m.role !== "owner" && (lastnik || m.role === "doorman" || m.role === "bartender");
+  const lahkoPreklice = v => lastnik || v.role === "doorman" || v.role === "bartender";
   const ime = x => x.username || x.email;
 
   async function izvedi(kljuc, pot) {
@@ -78,6 +78,8 @@ export function Ekipa({ klub }) {
           <span>${t("Events, sales, club page and door staff. Can't add other managers.")}</span></span></div>
         <div><${Ikona} ime="scan-line" velikost=${16} razred="modra" /><span class="kv-besedilo"><strong>${t("Door staff")}</strong>
           <span>${t("Scans tickets at the door. Nothing else.")}</span></span></div>
+        <div><${Ikona} ime="wine" velikost=${16} razred="modra" /><span class="kv-besedilo"><strong>${t("Bartender")}</strong>
+          <span>${t("Serves VIP tables after they are scanned. Nothing else.")}</span></span></div>
       </div>` : null}
 
     <${List} odprt=${!!odstrani} zapri=${() => setOdstrani(null)} naslov=${odstrani ? t("Remove {name} from the team?", { name: ime(odstrani) }) : ""}>
@@ -115,6 +117,7 @@ function PovabiClana({ odprt, zapri, klub, lahkoManagerja, ob }) {
     <span class="opomba">${t("They need an Outly account with this email. They get the invitation in the app (Profile → My clubs) and join once they accept.")}</span>
     <span class="oznaka-polja">${t("Role")}</span>
     ${izbira("doorman", "scan-line", t("Door staff"), t("Scans tickets at the door."))}
+    ${izbira("bartender", "wine", t("Bartender"), t("Serves VIP tables once the guests are scanned in."))}
     ${lahkoManagerja ? izbira("manager", "id-card", t("Manager"), t("Events, sales, club page and door staff.")) : null}
     ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}
     <button type="button" class="gumb-glavni" onClick=${poslji} disabled=${!ok || tece}>${tece ? t("Sending...") : t("Send invite")}</button>
