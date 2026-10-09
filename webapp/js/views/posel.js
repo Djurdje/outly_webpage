@@ -17,7 +17,7 @@ import { GlavaNazaj, Ikona, Slika, Nalaganje, Napaka, List } from "../ui.js";
 import { odpriStripe } from "../stripe.js";
 import { MenijskaVrstica } from "./racun.js";
 import { VrsticaNamestitve } from "./namestitev.js";
-import { imeVloge, lahkoUreja, idKluba, poslovno, useKlub, nastaviObraz, centiIz, evriBesedilo, NAJVEC_VIDEA } from "../posel.js";
+import { imeVloge, lahkoUreja, lahkoStrezbe, idKluba, poslovno, useKlub, nastaviObraz, centiIz, evriBesedilo, NAJVEC_VIDEA } from "../posel.js";
 
 /* ---------- skupni deli ---------- */
 export function LogoKluba({ url, velikost = 60 }) {
@@ -77,6 +77,7 @@ export function LastnikProfil({ me }) {
         <${MenijskaVrstica} href=${baza + "/events"} ikona="calendar" naslov=${t("Events")} />
         <${MenijskaVrstica} href=${baza + "/vip"} ikona="crown" naslov=${t("VIP tables")} />
         <${MenijskaVrstica} href=${baza + "/scan"} ikona="scan-line" naslov=${t("Scan tickets")} />
+        <${MenijskaVrstica} href=${baza + "/service"} ikona="wine" naslov=${t("Table service")} />
         <${MenijskaVrstica} href=${baza + "/team"} ikona="users" naslov=${t("My team")} />
         <${MenijskaVrstica} href=${baza + "/settings"} ikona="settings" naslov=${t("Settings")} />
       </div>
@@ -289,7 +290,8 @@ export function SredisceKluba({ klub }) {
       <${MenijskaVrstica} href=${baza + "/team"} ikona="users" naslov=${t("Team")} />
     </div>` : null}
     ${vloga ? html`<div class="seznam-kartica">
-      <${MenijskaVrstica} href=${baza + "/scan"} ikona="scan-line" naslov=${t("Scan ticket")} />
+      ${vloga !== "bartender" ? html`<${MenijskaVrstica} href=${baza + "/scan"} ikona="scan-line" naslov=${t("Scan ticket")} />` : null}
+      ${lahkoStrezbe(vloga) ? html`<${MenijskaVrstica} href=${baza + "/service"} ikona="wine" naslov=${t("Table service")} />` : null}
     </div>` : null}
     ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}
     ${vloga && vloga !== "owner" ? html`<button type="button" class="gumb-rdec" disabled=${tece} onClick=${() => setZapusti(true)}>${t("Leave the team")}</button>` : null}

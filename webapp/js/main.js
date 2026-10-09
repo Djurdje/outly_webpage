@@ -32,6 +32,7 @@ const NALAGALNIKI = {
   "./views/posel-plosca.js": () => import("./views/posel-plosca.js"),
   "./views/posel-ekipa.js": () => import("./views/posel-ekipa.js"),
   "./views/posel-skener.js": () => import("./views/posel-skener.js"),
+  "./views/posel-strezba.js": () => import("./views/posel-strezba.js"),
   "./views/posel-vip.js": () => import("./views/posel-vip.js"),
 };
 const Vstopnice = leno("./views/vstopnice.js", "Vstopnice");
@@ -73,12 +74,13 @@ const NadzornaPlosca = leno("./views/posel-plosca.js", "NadzornaPlosca");
 const SkeniranjaClana = leno("./views/posel-plosca.js", "SkeniranjaClana");
 const Ekipa = leno("./views/posel-ekipa.js", "Ekipa");
 const Skener = leno("./views/posel-skener.js", "Skener");
+const Strezba = leno("./views/posel-strezba.js", "Strezba");
 const UrejevalnikVip = leno("./views/posel-vip.js", "UrejevalnikVip");
 
 const AVT = new Set(["login", "register", "verify", "forgot"]);
 const SAMO_PRIJAVLJENI = new Set(["tickets", "guest-list", "interested", "onboarding", "account", "personal", "security", "preferences",
   "delete", "creator", "friends", "friends-plans", "my-clubs", "invites", "biz", "biz-settings", "biz-dashboard", "biz-staff",
-  "biz-events", "biz-event-new", "biz-event-edit", "biz-event-tickets", "biz-team", "biz-info", "biz-location", "biz-bar-prices", "biz-scan", "biz-vip"]);
+  "biz-events", "biz-event-new", "biz-event-edit", "biz-event-tickets", "biz-team", "biz-info", "biz-location", "biz-bar-prices", "biz-scan", "biz-service", "biz-vip"]);
 const ZAVIHKI = [
   { ime: "home", href: "/app", ikona: "house", napis: "Home" },
   { ime: "search", href: "/app/search", ikona: "search", napis: "Search" },
@@ -167,6 +169,8 @@ function Zaslon({ pot }) {
     case "biz": return html`<${SredisceKluba} key=${p.klub} klub=${p.klub} />`;
     // Skener: vse vloge v klubu (tudi vratar) - brez SamoUredniki.
     case "biz-scan": return html`<${Skener} key=${p.klub} klub=${p.klub} />`;
+    // Table service: owner, manager, bartender - vratarja zavrne pogled sam (brez klicev), strezba pa s 403.
+    case "biz-service": return html`<${Strezba} key=${p.klub} klub=${p.klub} />`;
     case "biz-settings": return html`<${SamoUredniki} klub=${p.klub}><${NastavitveLastnika} key=${p.klub} klub=${p.klub} /><//>`;
     case "biz-dashboard": return html`<${SamoUredniki} klub=${p.klub}><${NadzornaPlosca} key=${p.klub} klub=${p.klub} /><//>`;
     case "biz-staff": return html`<${SamoUredniki} klub=${p.klub}><${SkeniranjaClana} key=${p.klub + "/" + p.clan} klub=${p.klub} clan=${p.clan} /><//>`;
@@ -243,7 +247,7 @@ function naslovPoti(ime) {
     "my-clubs": "My clubs", invites: "Notifications", biz: "My clubs", "biz-settings": "Settings", "biz-dashboard": "Dashboard",
     "biz-staff": "Staff activity", "biz-events": "Events", "biz-event-new": "New event", "biz-event-edit": "Edit event",
     "biz-event-tickets": "Tickets", "biz-team": "Team", "biz-info": "Club info", "biz-location": "Location on the map",
-    "biz-bar-prices": "Bar prices", "biz-vip": "VIP tables" })[ime] || "Outly";
+    "biz-bar-prices": "Bar prices", "biz-service": "Table service", "biz-vip": "VIP tables" })[ime] || "Outly";
 }
 
 zacniSejo();

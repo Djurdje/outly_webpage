@@ -917,3 +917,16 @@ a.profil-ime{ white-space:normal; }
 .gl-moja-glava{ display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; }
 .skener-vip .znacka-gl{ font-size:15px; min-height:28px; padding:2px 12px; text-transform:none; letter-spacing:.02em; }
 .skener-vip .gl-vrstica{ justify-content:center; }
+
+/* Table service (strezba VIP miz): velika oznaka mize, paket + opis, cas skena, gumb Delivered / Undo. */
+.strezba-seznam{ display:flex; flex-direction:column; gap:10px; }
+.strezba-kartica{ display:grid; grid-template-columns:auto 1fr; gap:12px 14px; align-items:center; padding:14px; border-radius:18px; background:var(--b08); border:1px solid var(--b10); }
+.strezba-kartica.dostavljeno{ opacity:.55; background:var(--b04); }
+.strezba-miza{ min-width:72px; max-width:120px; min-height:72px; padding:8px 10px; border-radius:16px; border:1px solid var(--zlata); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; text-align:center; }
+.strezba-miza strong{ font-size:26px; line-height:1.1; font-weight:800; overflow-wrap:anywhere; }
+.strezba-miza span{ font-size:11px; font-weight:600; color:var(--b55); white-space:nowrap; }
+.strezba-besedilo{ display:flex; flex-direction:column; gap:4px; min-width:0; }
+.strezba-besedilo strong{ font-size:16px; overflow-wrap:anywhere; }
+.strezba-opis{ font-size:14px; color:var(--b70); overflow-wrap:anywhere; }
+.strezba-cas{ display:inline-flex; align-items:center; gap:5px; font-size:13px; color:var(--b55); }
+.strezba-gumb{ grid-column:1 / -1; width:100%; min-height:44px; }

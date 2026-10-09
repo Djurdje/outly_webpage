@@ -1050,5 +1050,31 @@ export const SL = {
  "View organizer": "Ogled organizatorja",
  "at {club}": "pri {club}",
  "the club": "klub",
- "Could not load your club details, so the venue cannot be checked.": "Podatkov kluba ni bilo mogoče naložiti, zato prizorišča ni mogoče preveriti."
+ "Could not load your club details, so the venue cannot be checked.": "Podatkov kluba ni bilo mogoče naložiti, zato prizorišča ni mogoče preveriti.",
+ "Bartender": "Natakar",
+ "Serves VIP tables after they are scanned. Nothing else.": "Streže VIP mize, ko so skenirane. Nič drugega.",
+ "Serves VIP tables once the guests are scanned in.": "Streže VIP mize, ko so gostje skenirani.",
+ "serving VIP tables": "strežba VIP miz",
+ "Table service": "Strežba miz",
+ "Table {label}": "Miza {label}",
+ "Table {label} · {package} — ready to serve": "Miza {label} · {package} — za strežbo",
+ "Table {label} — ready to serve": "Miza {label} — za strežbo",
+ "Scanned {cas}": "Skenirano {cas}",
+ "Delivered {cas}": "Dostavljeno {cas}",
+ "by {name}": "dostavil(a) {name}",
+ "Delivered": "Dostavljeno",
+ "Undo": "Razveljavi",
+ "To serve": "Za strežbo",
+ "No package": "Brez paketa",
+ "No events to serve": "Ni dogodkov za strežbo",
+ "VIP tables appear here once the door staff scans them.": "VIP mize se tu pokažejo, ko jih vratar skenira.",
+ "Nothing to serve yet": "Še ni česa streči",
+ "A table shows up here when the door staff scans its VIP ticket.": "Miza se pokaže tu, ko vratar skenira njeno VIP vstopnico.",
+ "{n} seats": {
+  "one": "{n} sedež",
+  "two": "{n} sedeža",
+  "few": "{n} sedeži",
+  "other": "{n} sedežev"
+ },
+ "1 seat": "1 sedež"
 };

@@ -1,4 +1,4 @@
-/* Poslovni del (faza 4): skupno za zaslone kluba. Vlogo v klubu (owner | manager | doorman) odloca streznik
+/* Poslovni del (faza 4): skupno za zaslone kluba. Vlogo v klubu (owner | manager | doorman | bartender) odloca streznik
    ob vsakem klicu; tu je samo izbira obraza. Vsak klic poslovnih poti poslje klub iz URL-ja (/app/business/:klub)
    v glavi X-Outly-Club (backend 018: oseba je lahko v vec ekipah) - tako globoka povezava ali osvezitev
    vedno velja za pravi klub (iOS ima za to globalni IzbraniKlub). */
@@ -8,8 +8,10 @@ import { send } from "./api.js";
 import { ustvariTrgovino, useStore, lokalno } from "./store.js";
 import { normalizirajKlub, normalizirajDogodek } from "./oblika.js";
 
-export const imeVloge = v => (v === "owner" ? t("Owner") : v === "manager" ? t("Manager") : t("Door staff"));
+export const imeVloge = v => (v === "owner" ? t("Owner") : v === "manager" ? t("Manager") : v === "bartender" ? t("Bartender") : t("Door staff"));
 export const lahkoUreja = v => v === "owner" || v === "manager" || v === "admin";
+/* Table service (strezba VIP miz): owner, manager in bartender; vratar je ne vidi (streznik vrne 403). */
+export const lahkoStrezbe = v => lahkoUreja(v) || v === "bartender";
 
 /* Obraz profila lastnika (iOS @AppStorage "profilObraz"): "club" = klubski profil, "personal" = osebni.
    Velja samo za vlogo business; shranjeno samo v tem brskalniku. */

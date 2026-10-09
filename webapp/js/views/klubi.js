@@ -9,7 +9,8 @@ import { useSeja, naloziMe } from "../seja.js";
 import { GlavaNazaj, Ikona, Slika, Nalaganje, Napaka, List } from "../ui.js";
 import { imeVloge } from "../posel.js";
 
-const opisVloge = v => (v === "manager" ? t("event management, sales and ticket scanning") : t("ticket scanning at the door"));
+const opisVloge = v => (v === "manager" ? t("event management, sales and ticket scanning")
+  : v === "bartender" ? t("serving VIP tables") : t("ticket scanning at the door"));
 
 export function MojiKlubi() {
   const me = useSeja(s => s.me);
