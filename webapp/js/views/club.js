@@ -7,7 +7,7 @@ import { useSeja } from "../seja.js";
 import { sporocilo } from "../napake.js";
 import { navigiraj } from "../usmerjanje.js";
 import * as P from "../podatki.js";
-import { denar, zanrIme, varenUrl } from "../oblika.js";
+import { denar, zanrIme, varenUrl, napisPrizorisca } from "../oblika.js";
 import { Ikona, Slika, GlavaNazaj, Nalaganje, Napaka, List, VrsticaDogodka } from "../ui.js";
 import { MiniKarta } from "./zemljevid.js";
 
@@ -48,7 +48,8 @@ export function Klub({ id }) {
   if (!k && napaka) return html`<div class="zaslon"><${GlavaNazaj} /><${Napaka} besedilo=${napaka} znova=${nalozi} /></div>`;
   if (!k) return html`<div class="zaslon"><${GlavaNazaj} /><${Nalaganje} /></div>`;
 
-  const kraj = [k.city, k.country].map(x => (x || "").trim()).filter(Boolean).join(", ");
+  const org = k.is_organizer === true;   // organizator brez prizorisca: brez naslova, mesta, zemljevida in cenika bara
+  const kraj = org ? "" : [k.city, k.country].map(x => (x || "").trim()).filter(Boolean).join(", ");
   return html`<div class="zaslon klub">
     <div class="klub-glava">
       <${Diaprojekcija} slike=${k._slike} ime=${k.name} />
@@ -78,11 +79,11 @@ export function Klub({ id }) {
 
     ${k.video_url
       ? html`<video class="klub-video" src=${k.video_url} autoplay muted loop playsinline preload="metadata" aria-label=${t("Club video")}></video>`
-      : html`<div class="klub-video prazen"><${Ikona} ime="play" velikost=${30} /><span>${t("Club video coming soon")}</span></div>`}
+      : html`<div class="klub-video prazen"><${Ikona} ime="play" velikost=${30} /><span>${org ? t("Organizer video coming soon") : t("Club video coming soon")}</span></div>`}
 
     <${SeznamDogodkov} naslov=${t("Coming Soon")} dogodki=${kmalu} ime=${k.name} nalaga=${nalaga} />
 
-    <button type="button" class="kartica-vrstica" onClick=${() => setCenik(true)}>
+    ${org ? null : html`<button type="button" class="kartica-vrstica" onClick=${() => setCenik(true)}>
       <${Ikona} ime="wine" velikost=${20} />
       <span class="kv-besedilo"><strong>${t("Bar prices")}</strong></span>
       <span class="utisano">${k.bar_prices.length ? t("{n} items", { n: k.bar_prices.length }) : t("Not added yet")}</span>
@@ -95,7 +96,7 @@ export function Klub({ id }) {
       <${Ikona} ime="map-pin" velikost=${20} />
       <span class="kv-besedilo"><strong>${t("Open in maps")}</strong>${k.address ? html`<span>${k.address}</span>` : null}</span>
       <${Ikona} ime="chevron-right" velikost=${16} razred="utisano" />
-    </a>` : null}
+    </a>` : null}`}
 
     <section class="blok-besedila">
       <h2 class="podnaslov">${t("Contact")}</h2>
@@ -106,7 +107,7 @@ export function Klub({ id }) {
     </section>
 
     ${(k.description || "").trim() ? html`<section class="blok-besedila">
-      <h2 class="podnaslov">${t("About the club")}</h2><p class="besedilo-opis">${k.description}</p>
+      <h2 class="podnaslov">${org ? t("About the organizer") : t("About the club")}</h2><p class="besedilo-opis">${k.description}</p>
     </section>` : null}
 
     <${CenikList} odprt=${cenik} zapri=${() => setCenik(false)} klub=${k} />
@@ -136,7 +137,8 @@ function SeznamDogodkov({ naslov, dogodki, ime, nalaga }) {
   return html`<section class="blok-besedila">
     <h2 class="podnaslov">${naslov}</h2>
     ${!dogodki.length && !nalaga ? html`<p class="utisano">${t("No events.")}</p>` : null}
-    ${dogodki.map(e => html`<${VrsticaDogodka} key=${e.id} dogodek=${e} />`)}
+    ${dogodki.map(e => html`<${VrsticaDogodka} key=${e.id} dogodek=${e}
+      klub=${e.hosted === true ? t("Hosted · organizer {name}", { name: e.club_name || "" }) : napisPrizorisca(e) || null} />`)}
   </section>`;
 }
 

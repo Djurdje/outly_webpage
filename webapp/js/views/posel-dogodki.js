@@ -9,10 +9,10 @@ import { naloziNaCloudinary, pomanjsajSliko } from "../api.js";
 import { sporocilo } from "../napake.js";
 import { navigiraj, nazaj } from "../usmerjanje.js";
 import * as P from "../podatki.js";
-import { zanrIme, napisCene, seJeKoncal, normalizirajDogodek } from "../oblika.js";
+import { zanrIme, napisCene, seJeKoncal, normalizirajDogodek, koordinata } from "../oblika.js";
 import { GlavaNazaj, Ikona, Slika, Nalaganje, List } from "../ui.js";
-import { idKluba, poslovno, normalizirajDogodke, centiIz, evriBesedilo, NAJVEC_VIDEA } from "../posel.js";
-import { PoslovnaNapaka } from "./posel.js";
+import { idKluba, poslovno, useKlub, normalizirajDogodke, centiIz, evriBesedilo, NAJVEC_VIDEA } from "../posel.js";
+import { PoslovnaNapaka, IzbiraLokacije } from "./posel.js";
 import { skenirajVstopnico, naslovRezultata, opisRezultata } from "./posel-skener.js";
 import { jeAktiven } from "../sken/okno.js";
 import { VipVrstica, OznakaGuestList } from "../vip.js";
@@ -100,8 +100,12 @@ export function ObrazecDogodka({ klub, dogodek }) {
   const [p, setP] = useState({
     title: "", description: "", start: vLokalno(privzetZacetek), imaKonec: false,
     end: vLokalno(new Date(privzetZacetek.getTime() + 5 * 3600e3)), minAge: "18", genres: new Set(),
-    price: "", capacity: "", ticketUrl: "", poster: "", objavljen: true
+    price: "", capacity: "", ticketUrl: "", poster: "", objavljen: true,
+    // Prizorisce (obvezno za organizatorje): nacin "klub" (klub z Outlyja) ali "rocno" (ime, naslov, mesto, tocka na zemljevidu).
+    nacin: "klub", gostitelj: null, vName: "", vAddress: "", vCity: "", vTocka: null
   });
+  const k = useKlub(id);   // is_organizer: samo organizator mora podati prizorisce
+  const organizator = !!(k.klub && k.klub.is_organizer);
   const [nalagaPlakat, setNalagaPlakat] = useState(false);
   const [nalagaVideo, setNalagaVideo] = useState(false);
   const [posnetek, setPosnetek] = useState("");
@@ -127,7 +131,11 @@ export function ObrazecDogodka({ klub, dogodek }) {
         minAge: String(e.min_age), genres: new Set(e.genres),
         price: e.ticket_price_cents != null ? evriBesedilo(e.ticket_price_cents) : "",
         capacity: e.capacity != null ? String(e.capacity) : "", ticketUrl: e.ticket_url || "",
-        poster: e.poster_url, objavljen: e.status === "published"
+        poster: e.poster_url, objavljen: e.status === "published",
+        nacin: e.venue_club_id == null && (e.venue_name || e.venue_city) ? "rocno" : "klub",
+        gostitelj: e.venue_club_id != null ? { id: e.venue_club_id, name: e.venue_club_name || "", city: "" } : null,
+        vName: e.venue_name, vAddress: e.venue_address, vCity: e.venue_city,
+        vTocka: koordinata(e.venue_lat) != null && koordinata(e.venue_lng) != null ? { lat: e.venue_lat, lng: e.venue_lng } : null
       });
       setNalaga(false);
     }).catch(e => { setNapakaNalaganja(e); setNalaga(false); });
@@ -186,7 +194,19 @@ export function ObrazecDogodka({ klub, dogodek }) {
       kapaciteta = Number(p.capacity.trim());
       if (!/^\d+$/.test(p.capacity.trim()) || kapaciteta < 1 || kapaciteta > 100000) return setNapaka(t("Capacity must be a whole number between 1 and 100000."));
     }
+    let prizorisce = null;
+    if (organizator) {
+      if (p.nacin === "klub") {
+        if (!p.gostitelj) return setNapaka(t("Choose the club where the event takes place."));
+        prizorisce = { venueClubId: p.gostitelj.id };
+      } else {
+        if (!p.vName.trim() || !p.vCity.trim()) return setNapaka(t("Enter the venue name and city."));
+        prizorisce = { venueClubId: null, venueName: p.vName.trim(), venueAddress: p.vAddress.trim(), venueCity: p.vCity.trim(),
+          venueLat: p.vTocka ? p.vTocka.lat : null, venueLng: p.vTocka ? p.vTocka.lng : null };
+      }
+    }
     const body = {
+      ...prizorisce,
       title, description: p.description, startAt: zacetek.toISOString(), endAt: konec ? konec.toISOString() : null,
       // Brez nalozenega seznama zanrov obdrzimo izbrane (sicer bi PATCH zanre izbrisal).
       minAge: starost, genres: vsiZanri ? vsiZanri.filter(g => p.genres.has(g)) : [...p.genres],
@@ -220,6 +240,9 @@ export function ObrazecDogodka({ klub, dogodek }) {
           <input type="checkbox" role="switch" class="stikalo" checked=${p.imaKonec} onChange=${e => nastavi("imaKonec", e.target.checked)} /></label>
         ${p.imaKonec ? html`<label class="polje-oznaceno">${t("Ends")}<input type="datetime-local" value=${p.end} min=${p.start} onInput=${e => nastavi("end", e.target.value)} /></label>` : null}
       </fieldset>
+      ${k.napaka ? html`<div class="napaka-blok" role="alert"><p>${t("Could not load your club details, so the venue cannot be checked.")}</p>
+        <button type="button" class="povezava-gumb" onClick=${k.nalozi}>${t("Try again")}</button></div>` : null}
+      ${organizator ? html`<${PrizoriscaDogodka} p=${p} nastavi=${nastavi} lastniId=${id} />` : null}
       <fieldset><legend>${t("Who")}</legend>
         <label class="polje-oznaceno">${t("Minimum age")}<input type="number" inputmode="numeric" min="0" max="99" value=${p.minAge} onInput=${e => nastavi("minAge", e.target.value)} /></label>
         ${vsiZanri && vsiZanri.length ? html`<div class="mreza-cipov" role="group" aria-label=${t("Music genres")}>${vsiZanri.map(g => html`<button type="button" class=${"cip" + (p.genres.has(g) ? " izbran" : "")} aria-pressed=${p.genres.has(g)}
@@ -261,7 +284,7 @@ export function ObrazecDogodka({ klub, dogodek }) {
       </fieldset>
       ${urejam && obstojeci ? html`<${VipDogodka} klub=${id} dogodek=${idDogodka} />` : null}
       ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}
-      <button type="button" class="gumb-glavni" onClick=${shrani} disabled=${shranjujem || nalagaPlakat || !p.title.trim()}>${shranjujem ? t("Saving...") : t("Save")}</button>
+      <button type="button" class="gumb-glavni" onClick=${shrani} disabled=${shranjujem || nalagaPlakat || k.nalaga || !!k.napaka || !p.title.trim()}>${shranjujem ? t("Saving...") : t("Save")}</button>
       ${urejam ? html`<button type="button" class="gumb-rdec" disabled=${shranjujem} onClick=${() => setBrisem(true)}>${t("Cancel or delete event")}</button>` : null}
     </div>
     <${List} odprt=${brisem} zapri=${() => setBrisem(false)} naslov=${t("Remove this event?")}>
@@ -270,6 +293,45 @@ export function ObrazecDogodka({ klub, dogodek }) {
       <button type="button" class="gumb-siv" onClick=${() => setBrisem(false)}>${t("Keep event")}</button>
     <//>
   </div>`;
+}
+
+/* ---------- Prizorisce dogodka organizatorja ---------- */
+/* Klub z Outlyja (iskanje po imenu iz javnega seznama klubov, brez organizatorjev in brez sebe) ali rocni vnos
+   (ime, naslov, mesto + klik na zemljevid za koordinate, kot pri klubu). Streznik sicer vrne 400 ("Organizer events need a venue"). */
+function PrizoriscaDogodka({ p, nastavi, lastniId }) {
+  const [klubi, setKlubi] = useState(null);   // null = nalaga; [] = ni uspelo / prazno
+  const [napaka, setNapaka] = useState(false);
+  const [iskanje, setIskanje] = useState("");
+  const nalozi = () => { setNapaka(false); setKlubi(null); P.klubi().then(setKlubi).catch(() => { setKlubi([]); setNapaka(true); }); };
+  useEffect(nalozi, []);
+  const q = iskanje.trim().toLowerCase();
+  const zadetki = (klubi || []).filter(c => !c.is_organizer && c.id !== lastniId && (!q || c.name.toLowerCase().includes(q))).slice(0, 6);
+  return html`<fieldset class="prizorisce"><legend>${t("Venue")}</legend>
+    <div class="vrsta-izbir" role="group" aria-label=${t("Venue")}>
+      <button type="button" class=${"cip" + (p.nacin === "klub" ? " izbran" : "")} aria-pressed=${p.nacin === "klub"} onClick=${() => nastavi("nacin", "klub")}>${t("Club on Outly")}</button>
+      <button type="button" class=${"cip" + (p.nacin === "rocno" ? " izbran" : "")} aria-pressed=${p.nacin === "rocno"} onClick=${() => nastavi("nacin", "rocno")}>${t("Enter manually")}</button>
+    </div>
+    ${p.nacin === "klub" ? html`
+      ${p.gostitelj ? html`<div class="izbran-klub"><span class="kv-besedilo"><strong>${p.gostitelj.name}</strong>${p.gostitelj.city ? html`<span>${p.gostitelj.city}</span>` : null}</span>
+        <button type="button" class="povezava-gumb" onClick=${() => nastavi("gostitelj", null)}>${t("Change")}</button></div>`
+      : html`
+        <label class="polje-oznaceno">${t("Search clubs")}<input type="search" value=${iskanje} maxlength="60" placeholder=${t("Club name")} onInput=${e => setIskanje(e.target.value)} /></label>
+        ${klubi === null ? html`<span class="opomba">${t("Loading clubs...")}</span>`
+          : napaka ? html`<button type="button" class="povezava-gumb" onClick=${nalozi}>${t("Could not load clubs.")} ${t("Try again")}</button>`
+          : !zadetki.length ? html`<span class="opomba">${t("No clubs found.")}</span>`
+          : html`<div class="seznam">${zadetki.map(c => html`<button type="button" class="kartica-vrstica" key=${c.id} onClick=${() => { nastavi("gostitelj", { id: c.id, name: c.name, city: c.city }); setIskanje(""); }}>
+              <span class="kv-besedilo"><strong>${c.name}</strong>${c.city ? html`<span>${c.city}</span>` : null}</span>
+              <${Ikona} ime="chevron-right" velikost=${16} razred="utisano" /></button>`)}</div>`}`}
+      <span class="opomba">${t("Guests see the event as “at {club}” with a link to the club page.", { club: p.gostitelj ? p.gostitelj.name : t("the club") })}</span>`
+    : html`
+      <label class="polje-oznaceno">${t("Venue name")}<input value=${p.vName} maxlength="120" onInput=${e => nastavi("vName", e.target.value)} /></label>
+      <label class="polje-oznaceno">${t("Venue address")}<input value=${p.vAddress} maxlength="160" placeholder=${t("Street and number")} autocomplete="off" onInput=${e => nastavi("vAddress", e.target.value)} /></label>
+      <label class="polje-oznaceno">${t("Venue city")}<input value=${p.vCity} maxlength="60" placeholder=${t("e.g. Ljubljana")} autocomplete="off" onInput=${e => nastavi("vCity", e.target.value)} /></label>
+      <div class="skupina-polj"><span class="oznaka-polja">${t("Location on the map")}</span>
+        <${IzbiraLokacije} lat=${p.vTocka && p.vTocka.lat} lng=${p.vTocka && p.vTocka.lng} ob=${tocka => nastavi("vTocka", tocka)} visina=${220} />
+        <span class="opomba">${p.vTocka ? t("Location set. Drag the pin or tap elsewhere to move it.") : t("Tap the map where the event takes place. Optional.")}</span>
+      </div>`}
+  </fieldset>`;
 }
 
 /* ---------- Vstopnice dogodka + rocni "Check in" (iOS EventTicketsView) ---------- */

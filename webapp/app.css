@@ -502,7 +502,7 @@ h1,h2,h3,p{ margin:0; }
 .avatar-gumb{ position:relative; border-radius:50%; }
 .avatar-plus{ position:absolute; right:-4px; top:2px; width:26px; height:26px; border-radius:7px; background:var(--modra); display:grid; place-items:center; color:#fff; }
 .stikalo-vrstica{ display:flex; align-items:center; gap:14px; padding:14px 16px; border-radius:14px; background:var(--b08); border:1px solid var(--b14); cursor:pointer; }
-.stikalo-vrstica .kv-besedilo span{ white-space:normal; }
+.stikalo-vrstica .kv-besedilo span, .stikalo-vrstica .kv-besedilo strong{ white-space:normal; }
 .stikalo{ appearance:none; -webkit-appearance:none; flex:none; width:51px; height:31px; border-radius:999px; background:rgba(120,120,128,.36); position:relative; cursor:pointer; transition:background .2s; margin:0; }
 .stikalo::after{ content:""; position:absolute; top:2px; left:2px; width:27px; height:27px; border-radius:50%; background:#fff; box-shadow:0 2px 4px rgba(0,0,0,.3); transition:transform .2s var(--ease); }
 .stikalo:checked{ background:var(--modra); }
@@ -588,6 +588,9 @@ a.profil-ime{ white-space:normal; }
 .oznaka-polja{ font-size:13px; font-weight:600; color:var(--b70); }
 .vrsta-izbir{ display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; }
 .vrsta-izbir .cip{ height:40px; font-size:14px; }
+.prizorisce .vrsta-izbir{ grid-template-columns:1fr 1fr; }
+.prizorisce .seznam{ gap:8px; }
+.izbran-klub{ display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:14px; background:var(--b08); border:1px solid var(--b14); }
 .dve-polji{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 .polje textarea, .polje-oznaceno textarea{
   width:100%; min-height:110px; resize:vertical; padding:12px 14px; border-radius:10px; border:1px solid #2c2c2e; background:#1C1C1E;
