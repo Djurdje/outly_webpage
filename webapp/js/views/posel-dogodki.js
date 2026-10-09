@@ -16,7 +16,7 @@ import { PoslovnaNapaka, IzbiraLokacije } from "./posel.js";
 import { skenirajVstopnico, naslovRezultata, opisRezultata } from "./posel-skener.js";
 import { jeAktiven } from "../sken/okno.js";
 import { VipVrstica, OznakaGuestList } from "../vip.js";
-import { VipDogodka, RezervacijeVip } from "./posel-vip-dogodek.js";
+import { VipDogodka, RezervacijeVip, RazporedDogodka } from "./posel-vip-dogodek.js";
 
 const datumDogodka = d => (d ? new Intl.DateTimeFormat(locale(), { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }).format(d) : "");
 
@@ -282,7 +282,9 @@ export function ObrazecDogodka({ klub, dogodek }) {
           <input type="checkbox" role="switch" class="stikalo" checked=${p.objavljen} onChange=${e => nastavi("objavljen", e.target.checked)} /></label>
         ${obstojeci && obstojeci.status === "cancelled" ? html`<p class="napaka-besedilo">${t("This event is cancelled.")}</p>` : null}
       </fieldset>
-      ${urejam && obstojeci ? html`<${VipDogodka} klub=${id} dogodek=${idDogodka} />` : null}
+      ${organizator ? (urejam && obstojeci ? html`<${RazporedDogodka} klub=${id} dogodek=${idDogodka} />`
+        : !urejam ? html`<fieldset><legend>${t("VIP tables")}</legend><span class="opomba">${t("Save the event first, then set up its VIP tables.")}</span></fieldset>` : null)
+      : urejam && obstojeci ? html`<${VipDogodka} klub=${id} dogodek=${idDogodka} />` : null}
       ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}
       <button type="button" class="gumb-glavni" onClick=${shrani} disabled=${shranjujem || nalagaPlakat || k.nalaga || !!k.napaka || !p.title.trim()}>${shranjujem ? t("Saving...") : t("Save")}</button>
       ${urejam ? html`<button type="button" class="gumb-rdec" disabled=${shranjujem} onClick=${() => setBrisem(true)}>${t("Cancel or delete event")}</button>` : null}

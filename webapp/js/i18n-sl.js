@@ -1076,5 +1076,33 @@ export const SL = {
   "few": "{n} sedeži",
   "other": "{n} sedežev"
  },
- "1 seat": "1 sedež"
+ "1 seat": "1 sedež",
+ "Table sales and reservations": "Prodaja miz in rezervacije",
+ "Edit bottle packages": "Uredi pakete steklenic",
+ "Bottle packages are shared by all your events.": "Paketi steklenic so skupni vsem tvojim dogodkom.",
+ "Draw a floor plan just for this event: add the bar, stage and tables, set seats and the price of each table.": "Nariši tloris samo za ta dogodek: dodaj bar, oder in mize, nastavi sedeže in ceno vsake mize.",
+ "Saved.": "Shranjeno.",
+ "Use {venue}'s layout": "Uporabi razpored: {venue}",
+ "the venue": "prizorišče",
+ "Copies the floor plan and tables. You can change prices and tables afterwards.": "Prekopira tloris in mize. Cene in mize lahko nato spremeniš.",
+ "Own layout for this event": "Lasten razpored za ta dogodek",
+ "Draw a floor plan and tables just for this event.": "Nariši tloris in mize samo za ta dogodek.",
+ "No VIP tables": "Brez VIP miz",
+ "Guests cannot book tables at this event.": "Gostje na tem dogodku ne morejo rezervirati miz.",
+ "1 table": "1 miza",
+ "{n} tables": {
+  "few": "{n} mize",
+  "one": "{n} miza",
+  "other": "{n} miz",
+  "two": "{n} mizi"
+ },
+ "Copied from {club}": "Kopirano iz: {club}",
+ "Edit layout and tables": "Uredi razpored in mize",
+ "Replace this event's tables?": "Zamenjam mize tega dogodka?",
+ "This event's current tables are replaced with a fresh copy of {venue}'s layout. Tables with orders are archived.": "Trenutne mize tega dogodka se zamenjajo s svežo kopijo razporeda: {venue}. Mize z naročili se arhivirajo.",
+ "Replace with a copy": "Zamenjaj s kopijo",
+ "Remove VIP tables from this event?": "Odstranim VIP mize s tega dogodka?",
+ "Guests will not be able to book tables. Tables with orders are archived, so tickets already sold stay valid.": "Gostje ne bodo mogli rezervirati miz. Mize z naročili se arhivirajo, zato že prodane vstopnice ostanejo veljavne.",
+ "Remove VIP tables": "Odstrani VIP mize",
+ "Save the event first, then set up its VIP tables.": "Najprej shrani dogodek, nato nastavi njegove VIP mize."
 };

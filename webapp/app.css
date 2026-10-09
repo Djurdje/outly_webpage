@@ -851,6 +851,16 @@ a.profil-ime{ white-space:normal; }
 .vip-hold-gumbi{ display:flex; gap:8px; }
 .vip-hold-gumbi .gumb-siv{ flex:1; width:auto; }
 .vip-hold-gumbi .poudarjen{ border:1px solid rgba(255,255,255,.5); }
+/* organizator: izbira vira razporeda VIP miz za dogodek */
+.obrazec-dogodka fieldset.vip-razpored{ min-width:0; }
+.vip-viri{ display:flex; flex-direction:column; gap:8px; }
+.vip-vir{ display:flex; align-items:center; gap:12px; width:100%; min-height:56px; padding:12px; text-align:left; border-radius:14px; background:var(--b04); border:1px solid var(--b10); }
+.vip-vir .kv-besedilo{ flex:1; min-width:0; }
+.vip-vir .kv-besedilo span{ white-space:normal; font-size:13px; color:var(--b55); }
+.vip-vir.izbran{ border-color:rgba(255,255,255,.7); background:var(--b08); }
+.vip-vir > .ikona{ flex:none; }
+.vip-vir:disabled{ opacity:1; cursor:default; }
+.vip-razpored-stanje{ display:flex; flex-direction:column; gap:8px; }
 .vip-rez-tel{ align-items:center; gap:2px; color:var(--b70); }
 .vip-tloris-okvir{ border-radius:14px; background:var(--b04); border:1px solid var(--b10); padding:6px; }
 /* tloris dogodka je samo za branje: brez kazalca "roka" in brez hover-poudarka proste mize */
