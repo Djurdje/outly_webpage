@@ -12,6 +12,7 @@ import {
 } from "../napake.js";
 import { navigiraj } from "../usmerjanje.js";
 import { odpriStripe } from "../stripe.js";
+import { PogojiNakupa } from "../pogoji.js";
 import { denar, danInUra } from "../oblika.js";
 import { List, Ikona, Nalaganje, Napaka, useZaklep } from "../ui.js";
 import { VipRazdeli, mejaStarostiVip, zapomniCakajocVip } from "./vip-razdeli.js";
@@ -223,6 +224,7 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
         <p class="opomba">${t("Test mode — nothing is charged")}</p>
         <button type="button" class="gumb-glavni" onClick=${rezerviraj} disabled=${posiljam || zaklenjeno || !d.onSale || (imaPakete && !paket)}>
           ${posiljam ? t("Processing...") : t("Reserve table") + " · " + denar(miza.price_cents, d.valuta)}</button>
+        <${PogojiNakupa} />
       </div>` : null}` : null}
   <//>`;
 }
