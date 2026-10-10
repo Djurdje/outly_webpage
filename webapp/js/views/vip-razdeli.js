@@ -138,6 +138,9 @@ export function VipRazdeli({ vstopnice, meja: mejaZacetna = 0, zapri, obZaposlen
   return html`<div class="vip-razdeli">
     <h3 class="nastavitev-naslov">${t("Send tickets to friends")}</h3>
     <p class="opomba">${tn("Choose 1 friend to send a ticket to. You keep one ticket.", "Choose up to {n} friends. You keep one ticket.", najvec)}</p>
+    <p class="opomba">${ostale.some(x => x.transferred === true)
+      ? t("If the event is cancelled, the refund goes to the original buyer, not to the person you send the ticket to.")
+      : t("If the event is cancelled, the refund goes to you as the buyer, not to the person you send the ticket to.")}</p>
     <${IzbiraPrijateljev} prijatelji=${prijatelji} napaka=${napakaSeznama} znova=${znova}
       izkljuceni=${poslaniIds} najvec=${najvec} izbrani=${izbrani} spremeni=${s => { setIzbrani(s); setNapaka(""); }} onemogoceno=${tece}
       meja=${meja} starostOk=${starostOk} spremeniStarost=${setStarostOk} prazno=${prazno} />
