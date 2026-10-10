@@ -99,6 +99,10 @@ export class AuthError extends Error {
 }
 
 const PRAVILA = [
+  // Meje nakupa (backend krog 2): golo besedilo 409, tudi za prijavljenega kupca (gostSporocilo jih ima ze prej za goste).
+  ["you have too many payments still processing", "You have too many payments still processing. Wait for your bank to confirm them."],
+  ["you already have an unfinished payment", "You already have an unfinished payment for this event. Please wait up to 30 minutes for it to expire, then try again."],
+  ["you have too many unfinished payments", "You have too many unfinished payments. Please wait up to 30 minutes for them to expire, then try again."],
   ["invalid or expired code", "The code is wrong or has expired. Request a new one."],
   ["too many attempts", "Too many wrong attempts. Request a new code."],
   ["code must be 6 digits", "Enter the code from the email."],
@@ -199,7 +203,8 @@ function prevediApi(e) {
     case "request_in_progress": return t("Your previous attempt is still being processed. Please try again in a moment.");
     case "idempotency_key_reused":
     case "invalid_idempotency_key": return t("Something changed, please try again.");
-    case "order_not_active": return potekloPlacilo();
+    // order_not_active = naroilo ni vec aktivno: potek seje, preklic, zavrnjeno placilo (SEPA) ali vracilo - ne trdimo, da je potekla seja.
+    case "order_not_active": return t("Your previous payment is no longer active. Please try again.");
     case "free_limit": return t("You've reached the limit of free tickets for this event.");
     // Prenos vstopnice prijatelju brez racuna (POST /tickets/:id/transfer z allow_guest)
     case "age_confirmation_required": {

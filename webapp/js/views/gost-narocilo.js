@@ -2,7 +2,7 @@
    Zeton se takoj shrani in odstrani iz naslovne vrstice (gost.js); vstopnice pridejo iz GET /guest/order (glava
    X-Guest-Token, brez prijave). Placilo se potrjuje (pending) nekaj sekund: stran se osvezi 5x na 2 s.
    QR kot pri prijavljenih (QrTelo iz vstopnice.js); prenosa vstopnice za goste ni. */
-import { html, useEffect, useState } from "../lib.js";
+import { html, useEffect, useRef, useState } from "../lib.js";
 import { t, tn } from "../i18n.js";
 import { send } from "../api.js";
 import { ApiError, sporocilo, kodaNapake, potekloPlacilo, placiloVObdelavi } from "../napake.js";
@@ -21,19 +21,23 @@ export function GostNarocilo() {
   const prijavljen = useSeja(x => x.prijavljen);
   const [s, setS] = useState({ stanje: zeton ? "nalaga" : "brez", r: null, napaka: "", poteklo: false });
   const [poskus, setPoskus] = useState(0);
+  const zadnjiOdgovor = useRef(null);   // zadnji uspesen odgovor GET /guest/order: preziv "Check again" (nov krog poizvedbe), da 404 loci preklic od neveljavne povezave
   const [preklic, setPreklic] = useState({ tece: false, napaka: "", opravljen: null });   // opravljen: { dogodek } po uspesnem preklicu
 
   useEffect(() => { document.title = t("Your tickets") + " · Outly"; }, []);
   useEffect(() => {
     if (!zeton) return undefined;
-    let zivo = true, casovnik = null, krog = 0, zadnji = null;
+    let zivo = true, casovnik = null, krog = 0, zadnji = zadnjiOdgovor.current;
     setS(x => ({ ...x, napaka: "", poteklo: false, stanje: x.r ? x.stanje : "nalaga" }));
     const korak = async () => {
       let r;
       try { r = await send("/guest/order", { glave: { "X-Guest-Token": zeton } }); }
       catch (err) {
         if (!zivo) return;
-        if (err instanceof ApiError && err.status === 404) { pozabiGostZeton(); if (zadnji && zadnji.order && zadnji.order.event) pozabiGostNakup({ dogodek: zadnji.order.event.id }); setS({ stanje: "neveljavno", r: null, napaka: "", poteklo: false }); return; }
+        if (err instanceof ApiError && err.status === 404) { pozabiGostZeton(); if (zadnji && zadnji.order && zadnji.order.event) pozabiGostNakup({ dogodek: zadnji.order.event.id });
+          // Backend za preklicano/zavrnjeno neplacano narocilo vrne 404. Ce je gost prej videl pending (npr. potekla seja), je to preklic, ne neveljavna povezava.
+          const bilCakajoc = !!(zadnji && zadnji.order && zadnji.order.status === "pending");
+          setS({ stanje: bilCakajoc ? "preklicano" : "neveljavno", r: null, napaka: "", poteklo: false, dogodek: bilCakajoc && zadnji.order.event ? zadnji.order.event.id : null }); return; }
         // Prehodna napaka (503, 429, omrezje) med poizvedovanjem: znotraj meje poskusov tiho poskusimo znova; sicer sporocilo in
         // "Try again" (stanje ostane, pending vsebina je se vidna).
         if (zadnji && zadnji.order && zadnji.order.status === "pending" && krog < OSVEZITEV_STEVILO) { krog += 1; casovnik = setTimeout(korak, OSVEZITEV_MS); return; }
@@ -41,7 +45,7 @@ export function GostNarocilo() {
         return;
       }
       if (!zivo) return;
-      zadnji = r;
+      zadnji = r; zadnjiOdgovor.current = r;
       const caka = !!(r && r.order && r.order.status === "pending");
       const naprej = caka && krog < OSVEZITEV_STEVILO;
       if (naprej) { krog += 1; casovnik = setTimeout(korak, OSVEZITEV_MS); }
@@ -67,15 +71,16 @@ export function GostNarocilo() {
     }
   }
   const glava = html`<${GlavaNazaj} naslov=${t("Your tickets")} rezerva="/app" />`;
-  if (preklic.opravljen) {
-    return html`<div class="zaslon">${glava}
+  const preklicano = dogodek => html`<div class="zaslon">${glava}
       <div class="prazno" role="status">
         <${Ikona} ime="info" velikost=${34} razred="modra" />
         <strong>${t("Order cancelled. You have not been charged.")}</strong>
-        ${preklic.opravljen.dogodek != null ? html`<a class="gumb-siv" href=${"/app/event/" + preklic.opravljen.dogodek}>${t("View event")}</a>` : html`<a class="gumb-siv" href="/app/events">${t("See all events")}</a>`}
+        ${dogodek != null ? html`<a class="gumb-siv" href=${"/app/event/" + dogodek}>${t("View event")}</a>` : html`<a class="gumb-siv" href="/app/events">${t("See all events")}</a>`}
       </div></div>`;
-  }
-  if (s.stanje === "neveljavno" && prijavljen) {
+  if (preklic.opravljen) return preklicano(preklic.opravljen.dogodek);
+  // Neprijavljen gost, ki je prej videl pending: 404 = narocilo preklicano (prijavljen: lahko je placano narocilo prevzel racun, spodnja veja).
+  if (s.stanje === "preklicano" && !prijavljen) return preklicano(s.dogodek);
+  if ((s.stanje === "neveljavno" || s.stanje === "preklicano") && prijavljen) {
     // 404 je tudi potekel ali tuj zeton: ne trdimo, da so vstopnice v racunu (GET /me jih prevzame samo ob istem potrjenem e-naslovu).
     return html`<div class="zaslon">${glava}
       <div class="prazno">
@@ -85,7 +90,7 @@ export function GostNarocilo() {
         <a class="gumb-glavni" href="/app/tickets">${t("Open my tickets")}</a>
       </div></div>`;
   }
-  if (s.stanje === "brez" || s.stanje === "neveljavno") {
+  if (s.stanje === "brez" || s.stanje === "neveljavno" || s.stanje === "preklicano") {
     return html`<div class="zaslon">${glava}
       <div class="prazno">
         <${Ikona} ime="ticket" velikost=${34} razred="modra" />
@@ -154,16 +159,6 @@ export function GostNarocilo() {
     </div>`;
   }
 
-  // Preklicano (tudi po izteku Stripove seje): placila ni, nov nakup je na dogodku.
-  if (o.status === "cancelled") {
-    pozabiGostNakup({ dogodek: e.id });   // kot pri paid: shranjeni kljuc nakupa ni vec potreben (nov nakup = nov kljuc)
-    return html`<div class="zaslon">${glava}
-      <div class="prazno" role="status">
-        <${Ikona} ime="info" velikost=${34} razred="modra" />
-        <strong>${t("Order cancelled. You have not been charged.")}</strong>
-        ${e.id != null ? html`<a class="gumb-siv" href=${"/app/event/" + e.id}>${t("View event")}</a>` : html`<a class="gumb-siv" href="/app/events">${t("See all events")}</a>`}
-      </div>${dogodek}</div>`;
-  }
   const placano = o.status === "paid";
   if (placano) pozabiGostNakup({ dogodek: e.id });   // placano: shranjeni kljuc nakupa (vrnitev s Stripa) ni vec potreben
   return html`<div class="zaslon">${glava}

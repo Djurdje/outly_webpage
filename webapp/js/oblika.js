@@ -16,7 +16,6 @@ function datum(s) {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-/** Dogodek iz API-ja + razclenjena datuma (_zacetek, _konec). Manjkajoca polja dobijo privzetke. */
 /* Kako se placa pri tem dogodku/VIP/dashboardu (backend #149, polje payment_mode): "test" | "stripe" | "unavailable".
    Manjkajoce ali neznano polje (star backend) = "stripe": nikoli napisa "nothing is charged" pri morebitnem pravem placilu. */
 export function nacinPlacila(x) {
@@ -24,6 +23,7 @@ export function nacinPlacila(x) {
   return v === "test" || v === "unavailable" ? v : "stripe";
 }
 
+/** Dogodek iz API-ja + razclenjena datuma (_zacetek, _konec). Manjkajoca polja dobijo privzetke. */
 export function normalizirajDogodek(e) {
   return {
     ...e,

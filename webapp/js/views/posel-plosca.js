@@ -7,6 +7,7 @@ import { sporocilo } from "../napake.js";
 import { denar } from "../oblika.js";
 import { GlavaNazaj, Ikona, Slika, Avatar, Nalaganje, Napaka } from "../ui.js";
 import { idKluba, poslovno, imeVloge } from "../posel.js";
+import { useSeja } from "../seja.js";
 import { PoslovnaNapaka } from "./posel.js";
 
 const OBDOBJA = [["year", "By year"], ["month", "By month"], ["week", "By week"]];
@@ -26,6 +27,9 @@ export function NadzornaPlosca({ klub }) {
   const [nalagaGraf, setNalagaGraf] = useState(false);
   const [napaka, setNapaka] = useState(null);
   const baza = `/app/business/${id}`;
+  const me = useSeja(x => x.me);
+  // Stripe onboarding (Nastavitve) je samo za lastnika (backend 403 za ostale): povezavo vidi samo on.
+  const jeLastnik = !!(me && Array.isArray(me.clubs) && me.clubs.some(c => Number(c.club_id) === id && c.role === "owner"));
   const zadnji = useRef(0);   // samo zadnji odgovor sme dolociti graf (hiter preklop obdobja)
 
   const nalozi = async () => {
@@ -65,7 +69,9 @@ export function NadzornaPlosca({ klub }) {
     <div class="naslov-z-gumbom"><h1 class="velik-naslov">${t("Dashboard")}</h1>${test ? html`<span class="znacka-test">${t("TEST")}</span>` : null}</div>
     ${ime ? html`<p class="podnaslov-plosce">${ime}</p>` : null}
     ${test ? html`<p class="opomba oranzna">${t("Test mode: purchases are simulated, no money moves. Numbers show how the real dashboard will look.")}</p>` : null}
-    ${brezStripa ? html`<p class="opomba oranzna" role="status"><a href=${baza + "/settings"}>${t("Buyers can't purchase yet — connect Stripe in Settings.")}</a></p>` : null}
+    ${brezStripa ? html`<p class="opomba oranzna" role="status">${jeLastnik
+      ? html`<a href=${baza + "/settings"}>${t("Buyers can't purchase yet. Connect Stripe in Settings, or contact Outly if it's already connected.")}</a>`
+      : t("Buyers can't purchase yet. Ask the club owner to connect Stripe, or contact Outly if it's already connected.")}</p>` : null}
     ${nalaga && !s ? html`<${Nalaganje} />` : null}
     ${napaka && !s ? html`<${PoslovnaNapaka} napaka=${napaka} znova=${nalozi} />` : null}
     ${napaka && s ? html`<${Napaka} besedilo=${sporocilo(napaka)} />` : null}
