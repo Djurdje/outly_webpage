@@ -9,12 +9,12 @@ import { t, useJezik } from "../i18n.js";
 import { send, pocistiPredpomnilnik, kljucNakupa, pozabiKljucNakupa, oznaciIzidNakupa, zasejKljucNakupa } from "../api.js";
 import {
   jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo, jeNakupVObdelavi, NAKUP_V_OBDELAVI_S,
-  ApiError, izidNakupa, nakupBrezOdgovoraSporocilo, gostSporocilo
+  ApiError, izidNakupa, nakupBrezOdgovoraSporocilo, gostSporocilo, potekloPlacilo
 } from "../napake.js";
-import { denar, jeRazprodan, preostanek, danInUra } from "../oblika.js";
+import { denar, jeRazprodan, preostanek, danInUra, nacinPlacila } from "../oblika.js";
 import { List, useZaklep } from "../ui.js";
 import { navigiraj } from "../usmerjanje.js";
-import { odpriStripe } from "../stripe.js";
+import { odpriStripe, izidStripeNakupa } from "../stripe.js";
 import { TERMS_VERSION, EMAIL_RE } from "../pogoji.js";
 import { shraniGostZeton, jeGostZeton, shraniGostNakup, preberiGostNakup, pozabiGostNakup } from "../gost.js";
 
@@ -65,12 +65,14 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
   const najvec = Math.max(1, Math.min(NAJVEC_GOST, ostane == null ? NAJVEC_GOST : ostane));
   const skupaj = cenaEna * kolicina;
   const razprodano = jeRazprodan(e) || ostane === 0;
+  const nacin = nacinPlacila(e);   // "test" | "stripe" | "unavailable" (backend #149)
+  const neprodaja = nacin === "unavailable";
   const potrebujeStarost = e.min_age > 0;
   const zasebnost = koda === "sl" ? "/privacy-app" : "/privacy";   // politika v jeziku obrazca (pravno 2.2: EN /privacy, SL /privacy-app)
 
   async function kupi(ev) {
     ev.preventDefault();
-    if (tece.current) return;
+    if (tece.current || neprodaja) return;
     setVRacunu(false);
     const m = email.trim().toLowerCase();
     if (!EMAIL_RE.test(m)) return setNapaka(t("Enter a valid email address."));
@@ -94,11 +96,20 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
       pocistiPredpomnilnik();   // zaloga (sold_count) na karticah naj bo sveza
       const zeton = r && r.guest_token;
       // Stripe: kljuca NE pozabimo - ce se kupec vrne brez placila, ponovni pritisk vrne ISTO narocilo in isti checkout_url.
-      if (r && r.mode === "stripe" && r.checkout_url) {
+      const izidS = izidStripeNakupa(r);
+      if (izidS === "preusmeri") {
         shraniGostZeton(zeton);
         shraniGostNakup({ e: m, d: e.id, q: kolicina, k: kljuc });
         if (odpriStripe(r.checkout_url)) return;   // stran se preusmerja; gumb ostane "Processing..."
         throw new ApiError(-1, "Could not open the payment page.");
+      }
+      // Potekla Stripova seja: Stripa ne odpiramo. Kljuc OSTANE (placano tik pred rokom -> ponovitev vrne placano narocilo; sicer
+      // 409 order_not_active, kljuc se zavrze in naslednji pritisk je nov nakup). 0 EUR pri klubu s Stripom gre naprej kot uspeh.
+      if (izidS === "poteklo") {
+        oznaciIzidNakupa("gost", m, e.id, kljuc, "dokoncen");
+        if (ziv.current) setNapaka(potekloPlacilo());
+        tece.current = false; if (ziv.current) setPosiljam(false);
+        return;
       }
       // Ponovitev kljuca po prevzemu v racun (GET /me z istim potrjenim e-naslovom): guest_token je null - zetonov ni vec, vstopnice so v racunu.
       if (r && r.guest_token === null && r.order && ["paid", "partially_refunded"].includes(r.order.status)) {
@@ -179,7 +190,10 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
         <strong>${brezplacno ? t("Free") : denar(skupaj, e.currency)}</strong>
       </div>
 
-      ${brezplacno ? null : html`<p class="opomba">${t("You pay by card on the next page. Your tickets are sent by email right after payment.")}</p>`}
+      ${neprodaja ? html`<p class="opomba" role="status">${t("Tickets aren't on sale in the app yet.")}</p>`
+        : brezplacno ? null
+        : nacin === "test" ? html`<p class="opomba">${t("Test mode — nothing is charged")}</p>`
+        : html`<p class="opomba">${t("You pay by card on the next page. Your tickets are sent by email right after payment.")}</p>`}
 
       <p class="opomba">${t("Tickets for a dated event cannot be returned after purchase (ZVPot-1, 135/12). The seller is the club; Outly is the intermediary.")}</p>
 
@@ -191,7 +205,7 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
       ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}
       ${brezGosta ? html`<button type="button" class="gumb-siv" onClick=${prijava}>${t("Sign in to buy")}</button>` : null}
 
-      <button type="submit" class="gumb-glavni" disabled=${posiljam || razprodano || zaklenjeno}>
+      <button type="submit" class="gumb-glavni" disabled=${posiljam || razprodano || zaklenjeno || neprodaja}>
         ${razprodano ? t("Sold out") : posiljam ? t("Processing...")
           : brezplacno ? (kolicina === 1 ? t("Get ticket") : t("Get tickets"))
           : t("Pay {amount}", { amount: denar(skupaj, e.currency) })}

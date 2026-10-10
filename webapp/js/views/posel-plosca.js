@@ -56,7 +56,8 @@ export function NadzornaPlosca({ klub }) {
   if (!id) return html`<div class="zaslon"><${GlavaNazaj} rezerva="/app/profile" /><${PoslovnaNapaka} napaka=${{ status: 404 }} /></div>`;
   const s = prodaja;
   const povzetek = (s && s.summary) || {};
-  const test = !!s && s.mode === "test";
+  // Napis temelji na payment_mode TEGA kluba (backend #149); star backend ga nima -> kot doslej globalni `mode`.
+  const test = !!s && (s.payment_mode ? s.payment_mode === "test" : s.mode === "test");
   return html`<div class="zaslon plosca">
     <${GlavaNazaj} rezerva=${baza} />
     <div class="naslov-z-gumbom"><h1 class="velik-naslov">${t("Dashboard")}</h1>${test ? html`<span class="znacka-test">${t("TEST")}</span>` : null}</div>

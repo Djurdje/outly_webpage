@@ -72,6 +72,10 @@ export function nakupNapakaSporocilo(e) {
   if (e && e.status === -1) return nakupBrezOdgovoraSporocilo();
   return sporocilo(e);
 }
+/* Stripova seja je potekla (checkout_expired, ali 409 order_not_active pri ponovitvi): povezave ne odpiramo, naslednji pritisk je nov nakup. */
+export function potekloPlacilo() {
+  return t("The payment session expired. Please try again.");
+}
 export function nakupZasedenoSporocilo() {
   return t("Lots of people are buying right now. Please try again in a few seconds.");
 }
@@ -185,7 +189,7 @@ function prevediApi(e) {
     case "request_in_progress": return t("Your previous attempt is still being processed. Please try again in a moment.");
     case "idempotency_key_reused":
     case "invalid_idempotency_key": return t("Something changed, please try again.");
-    case "order_not_active": return t("Your previous order is no longer active. Tap again to buy anew.");
+    case "order_not_active": return potekloPlacilo();
     // Prenos vstopnice prijatelju brez racuna (POST /tickets/:id/transfer z allow_guest)
     case "age_confirmation_required": {
       let n = 0;
