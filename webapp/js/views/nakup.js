@@ -13,6 +13,7 @@ import { denar, jeRazprodan, preostanek, danInUra } from "../oblika.js";
 import { List, Ikona, useZaklep } from "../ui.js";
 import { KodaQR } from "../qr.js";
 import { odpriStripe } from "../stripe.js";
+import { PogojiNakupa } from "../pogoji.js";
 
 export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
   const [kolicina, setKolicina] = useState(1);
@@ -137,6 +138,7 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
         : brezplacno ? (kolicina === 1 ? t("Get ticket") : t("Get tickets"))
         : t("Pay {amount}", { amount: denar(skupaj, e.currency) })}
     </button>
+    <${PogojiNakupa} />
     <p class="opomba">${t("Tickets for a dated event cannot be returned after purchase (ZVPot-1, 135/12). The seller is the club; Outly is the intermediary.")}</p>
   <//>`;
 }

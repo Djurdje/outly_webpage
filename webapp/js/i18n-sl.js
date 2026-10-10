@@ -1107,5 +1107,6 @@ export const SL = {
  "If your club has its own floor plan, the event goes back to it. Otherwise it has no VIP tables.": "Če ima tvoj klub svoj tloris, se dogodek vrne nanj. Sicer dogodek nima VIP miz.",
  "Save changes first": "Najprej shrani spremembe",
  "Remove VIP tables": "Odstrani VIP mize",
- "Save the event first, then set up its VIP tables.": "Najprej shrani dogodek, nato nastavi njegove VIP mize."
+ "Save the event first, then set up its VIP tables.": "Najprej shrani dogodek, nato nastavi njegove VIP mize.",
+ "By continuing you agree to the [Terms of Use] and acknowledge the [Privacy Policy].": "Z nadaljevanjem se strinjaš s [Pogoji uporabe] in potrjuješ, da si prebral [Politiko zasebnosti]."
 };
