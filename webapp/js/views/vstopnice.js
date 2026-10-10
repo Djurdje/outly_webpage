@@ -135,6 +135,7 @@ export function QrTelo({ v, poslji }) {
       ${v.min_age > 0 ? html`<span><small>${t("AGE")}</small>${v.min_age}+</span>` : null}
     </div>
     <p class="opomba srednje">${t("Show this QR code at the door. Turn your screen brightness up.")}</p>
+    ${v.transferred === true && v.is_guest_list !== true ? html`<p class="opomba srednje">${t("This ticket was transferred to you. If the event is cancelled, the refund goes to the original buyer.")}</p>` : null}
     ${v.transferable && v.is_guest_list !== true && poslji ? html`<button type="button" class="gumb-siv" onClick=${() => poslji(v)}><${Ikona} ime="send" velikost=${16} /> ${t("Send to a friend")}</button>` : null}
   </div>`;
 }
@@ -246,6 +247,10 @@ function PrenosList({ vstopnica: v, zapri, koncano }) {
       ? t("The ticket moves to your friend's account with a new QR code. Your copy stops working. Your friend needs an Outly account and must be {n}+.", { n: minStarost })
       : t("The ticket moves to your friend's account with a new QR code. Your copy stops working. Your friend needs an Outly account.");
   const izbranGost = !!(izbran && izbran.email && gostNacin);
+  // Vracilo ob odpovedi dogodka dobi kupec (prodajalec je klub), ne prejemnik; kdor je vstopnico sam prejel, ni kupec.
+  const vracilo = v.transferred === true
+    ? t("If the event is cancelled, the refund goes to the original buyer, not to the person you send the ticket to.")
+    : t("If the event is cancelled, the refund goes to you as the buyer, not to the person you send the ticket to.");
 
   return html`<${List} odprt=${true} zapri=${uspeh ? koncano : zapri} naslov=${t("Send to a friend")}>
     ${uspeh ? html`<div class="uspeh"><span class="uspeh-krog"><${Ikona} ime="check" velikost=${28} debelina=${3} /></span>
@@ -256,7 +261,7 @@ function PrenosList({ vstopnica: v, zapri, koncano }) {
     : izbranGost ? html`<p class="besedilo-opis prenos-naslov" role="alert">${t("Send ticket to {email}?", { email: izbran.email })}</p>
         <p class="opomba">${t("Check the address – the ticket will be theirs and your QR code will stop working.")}</p>
         <p class="opomba">${t("We'll email them the ticket with your username. Only enter the address of someone who is expecting it.")}</p>
-        <p class="opomba">${t("If the event is cancelled, the refund goes to the original buyer, not to your friend.")}</p>
+        <p class="opomba">${vracilo}</p>
         ${starostPotrebna ? html`<label class="soglasje">
           <input type="checkbox" checked=${starostOk} onChange=${e => { setStarostOk(e.target.checked); setNapaka(""); }} />
           <span>${t("I confirm the person I'm sending this ticket to is at least {n} years old. They must show a valid photo ID at the door; if they are younger, the club will refuse entry.", { n: minStarost })}</span>
@@ -265,7 +270,7 @@ function PrenosList({ vstopnica: v, zapri, koncano }) {
         <button type="button" class="gumb-siv" onClick=${nazajNaIzbiro} disabled=${tece}>${t("Cancel")}</button>`
     : izbran ? html`<p class="besedilo-opis">${t("Send your ticket for {event} to {name}?", { event: v.event_title, name: izbran.ime })}</p>
         <p class="opomba">${t("Your copy stops working.")}</p>
-        <p class="opomba">${t("If the event is cancelled, the refund goes to the original buyer, not to your friend.")}</p>
+        <p class="opomba">${vracilo}</p>
         ${starostPotrebna ? html`<label class="soglasje">
           <input type="checkbox" checked=${starostOk} onChange=${e => { setStarostOk(e.target.checked); setNapaka(""); }} />
           <span>${t("I confirm the person I'm sending this ticket to is at least {n} years old. They must show a valid photo ID at the door; if they are younger, the club will refuse entry.", { n: minStarost })}</span>
@@ -276,6 +281,7 @@ function PrenosList({ vstopnica: v, zapri, koncano }) {
       <div class="nakup-dogodek"><strong>${v.event_title}</strong><span class="utisano">${v.club_name} · ${v.public_ref}</span>
         ${v.is_vip === true ? html`<${VipVrstica} v=${v} />` : null}</div>
       <p class="opomba">${opis}</p>
+      <p class="opomba">${vracilo}</p>
       ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}
       <h3 class="nastavitev-naslov">${t("Choose a friend")}</h3>
       ${prijatelji === null ? html`<div class="nalaganje"><span class="vrtavka"></span></div>`
