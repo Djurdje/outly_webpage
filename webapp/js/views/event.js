@@ -19,6 +19,7 @@ import { GostNakupList } from "./nakup-gost.js";
 import { gostNakupVklopljen } from "../gost.js";
 import { MiniKarta } from "./zemljevid.js";
 import { CenikList } from "./club.js";
+import { PrijaviGumb } from "./zloraba-gumb.js";
 
 export function Dogodek({ id }) {
   const prijavljen = useSeja(s => s.prijavljen);
@@ -181,6 +182,8 @@ export function Dogodek({ id }) {
       ${klub.contact_phone ? html`<p class="vip-klic">${t("FOR MORE QUESTIONS CALL:")}<br />
         <a href=${"tel:" + klub.contact_phone.replace(/[^\d+]/g, "")}>${klub.contact_phone}</a></p>` : null}
     </section>` : null}
+
+    <${PrijaviGumb} tip="event" id=${e.id} klubId=${e.club_id} />
 
     ${!gostNakup
       ? html`<${NakupList} odprt=${list === "nakup"} zapri=${() => setList(null)} dogodek=${e} imeKluba=${klub ? klub.name : ""} />`

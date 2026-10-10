@@ -10,6 +10,7 @@ import * as P from "../podatki.js";
 import { denar, zanrIme, varenUrl, napisPrizorisca } from "../oblika.js";
 import { Ikona, Slika, GlavaNazaj, Nalaganje, Napaka, List, VrsticaDogodka } from "../ui.js";
 import { MiniKarta } from "./zemljevid.js";
+import { PrijaviGumb } from "./zloraba-gumb.js";
 
 export function Klub({ id }) {
   const prijavljen = useSeja(s => s.prijavljen);
@@ -103,6 +104,8 @@ export function Klub({ id }) {
     ${(k.description || "").trim() ? html`<section class="blok-besedila">
       <h2 class="podnaslov">${org ? t("About the organizer") : t("About the club")}</h2><p class="besedilo-opis">${k.description}</p>
     </section>` : null}
+
+    <${PrijaviGumb} tip="club" id=${k.id} klubId=${k.id} />
 
     <${CenikList} odprt=${cenik} zapri=${() => setCenik(false)} klub=${k} />
   </div>`;

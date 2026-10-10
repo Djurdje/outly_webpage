@@ -262,6 +262,18 @@ export function sporocilo(e) {
   return t("Something went wrong. Please try again.");
 }
 
+/** Sporocilo za Report / Block (backend #189): 404 s kodo not_found = cilj ni vec javen; 404 brez kode = star backend brez poti
+    ("Cannot POST /reports"); 429 = omejitev prijav. Ostalo kot sporocilo(). */
+export function zlorabaSporocilo(e) {
+  if (e instanceof ApiError) {
+    const koda = kodaNapake(e);
+    if (e.status === 404) return koda === "not_found" ? t("This is no longer available.") : t("Not available yet.");
+    if (e.status === 429) return t("Try again later.");
+    if (e.status === 409 && koda === "blocks_limit") return t("You can't block more people. Unblock someone first.");
+  }
+  return sporocilo(e);
+}
+
 /** Sporocilo za napako nakupa brez racuna (POST /guest/events/:id/orders): iste prevode kot sporocilo(), razen ob splosnih
     sporocilih, ki bi pri gostu zavajala ("Enter your friend's email", "You do not have permission", "This is already in use"). */
 export function gostSporocilo(e) {
