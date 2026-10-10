@@ -8,12 +8,12 @@ import { send, pocistiPredpomnilnik, kljucNakupa, pozabiKljucNakupa, nerazresenN
 import { uidSeje } from "../seja.js";
 import {
   sporocilo, ApiError, jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo,
-  jeNakupVObdelavi, NAKUP_V_OBDELAVI_S, izidNakupa, jeNarociloNeaktivno, nakupNapakaSporocilo, nakupBrezOdgovoraSporocilo
+  jeNakupVObdelavi, NAKUP_V_OBDELAVI_S, izidNakupa, jeNarociloNeaktivno, nakupNapakaSporocilo, nakupBrezOdgovoraSporocilo, potekloPlacilo, placiloVObdelavi, placiloNepripravljeno, jeMejaBrezplacnih
 } from "../napake.js";
 import { navigiraj } from "../usmerjanje.js";
-import { odpriStripe } from "../stripe.js";
+import { odpriStripe, izidStripeNakupa } from "../stripe.js";
 import { PogojiNakupa } from "../pogoji.js";
-import { denar, danInUra } from "../oblika.js";
+import { denar, danInUra, nacinPlacila } from "../oblika.js";
 import { List, Ikona, Nalaganje, Napaka, useZaklep } from "../ui.js";
 import { VipRazdeli, mejaStarostiVip, zapomniCakajocVip } from "./vip-razdeli.js";
 import {
@@ -65,6 +65,8 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
       const r = await send(`/events/${e.id}/vip`, { auth: "optional" });
       const d = {
         enabled: !!(r && r.enabled), onSale: !!(r && r.on_sale), valuta: (r && r.currency) || e.currency || "EUR",
+        // payment_mode (backend #149): na vrhu odgovora VIP; sicer iz dogodka; star backend = "stripe".
+        nacin: nacinPlacila({ payment_mode: (r && r.payment_mode) || e.payment_mode }),
         plan: normalizirajTloris(r && r.plan), mize: normalizirajMize(r && r.tables), paketi: normalizirajPakete(r && r.packages)
       };
       setS({ nalaga: false, napaka: "", d });
@@ -100,7 +102,7 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
   const imaPakete = !!d && d.paketi.length > 0;
 
   async function rezerviraj() {
-    if (!miza || tece.current) return;
+    if (!miza || tece.current || (d && d.nacin === "unavailable")) return;
     if (!prijavljen) {
       // Prijava in nazaj na isti dogodek (kot pri nakupu vstopnic); izbira mize in paketa se ohrani.
       const nazajNa = `/app/event/${e.id}?vip=1&table=${miza.id}` + (paketId ? `&pkg=${paketId}` : "");
@@ -125,19 +127,26 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
       pocistiPredpomnilnik();
       // Stripe (backend #19): narocilo caka na placilo na Stripovi strani. Kljuca NE pozabimo: ce se kupec vrne brez
       // placila, ponovni pritisk vrne ISTO narocilo in isti checkout_url (ne rezervira se enkrat).
-      if (r && r.mode === "stripe" && r.checkout_url) {
+      // Potekla Stripova seja: Stripa ne odpiramo; kljuc OSTANE (placano tik pred rokom -> ponovitev vrne placano miza; sicer 409 order_not_active).
+      const izidS = izidStripeNakupa(r);
+      if (izidS === "preusmeri") {
         // Po placilu Stripe vrne na /app/tickets?placilo=uspeh: tam se razdelitev ponudi vnovic (vip-razdeli.js).
         zapomniCakajocVip(uid, r.order && r.order.id);
         if (odpriStripe(r.checkout_url)) return;   // stran se preusmerja; gumb ostane "Processing..."
         throw new ApiError(-1, "Could not open the payment page.");
       }
-      if (ziv.current && odprtRef.current) { pozabiKljucNakupa("vip", uid, e.id, kljuc); setNakup(r); }   // uspeh: naslednji nakup dobi nov kljuc
+      // payment_processing (odlozeno placilo): NI potekla seja; kljuc ostane (ponovitev = 409 request_in_progress).
+      if (izidS === "obdelava") { oznaciIzidNakupa("vip", uid, e.id, kljuc, "nerazresen"); zakleni(30); if (ziv.current) setNapaka(placiloVObdelavi()); }
+      else if (izidS === "poteklo") { oznaciIzidNakupa("vip", uid, e.id, kljuc, "dokoncen"); if (ziv.current) setNapaka(potekloPlacilo()); }
+      else if (izidS === "nepripravljeno") { oznaciIzidNakupa("vip", uid, e.id, kljuc, "nerazresen"); if (ziv.current) setNapaka(placiloNepripravljeno()); }
+      else if (ziv.current && odprtRef.current) { pozabiKljucNakupa("vip", uid, e.id, kljuc); setNakup(r); }   // uspeh: naslednji nakup dobi nov kljuc
       // Uspeh, ki ga uporabnik ni videl (list se je medtem odmontiral): kljuca NE pozabimo - ponovitev vrne isto narocilo (Idempotent-Replayed).
       else oznaciIzidNakupa("vip", uid, e.id, kljuc, "nerazresen");
     } catch (err) {
       // 409 request_in_progress NI "zasedeno": isti nakup se se obdeluje - izbiro mize obdrzimo (isti kljuc), samo pocakamo.
       // 409 order_not_active tudi NI "zasedeno": prejsnje narocilo ni vec aktivno - izbira ostane, tloris se tiho osvezi (miza je morda spet prosta).
       if (jeNarociloNeaktivno(err)) nalozi(true, { miza: miza.id, paket: paketId });
+      else if (jeMejaBrezplacnih(err)) { /* miza za 0 EUR: izbira ostane, sporocilo pove omejitev */ }
       else if (err && err.status === 409 && !jeNakupVObdelavi(err)) { nalozi(true); setMizaId(null); }   // zasedeno ali prodaja zaprta: osvezi tloris
       // Nakupa NE ponavljamo sami: uporabnik pritisne znova (isti kljuc, razen ob 422, 400 in 409 order_not_active).
       const izid = izidNakupa(err);
@@ -221,8 +230,9 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
         </div>` : null}
       </div>` : html`<p class="opomba srednje">${t("Tap a free table to reserve it.")}</p>`}
       ${miza ? html`<div class="vip-pas-nakupa">
-        <p class="opomba">${t("Test mode — nothing is charged")}</p>
-        <button type="button" class="gumb-glavni" onClick=${rezerviraj} disabled=${posiljam || zaklenjeno || !d.onSale || (imaPakete && !paket)}>
+        ${d.nacin === "unavailable" ? html`<p class="opomba" role="status">${t("Tickets aren't on sale in the app yet.")}</p>`
+          : d.nacin === "test" && miza.price_cents !== 0 ? html`<p class="opomba">${t("Test mode — nothing is charged")}</p>` : null}
+        <button type="button" class="gumb-glavni" onClick=${rezerviraj} disabled=${posiljam || zaklenjeno || !d.onSale || d.nacin === "unavailable" || (imaPakete && !paket)}>
           ${posiljam ? t("Processing...") : t("Reserve table") + " · " + denar(miza.price_cents, d.valuta)}</button>
         <${PogojiNakupa} />
       </div>` : null}` : null}

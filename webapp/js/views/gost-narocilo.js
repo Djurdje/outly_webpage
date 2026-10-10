@@ -2,10 +2,10 @@
    Zeton se takoj shrani in odstrani iz naslovne vrstice (gost.js); vstopnice pridejo iz GET /guest/order (glava
    X-Guest-Token, brez prijave). Placilo se potrjuje (pending) nekaj sekund: stran se osvezi 5x na 2 s.
    QR kot pri prijavljenih (QrTelo iz vstopnice.js); prenosa vstopnice za goste ni. */
-import { html, useEffect, useState } from "../lib.js";
+import { html, useEffect, useRef, useState } from "../lib.js";
 import { t, tn } from "../i18n.js";
 import { send } from "../api.js";
-import { ApiError, sporocilo, kodaNapake } from "../napake.js";
+import { ApiError, sporocilo, kodaNapake, potekloPlacilo, placiloVObdelavi } from "../napake.js";
 import { danInUra } from "../oblika.js";
 import { GlavaNazaj, Nalaganje, Napaka, Ikona, Slika } from "../ui.js";
 import { odpriStripe } from "../stripe.js";
@@ -21,19 +21,23 @@ export function GostNarocilo() {
   const prijavljen = useSeja(x => x.prijavljen);
   const [s, setS] = useState({ stanje: zeton ? "nalaga" : "brez", r: null, napaka: "", poteklo: false });
   const [poskus, setPoskus] = useState(0);
+  const zadnjiOdgovor = useRef(null);   // zadnji uspesen odgovor GET /guest/order: preziv "Check again" (nov krog poizvedbe), da 404 loci preklic od neveljavne povezave
   const [preklic, setPreklic] = useState({ tece: false, napaka: "", opravljen: null });   // opravljen: { dogodek } po uspesnem preklicu
 
   useEffect(() => { document.title = t("Your tickets") + " · Outly"; }, []);
   useEffect(() => {
     if (!zeton) return undefined;
-    let zivo = true, casovnik = null, krog = 0, zadnji = null;
+    let zivo = true, casovnik = null, krog = 0, zadnji = zadnjiOdgovor.current;
     setS(x => ({ ...x, napaka: "", poteklo: false, stanje: x.r ? x.stanje : "nalaga" }));
     const korak = async () => {
       let r;
       try { r = await send("/guest/order", { glave: { "X-Guest-Token": zeton } }); }
       catch (err) {
         if (!zivo) return;
-        if (err instanceof ApiError && err.status === 404) { pozabiGostZeton(); if (zadnji && zadnji.order && zadnji.order.event) pozabiGostNakup({ dogodek: zadnji.order.event.id }); setS({ stanje: "neveljavno", r: null, napaka: "", poteklo: false }); return; }
+        if (err instanceof ApiError && err.status === 404) { pozabiGostZeton(); if (zadnji && zadnji.order && zadnji.order.event) pozabiGostNakup({ dogodek: zadnji.order.event.id });
+          // Backend za preklicano/zavrnjeno neplacano narocilo vrne 404. Ce je gost prej videl pending (npr. potekla seja), je to preklic, ne neveljavna povezava.
+          const bilCakajoc = !!(zadnji && zadnji.order && zadnji.order.status === "pending");
+          setS({ stanje: bilCakajoc ? "preklicano" : "neveljavno", r: null, napaka: "", poteklo: false, dogodek: bilCakajoc && zadnji.order.event ? zadnji.order.event.id : null }); return; }
         // Prehodna napaka (503, 429, omrezje) med poizvedovanjem: znotraj meje poskusov tiho poskusimo znova; sicer sporocilo in
         // "Try again" (stanje ostane, pending vsebina je se vidna).
         if (zadnji && zadnji.order && zadnji.order.status === "pending" && krog < OSVEZITEV_STEVILO) { krog += 1; casovnik = setTimeout(korak, OSVEZITEV_MS); return; }
@@ -41,7 +45,7 @@ export function GostNarocilo() {
         return;
       }
       if (!zivo) return;
-      zadnji = r;
+      zadnji = r; zadnjiOdgovor.current = r;
       const caka = !!(r && r.order && r.order.status === "pending");
       const naprej = caka && krog < OSVEZITEV_STEVILO;
       if (naprej) { krog += 1; casovnik = setTimeout(korak, OSVEZITEV_MS); }
@@ -67,15 +71,16 @@ export function GostNarocilo() {
     }
   }
   const glava = html`<${GlavaNazaj} naslov=${t("Your tickets")} rezerva="/app" />`;
-  if (preklic.opravljen) {
-    return html`<div class="zaslon">${glava}
+  const preklicano = dogodek => html`<div class="zaslon">${glava}
       <div class="prazno" role="status">
         <${Ikona} ime="info" velikost=${34} razred="modra" />
         <strong>${t("Order cancelled. You have not been charged.")}</strong>
-        ${preklic.opravljen.dogodek != null ? html`<a class="gumb-siv" href=${"/app/event/" + preklic.opravljen.dogodek}>${t("View event")}</a>` : html`<a class="gumb-siv" href="/app/events">${t("See all events")}</a>`}
+        ${dogodek != null ? html`<a class="gumb-siv" href=${"/app/event/" + dogodek}>${t("View event")}</a>` : html`<a class="gumb-siv" href="/app/events">${t("See all events")}</a>`}
       </div></div>`;
-  }
-  if (s.stanje === "neveljavno" && prijavljen) {
+  if (preklic.opravljen) return preklicano(preklic.opravljen.dogodek);
+  // Neprijavljen gost, ki je prej videl pending: 404 = narocilo preklicano (prijavljen: lahko je placano narocilo prevzel racun, spodnja veja).
+  if (s.stanje === "preklicano" && !prijavljen) return preklicano(s.dogodek);
+  if ((s.stanje === "neveljavno" || s.stanje === "preklicano") && prijavljen) {
     // 404 je tudi potekel ali tuj zeton: ne trdimo, da so vstopnice v racunu (GET /me jih prevzame samo ob istem potrjenem e-naslovu).
     return html`<div class="zaslon">${glava}
       <div class="prazno">
@@ -85,7 +90,7 @@ export function GostNarocilo() {
         <a class="gumb-glavni" href="/app/tickets">${t("Open my tickets")}</a>
       </div></div>`;
   }
-  if (s.stanje === "brez" || s.stanje === "neveljavno") {
+  if (s.stanje === "brez" || s.stanje === "neveljavno" || s.stanje === "preklicano") {
     return html`<div class="zaslon">${glava}
       <div class="prazno">
         <${Ikona} ime="ticket" velikost=${34} razred="modra" />
@@ -109,6 +114,35 @@ export function GostNarocilo() {
       <${Ikona} ime="chevron-right" velikost=${16} razred="utisano" />
     </a>` : null}`;
 
+  // Odlozeno placilo (payment_processing, backend krog 2): kupec je placal, banka se ni potrdila. NI potekla seja: brez "Complete payment",
+  // brez preklica (placilo je v teku); narocilo samo preide v paid (vstopnice po e-posti in na tej strani) ali cancelled.
+  if (o.status === "pending" && o.payment_processing === true) {
+    return html`<div class="zaslon">${glava}
+      <${Napaka} besedilo=${s.napaka} znova=${() => setPoskus(p => p + 1)} />
+      <div class="prazno" role="status">
+        <${Ikona} ime="clock" velikost=${34} razred="modra" />
+        <strong>${placiloVObdelavi()}</strong>
+        <button type="button" class="gumb-siv" onClick=${() => setPoskus(p => p + 1)}>${t("Check again")}</button>
+      </div>
+      ${dogodek}
+    </div>`;
+  }
+  // Potekla Stripova seja (backend #149): checkout_url je null, checkout_expired true. Povezave ne odpiramo; "Check again" osvezi
+  // (backend narocilo preveri pri Stripu: placano tik pred rokom -> vstopnice, sicer preklicano), nov nakup je na dogodku.
+  if (o.status === "pending" && o.checkout_expired === true) {
+    return html`<div class="zaslon">${glava}
+      <${Napaka} besedilo=${s.napaka} znova=${() => setPoskus(p => p + 1)} />
+      <div class="prazno" role="status">
+        <${Ikona} ime="clock" velikost=${34} razred="modra" />
+        <strong>${potekloPlacilo()}</strong>
+        <button type="button" class="gumb-glavni" onClick=${() => setPoskus(p => p + 1)}>${t("Check again")}</button>
+        ${e.id != null ? html`<a class="gumb-siv" href=${"/app/event/" + e.id}>${t("View event")}</a>` : null}
+        <${Napaka} besedilo=${preklic.napaka} />
+        <button type="button" class="povezava-gumb" onClick=${preklici} disabled=${preklic.tece}>${preklic.tece ? t("Cancelling...") : t("Cancel order")}</button>
+      </div>
+      ${dogodek}
+    </div>`;
+  }
   if (o.status === "pending") {
     return html`<div class="zaslon">${glava}
       <${Napaka} besedilo=${s.napaka} znova=${() => setPoskus(p => p + 1)} />
@@ -116,7 +150,7 @@ export function GostNarocilo() {
         ${s.poteklo ? html`<${Ikona} ime="clock" velikost=${34} razred="modra" />` : html`<div class="nalaganje"><span class="vrtavka"></span></div>`}
         <strong>${s.poteklo ? t("We are still waiting for your payment") : t("Payment is being confirmed…")}</strong>
         <span>${s.poteklo ? t("Your tickets will be emailed to you as soon as the payment is confirmed.") : t("This usually takes a few seconds.")}</span>
-        ${o.checkout_url ? html`<button type="button" class="gumb-glavni" onClick=${() => odpriStripe(o.checkout_url)}>${t("Complete payment")}</button>` : null}
+        ${o.checkout_url && o.checkout_expired !== true && o.payment_processing !== true ? html`<button type="button" class="gumb-glavni" onClick=${() => odpriStripe(o.checkout_url)}>${t("Complete payment")}</button>` : null}
         ${s.poteklo ? html`<button type="button" class="gumb-siv" onClick=${() => setPoskus(p => p + 1)}>${t("Check again")}</button>` : null}
         <${Napaka} besedilo=${preklic.napaka} />
         <button type="button" class="povezava-gumb" onClick=${preklici} disabled=${preklic.tece}>${preklic.tece ? t("Cancelling...") : t("Cancel order")}</button>

@@ -14,3 +14,19 @@ export function odpriStripe(url) {
   window.location.assign(url);
   return true;
 }
+
+/* Izid odgovora nakupa (POST .../orders; backend #149, pogodba 10. 10. 2026, 2 in 2b):
+   "preusmeri" = stripe + veljaven checkout_url (odpri Stripe);
+   "obdelava"  = payment_processing (odlozeno placilo: kupec je placal, banka se ni potrdila) - NI potekla seja, povezave ni;
+   "poteklo"   = checkout_expired: Stripa NE odpiramo;
+   "nepripravljeno" = pending brez povezave, brez poteka in brez obdelave (seja se ustvarja);
+   "uspeh"     = vse ostalo (testni nacin, 0 EUR pri klubu s Stripom: mode "stripe", paid, tickets polne, checkout_url null).
+   Potekla povezava nikoli ne gre na Stripe, tudi ce bi jo star odjemalec dobil. */
+export function izidStripeNakupa(r) {
+  if (!r || r.mode !== "stripe") return "uspeh";
+  const o = r.order || {};
+  if (o.status === "pending" && o.payment_processing === true) return "obdelava";
+  if (o.checkout_expired === true) return "poteklo";
+  if (r.checkout_url) return "preusmeri";
+  return o.status === "pending" ? "nepripravljeno" : "uspeh";
+}

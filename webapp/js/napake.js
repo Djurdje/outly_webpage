@@ -53,8 +53,8 @@ export const jeKljucNeveljaven = e => e instanceof ApiError && e.status === 400 
 /* Nerazresen izid: narocilo je morda nastalo (brez odgovora, timeout, prekinjena povezava, 409 request_in_progress).
    Neuspela osvezitev seje to NI (zahtevek ni odsel). Samo po takem izidu se list ob ponovnem odprtju predizpolni. */
 export const jeNerazresenIzid = e => jeNakupVObdelavi(e) || (e instanceof ApiError && e.status === -1 && !jeOsvezitevSeje(e));
-/* Napake, po katerih se kljuc zavrze (nov nakup): 422, 400 neveljaven kljuc, 409 order_not_active. */
-export const jeKljucZavrzen = e => jeKljucPonovljen(e) || jeKljucNeveljaven(e) || jeNarociloNeaktivno(e);
+/* Napake, po katerih se kljuc zavrze (nov nakup): 422, 400 neveljaven kljuc, 409 order_not_active, 409 free_limit. */
+export const jeKljucZavrzen = e => jeKljucPonovljen(e) || jeKljucNeveljaven(e) || jeNarociloNeaktivno(e) || jeMejaBrezplacnih(e);
 /* Izid napake nakupa za shrambo kljucev (api.js oznaciIzidNakupa): "zavrzen" (nov nakup), "neposlan" (zahtevek ni odsel),
    "nerazresen" (narocilo je morda nastalo) ali "dokoncen". */
 export function izidNakupa(e) {
@@ -72,6 +72,20 @@ export function nakupNapakaSporocilo(e) {
   if (e && e.status === -1) return nakupBrezOdgovoraSporocilo();
   return sporocilo(e);
 }
+/* Stripova seja je potekla (checkout_expired, ali 409 order_not_active pri ponovitvi): povezave ne odpiramo, naslednji pritisk je nov nakup. */
+export function potekloPlacilo() {
+  return t("The payment session expired. Please try again.");
+}
+/* Odlozeno placilo (order.payment_processing, backend krog 2): kupec je placal, banka denarja se ni potrdila. Ni potekla seja. */
+export function placiloVObdelavi() {
+  return t("Your payment is being processed by your bank. We'll update your tickets when it's confirmed.");
+}
+/* pending brez povezave, brez poteka in brez obdelave: Stripova seja se ustvarja. */
+export function placiloNepripravljeno() {
+  return t("The payment page isn't ready yet. Please try again.");
+}
+/* 409 free_limit: brezplacnih vstopnic za ta dogodek je na osebo omejeno (backend 2c). Narocilo ni nastalo: kljuc se zavrze. */
+export const jeMejaBrezplacnih = e => e instanceof ApiError && e.status === 409 && kodaNapake(e) === "free_limit";
 export function nakupZasedenoSporocilo() {
   return t("Lots of people are buying right now. Please try again in a few seconds.");
 }
@@ -85,6 +99,10 @@ export class AuthError extends Error {
 }
 
 const PRAVILA = [
+  // Meje nakupa (backend krog 2): golo besedilo 409, tudi za prijavljenega kupca (gostSporocilo jih ima ze prej za goste).
+  ["you have too many payments still processing", "You have too many payments still processing. Wait for your bank to confirm them."],
+  ["you already have an unfinished payment", "You already have an unfinished payment for this event. Please wait up to 30 minutes for it to expire, then try again."],
+  ["you have too many unfinished payments", "You have too many unfinished payments. Please wait up to 30 minutes for them to expire, then try again."],
   ["invalid or expired code", "The code is wrong or has expired. Request a new one."],
   ["too many attempts", "Too many wrong attempts. Request a new code."],
   ["code must be 6 digits", "Enter the code from the email."],
@@ -185,7 +203,9 @@ function prevediApi(e) {
     case "request_in_progress": return t("Your previous attempt is still being processed. Please try again in a moment.");
     case "idempotency_key_reused":
     case "invalid_idempotency_key": return t("Something changed, please try again.");
-    case "order_not_active": return t("Your previous order is no longer active. Tap again to buy anew.");
+    // order_not_active = naroilo ni vec aktivno: potek seje, preklic, zavrnjeno placilo (SEPA) ali vracilo - ne trdimo, da je potekla seja.
+    case "order_not_active": return t("Your previous payment is no longer active. Please try again.");
+    case "free_limit": return t("You've reached the limit of free tickets for this event.");
     // Prenos vstopnice prijatelju brez racuna (POST /tickets/:id/transfer z allow_guest)
     case "age_confirmation_required": {
       let n = 0;
