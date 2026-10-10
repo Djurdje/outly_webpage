@@ -53,8 +53,8 @@ export const jeKljucNeveljaven = e => e instanceof ApiError && e.status === 400 
 /* Nerazresen izid: narocilo je morda nastalo (brez odgovora, timeout, prekinjena povezava, 409 request_in_progress).
    Neuspela osvezitev seje to NI (zahtevek ni odsel). Samo po takem izidu se list ob ponovnem odprtju predizpolni. */
 export const jeNerazresenIzid = e => jeNakupVObdelavi(e) || (e instanceof ApiError && e.status === -1 && !jeOsvezitevSeje(e));
-/* Napake, po katerih se kljuc zavrze (nov nakup): 422, 400 neveljaven kljuc, 409 order_not_active. */
-export const jeKljucZavrzen = e => jeKljucPonovljen(e) || jeKljucNeveljaven(e) || jeNarociloNeaktivno(e);
+/* Napake, po katerih se kljuc zavrze (nov nakup): 422, 400 neveljaven kljuc, 409 order_not_active, 409 free_limit. */
+export const jeKljucZavrzen = e => jeKljucPonovljen(e) || jeKljucNeveljaven(e) || jeNarociloNeaktivno(e) || jeMejaBrezplacnih(e);
 /* Izid napake nakupa za shrambo kljucev (api.js oznaciIzidNakupa): "zavrzen" (nov nakup), "neposlan" (zahtevek ni odsel),
    "nerazresen" (narocilo je morda nastalo) ali "dokoncen". */
 export function izidNakupa(e) {
@@ -76,6 +76,16 @@ export function nakupNapakaSporocilo(e) {
 export function potekloPlacilo() {
   return t("The payment session expired. Please try again.");
 }
+/* Odlozeno placilo (order.payment_processing, backend krog 2): kupec je placal, banka denarja se ni potrdila. Ni potekla seja. */
+export function placiloVObdelavi() {
+  return t("Your payment is being processed by your bank. We'll update your tickets when it's confirmed.");
+}
+/* pending brez povezave, brez poteka in brez obdelave: Stripova seja se ustvarja. */
+export function placiloNepripravljeno() {
+  return t("The payment page isn't ready yet. Please try again.");
+}
+/* 409 free_limit: brezplacnih vstopnic za ta dogodek je na osebo omejeno (backend 2c). Narocilo ni nastalo: kljuc se zavrze. */
+export const jeMejaBrezplacnih = e => e instanceof ApiError && e.status === 409 && kodaNapake(e) === "free_limit";
 export function nakupZasedenoSporocilo() {
   return t("Lots of people are buying right now. Please try again in a few seconds.");
 }
@@ -190,6 +200,7 @@ function prevediApi(e) {
     case "idempotency_key_reused":
     case "invalid_idempotency_key": return t("Something changed, please try again.");
     case "order_not_active": return potekloPlacilo();
+    case "free_limit": return t("You've reached the limit of free tickets for this event.");
     // Prenos vstopnice prijatelju brez racuna (POST /tickets/:id/transfer z allow_guest)
     case "age_confirmation_required": {
       let n = 0;

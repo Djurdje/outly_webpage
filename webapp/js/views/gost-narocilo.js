@@ -5,7 +5,7 @@
 import { html, useEffect, useState } from "../lib.js";
 import { t, tn } from "../i18n.js";
 import { send } from "../api.js";
-import { ApiError, sporocilo, kodaNapake, potekloPlacilo } from "../napake.js";
+import { ApiError, sporocilo, kodaNapake, potekloPlacilo, placiloVObdelavi } from "../napake.js";
 import { danInUra } from "../oblika.js";
 import { GlavaNazaj, Nalaganje, Napaka, Ikona, Slika } from "../ui.js";
 import { odpriStripe } from "../stripe.js";
@@ -109,6 +109,19 @@ export function GostNarocilo() {
       <${Ikona} ime="chevron-right" velikost=${16} razred="utisano" />
     </a>` : null}`;
 
+  // Odlozeno placilo (payment_processing, backend krog 2): kupec je placal, banka se ni potrdila. NI potekla seja: brez "Complete payment",
+  // brez preklica (placilo je v teku); narocilo samo preide v paid (vstopnice po e-posti in na tej strani) ali cancelled.
+  if (o.status === "pending" && o.payment_processing === true) {
+    return html`<div class="zaslon">${glava}
+      <${Napaka} besedilo=${s.napaka} znova=${() => setPoskus(p => p + 1)} />
+      <div class="prazno" role="status">
+        <${Ikona} ime="clock" velikost=${34} razred="modra" />
+        <strong>${placiloVObdelavi()}</strong>
+        <button type="button" class="gumb-siv" onClick=${() => setPoskus(p => p + 1)}>${t("Check again")}</button>
+      </div>
+      ${dogodek}
+    </div>`;
+  }
   // Potekla Stripova seja (backend #149): checkout_url je null, checkout_expired true. Povezave ne odpiramo; "Check again" osvezi
   // (backend narocilo preveri pri Stripu: placano tik pred rokom -> vstopnice, sicer preklicano), nov nakup je na dogodku.
   if (o.status === "pending" && o.checkout_expired === true) {
@@ -132,7 +145,7 @@ export function GostNarocilo() {
         ${s.poteklo ? html`<${Ikona} ime="clock" velikost=${34} razred="modra" />` : html`<div class="nalaganje"><span class="vrtavka"></span></div>`}
         <strong>${s.poteklo ? t("We are still waiting for your payment") : t("Payment is being confirmed…")}</strong>
         <span>${s.poteklo ? t("Your tickets will be emailed to you as soon as the payment is confirmed.") : t("This usually takes a few seconds.")}</span>
-        ${o.checkout_url && o.checkout_expired !== true ? html`<button type="button" class="gumb-glavni" onClick=${() => odpriStripe(o.checkout_url)}>${t("Complete payment")}</button>` : null}
+        ${o.checkout_url && o.checkout_expired !== true && o.payment_processing !== true ? html`<button type="button" class="gumb-glavni" onClick=${() => odpriStripe(o.checkout_url)}>${t("Complete payment")}</button>` : null}
         ${s.poteklo ? html`<button type="button" class="gumb-siv" onClick=${() => setPoskus(p => p + 1)}>${t("Check again")}</button>` : null}
         <${Napaka} besedilo=${preklic.napaka} />
         <button type="button" class="povezava-gumb" onClick=${preklici} disabled=${preklic.tece}>${preklic.tece ? t("Cancelling...") : t("Cancel order")}</button>
@@ -143,6 +156,7 @@ export function GostNarocilo() {
 
   // Preklicano (tudi po izteku Stripove seje): placila ni, nov nakup je na dogodku.
   if (o.status === "cancelled") {
+    pozabiGostNakup({ dogodek: e.id });   // kot pri paid: shranjeni kljuc nakupa ni vec potreben (nov nakup = nov kljuc)
     return html`<div class="zaslon">${glava}
       <div class="prazno" role="status">
         <${Ikona} ime="info" velikost=${34} razred="modra" />

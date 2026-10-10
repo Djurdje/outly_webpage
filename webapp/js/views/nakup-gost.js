@@ -9,7 +9,7 @@ import { t, useJezik } from "../i18n.js";
 import { send, pocistiPredpomnilnik, kljucNakupa, pozabiKljucNakupa, oznaciIzidNakupa, zasejKljucNakupa } from "../api.js";
 import {
   jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo, jeNakupVObdelavi, NAKUP_V_OBDELAVI_S,
-  ApiError, izidNakupa, nakupBrezOdgovoraSporocilo, gostSporocilo, potekloPlacilo
+  ApiError, izidNakupa, nakupBrezOdgovoraSporocilo, gostSporocilo, potekloPlacilo, placiloVObdelavi, placiloNepripravljeno
 } from "../napake.js";
 import { denar, jeRazprodan, preostanek, danInUra, nacinPlacila } from "../oblika.js";
 import { List, useZaklep } from "../ui.js";
@@ -105,9 +105,11 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
       }
       // Potekla Stripova seja: Stripa ne odpiramo. Kljuc OSTANE (placano tik pred rokom -> ponovitev vrne placano narocilo; sicer
       // 409 order_not_active, kljuc se zavrze in naslednji pritisk je nov nakup). 0 EUR pri klubu s Stripom gre naprej kot uspeh.
-      if (izidS === "poteklo") {
-        oznaciIzidNakupa("gost", m, e.id, kljuc, "dokoncen");
-        if (ziv.current) setNapaka(potekloPlacilo());
+      if (izidS === "poteklo" || izidS === "obdelava" || izidS === "nepripravljeno") {
+        // payment_processing (odlozeno placilo) NI potekla seja; kljuc ostane (ponovitev = 409 request_in_progress).
+        oznaciIzidNakupa("gost", m, e.id, kljuc, izidS === "poteklo" ? "dokoncen" : "nerazresen");
+        if (izidS === "obdelava") zakleni(30);
+        if (ziv.current) setNapaka(izidS === "obdelava" ? placiloVObdelavi() : izidS === "nepripravljeno" ? placiloNepripravljeno() : potekloPlacilo());
         tece.current = false; if (ziv.current) setPosiljam(false);
         return;
       }

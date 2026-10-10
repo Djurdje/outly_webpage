@@ -57,12 +57,15 @@ export function NadzornaPlosca({ klub }) {
   const s = prodaja;
   const povzetek = (s && s.summary) || {};
   // Napis temelji na payment_mode TEGA kluba (backend #149); star backend ga nima -> kot doslej globalni `mode`.
+  // payment_mode "unavailable": kupci ne morejo kupovati, dokler klub ne poveze Stripa (Nastavitve -> Connect Stripe, views/posel.js).
+  const brezStripa = !!s && s.payment_mode === "unavailable";
   const test = !!s && (s.payment_mode ? s.payment_mode === "test" : s.mode === "test");
   return html`<div class="zaslon plosca">
     <${GlavaNazaj} rezerva=${baza} />
     <div class="naslov-z-gumbom"><h1 class="velik-naslov">${t("Dashboard")}</h1>${test ? html`<span class="znacka-test">${t("TEST")}</span>` : null}</div>
     ${ime ? html`<p class="podnaslov-plosce">${ime}</p>` : null}
     ${test ? html`<p class="opomba oranzna">${t("Test mode: purchases are simulated, no money moves. Numbers show how the real dashboard will look.")}</p>` : null}
+    ${brezStripa ? html`<p class="opomba oranzna" role="status"><a href=${baza + "/settings"}>${t("Buyers can't purchase yet — connect Stripe in Settings.")}</a></p>` : null}
     ${nalaga && !s ? html`<${Nalaganje} />` : null}
     ${napaka && !s ? html`<${PoslovnaNapaka} napaka=${napaka} znova=${nalozi} />` : null}
     ${napaka && s ? html`<${Napaka} besedilo=${sporocilo(napaka)} />` : null}

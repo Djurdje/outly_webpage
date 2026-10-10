@@ -8,7 +8,7 @@ import { send, pocistiPredpomnilnik, kljucNakupa, pozabiKljucNakupa, nerazresenN
 import { uidSeje } from "../seja.js";
 import {
   sporocilo, ApiError, jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo,
-  jeNakupVObdelavi, NAKUP_V_OBDELAVI_S, izidNakupa, jeNarociloNeaktivno, nakupNapakaSporocilo, nakupBrezOdgovoraSporocilo, potekloPlacilo
+  jeNakupVObdelavi, NAKUP_V_OBDELAVI_S, izidNakupa, jeNarociloNeaktivno, nakupNapakaSporocilo, nakupBrezOdgovoraSporocilo, potekloPlacilo, placiloVObdelavi, placiloNepripravljeno, jeMejaBrezplacnih
 } from "../napake.js";
 import { navigiraj } from "../usmerjanje.js";
 import { odpriStripe, izidStripeNakupa } from "../stripe.js";
@@ -135,7 +135,10 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
         if (odpriStripe(r.checkout_url)) return;   // stran se preusmerja; gumb ostane "Processing..."
         throw new ApiError(-1, "Could not open the payment page.");
       }
-      if (izidS === "poteklo") { oznaciIzidNakupa("vip", uid, e.id, kljuc, "dokoncen"); if (ziv.current) setNapaka(potekloPlacilo()); }
+      // payment_processing (odlozeno placilo): NI potekla seja; kljuc ostane (ponovitev = 409 request_in_progress).
+      if (izidS === "obdelava") { oznaciIzidNakupa("vip", uid, e.id, kljuc, "nerazresen"); zakleni(30); if (ziv.current) setNapaka(placiloVObdelavi()); }
+      else if (izidS === "poteklo") { oznaciIzidNakupa("vip", uid, e.id, kljuc, "dokoncen"); if (ziv.current) setNapaka(potekloPlacilo()); }
+      else if (izidS === "nepripravljeno") { oznaciIzidNakupa("vip", uid, e.id, kljuc, "nerazresen"); if (ziv.current) setNapaka(placiloNepripravljeno()); }
       else if (ziv.current && odprtRef.current) { pozabiKljucNakupa("vip", uid, e.id, kljuc); setNakup(r); }   // uspeh: naslednji nakup dobi nov kljuc
       // Uspeh, ki ga uporabnik ni videl (list se je medtem odmontiral): kljuca NE pozabimo - ponovitev vrne isto narocilo (Idempotent-Replayed).
       else oznaciIzidNakupa("vip", uid, e.id, kljuc, "nerazresen");
@@ -143,6 +146,7 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
       // 409 request_in_progress NI "zasedeno": isti nakup se se obdeluje - izbiro mize obdrzimo (isti kljuc), samo pocakamo.
       // 409 order_not_active tudi NI "zasedeno": prejsnje narocilo ni vec aktivno - izbira ostane, tloris se tiho osvezi (miza je morda spet prosta).
       if (jeNarociloNeaktivno(err)) nalozi(true, { miza: miza.id, paket: paketId });
+      else if (jeMejaBrezplacnih(err)) { /* miza za 0 EUR: izbira ostane, sporocilo pove omejitev */ }
       else if (err && err.status === 409 && !jeNakupVObdelavi(err)) { nalozi(true); setMizaId(null); }   // zasedeno ali prodaja zaprta: osvezi tloris
       // Nakupa NE ponavljamo sami: uporabnik pritisne znova (isti kljuc, razen ob 422, 400 in 409 order_not_active).
       const izid = izidNakupa(err);

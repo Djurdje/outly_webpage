@@ -647,6 +647,7 @@ a.profil-ime{ white-space:normal; }
 .znacka-test{ font-size:11px; font-weight:800; color:#FFA24C; background:rgba(255,162,76,.15); padding:3px 8px; border-radius:999px; }
 .podnaslov-plosce{ margin-top:-10px; font-size:16px; font-weight:600; color:var(--b70); }
 .opomba.oranzna{ color:rgba(255,162,76,.9); }
+.opomba.oranzna a{ color:inherit; text-decoration:underline; }
 .mreza-stevilk{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 .kartica-stevilke{ display:flex; flex-direction:column; gap:4px; min-width:0; padding:12px; border-radius:16px; background:var(--b06); }
 .kartica-stevilke strong{ font-size:20px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
