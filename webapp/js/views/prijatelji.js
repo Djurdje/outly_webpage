@@ -14,6 +14,9 @@ export function MojiPrijatelji() {
   const [s, setS] = useState({ nalaga: true, napaka: null, friends: [], requests_in: [], requests_out: [] });
   const [dodajanje, setDodajanje] = useState(false);
   const [odstrani, setOdstrani] = useState(null);
+  const [meni, setMeni] = useState(null);   // { oseba: { id, username }, Meni } za Report / Block
+  // Obrazec (zloraba.js) se nalozi sele ob kliku: prijatelji.js je v zacetnem grafu (Home), zloraba.js ne sme biti.
+  const odpriMeni = oseba => import("./zloraba.js").then(m => setMeni({ oseba, Meni: m.OsebaMeni })).catch(() => setS(x => ({ ...x, napaka: t("This screen could not be loaded. Please try again.") })));
   const [zasedeni, setZasedeni] = useState(new Set());   // vec prosenj hkrati (vsaka svoj gumb)
   const nalozi = async () => {
     try {
@@ -48,6 +51,8 @@ export function MojiPrijatelji() {
           onClick=${() => dejanje("in" + r.id, `/me/friends/requests/${r.id}/accept`)} aria-label=${t("Accept") + " " + r.user.username}>${t("Accept")}</button>
         <button type="button" class="gumb-majhen" disabled=${zaseden("in" + r.id)}
           onClick=${() => dejanje("in" + r.id, `/me/friends/requests/${r.id}/decline`)} aria-label=${t("Decline") + " " + r.user.username}>${t("Decline")}</button>
+        ${r.user.id != null ? html`<button type="button" class="krog-gumb majhen" onClick=${() => odpriMeni({ id: r.user.id, username: r.user.username })}
+          aria-label=${t("Report or block {name}", { name: r.user.username })}><${Ikona} ime="ellipsis" velikost=${16} /></button>` : null}
       </div>`)}
     </section>` : null}
 
@@ -56,6 +61,8 @@ export function MojiPrijatelji() {
       ${s.friends.map(f => html`<div class="vrstica-osebe" key=${"f" + f.id}>
         <${Avatar} url=${f.avatar_url} ime=${f.username} velikost=${44} />
         <span class="kv-besedilo"><strong>${f.username}</strong></span>
+        <button type="button" class="krog-gumb majhen" onClick=${() => odpriMeni({ id: f.id, username: f.username })}
+          aria-label=${t("Report or block {name}", { name: f.username })}><${Ikona} ime="ellipsis" velikost=${16} /></button>
         <button type="button" class="krog-gumb majhen" onClick=${() => setOdstrani(f)} aria-label=${t("Remove friend") + " " + f.username}><${Ikona} ime="user-minus" velikost=${16} /></button>
       </div>`)}
     </section>` : !s.nalaga && !s.requests_in.length && !s.requests_out.length ? html`<div class="prazno">
@@ -72,6 +79,7 @@ export function MojiPrijatelji() {
       </div>`)}
     </section>` : null}
 
+    ${meni ? html`<${meni.Meni} key=${meni.oseba.id} oseba=${meni.oseba} zapri=${() => setMeni(null)} obBlokiran=${() => { nalozi(); naloziMe(); }} />` : null}
     ${dodajanje ? html`<${DodajPrijatelje} odprt=${true} zapri=${() => { setDodajanje(false); nalozi(); }} />` : null}
     <${List} odprt=${!!odstrani} zapri=${() => setOdstrani(null)} naslov=${t("Remove friend")}>
       <p class="besedilo-opis">${t("You will no longer see each other's plans. You can add them again later.")}</p>

@@ -28,6 +28,7 @@ const POTI = [
   ["/app/account/security", "security"],
   ["/app/account/preferences", "preferences"],
   ["/app/account/my-preferences", "my-preferences"],
+  ["/app/account/blocked", "blocked"],
   ["/app/account/delete", "delete"],
   ["/app/account/creator", "creator"],
   ["/app/payment", "payment"],

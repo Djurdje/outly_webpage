@@ -26,6 +26,7 @@ const NALAGALNIKI = {
   "./views/jezik.js": () => import("./views/jezik.js"),
   "./views/racun.js": () => import("./views/racun.js"),
   "./views/prijatelji.js": () => import("./views/prijatelji.js"),
+  "./views/zloraba.js": () => import("./views/zloraba.js"),
   "./views/klubi.js": () => import("./views/klubi.js"),
   "./views/posel.js": () => import("./views/posel.js"),
   "./views/posel-dogodki.js": () => import("./views/posel-dogodki.js"),
@@ -57,6 +58,7 @@ const Placila = leno("./views/racun.js", "Placila");
 const Pomoc = leno("./views/racun.js", "Pomoc");
 const ClanekPomoci = leno("./views/racun.js", "ClanekPomoci");
 const OAplikaciji = leno("./views/racun.js", "OAplikaciji");
+const BlokiraniUporabniki = leno("./views/zloraba.js", "BlokiraniUporabniki");
 const MojiPrijatelji = leno("./views/prijatelji.js", "MojiPrijatelji");
 const NacrtiPrijateljev = leno("./views/prijatelji.js", "NacrtiPrijateljev");
 const MojiKlubi = leno("./views/klubi.js", "MojiKlubi");
@@ -79,7 +81,7 @@ const UrejevalnikVip = leno("./views/posel-vip.js", "UrejevalnikVip");
 
 const AVT = new Set(["login", "register", "verify", "forgot"]);
 const SAMO_PRIJAVLJENI = new Set(["tickets", "guest-list", "interested", "onboarding", "account", "personal", "security", "preferences",
-  "delete", "creator", "friends", "friends-plans", "my-clubs", "invites", "biz", "biz-settings", "biz-dashboard", "biz-staff",
+  "delete", "creator", "blocked", "friends", "friends-plans", "my-clubs", "invites", "biz", "biz-settings", "biz-dashboard", "biz-staff",
   "biz-events", "biz-event-new", "biz-event-edit", "biz-event-tickets", "biz-event-vip", "biz-team", "biz-info", "biz-location", "biz-bar-prices", "biz-scan", "biz-service", "biz-vip"]);
 const ZAVIHKI = [
   { ime: "home", href: "/app", ikona: "house", napis: "Home" },
@@ -156,6 +158,7 @@ function Zaslon({ pot }) {
     case "security": return html`<${GesloVarnost} />`;
     case "preferences": return html`<${Nastavitve} />`;
     case "my-preferences": return html`<${MojeNastavitve} />`;
+    case "blocked": return html`<${BlokiraniUporabniki} />`;
     case "delete": return html`<${IzbrisRacuna} />`;
     case "creator": return html`<${ProsnjaUstvarjalca} />`;
     case "payment": return html`<${Placila} />`;
@@ -243,7 +246,7 @@ function naslovPoti(ime) {
     tickets: "Tickets", "guest-list": "Guest list", "guest-order": "Your tickets", "guest-ticket": "Your ticket", login: "Sign in", register: "Create an account", verify: "Verify your email",
     forgot: "Forgot password?", onboarding: "Complete your account", language: "Language", genre: "Events",
     account: "My Account", personal: "Personal info", security: "Password and security", preferences: "Preferences",
-    "my-preferences": "My preferences", delete: "Delete account", creator: "Request for creator", payment: "Payment",
+    "my-preferences": "My preferences", blocked: "Blocked users", delete: "Delete account", creator: "Request for creator", payment: "Payment",
     help: "Help Center", article: "Help Center", about: "About", friends: "My friends", "friends-plans": "Friends plans",
     "my-clubs": "My clubs", invites: "Notifications", biz: "My clubs", "biz-settings": "Settings", "biz-dashboard": "Dashboard",
     "biz-staff": "Staff activity", "biz-events": "Events", "biz-event-new": "New event", "biz-event-edit": "Edit event",

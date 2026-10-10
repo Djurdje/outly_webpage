@@ -247,6 +247,7 @@ export function Nastavitve() {
     </label>
     ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}
     <div class="seznam-kartica">
+      <${Vrstica} href="/app/account/blocked" ikona="ban" naslov=${t("Blocked users")} />
       <${Vrstica} href="/app/account/my-preferences" ikona="sliders-horizontal" naslov=${t("My preferences")} />
       <${Vrstica} href="/app/language" ikona="globe" naslov=${t("Language")} />
     </div>

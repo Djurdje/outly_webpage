@@ -941,3 +941,16 @@ a.profil-ime{ white-space:normal; }
 .strezba-opis{ font-size:14px; color:var(--b70); overflow-wrap:anywhere; }
 .strezba-cas{ display:inline-flex; align-items:center; gap:5px; font-size:13px; color:var(--b55); }
 .strezba-gumb{ grid-column:1 / -1; width:100%; min-height:44px; }
+
+/* ---------- Report / Block (backend #189) ---------- */
+.prijavi-vrstica{ display:flex; flex-direction:column; align-items:center; gap:6px; padding-top:8px; }
+.prijavi-gumb{ display:inline-flex; align-items:center; justify-content:center; gap:6px; width:auto; color:var(--utisano); font-weight:500; font-size:13px; }
+.obrazec-prijave{ display:flex; flex-direction:column; gap:14px; }
+.razlogi{ display:flex; flex-direction:column; gap:8px; }
+.razlog{ display:flex; align-items:center; gap:10px; min-height:48px; padding:0 14px; border-radius:12px; background:var(--b08); border:1px solid var(--b14); font-size:15px; cursor:pointer; }
+.razlog span{ flex:1; }
+.razlog.izbran{ border-color:rgba(255,255,255,.7); background:var(--b14); }
+.razlog input{ position:absolute; opacity:0; width:1px; height:1px; pointer-events:none; }
+.razlog:has(input:focus-visible){ outline:2px solid var(--b70); outline-offset:2px; }
+.brojilec{ align-self:flex-end; }
+.prijava-uspeh{ padding:8px 0 4px; }
