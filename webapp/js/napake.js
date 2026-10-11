@@ -205,6 +205,8 @@ function prevediApi(e) {
     case "invalid_idempotency_key": return t("Something changed, please try again.");
     // order_not_active = naroilo ni vec aktivno: potek seje, preklic, zavrnjeno placilo (SEPA) ali vracilo - ne trdimo, da je potekla seja.
     case "order_not_active": return t("Your previous payment is no longer active. Please try again.");
+    // Podatki prodajalca kluba (backend #94): spreminja jih samo lastnik, manager dobi 403 owner_only.
+    case "owner_only": return t("Only the club owner can change seller details.");
     case "free_limit": return t("You've reached the limit of free tickets for this event.");
     // Prenos vstopnice prijatelju brez racuna (POST /tickets/:id/transfer z allow_guest)
     case "age_confirmation_required": {

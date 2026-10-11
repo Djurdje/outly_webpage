@@ -9,11 +9,11 @@ import {
   jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo,
   jeNakupVObdelavi, NAKUP_V_OBDELAVI_S, sporocilo, ApiError, izidNakupa, nakupNapakaSporocilo, nakupBrezOdgovoraSporocilo, potekloPlacilo, placiloVObdelavi, placiloNepripravljeno
 } from "../napake.js";
-import { denar, jeRazprodan, preostanek, danInUra, nacinPlacila } from "../oblika.js";
+import { denar, jeRazprodan, preostanek, danInUra, nacinPlacila, ddvBesedilo } from "../oblika.js";
 import { List, Ikona, useZaklep } from "../ui.js";
 import { KodaQR } from "../qr.js";
 import { odpriStripe, izidStripeNakupa } from "../stripe.js";
-import { PogojiNakupa } from "../pogoji.js";
+import { PogojiNakupa, BlokProdajalca, OpombaVracila } from "../pogoji.js";
 
 export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
   const [kolicina, setKolicina] = useState(1);
@@ -136,9 +136,11 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
     </div>
 
     <div class="nakup-skupaj">
-      <span>${t("Total")}<small class="utisano"> · ${t("Prices include VAT")}</small></span>
+      <span>${t("Total")}<small class="utisano"> · ${ddvBesedilo(e.seller)}</small></span>
       <strong>${brezplacno ? t("Free") : denar(skupaj, e.currency)}</strong>
     </div>
+
+    <${BlokProdajalca} prodajalec=${e.seller} />
 
     ${neprodaja ? html`<p class="opomba" role="status">${t("Tickets aren't on sale in the app yet.")}</p>`
       : nacin === "test" && !brezplacno ? html`<p class="opomba">${t("Test mode — nothing is charged")}</p>` : null}
@@ -150,6 +152,6 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
         : t("Pay {amount}", { amount: denar(skupaj, e.currency) })}
     </button>
     <${PogojiNakupa} />
-    <p class="opomba">${t("Tickets for a dated event cannot be returned after purchase (ZVPot-1, 135/12). The seller is the club; Outly is the intermediary.")}</p>
+    <${OpombaVracila} prodajalec=${e.seller} />
   <//>`;
 }
