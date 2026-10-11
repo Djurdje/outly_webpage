@@ -219,6 +219,8 @@ function prevediApi(e) {
     case "guest_transfer_disabled": return t("Sending a ticket to someone without an Outly account is not available yet.");
     case "guest_transfer_limit": return t("You have sent too many tickets to people without an Outly account today. Try again later.");
     case "invalid_email": return t("Enter your friend's email address.");
+    // PATCH /me: prepovedano/neprimerno uporabnisko ime (backend #218, 400 JSON). Pred splosnim 400; drugi 400 pri imenu ostanejo po besedilu.
+    case "username_not_allowed": if (e.status === 400) return t("That username isn't allowed. Choose another."); break;
   }
   const s = e.raw.toLowerCase();
   // Guest lista (pogodba 8. 10. 2026): besedila s spremenljivko (stevilo mest, uporabnisko ime) pred splosnimi pravili.
