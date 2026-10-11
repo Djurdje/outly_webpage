@@ -3,7 +3,7 @@
    Kartice NIKOLI ne vnasamo v nas vmesnik (Stripe Checkout, ko pride). */
 import { html, useEffect, useRef, useState } from "../lib.js";
 import { t, tn } from "../i18n.js";
-import { send, pocistiPredpomnilnik, kljucNakupa, pozabiKljucNakupa, nerazresenNakup, oznaciIzidNakupa } from "../api.js";
+import { send, pocistiPredpomnilnik, kljucNakupa, pozabiKljucNakupa, nerazresenNakup, oznaciIzidNakupa, zapomniCakajocePlacilo, obnoviCakajocePlacilo } from "../api.js";
 import { uidSeje } from "../seja.js";
 import {
   jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo,
@@ -12,7 +12,7 @@ import {
 import { denar, jeRazprodan, preostanek, danInUra, nacinPlacila, ddvBesedilo } from "../oblika.js";
 import { List, Ikona, useZaklep } from "../ui.js";
 import { KodaQR } from "../qr.js";
-import { odpriStripe, izidStripeNakupa } from "../stripe.js";
+import { odpriStripe, izidStripeNakupa, jeStripeUrl } from "../stripe.js";
 import { PogojiNakupa, BlokProdajalca, OpombaVracila } from "../pogoji.js";
 
 export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
@@ -20,20 +20,32 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
   const [posiljam, setPosiljam] = useState(false);
   const [napaka, setNapaka] = useState("");
   const [nakup, setNakup] = useState(null);
+  const [cakaPlacilo, setCakaPlacilo] = useState(false);   // nedokoncano Stripe placilo tega nakupa: gumb "Continue to payment" (isti kljuc, isti URL)
   const tece = useRef(false);   // zascita pred dvojnim klikom v istem trenutku (stanje se posodobi prepozno)
   const [zaklenjeno, zakleni] = useZaklep();   // po 503 (semafor nakupov) je gumb nekaj sekund onemogocen
   const ziv = useRef(true);   // komponenta je nameščena
   const odprtRef = useRef(odprt);
   odprtRef.current = odprt;
   useEffect(() => () => { ziv.current = false; }, []);
+  // Nazaj iz Stripove strani (gumb Nazaj, bfcache): stran se obnovi s stanjem "Processing..." - gumb odklenemo (kot nakup-gost.js).
+  useEffect(() => {
+    const ob = ev => { if (ev.persisted) { tece.current = false; setPosiljam(false); } };
+    window.addEventListener("pageshow", ob);
+    return () => window.removeEventListener("pageshow", ob);
+  }, []);
   useEffect(() => {
     if (!odprt) return;
+    // Cakajoce Stripe placilo (shranjeno ob preusmeritvi; stran se je medtem lahko naložila znova): kljuc se vrne v zapis.
+    const uid = uidSeje();
+    if (uid) obnoviCakajocePlacilo("vstopnice", uid, e.id);
     // Nerazresen nakup tega dogodka (timeout, brez odgovora ...): list se odpre z ISTO kolicino (isti kljuc) in z napotkom,
     // da je narocilo morda ze nastalo; sicer bi sprememba kolicine dala nov kljuc = drugo narocilo.
-    const prej = nerazresenNakup("vstopnice", uidSeje(), e.id);
+    const prej = nerazresenNakup("vstopnice", uid, e.id);
     const ostane = preostanek(e), najvec = Math.max(1, Math.min(10, ostane == null ? 10 : ostane));
-    setKolicina(prej && prej.kolicina >= 1 ? Math.min(prej.kolicina, najvec) : 1);
-    setNapaka(prej ? nakupBrezOdgovoraSporocilo() : ""); setNakup(null);
+    setKolicina(prej && prej.kolicina >= 1 ? Math.min(prej.kolicina, prej.cakaPlacilo ? 10 : najvec) : 1);   // placilo v teku: zaloga ze vsebuje to narocilo, kolicina se ne sme spremeniti (nov kljuc)
+    // Kupec je ze prisel do Stripa: ni "morda je nastalo", ampak nedokoncano placilo - ponovitev vrne isti checkout_url.
+    setCakaPlacilo(!!(prej && prej.cakaPlacilo));
+    setNapaka(prej && !prej.cakaPlacilo ? nakupBrezOdgovoraSporocilo() : ""); setNakup(null);
   }, [odprt]);
   // Cena null = vstopnic ni na Outlyju; tak dogodek nima nakupa (in NI "Free").
   if (!odprt || e.ticket_price_cents == null) return null;
@@ -43,7 +55,7 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
   const ostane = preostanek(e);
   const najvec = Math.max(1, Math.min(10, ostane == null ? 10 : ostane));
   const skupaj = cenaEna * kolicina;
-  const razprodano = jeRazprodan(e) || ostane === 0;
+  const razprodano = (jeRazprodan(e) || ostane === 0) && !cakaPlacilo;   // zadnje vstopnice lahko drzi ravno to (cakajoce) narocilo
   const nacin = nacinPlacila(e);   // "test" | "stripe" | "unavailable" (backend #149)
   const neprodaja = nacin === "unavailable";
 
@@ -67,12 +79,13 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
       // 0 EUR pri klubu s Stripom: mode "stripe", paid, tickets polne, checkout_url null -> uspeh brez Stripa.
       const izidS = izidStripeNakupa(r);
       if (izidS === "preusmeri") {
+        if (jeStripeUrl(r.checkout_url)) zapomniCakajocePlacilo("vstopnice", uid, e.id, kljuc);   // vrnitev po polni nalozitvi strani najde isti kljuc
         if (odpriStripe(r.checkout_url)) return;   // stran se preusmerja; gumb ostane "Processing..."
         throw new ApiError(-1, "Could not open the payment page.");
       }   // zaloga (sold_count) na karticah naj bo sveza
       // payment_processing (odlozeno placilo): NI potekla seja. Kljuc ostane (ponovitev = 409 request_in_progress), gumb nekaj casa zaklenjen.
       if (izidS === "obdelava") { oznaciIzidNakupa("vstopnice", uid, e.id, kljuc, "nerazresen"); zakleni(30); if (ziv.current) setNapaka(placiloVObdelavi()); }
-      else if (izidS === "poteklo") { oznaciIzidNakupa("vstopnice", uid, e.id, kljuc, "dokoncen"); if (ziv.current) setNapaka(potekloPlacilo()); }
+      else if (izidS === "poteklo") { oznaciIzidNakupa("vstopnice", uid, e.id, kljuc, "dokoncen"); if (ziv.current) { setCakaPlacilo(false); setNapaka(potekloPlacilo()); } }
       else if (izidS === "nepripravljeno") { oznaciIzidNakupa("vstopnice", uid, e.id, kljuc, "nerazresen"); if (ziv.current) setNapaka(placiloNepripravljeno()); }
       else if (ziv.current && odprtRef.current) { pozabiKljucNakupa("vstopnice", uid, e.id, kljuc); setNakup(r); }   // uspeh: naslednji nakup dobi nov kljuc
       // Uspeh, ki ga uporabnik ni videl (list se je medtem odmontiral): kljuca NE pozabimo - ponovitev vrne isto narocilo (Idempotent-Replayed).
@@ -80,7 +93,7 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
     } catch (err) {
       // Nakupa NE ponavljamo sami: uporabnik pritisne znova (isti kljuc, razen ob 422, 400 in 409 order_not_active).
       const izid = izidNakupa(err);
-      if (izid === "zavrzen") pozabiKljucNakupa("vstopnice", uid, e.id, kljuc);   // nov nakup
+      if (izid === "zavrzen") { pozabiKljucNakupa("vstopnice", uid, e.id, kljuc); if (ziv.current) setCakaPlacilo(false); }   // nov nakup
       else oznaciIzidNakupa("vstopnice", uid, e.id, kljuc, izid);   // nerazresen: predizpolnitev in napotek ob ponovnem odprtju
       // Streznik je zaseden (503): kratek premor; sporocilo o navalu samo za znano telo (napake.js).
       if (jeNakup503(err)) zakleni(nakupPocakajS(err));   // gumb pri vsakem 503 na nakupu nekaj sekund onemogocen
@@ -129,9 +142,9 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
     <div class="nakup-vrsta">
       <div><strong>${brezplacno ? t("Free") : denar(cenaEna, e.currency)}</strong><span class="utisano"> ${t("per ticket")}</span></div>
       <div class="stevec" role="group" aria-label=${t("Number of tickets")}>
-        <button type="button" onClick=${() => { if (!tece.current) setKolicina(k => Math.max(1, k - 1)); }} disabled=${kolicina <= 1 || posiljam} aria-label=${t("Fewer")}>−</button>
+        <button type="button" onClick=${() => { if (!tece.current && !cakaPlacilo) setKolicina(k => Math.max(1, k - 1)); }} disabled=${kolicina <= 1 || posiljam || cakaPlacilo} aria-label=${t("Fewer")}>−</button>
         <output aria-live="polite">${kolicina}</output>
-        <button type="button" onClick=${() => { if (!tece.current) setKolicina(k => Math.min(najvec, k + 1)); }} disabled=${kolicina >= najvec || posiljam} aria-label=${t("More")}>+</button>
+        <button type="button" onClick=${() => { if (!tece.current && !cakaPlacilo) setKolicina(k => Math.min(najvec, k + 1)); }} disabled=${kolicina >= najvec || posiljam || cakaPlacilo} aria-label=${t("More")}>+</button>
       </div>
     </div>
 
@@ -144,10 +157,12 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
 
     ${neprodaja ? html`<p class="opomba" role="status">${t("Tickets aren't on sale in the app yet.")}</p>`
       : nacin === "test" && !brezplacno ? html`<p class="opomba">${t("Test mode — nothing is charged")}</p>` : null}
+    ${cakaPlacilo ? html`<p class="opomba" role="status">${t("You have an unfinished payment for this order. Continue to payment to finish it.")}</p>` : null}
     ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}
 
     <button type="button" class="gumb-glavni" onClick=${kupi} disabled=${posiljam || razprodano || zaklenjeno || neprodaja}>
       ${razprodano ? t("Sold out") : posiljam ? t("Processing...")
+        : cakaPlacilo ? t("Continue to payment")
         : brezplacno ? (kolicina === 1 ? t("Get ticket") : t("Get tickets"))
         : t("Pay {amount}", { amount: denar(skupaj, e.currency) })}
     </button>

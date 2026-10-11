@@ -1164,5 +1164,20 @@ export const SL = {
  "Not a VAT payer": "Ni zavezanec za DDV",
  "Not selected": "Ni izbrano",
  "Details complete": "Podatki popolni",
- "Details incomplete": "Podatki nepopolni"
+ "Details incomplete": "Podatki nepopolni",
+ "VOID": "RAZVELJAVLJENA",
+ "PARTIALLY REFUNDED": "DELNO VRNJENO",
+ "PENDING": "ČAKA NA PLAČILO",
+ "PAID": "PLAČANO",
+ "FAILED": "NEUSPELO",
+ "You must be at least {n} to buy tickets for this event.": "Za nakup vstopnic za ta dogodek moraš biti star vsaj {n} let.",
+ "You must be at least {n} to buy a table with a bottle package.": "Za nakup mize s steklenico moraš biti star vsaj {n} let.",
+ "Continue to payment": "Nadaljuj na plačilo",
+ "You have an unfinished payment for this order. Continue to payment to finish it.": "Za to naročilo imaš nedokončano plačilo. Nadaljuj na plačilo, da ga dokončaš.",
+ "You have an unfinished payment for this table. Continue to payment to finish it.": "Za to mizo imaš nedokončano plačilo. Nadaljuj na plačilo, da ga dokončaš.",
+ "unlimited": "neomejeno",
+ "sold": "prodano",
+ "expected": "pričakovano",
+ "cancelled": "preklicano",
+ "draft": "osnutek"
 };

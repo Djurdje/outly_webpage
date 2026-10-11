@@ -115,6 +115,24 @@ export function denar(centi, valuta = "EUR") {
   }).format(centi / 100);
 }
 
+/* ---------- stanje narocila in vstopnice (backend: orders_status_chk, tickets_status_chk) ---------- */
+/** Stanje kot veliki napis v jeziku aplikacije (nakupna informacija, ZVPot-1 7/1): znana stanja prevedena, neznano ostane surovo. */
+export function statusNapis(status) {
+  const s = String(status || "");
+  switch (s) {
+    case "valid": return t("VALID");
+    case "used": return t("USED");
+    case "void": return t("VOID");
+    case "refunded": return t("REFUNDED");
+    case "partially_refunded": return t("PARTIALLY REFUNDED");
+    case "pending": return t("PENDING");
+    case "paid": return t("PAID");
+    case "failed": return t("FAILED");
+    case "cancelled": return t("CANCELLED");
+    default: return s.toUpperCase();
+  }
+}
+
 /* ---------- dogodek: stanja in oznake ---------- */
 export const jeRazprodan = e => e.availability === "sold_out";
 export const jeMaloVstopnic = e => e.availability === "few_left";

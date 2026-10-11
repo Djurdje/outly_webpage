@@ -4,7 +4,7 @@ import { html, useEffect, useRef, useState } from "../lib.js";
 import { t, tn } from "../i18n.js";
 import { send } from "../api.js";
 import { sporocilo, kodaNapake } from "../napake.js";
-import { danInUra } from "../oblika.js";
+import { danInUra, statusNapis } from "../oblika.js";
 import { GlavaNazaj, Nalaganje, Napaka, Ikona, Slika, Avatar, List } from "../ui.js";
 import { KodaQR } from "../qr.js";
 import { VipVrstica, OznakaGuestList, doOseb } from "../vip.js";
@@ -105,7 +105,7 @@ export function Vstopnice() {
 function Karta({ v, odprta, preklopi, stara, poslji }) {
   const jaz = useSeja(x => (x.me && x.me.username) || "");
   const uporabljena = v.status === "used";
-  const stanje = uporabljena ? t("ALREADY USED") : v.status === "valid" ? (stara ? t("ENDED") : "") : v.status.toUpperCase();
+  const stanje = uporabljena ? t("ALREADY USED") : v.status === "valid" ? (stara ? t("ENDED") : "") : statusNapis(v.status);
   const vip = v.is_vip === true;
   return html`<div class=${"vstopnica" + (stara ? " stara" : "") + (vip ? " vip" : "")}>
     <button type="button" class="vstopnica-glava-gumb" onClick=${preklopi} disabled=${stara} aria-expanded=${odprta}>
@@ -159,7 +159,7 @@ function Skupina({ vst, stara, razprta, preklopi, odprta, preklopiVstopnico, pos
       ${!stara && razdeljive.length >= 2 ? html`<button type="button" class="gumb-siv majhen" onClick=${() => razdeli(razdeljive)}>
         <${Ikona} ime="users" velikost=${16} /> ${t("Send to friends")}</button>` : null}
       ${vst.map((x, i) => {
-        const stanje = x.status === "used" ? t("USED") : x.status === "valid" ? (stara ? t("ENDED") : t("VALID")) : String(x.status || "").toUpperCase();
+        const stanje = x.status === "used" ? t("USED") : x.status === "valid" ? (stara ? t("ENDED") : t("VALID")) : statusNapis(x.status);
         const naVoljo = !stara && x.status === "valid";
         const od = x.transferred && x.buyer_username ? t("from {name}", { name: x.buyer_username }) : "";
         const serial = String(x.serial || "").slice(0, 8).toUpperCase();

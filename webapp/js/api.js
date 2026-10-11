@@ -190,9 +190,59 @@ export function nerazresenNakup(vrsta, uporabnik, dogodek) {
 export function pozabiKljucNakupa(vrsta, uporabnik, dogodek, kljuc) {
   const pot = potNakupa(vrsta, uporabnik, dogodek), z = kljuciNakupov.get(pot);
   if (z && z.kljuc === kljuc) kljuciNakupov.delete(pot);
+  pozabiShranjenoPlacilo(pot, kljuc);
 }
 /** Odjava ali zamenjava uporabnika: vsi kljuci stran. */
-export function pozabiVseKljuceNakupa() { kljuciNakupov.clear(); }
+export function pozabiVseKljuceNakupa() {
+  kljuciNakupov.clear();
+  try { sessionStorage.removeItem(KLJUC_PLACILA); } catch { /* brez */ }
+}
+
+/* Cakajoce Stripe placilo prijavljenega kupca (vstopnice, VIP miza): ob preusmeritvi na Stripe se stran zapre, zato bi kljuc v
+   pomnilniku modula izginil - po vrnitvi (cancel_url = /app/event/:id?placilo=preklic, gumb Nazaj brez bfcache, zaprt zavihek v isti seji)
+   bi kupec dobil nov kljuc in backend bi odgovoril 409 "unfinished payment" (vstopnice), VIP miza pa bi bila "Booked" (pending narocilo
+   mizo zaseda do poteka seje; outly-app #59). Zato kljuc ob preusmeritvi shranimo v sessionStorage (ni obcutljivo: UUID, vezan na
+   uporabnika; isto kot gost.js) in ga ob odprtju lista vrnemo v zapis: ponovitev z ISTIM kljucem vrne isto narocilo in isti checkout_url.
+   Velja PLACILO_ZIVLJENJE_MS (seja Stripa 30 min + pospravljanje); potem backend itak odgovori 409 order_not_active in kljuc se zavrze. */
+const KLJUC_PLACILA = "outly_cakajoce_placilo";
+export const PLACILO_ZIVLJENJE_MS = 2 * 60 * 60 * 1000;
+function preberiShranjenaPlacila() {
+  try {
+    const o = JSON.parse(sessionStorage.getItem(KLJUC_PLACILA) || "{}");
+    return o && typeof o === "object" && !Array.isArray(o) ? o : {};
+  } catch { return {}; }
+}
+function zapisiShranjenaPlacila(o) {
+  try {
+    if (Object.keys(o).length) sessionStorage.setItem(KLJUC_PLACILA, JSON.stringify(o));
+    else sessionStorage.removeItem(KLJUC_PLACILA);
+  } catch { /* brez */ }
+}
+function pozabiShranjenoPlacilo(pot, kljuc) {
+  const o = preberiShranjenaPlacila();
+  if (o[pot] && o[pot].kljuc === kljuc) { delete o[pot]; zapisiShranjenaPlacila(o); }
+}
+/** Tik pred preusmeritvijo na Stripe: zapis postane "caka placilo" (podatki.cakaPlacilo) in se shrani za vrnitev po polni nalozitvi strani. */
+export function zapomniCakajocePlacilo(vrsta, uporabnik, dogodek, kljuc) {
+  const pot = potNakupa(vrsta, uporabnik, dogodek), z = kljuciNakupov.get(pot);
+  if (!z || z.kljuc !== kljuc) return;
+  z.izid = "nerazresen"; z.podatki = { ...(z.podatki || {}), cakaPlacilo: true }; z.ob = Date.now();
+  const o = preberiShranjenaPlacila(), zdaj = Date.now();
+  for (const k of Object.keys(o)) if (!o[k] || zdaj - o[k].ob >= PLACILO_ZIVLJENJE_MS) delete o[k];
+  o[pot] = { kljuc, vsebina: z.vsebina, podatki: z.podatki, ob: zdaj };
+  const kljuci = Object.keys(o);
+  if (kljuci.length > 20) delete o[kljuci[0]];   // meja: sessionStorage ne sme rasti brez konca
+  zapisiShranjenaPlacila(o);
+}
+/** Ob odprtju lista: shranjeno cakajoce placilo (ce ni zivega zapisa in ni preteklo) se vrne v zapis kot nerazresen nakup z istim kljucem. */
+export function obnoviCakajocePlacilo(vrsta, uporabnik, dogodek) {
+  const pot = potNakupa(vrsta, uporabnik, dogodek);
+  if (zivZapis(pot)) return;
+  const o = preberiShranjenaPlacila(), z = o[pot];
+  if (!z) return;
+  if (typeof z.kljuc !== "string" || typeof z.vsebina !== "string" || !(Date.now() - z.ob < PLACILO_ZIVLJENJE_MS)) { delete o[pot]; zapisiShranjenaPlacila(o); return; }
+  kljuciNakupov.set(pot, { kljuc: z.kljuc, vsebina: z.vsebina, podatki: z.podatki && typeof z.podatki === "object" ? z.podatki : null, izid: "nerazresen", prej: "nerazresen", ob: Date.now() });
+}
 
 /* Ena osvezitev naenkrat, tudi ce jo zahteva vec klicev hkrati.
    Vrne nov zeton, "" (seja zavrnjena) ali null (zacasna napaka - seja ostane). */
