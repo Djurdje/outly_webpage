@@ -2,7 +2,7 @@
    takoj placano in nic se ne zaracuna. Brez vprasanja pred placilom (Martin, 23. 9.).
    Kartice NIKOLI ne vnasamo v nas vmesnik (Stripe Checkout, ko pride). */
 import { html, useEffect, useRef, useState } from "../lib.js";
-import { t, tn } from "../i18n.js";
+import { t, tn, kodaJezika } from "../i18n.js";
 import { send, pocistiPredpomnilnik, kljucNakupa, pozabiKljucNakupa, nerazresenNakup, oznaciIzidNakupa, zapomniCakajocePlacilo, obnoviCakajocePlacilo } from "../api.js";
 import { uidSeje, useSeja } from "../seja.js";
 import {
@@ -72,7 +72,7 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
     // timeoutu/503/409 in po zaprtju ter ponovnem odprtju lista: backend vrne isto narocilo (201).
     const kljuc = kljucNakupa("vstopnice", uid, e.id, String(kolicina), { dogodek: e.id, kolicina });
     try {
-      const r = await send(`/events/${e.id}/orders`, { method: "POST", body: { quantity: kolicina }, auth: true, glave: { "Idempotency-Key": kljuc } });
+      const r = await send(`/events/${e.id}/orders`, { method: "POST", body: { quantity: kolicina, locale: kodaJezika() }, auth: true, glave: { "Idempotency-Key": kljuc } });
       pocistiPredpomnilnik();
       // Stripe (backend #19): narocilo caka na placilo na Stripovi strani. Kljuca NE pozabimo: ce se kupec vrne brez
       // placila, ponovni pritisk vrne ISTO narocilo in isti checkout_url (ne rezervira se enkrat).

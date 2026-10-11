@@ -35,6 +35,8 @@ export async function nastaviJezik(koda) {
 }
 
 export const useJezik = () => useStore(jezik, s => s.koda);
+/** Koda jezika aplikacije ("sl" | "en") za polje `locale` v telesu nakupnih POST-ov (Stripe Checkout se odpre v tem jeziku). */
+export const kodaJezika = () => jezik.get().koda;
 export const locale = () => (jezik.get().koda === "sl" ? "sl-SI" : "en-GB");
 
 function vstavi(niz, vrednosti) {
