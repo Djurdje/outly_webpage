@@ -634,7 +634,12 @@
         try { me = await backend("/me", "PATCH", { username: name }); }
         catch (err) { setMsg(form, "Can't reach our servers. Check your connection.", "error"); return; }
         if (me.status === 409) { setMsg(form, "That username is taken — try another.", "error"); return; }
-        if (me.status === 400) { setMsg(form, "3–20 characters: letters, numbers and underscores.", "error"); return; }
+        if (me.status === 400) {
+          // Backend #218: prepovedano ime = JSON { error: "username_not_allowed" }; drugi 400 ostanejo pri obliki imena.
+          const prepovedano = me.json && me.json.error === "username_not_allowed";
+          setMsg(form, prepovedano ? "That username isn't allowed. Choose another." : "3–20 characters: letters, numbers and underscores.", "error");
+          return;
+        }
         if (!me.ok)            { setMsg(form, "Something went wrong. Please try again.", "error"); return; }
         // 2. waitlist (javni seznam); ce je tam zasedeno, aplikacija ima prednost
         const { data: st, error } = await client.rpc("set_username", { p_username: name });

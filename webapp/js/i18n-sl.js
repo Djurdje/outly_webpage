@@ -485,6 +485,7 @@ export const SL = {
  "That is your own email.": "To je tvoj lastni e-naslov.",
  "That phone number is already used by another account.": "To telefonsko številko že uporablja drug račun.",
  "That username is already taken.": "To uporabniško ime je že zasedeno.",
+ "That username isn't allowed. Choose another.": "To uporabniško ime ni dovoljeno. Izberi drugo.",
  "The club has not added bar prices yet.": "Klub še ni dodal cenika bara.",
  "The code is wrong or has expired. Request a new one.": "Koda je napačna ali je potekla. Zahtevaj novo.",
  "The map can't be shown in this browser. Enter the coordinates instead (e.g. from a maps app).": "Zemljevida v tem brskalniku ni mogoče prikazati. Vnesi koordinate (npr. iz aplikacije za zemljevide).",
