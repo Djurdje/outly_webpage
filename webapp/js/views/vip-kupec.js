@@ -12,8 +12,8 @@ import {
 } from "../napake.js";
 import { navigiraj } from "../usmerjanje.js";
 import { odpriStripe, izidStripeNakupa } from "../stripe.js";
-import { PogojiNakupa } from "../pogoji.js";
-import { denar, danInUra, nacinPlacila } from "../oblika.js";
+import { PogojiNakupa, BlokProdajalca } from "../pogoji.js";
+import { denar, danInUra, nacinPlacila, normalizirajProdajalca, ddvBesedilo } from "../oblika.js";
 import { List, Ikona, Nalaganje, Napaka, useZaklep } from "../ui.js";
 import { VipRazdeli, mejaStarostiVip, zapomniCakajocVip } from "./vip-razdeli.js";
 import {
@@ -67,6 +67,8 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
         enabled: !!(r && r.enabled), onSale: !!(r && r.on_sale), valuta: (r && r.currency) || e.currency || "EUR",
         // payment_mode (backend #149): na vrhu odgovora VIP; sicer iz dogodka; star backend = "stripe".
         nacin: nacinPlacila({ payment_mode: (r && r.payment_mode) || e.payment_mode }),
+        // Prodajalec (backend #94): iz odgovora VIP, sicer iz dogodka; star backend = null (blok se ne pokaze).
+        prodajalec: normalizirajProdajalca(r && r.seller) || e.seller || null,
         plan: normalizirajTloris(r && r.plan), mize: normalizirajMize(r && r.tables), paketi: normalizirajPakete(r && r.packages)
       };
       setS({ nalaga: false, napaka: "", d });
@@ -230,6 +232,8 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
         </div>` : null}
       </div>` : html`<p class="opomba srednje">${t("Tap a free table to reserve it.")}</p>`}
       ${miza ? html`<div class="vip-pas-nakupa">
+        <p class="opomba">${ddvBesedilo(d.prodajalec)}</p>
+        <${BlokProdajalca} prodajalec=${d.prodajalec} />
         ${d.nacin === "unavailable" ? html`<p class="opomba" role="status">${t("Tickets aren't on sale in the app yet.")}</p>`
           : d.nacin === "test" && miza.price_cents !== 0 ? html`<p class="opomba">${t("Test mode — nothing is charged")}</p>` : null}
         <button type="button" class="gumb-glavni" onClick=${rezerviraj} disabled=${posiljam || zaklenjeno || !d.onSale || d.nacin === "unavailable" || (imaPakete && !paket)}>

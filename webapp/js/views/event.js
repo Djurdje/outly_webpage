@@ -154,6 +154,8 @@ export function Dogodek({ id }) {
         <${Ikona} ime="map-pin" velikost=${16} /> ${t("Open in maps")}</a>` : null}
     </div>
 
+    ${prodajaVAplikaciji(e) ? html`<p class="opomba prodaja-vrstica">${t("Sold by {name}", { name: e.seller.name })}</p>` : null}
+
     ${pokaziCenik ? html`<button type="button" class="kartica-vrstica" onClick=${() => setList("cenik")}>
       <${Ikona} ime="wine" velikost=${20} />
       <span class="kv-besedilo"><strong>${t("Bar prices")}</strong></span>
@@ -219,6 +221,9 @@ function VipLoader(props) {
       znova=${() => (window.outlyObnovi ? window.outlyObnovi(true) : location.reload())} />` : html`<${Nalaganje} />`}
   <//>`;
 }
+
+/* "Sold by {klub}" (backend #94): samo dogodki, ki se prodajajo v aplikaciji (cena ali VIP mize), ne zunanja prodaja; star backend = brez vrstice. */
+const prodajaVAplikaciji = e => !!(e.seller && e.seller.name) && e.availability !== "external" && (e.ticket_price_cents != null || e.vip_enabled === true);
 
 /* Nakup na Outlyju: cena mora obstajati (null = ne prodaja se pri nas), dogodek ni mimo ali razprodan. */
 const moznoKupiti = e => e.ticket_price_cents != null && !jeMimo(e) && !jeRazprodan(e);

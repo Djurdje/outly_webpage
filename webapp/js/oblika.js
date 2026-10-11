@@ -45,9 +45,30 @@ export function normalizirajDogodek(e) {
     venue_lat: e.venue_lat ?? null,
     venue_lng: e.venue_lng ?? null,
     hosted: e.hosted === true,
+    seller: normalizirajProdajalca(e.seller),   // podatki prodajalca (backend #94): star backend polja nima -> null
     _zacetek: datum(e.start_at),
     _konec: datum(e.end_at)
   };
+}
+
+/** Prodajalec (klub) iz odgovora `seller` (backend #94): vsa polja dobijo privzetke; brez objekta (star backend) = null.
+    vat_payer je true | false | null (null = ni vpisano). */
+export function normalizirajProdajalca(s) {
+  if (!s || typeof s !== "object" || Array.isArray(s)) return null;
+  const niz = v => (typeof v === "string" ? v.trim() : "");
+  return {
+    name: niz(s.name), address: niz(s.address), registration_number: niz(s.registration_number), tax_number: niz(s.tax_number),
+    vat_payer: s.vat_payer === true ? true : s.vat_payer === false ? false : null,
+    phone: niz(s.phone), email: niz(s.email), complete: s.complete === true
+  };
+}
+
+/** Vrstica o DDV ob ceni, po davcnem statusu prodajalca (#101). Brez prodajalca (star backend) = status ni znan. */
+export function ddvBesedilo(prodajalec) {
+  const v = prodajalec ? prodajalec.vat_payer : null;
+  if (v === true) return t("Prices include VAT");
+  if (v === false) return t("The seller is not a VAT payer");
+  return t("VAT according to the seller's VAT status");
 }
 
 export function normalizirajKlub(c) {
@@ -62,6 +83,7 @@ export function normalizirajKlub(c) {
     min_age: c.min_age ?? 18,
     is_organizer: c.is_organizer === true,
     is_official: c.is_official === true,
+    seller: normalizirajProdajalca(c.seller),
     followers_count: c.followers_count ?? 0,
     // Slideshow; stari klubi brez galerije pokazejo pasico (DECISIONS 22. 9.).
     _slike: galerija.length ? galerija : (c.banner_url ? [c.banner_url] : [])

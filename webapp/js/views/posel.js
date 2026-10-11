@@ -330,6 +330,7 @@ function preveriPolje(polje, v) {
 export function PodatkiKluba({ klub }) {
   const id = idKluba(klub);
   const k = useKlub(id);
+  const me = useSeja(x => x.me);
   const [urejam, setUrejam] = useState(null);
   const [vrednost, setVrednost] = useState("");
   const [napakaUrejanja, setNapakaUrejanja] = useState("");
@@ -393,6 +394,10 @@ export function PodatkiKluba({ klub }) {
   const galerija = (c.gallery_urls || []).filter(Boolean);
   const odpri = polje => { setNapakaUrejanja(""); setVrednost(c[polje] || ""); setUrejam(polje); };
   const naKarti = c.lat != null && c.lng != null;
+  // Podatki prodajalca (backend #94): samo lastnik; streznik vseeno uveljavi 403 owner_only. Star backend polj nima -> razdelka ni.
+  const clanstvo = me && Array.isArray(me.clubs) ? me.clubs.find(x => Number(x.club_id) === id) : null;
+  const jeLastnik = ((clanstvo && clanstvo.role) || c.my_role) === "owner";
+  const imaProdajalca = "legal_name" in c || "seller_complete" in c;
 
   return html`<div class="zaslon">
     <${GlavaNazaj} naslov=${t("Club info")} rezerva="/app/profile" />
@@ -430,6 +435,8 @@ export function PodatkiKluba({ klub }) {
       vrednost=${c.bar_prices.length ? t("{n} items", { n: c.bar_prices.length }) : t("Not added yet")}
       opis=${t("Guests see the list under \"Bar prices\" on every event of your club.")} gumb=${t("Edit")} href=${baza + "/bar-prices"} />`}
 
+    ${jeLastnik && imaProdajalca ? html`<${PodatkiProdajalca} c=${c} id=${id} ob=${k.nastavi} />` : null}
+
     <${List} odprt=${!!urejam} zapri=${() => setUrejam(null)} naslov=${urejam ? POLJA[urejam].naslov() : ""}>
       ${urejam ? html`<label class="polje"><span class="skrito">${POLJA[urejam].naslov()}</span>
         ${POLJA[urejam].vec
@@ -438,6 +445,58 @@ export function PodatkiKluba({ klub }) {
       </label>` : null}
       ${napakaUrejanja ? html`<p class="napaka-besedilo" role="alert">${napakaUrejanja}</p>` : null}
       <button type="button" class="gumb-glavni" onClick=${shraniPolje} disabled=${shranjujem}>${shranjujem ? t("Saving...") : t("Save")}</button>
+    <//>
+  </div>`;
+}
+
+/* ---------- Podatki prodajalca (samo lastnik): firma, sedez, maticna, davcna, DDV status ---------- */
+const DDV_IZBIRE = [["", () => t("Not selected")], ["yes", () => t("VAT payer")], ["no", () => t("Not a VAT payer")]];
+const ddvIzVrednosti = v => (v === true ? "yes" : v === false ? "no" : "");
+
+function PodatkiProdajalca({ c, id, ob }) {
+  const [odprt, setOdprt] = useState(false);
+  const [f, setF] = useState({ legal_name: "", legal_address: "", registration_number: "", tax_number: "", vat: "" });
+  const [shranjujem, setShranjujem] = useState(false);
+  const [napaka, setNapaka] = useState("");
+  const odpri = () => {
+    setF({ legal_name: c.legal_name || "", legal_address: c.legal_address || "", registration_number: c.registration_number || "",
+      tax_number: c.tax_number || "", vat: ddvIzVrednosti(c.vat_payer) });
+    setNapaka(""); setOdprt(true);
+  };
+  const polje = kljuc => ev => { setNapaka(""); setF(x => ({ ...x, [kljuc]: ev.target.value })); };
+  async function shrani() {
+    setShranjujem(true); setNapaka("");
+    const body = {
+      legal_name: f.legal_name.trim(), legal_address: f.legal_address.trim(),
+      registration_number: f.registration_number.trim(), tax_number: f.tax_number.trim(),
+      vat_payer: f.vat === "yes" ? true : f.vat === "no" ? false : null
+    };
+    try { ob(await poslovno(id, "/business/clubs/me", { method: "PATCH", body })); setOdprt(false); }
+    catch (e) { setNapaka(sporocilo(e)); }
+    setShranjujem(false);
+  }
+  const ddv = c.vat_payer === true ? t("VAT payer") : c.vat_payer === false ? t("Not a VAT payer") : t("Not selected");
+  const vnos = (kljuc, naslov, najvec, ac) => html`<label class="polje-oznaceno"><span>${naslov}</span>
+    <input type="text" maxlength=${najvec} value=${f[kljuc]} onInput=${polje(kljuc)} autocomplete=${ac || "off"} /></label>`;
+  return html`<div class="kartica-podatka">
+    <div class="kp-vrh"><${Ikona} ime="file-text" velikost=${18} /><strong>${t("Seller details")}</strong>
+      <button type="button" class="povezava-modra" onClick=${odpri} aria-label=${t("Edit") + " " + t("Seller details")}>${t("Edit")}</button></div>
+    <span class="kp-vrednost">${c.legal_name || t("Not set")}</span>
+    ${c.legal_address ? html`<span class="opomba">${c.legal_address}</span>` : null}
+    <span class="opomba">${ddv} · ${c.seller_complete === true ? t("Details complete") : t("Details incomplete")}</span>
+    <span class="opomba">${t("Shown to buyers before payment and on receipts (required by consumer law).")}</span>
+    <${List} odprt=${odprt} zapri=${() => { if (!shranjujem) setOdprt(false); }} naslov=${t("Seller details")}>
+      <p class="besedilo-opis">${t("Shown to buyers before payment and on receipts (required by consumer law).")}</p>
+      ${vnos("legal_name", t("Company name"), 200, "organization")}
+      ${vnos("legal_address", t("Registered address"), 300, "off")}
+      ${vnos("registration_number", t("Registration number"), 20)}
+      ${vnos("tax_number", t("Tax / VAT number"), 20)}
+      <label class="polje-oznaceno"><span>${t("VAT status")}</span>
+        <select value=${f.vat} onChange=${polje("vat")}>
+          ${DDV_IZBIRE.map(([v, ime]) => html`<option key=${v} value=${v} selected=${f.vat === v}>${ime()}</option>`)}
+        </select></label>
+      ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}
+      <button type="button" class="gumb-glavni" onClick=${shrani} disabled=${shranjujem}>${shranjujem ? t("Saving...") : t("Save")}</button>
     <//>
   </div>`;
 }

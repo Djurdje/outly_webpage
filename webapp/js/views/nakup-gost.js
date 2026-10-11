@@ -11,11 +11,11 @@ import {
   jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo, jeNakupVObdelavi, NAKUP_V_OBDELAVI_S,
   ApiError, izidNakupa, nakupBrezOdgovoraSporocilo, gostSporocilo, potekloPlacilo, placiloVObdelavi, placiloNepripravljeno
 } from "../napake.js";
-import { denar, jeRazprodan, preostanek, danInUra, nacinPlacila } from "../oblika.js";
+import { denar, jeRazprodan, preostanek, danInUra, nacinPlacila, ddvBesedilo } from "../oblika.js";
 import { List, useZaklep } from "../ui.js";
 import { navigiraj } from "../usmerjanje.js";
 import { odpriStripe, izidStripeNakupa } from "../stripe.js";
-import { TERMS_VERSION, EMAIL_RE } from "../pogoji.js";
+import { TERMS_VERSION, EMAIL_RE, BlokProdajalca, OpombaVracila } from "../pogoji.js";
 import { shraniGostZeton, jeGostZeton, shraniGostNakup, preberiGostNakup, pozabiGostNakup } from "../gost.js";
 
 const NAJVEC_GOST = 6;   // gost najvec 6 vstopnic na nakup (dogovor z backendom), tudi ce dogodek dovoli vec
@@ -162,7 +162,7 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
       <span class="utisano">${danInUra(e._zacetek)}</span>
       ${kraj && kraj !== "-" ? html`<span class="utisano">${kraj}</span>` : null}
       ${e.min_age > 0 ? html`<span class="utisano">${t("{n}+ · ID at the door", { n: e.min_age })}</span>` : null}
-      ${imeKluba ? html`<span class="utisano">${t("Seller: {club}", { club: imeKluba })}</span>` : null}
+      ${imeKluba && !e.seller ? html`<span class="utisano">${t("Seller: {club}", { club: imeKluba })}</span>` : null}
     </div>
 
     <form class="obrazec" onSubmit=${kupi} novalidate>
@@ -188,16 +188,18 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
       </div>
 
       <div class="nakup-skupaj">
-        <span>${t("Total")}<small class="utisano"> · ${t("Prices include VAT")}</small></span>
+        <span>${t("Total")}<small class="utisano"> · ${ddvBesedilo(e.seller)}</small></span>
         <strong>${brezplacno ? t("Free") : denar(skupaj, e.currency)}</strong>
       </div>
+
+      <${BlokProdajalca} prodajalec=${e.seller} />
 
       ${neprodaja ? html`<p class="opomba" role="status">${t("Tickets aren't on sale in the app yet.")}</p>`
         : brezplacno ? null
         : nacin === "test" ? html`<p class="opomba">${t("Test mode — nothing is charged")}</p>`
         : html`<p class="opomba">${t("You pay by card on the next page. Your tickets are sent by email right after payment.")}</p>`}
 
-      <p class="opomba">${t("Tickets for a dated event cannot be returned after purchase (ZVPot-1, 135/12). The seller is the club; Outly is the intermediary.")}</p>
+      <${OpombaVracila} prodajalec=${e.seller} />
 
       <label class="soglasje">
         <input type="checkbox" checked=${soglasje} onChange=${x => polje(setSoglasje)(x.target.checked)} />
