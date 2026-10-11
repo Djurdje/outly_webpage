@@ -7,7 +7,7 @@ import { html, useEffect, useState } from "../lib.js";
 import { t } from "../i18n.js";
 import { send } from "../api.js";
 import { ApiError, sporocilo } from "../napake.js";
-import { danInUra } from "../oblika.js";
+import { danInUra, statusNapis } from "../oblika.js";
 import { GlavaNazaj, Nalaganje, Napaka, Ikona, Slika } from "../ui.js";
 import { useSeja } from "../seja.js";
 import { prevzemiZetonIzUrl, preberiVstopnicaZeton, pozabiVstopnicaZeton, shraniVstopnicaZeton } from "../gost.js";
@@ -90,7 +90,7 @@ export function GostVstopnica() {
         <strong>${naslov}</strong>
         ${veljavna
           ? html`<${QrTelo} v=${{ ...v, transferable: false, min_age: v.min_age ?? e.min_age }} />`
-          : html`<span class="cip-plan">${uporabljena ? t("ALREADY USED") : String(v.status || "").toUpperCase()}</span>`}
+          : html`<span class="cip-plan">${uporabljena ? t("ALREADY USED") : statusNapis(v.status)}</span>`}
       </div>
     </div>
     ${veljavna ? html`<p class="opomba srednje">${t("One entry per QR code: whoever shows it first gets in. Don't share this link or post the code.")}</p>` : null}

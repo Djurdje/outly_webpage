@@ -164,14 +164,16 @@ const PRAVILA = [
   ["table not found", "This table is not available anymore."],
   ["choose a bottle package", "Choose a bottle for your table."],
   ["package does not belong", "Choose a bottle for your table."],
-  ["add your date of birth", "Add your date of birth in Personal info to buy tickets."],
   ["payments are not available", "Payments are not available yet."],
+  ["does not accept online payments", "This club does not accept online payments yet."],
   ["already exists", "An account with this email or username already exists."],
   ["already registered", "An account with this email or username already exists."]
 ];
 
 /* Pravila, ki morajo pred splosnim "date of birth" (prenos vstopnice govori o prijateljevem datumu). */
 const PREDNOSTNA = [
+  // Nakup brez datuma rojstva (403, backend preveriStarostKupca): pred splosnim "date of birth" spodaj, sicer bi kupec dobil "Enter a valid date of birth".
+  ["add your date of birth", "Add your date of birth in Personal info to buy tickets."],
   ["you can only invite friends", "You can only invite friends."],
   ["guest list is closed", "This guest list is closed."],
   ["already checked in", "Already checked in."],
@@ -232,7 +234,14 @@ function prevediApi(e) {
     if (s.includes("plausible")) return t("That date of birth does not look right.");
     return t("Enter a valid date of birth.");
   }
-  // "You must be at least 18 years old..." - streznik pove mejo, iOS pokaze besedilo, kot je.
+  // Nakup za 18+ (backend preveriStarostKupca): "You must be at least 18 to buy tickets for this event." / "... to buy a table with a
+  // bottle package." Meja je v besedilu, zato prevod z mejo ({n}); neznano besedilo (druga zahteva) streznik pove sam, kot na iOS.
+  const starost = /you must be at least (\d+) to buy (tickets for this event|a table with a bottle package)/.exec(s);
+  if (starost) {
+    return starost[2].startsWith("a table")
+      ? t("You must be at least {n} to buy a table with a bottle package.", { n: starost[1] })
+      : t("You must be at least {n} to buy tickets for this event.", { n: starost[1] });
+  }
   if (s.includes("you must be at least") && !s.includes("15 years")) return e.raw;
   for (const [podniz, sporocilo] of PRAVILA) if (s.includes(podniz)) return t(sporocilo);
   switch (true) {

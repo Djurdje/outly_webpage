@@ -6,7 +6,7 @@ import { html, useEffect, useRef, useState } from "../lib.js";
 import { t, tn } from "../i18n.js";
 import { send } from "../api.js";
 import { ApiError, sporocilo, kodaNapake, potekloPlacilo, placiloVObdelavi } from "../napake.js";
-import { danInUra } from "../oblika.js";
+import { danInUra, statusNapis } from "../oblika.js";
 import { GlavaNazaj, Nalaganje, Napaka, Ikona, Slika } from "../ui.js";
 import { odpriStripe } from "../stripe.js";
 import { useSeja } from "../seja.js";
@@ -164,7 +164,7 @@ export function GostNarocilo() {
   return html`<div class="zaslon">${glava}
     <div class="uspeh">
       ${placano ? html`<span class="uspeh-krog"><${Ikona} ime="check" velikost=${28} debelina=${3} /></span><strong>${t("You're in!")}</strong>`
-        : html`<strong>${t("Order status: {status}", { status: String(o.status || "").toUpperCase() })}</strong>`}
+        : html`<strong>${t("Order status: {status}", { status: statusNapis(o.status) })}</strong>`}
       <span>${ref ? t("Order {ref}", { ref }) + " · " : ""}${tn("1 ticket", "{n} tickets", vstopnice.length || Number(o.quantity) || 0)}</span>
       ${o.is_test && placano ? html`<span class="opomba">${t("Test purchase — nothing was charged")}</span>` : null}
     </div>
@@ -176,7 +176,7 @@ export function GostNarocilo() {
         <strong>${e.title}</strong>
         ${v.status === "valid"
           ? html`<${QrTelo} v=${{ ...v, public_ref: v.public_ref || ref, min_age: v.min_age ?? e.min_age }} />`
-          : html`<span class="cip-plan">${v.status === "used" ? t("ALREADY USED") : String(v.status || "").toUpperCase()}</span>`}
+          : html`<span class="cip-plan">${v.status === "used" ? t("ALREADY USED") : statusNapis(v.status)}</span>`}
       </div>`)}
     </div>
     ${prijavljen ? null : html`<div class="gost-racun">
