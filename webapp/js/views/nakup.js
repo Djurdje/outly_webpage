@@ -13,7 +13,7 @@ import { denar, jeRazprodan, preostanek, danInUra, nacinPlacila, ddvBesedilo } f
 import { List, Ikona, useZaklep } from "../ui.js";
 import { KodaQR } from "../qr.js";
 import { odpriStripe, izidStripeNakupa, jeStripeUrl } from "../stripe.js";
-import { PogojiNakupa, BlokProdajalca, OpombaVracila } from "../pogoji.js";
+import { PogojiNakupa, BlokProdajalca, OpombaVracila, TERMS_VERSION } from "../pogoji.js";
 
 export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
   const [kolicina, setKolicina] = useState(1);
@@ -72,7 +72,7 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
     // timeoutu/503/409 in po zaprtju ter ponovnem odprtju lista: backend vrne isto narocilo (201).
     const kljuc = kljucNakupa("vstopnice", uid, e.id, String(kolicina), { dogodek: e.id, kolicina });
     try {
-      const r = await send(`/events/${e.id}/orders`, { method: "POST", body: { quantity: kolicina, locale: kodaJezika() }, auth: true, glave: { "Idempotency-Key": kljuc } });
+      const r = await send(`/events/${e.id}/orders`, { method: "POST", body: { quantity: kolicina, locale: kodaJezika(), terms_version: TERMS_VERSION }, auth: true, glave: { "Idempotency-Key": kljuc } });
       pocistiPredpomnilnik();
       // Stripe (backend #19): narocilo caka na placilo na Stripovi strani. Kljuca NE pozabimo: ce se kupec vrne brez
       // placila, ponovni pritisk vrne ISTO narocilo in isti checkout_url (ne rezervira se enkrat).

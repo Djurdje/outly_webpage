@@ -12,7 +12,7 @@ import {
 } from "../napake.js";
 import { navigiraj } from "../usmerjanje.js";
 import { odpriStripe, izidStripeNakupa, jeStripeUrl } from "../stripe.js";
-import { PogojiNakupa, BlokProdajalca, OpombaVracila } from "../pogoji.js";
+import { PogojiNakupa, BlokProdajalca, OpombaVracila, TERMS_VERSION } from "../pogoji.js";
 import { denar, danInUra, nacinPlacila, normalizirajProdajalca, ddvBesedilo } from "../oblika.js";
 import { List, Ikona, Nalaganje, Napaka, useZaklep } from "../ui.js";
 import { VipRazdeli, mejaStarostiVip, zapomniCakajocVip } from "./vip-razdeli.js";
@@ -143,7 +143,7 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
     const kljuc = kljucNakupa("vip", uid, e.id, `${miza.id}|${paketPrejsnji ?? ""}`, { dogodek: e.id, miza: miza.id, paket: paketPrejsnji });
     try {
       const r = await send(`/events/${e.id}/tables/${miza.id}/orders`, {
-        method: "POST", body: paketPrejsnji != null ? { package_id: paketPrejsnji, expected_price_cents: miza.price_cents, locale: kodaJezika() } : { expected_price_cents: miza.price_cents, locale: kodaJezika() }, auth: true,
+        method: "POST", body: paketPrejsnji != null ? { package_id: paketPrejsnji, expected_price_cents: miza.price_cents, locale: kodaJezika(), terms_version: TERMS_VERSION } : { expected_price_cents: miza.price_cents, locale: kodaJezika(), terms_version: TERMS_VERSION }, auth: true,
         glave: { "Idempotency-Key": kljuc }
       });
       pocistiPredpomnilnik();
