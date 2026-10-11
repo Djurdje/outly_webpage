@@ -5,7 +5,7 @@
    - stripe: preusmeritev na checkout_url, Stripe po placilu vrne na /app/guest/order?t=<guest_token>.
    Kartice NIKOLI ne vnasamo v nas vmesnik. Kljuc nakupa (api.js) je vezan na e-naslov: ponovni klik ali timeout = isto narocilo. */
 import { html, useEffect, useRef, useState } from "../lib.js";
-import { t, useJezik } from "../i18n.js";
+import { t, useJezik, kodaJezika } from "../i18n.js";
 import { send, pocistiPredpomnilnik, kljucNakupa, pozabiKljucNakupa, oznaciIzidNakupa, zasejKljucNakupa } from "../api.js";
 import {
   jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo, jeNakupVObdelavi, NAKUP_V_OBDELAVI_S,
@@ -89,7 +89,7 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
     const prej = preberiGostNakup(e.id);
     if (prej && prej.e === m && prej.q === kolicina) zasejKljucNakupa("gost", m, e.id, vsebina, prej.k);
     const kljuc = kljucNakupa("gost", m, e.id, vsebina, null);
-    const telo = { email: m, quantity: kolicina, accept_terms: true, terms_version: TERMS_VERSION };
+    const telo = { email: m, quantity: kolicina, accept_terms: true, terms_version: TERMS_VERSION, locale: kodaJezika() };
     if (potrebujeStarost) telo.date_of_birth = dob;
     try {
       const r = await send(`/guest/events/${e.id}/orders`, { method: "POST", body: telo, glave: { "Idempotency-Key": kljuc } });

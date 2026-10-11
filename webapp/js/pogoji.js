@@ -38,7 +38,12 @@ export function BlokProdajalca({ prodajalec: p }) {
 }
 
 /* Opomba o vracilu pod gumbom: z blokom prodajalca stavek o posredniku ostane v bloku (ne podvajamo), brez njega kot doslej. */
-export function OpombaVracila({ prodajalec }) {
+export function OpombaVracila({ prodajalec, vip = false }) {
+  if (vip) {   // VIP miza (s paketom): pravnik 11. 10. 2026 - "Tickets" samo ne pokrije mize in paketa
+    return html`<p class="opomba">${prodajalec
+      ? t("VIP tables (including any package) and tickets for a dated event cannot be returned after purchase (ZVPot-1, 135/12).")
+      : t("VIP tables (including any package) and tickets for a dated event cannot be returned after purchase (ZVPot-1, 135/12). The seller is the club; Outly is the intermediary.")}</p>`;
+  }
   return html`<p class="opomba">${prodajalec
     ? t("Tickets for a dated event cannot be returned after purchase (ZVPot-1, 135/12).")
     : t("Tickets for a dated event cannot be returned after purchase (ZVPot-1, 135/12). The seller is the club; Outly is the intermediary.")}</p>`;

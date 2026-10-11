@@ -1150,6 +1150,8 @@ export const SL = {
  "Outly is the intermediary.": "Outly je posrednik.",
  "Reg. no. {n}": "Matična št. {n}",
  "Tax no. {n}": "Davčna št. {n}",
+ "VIP tables (including any package) and tickets for a dated event cannot be returned after purchase (ZVPot-1, 135/12).": "VIP miz (skupaj s paketom) in vstopnic za dogodek z določenim datumom po nakupu ni mogoče vrniti (ZVPot-1, 135/12).",
+ "VIP tables (including any package) and tickets for a dated event cannot be returned after purchase (ZVPot-1, 135/12). The seller is the club; Outly is the intermediary.": "VIP miz (skupaj s paketom) in vstopnic za dogodek z določenim datumom po nakupu ni mogoče vrniti (ZVPot-1, 135/12). Prodajalec je klub; Outly je posrednik.",
  "Tickets for a dated event cannot be returned after purchase (ZVPot-1, 135/12).": "Vstopnic za dogodek z določenim datumom po nakupu ni mogoče vrniti (ZVPot-1, 135/12).",
  "Sold by {name}": "Prodaja: {name}",
  "Seller details": "Podatki prodajalca",

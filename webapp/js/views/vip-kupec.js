@@ -3,7 +3,7 @@
    narocilo je takoj placano, nic se ne zaracuna. Kupec dobi toliko VIP vstopnic, kolikor ima miza sedezev; razdeli
    jih prijateljem z obstojecim prenosom (Profile -> Tickets). Ta modul se nalozi leno (event.js), ko dogodek ponuja VIP. */
 import { html, useEffect, useRef, useState } from "../lib.js";
-import { t, tn } from "../i18n.js";
+import { t, tn, kodaJezika } from "../i18n.js";
 import { send, pocistiPredpomnilnik, kljucNakupa, pozabiKljucNakupa, nerazresenNakup, oznaciIzidNakupa, zapomniCakajocePlacilo, obnoviCakajocePlacilo } from "../api.js";
 import { uidSeje, useSeja } from "../seja.js";
 import {
@@ -12,7 +12,7 @@ import {
 } from "../napake.js";
 import { navigiraj } from "../usmerjanje.js";
 import { odpriStripe, izidStripeNakupa, jeStripeUrl } from "../stripe.js";
-import { PogojiNakupa, BlokProdajalca } from "../pogoji.js";
+import { PogojiNakupa, BlokProdajalca, OpombaVracila } from "../pogoji.js";
 import { denar, danInUra, nacinPlacila, normalizirajProdajalca, ddvBesedilo } from "../oblika.js";
 import { List, Ikona, Nalaganje, Napaka, useZaklep } from "../ui.js";
 import { VipRazdeli, mejaStarostiVip, zapomniCakajocVip } from "./vip-razdeli.js";
@@ -143,7 +143,7 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
     const kljuc = kljucNakupa("vip", uid, e.id, `${miza.id}|${paketPrejsnji ?? ""}`, { dogodek: e.id, miza: miza.id, paket: paketPrejsnji });
     try {
       const r = await send(`/events/${e.id}/tables/${miza.id}/orders`, {
-        method: "POST", body: paketPrejsnji != null ? { package_id: paketPrejsnji, expected_price_cents: miza.price_cents } : { expected_price_cents: miza.price_cents }, auth: true,
+        method: "POST", body: paketPrejsnji != null ? { package_id: paketPrejsnji, expected_price_cents: miza.price_cents, locale: kodaJezika() } : { expected_price_cents: miza.price_cents, locale: kodaJezika() }, auth: true,
         glave: { "Idempotency-Key": kljuc }
       });
       pocistiPredpomnilnik();
@@ -262,6 +262,7 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
         <button type="button" class="gumb-glavni" onClick=${rezerviraj} disabled=${posiljam || zaklenjeno || (!d.onSale && moja == null) || d.nacin === "unavailable" || (imaPakete && !paket && moja == null)}>
           ${posiljam ? t("Processing...") : moja != null ? t("Continue to payment") : t("Reserve table") + " · " + denar(miza.price_cents, d.valuta)}</button>
         <${PogojiNakupa} />
+        <${OpombaVracila} prodajalec=${d.prodajalec} vip=${true} />
       </div>` : null}` : null}
   <//>`;
 }
