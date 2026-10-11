@@ -203,9 +203,11 @@ export function pozabiVseKljuceNakupa() {
    bi kupec dobil nov kljuc in backend bi odgovoril 409 "unfinished payment" (vstopnice), VIP miza pa bi bila "Booked" (pending narocilo
    mizo zaseda do poteka seje; outly-app #59). Zato kljuc ob preusmeritvi shranimo v sessionStorage (ni obcutljivo: UUID, vezan na
    uporabnika; isto kot gost.js) in ga ob odprtju lista vrnemo v zapis: ponovitev z ISTIM kljucem vrne isto narocilo in isti checkout_url.
-   Velja PLACILO_ZIVLJENJE_MS (seja Stripa 30 min + pospravljanje); potem backend itak odgovori 409 order_not_active in kljuc se zavrze. */
+   Velja PLACILO_ZIVLJENJE_MS (seja Stripa 30 min + pospravljanje ~5 min = 35 min, zato 40 min); potem backend itak odgovori
+   409 order_not_active in kljuc se zavrze. Po USPESNEM placilu se vnos pocisti (pocistiPlacanoPlacilo, vstopnice.js ?placilo=uspeh):
+   success_url nosi ?narocilo=<public_ref>, vnos hrani isti ref. */
 const KLJUC_PLACILA = "outly_cakajoce_placilo";
-export const PLACILO_ZIVLJENJE_MS = 2 * 60 * 60 * 1000;
+export const PLACILO_ZIVLJENJE_MS = 40 * 60 * 1000;
 function preberiShranjenaPlacila() {
   try {
     const o = JSON.parse(sessionStorage.getItem(KLJUC_PLACILA) || "{}");
@@ -223,16 +225,26 @@ function pozabiShranjenoPlacilo(pot, kljuc) {
   if (o[pot] && o[pot].kljuc === kljuc) { delete o[pot]; zapisiShranjenaPlacila(o); }
 }
 /** Tik pred preusmeritvijo na Stripe: zapis postane "caka placilo" (podatki.cakaPlacilo) in se shrani za vrnitev po polni nalozitvi strani. */
-export function zapomniCakajocePlacilo(vrsta, uporabnik, dogodek, kljuc) {
+export function zapomniCakajocePlacilo(vrsta, uporabnik, dogodek, kljuc, ref = "") {
   const pot = potNakupa(vrsta, uporabnik, dogodek), z = kljuciNakupov.get(pot);
   if (!z || z.kljuc !== kljuc) return;
-  z.izid = "nerazresen"; z.podatki = { ...(z.podatki || {}), cakaPlacilo: true }; z.ob = Date.now();
+  z.izid = "nerazresen"; z.podatki = { ...(z.podatki || {}), cakaPlacilo: true }; z.ref = String(ref || ""); z.ob = Date.now();
   const o = preberiShranjenaPlacila(), zdaj = Date.now();
   for (const k of Object.keys(o)) if (!o[k] || zdaj - o[k].ob >= PLACILO_ZIVLJENJE_MS) delete o[k];
-  o[pot] = { kljuc, vsebina: z.vsebina, podatki: z.podatki, ob: zdaj };
+  o[pot] = { kljuc, vsebina: z.vsebina, podatki: z.podatki, ref: z.ref, ob: zdaj };
   const kljuci = Object.keys(o);
   if (kljuci.length > 20) delete o[kljuci[0]];   // meja: sessionStorage ne sme rasti brez konca
   zapisiShranjenaPlacila(o);
+}
+/** Vrnitev s Stripa po USPESNEM placilu (/app/tickets?placilo=uspeh&narocilo=<ref>): vnos tega narocila (shranjen in v pomnilniku) stran,
+    sicer bi nakup istega dogodka v naslednjih 40 min kazal lazno "Continue to payment" in predvajal stari kljuc. Brez ref (neznano)
+    gredo stran vsi cakajoci vnosi. */
+export function pocistiPlacanoPlacilo(ref) {
+  ref = String(ref || "");
+  const o = preberiShranjenaPlacila();
+  for (const k of Object.keys(o)) if (!ref || !o[k] || o[k].ref === ref) delete o[k];
+  zapisiShranjenaPlacila(o);
+  for (const [k, z] of kljuciNakupov) if (z.podatki && z.podatki.cakaPlacilo && (!ref || z.ref === ref)) kljuciNakupov.delete(k);
 }
 /** Ob odprtju lista: shranjeno cakajoce placilo (ce ni zivega zapisa in ni preteklo) se vrne v zapis kot nerazresen nakup z istim kljucem. */
 export function obnoviCakajocePlacilo(vrsta, uporabnik, dogodek) {
@@ -241,7 +253,7 @@ export function obnoviCakajocePlacilo(vrsta, uporabnik, dogodek) {
   const o = preberiShranjenaPlacila(), z = o[pot];
   if (!z) return;
   if (typeof z.kljuc !== "string" || typeof z.vsebina !== "string" || !(Date.now() - z.ob < PLACILO_ZIVLJENJE_MS)) { delete o[pot]; zapisiShranjenaPlacila(o); return; }
-  kljuciNakupov.set(pot, { kljuc: z.kljuc, vsebina: z.vsebina, podatki: z.podatki && typeof z.podatki === "object" ? z.podatki : null, izid: "nerazresen", prej: "nerazresen", ob: Date.now() });
+  kljuciNakupov.set(pot, { kljuc: z.kljuc, vsebina: z.vsebina, podatki: z.podatki && typeof z.podatki === "object" ? z.podatki : null, ref: String(z.ref || ""), izid: "nerazresen", prej: "nerazresen", ob: Date.now() });
 }
 
 /* Ena osvezitev naenkrat, tudi ce jo zahteva vec klicev hkrati.

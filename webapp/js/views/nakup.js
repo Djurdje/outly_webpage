@@ -4,7 +4,7 @@
 import { html, useEffect, useRef, useState } from "../lib.js";
 import { t, tn } from "../i18n.js";
 import { send, pocistiPredpomnilnik, kljucNakupa, pozabiKljucNakupa, nerazresenNakup, oznaciIzidNakupa, zapomniCakajocePlacilo, obnoviCakajocePlacilo } from "../api.js";
-import { uidSeje } from "../seja.js";
+import { uidSeje, useSeja } from "../seja.js";
 import {
   jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo,
   jeNakupVObdelavi, NAKUP_V_OBDELAVI_S, sporocilo, ApiError, izidNakupa, nakupNapakaSporocilo, nakupBrezOdgovoraSporocilo, potekloPlacilo, placiloVObdelavi, placiloNepripravljeno
@@ -20,12 +20,13 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
   const [posiljam, setPosiljam] = useState(false);
   const [napaka, setNapaka] = useState("");
   const [nakup, setNakup] = useState(null);
-  const [cakaPlacilo, setCakaPlacilo] = useState(false);   // nedokoncano Stripe placilo tega nakupa: gumb "Continue to payment" (isti kljuc, isti URL)
+  const [cakaStanje, setCakaPlacilo] = useState(false);   // nedokoncano Stripe placilo tega nakupa: gumb "Continue to payment" (isti kljuc, isti URL)
   const tece = useRef(false);   // zascita pred dvojnim klikom v istem trenutku (stanje se posodobi prepozno)
   const [zaklenjeno, zakleni] = useZaklep();   // po 503 (semafor nakupov) je gumb nekaj sekund onemogocen
   const ziv = useRef(true);   // komponenta je nameščena
   const odprtRef = useRef(odprt);
   odprtRef.current = odprt;
+  const sejaEmail = useSeja(s => s.email);   // uid seje je ob hladnem zagonu lahko se prazen: obnova se ponovi, ko seja dobi uporabnika
   useEffect(() => () => { ziv.current = false; }, []);
   // Nazaj iz Stripove strani (gumb Nazaj, bfcache): stran se obnovi s stanjem "Processing..." - gumb odklenemo (kot nakup-gost.js).
   useEffect(() => {
@@ -46,9 +47,10 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
     // Kupec je ze prisel do Stripa: ni "morda je nastalo", ampak nedokoncano placilo - ponovitev vrne isti checkout_url.
     setCakaPlacilo(!!(prej && prej.cakaPlacilo));
     setNapaka(prej && !prej.cakaPlacilo ? nakupBrezOdgovoraSporocilo() : ""); setNakup(null);
-  }, [odprt]);
+  }, [odprt, sejaEmail]);
   // Cena null = vstopnic ni na Outlyju; tak dogodek nima nakupa (in NI "Free").
   if (!odprt || e.ticket_price_cents == null) return null;
+  const cakaPlacilo = cakaStanje && nacinPlacila(e) === "stripe";   // zaklep samo pri Stripu: v testnem nacinu/"unavailable" navaden tok
 
   const cenaEna = e.ticket_price_cents;
   const brezplacno = cenaEna === 0;
@@ -79,7 +81,7 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
       // 0 EUR pri klubu s Stripom: mode "stripe", paid, tickets polne, checkout_url null -> uspeh brez Stripa.
       const izidS = izidStripeNakupa(r);
       if (izidS === "preusmeri") {
-        if (jeStripeUrl(r.checkout_url)) zapomniCakajocePlacilo("vstopnice", uid, e.id, kljuc);   // vrnitev po polni nalozitvi strani najde isti kljuc
+        if (jeStripeUrl(r.checkout_url)) zapomniCakajocePlacilo("vstopnice", uid, e.id, kljuc, r.order && r.order.public_ref);   // vrnitev po polni nalozitvi strani najde isti kljuc
         if (odpriStripe(r.checkout_url)) return;   // stran se preusmerja; gumb ostane "Processing..."
         throw new ApiError(-1, "Could not open the payment page.");
       }   // zaloga (sold_count) na karticah naj bo sveza

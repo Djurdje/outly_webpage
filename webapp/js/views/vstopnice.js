@@ -2,7 +2,7 @@
    QR je podpisan niz iz backenda; po prenosu vstopnice stara koda ne velja vec (I7). */
 import { html, useEffect, useRef, useState } from "../lib.js";
 import { t, tn } from "../i18n.js";
-import { send } from "../api.js";
+import { send, pocistiPlacanoPlacilo } from "../api.js";
 import { sporocilo, kodaNapake } from "../napake.js";
 import { danInUra, statusNapis } from "../oblika.js";
 import { GlavaNazaj, Nalaganje, Napaka, Ikona, Slika, Avatar, List } from "../ui.js";
@@ -46,6 +46,7 @@ export function Vstopnice() {
   useEffect(() => {
     nalozi();
     if (!placano) return;
+    pocistiPlacanoPlacilo(new URLSearchParams(location.search).get("narocilo"));   // placano: shranjeni kljuc cakajocega placila ni vec potreben
     history.replaceState(history.state, "", location.pathname);
     const casi = [2000, 5000, 10000].map(ms => setTimeout(nalozi, ms));
     return () => casi.forEach(clearTimeout);
