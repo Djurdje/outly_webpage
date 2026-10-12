@@ -216,7 +216,7 @@ function prevediApi(e) {
     case "owner_only": return t("Only the club owner can change seller details.");
     case "free_limit": return t("You've reached the limit of free tickets for this event.");
     // Nakup pri klubu brez popolnih podatkov prodajalca (backend #219, 409 JSON). Isto besedilo kot iOS; gumb za nakup ostane viden.
-    case "seller_incomplete": if (e.status === 409) return t("Tickets can't be bought yet: the organizer hasn't completed their seller details."); break;
+    case "seller_incomplete": if (e.status === 409) return t("Purchases aren't available yet: the organizer hasn't completed their seller details."); break;
     // Prenos vstopnice prijatelju brez racuna (POST /tickets/:id/transfer z allow_guest)
     case "age_confirmation_required": {
       let n = 0;
