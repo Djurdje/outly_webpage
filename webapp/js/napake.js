@@ -53,8 +53,9 @@ export const jeKljucNeveljaven = e => e instanceof ApiError && e.status === 400 
 /* Nerazresen izid: narocilo je morda nastalo (brez odgovora, timeout, prekinjena povezava, 409 request_in_progress).
    Neuspela osvezitev seje to NI (zahtevek ni odsel). Samo po takem izidu se list ob ponovnem odprtju predizpolni. */
 export const jeNerazresenIzid = e => jeNakupVObdelavi(e) || (e instanceof ApiError && e.status === -1 && !jeOsvezitevSeje(e));
-/* Napake, po katerih se kljuc zavrze (nov nakup): 422, 400 neveljaven kljuc, 409 order_not_active, 409 free_limit. */
-export const jeKljucZavrzen = e => jeKljucPonovljen(e) || jeKljucNeveljaven(e) || jeNarociloNeaktivno(e) || jeMejaBrezplacnih(e);
+/* Napake, po katerih se kljuc zavrze (nov nakup): 422, 400 neveljaven kljuc, 409 order_not_active, 409 free_limit,
+   409 seller_incomplete. */
+export const jeKljucZavrzen = e => jeKljucPonovljen(e) || jeKljucNeveljaven(e) || jeNarociloNeaktivno(e) || jeMejaBrezplacnih(e) || jeProdajalecNepopoln(e);
 /* Izid napake nakupa za shrambo kljucev (api.js oznaciIzidNakupa): "zavrzen" (nov nakup), "neposlan" (zahtevek ni odsel),
    "nerazresen" (narocilo je morda nastalo) ali "dokoncen". */
 export function izidNakupa(e) {
@@ -86,6 +87,10 @@ export function placiloNepripravljeno() {
 }
 /* 409 free_limit: brezplacnih vstopnic za ta dogodek je na osebo omejeno (backend 2c). Narocilo ni nastalo: kljuc se zavrze. */
 export const jeMejaBrezplacnih = e => e instanceof ApiError && e.status === 409 && kodaNapake(e) === "free_limit";
+/* 409 seller_incomplete (backend #219): klub (v zivem Stripu) se nima popolnih podatkov prodajalca. Narocilo NI nastalo, zato izid ni
+   "nerazresen" (list se ne predizpolni, ni napotka "may have gone through"); kljuc se zavrze (kot free_limit), da se po dopolnitvi
+   podatkov nakup ne veze na zavrnjen poskus. Velja za POST /events/:id/orders, .../tables/:id/orders in /guest/events/:id/orders. */
+export const jeProdajalecNepopoln = e => e instanceof ApiError && e.status === 409 && kodaNapake(e) === "seller_incomplete";
 export function nakupZasedenoSporocilo() {
   return t("Lots of people are buying right now. Please try again in a few seconds.");
 }
@@ -210,6 +215,8 @@ function prevediApi(e) {
     // Podatki prodajalca kluba (backend #94): spreminja jih samo lastnik, manager dobi 403 owner_only.
     case "owner_only": return t("Only the club owner can change seller details.");
     case "free_limit": return t("You've reached the limit of free tickets for this event.");
+    // Nakup pri klubu brez popolnih podatkov prodajalca (backend #219, 409 JSON). Isto besedilo kot iOS; gumb za nakup ostane viden.
+    case "seller_incomplete": if (e.status === 409) return t("Tickets can't be bought yet: the organizer hasn't completed their seller details."); break;
     // Prenos vstopnice prijatelju brez racuna (POST /tickets/:id/transfer z allow_guest)
     case "age_confirmation_required": {
       let n = 0;
