@@ -2,12 +2,8 @@
 -- Varnostni pregled 12. 10. 2026 (outly-backend#223). POZENE MARTIN v Supabase SQL Editorju (projekt zbewqcxnvrwebxonvebx),
 -- PO shemi 14 (supabase-schema-14-zapri-staro-prosnjo.sql, ta zapre submit_creator_application - tukaj je ne podvajamo).
 --
--- Kaj je bilo narobe: vzorec "revoke all on function ... from public" (sheme 2, 9, 10, 13) anonu NE odvzame pravice EXECUTE,
--- ker jo Supabase (default privileges) da vlogam anon in authenticated NEPOSREDNO, ne prek PUBLIC. Zato so v produkciji
--- sync_my_account, my_profile, set_username in delete_my_account klicljive tudi brez prijave (varuje jih samo preverba
--- auth.uid()); pomozne funkcije (auth_email, gen_ref_code, mask_email, mask_name, waitlist_set_ref_code, waitlist_publish)
--- pa so odprte celo vsem prek PUBLIC. referral_leaderboard (pokaze domeno e-naslova) in referral_status nimata nobenega klica
--- v kodi (preverjeno z grep po outly_webpage, outly-backend in outly-app), pa sta odprti za anon.
+-- Zakaj: vzorec "revoke all on function ... from public" (sheme 2, 9, 10, 13) anonu ne odvzame EXECUTE, ker ga Supabase
+-- (default privileges) da vlogam anon in authenticated neposredno. Ta skripta pravice uskladi z namenom (outly-backend#223).
 --
 -- Kaj naredi ta skripta (stanje kataloga preverjeno 12. 10. 2026 s pg_proc / pg_get_function_identity_arguments):
 --   1) sync_my_account(text), my_profile(), set_username(text), delete_my_account(): odvzame EXECUTE od anon in public;
@@ -35,6 +31,8 @@
 --
 -- Opomba: Supabasovi privzeti privilegiji bodo tudi PRIHODNJIM funkcijam v shemi public spet dali EXECUTE anonu. Vsaka nova
 -- funkcija mora imeti izrecen "revoke execute ... from anon, public" (ne samo "from public").
+
+begin;
 
 -- 1) Funkcije za prijavljene: anon/public ven, authenticated ostane -------------------------------------------------------
 revoke execute on function public.sync_my_account(text) from anon, public;
@@ -64,6 +62,40 @@ alter function public.mask_email(text)        set search_path = public;
 alter function public.mask_name(text)         set search_path = public;
 alter function public.waitlist_set_ref_code() set search_path = public;
 
+commit;
+
+-- PREVERBA (SQL Editor pokaze samo zadnji rezultat, zato je ena vrstica): mora vrniti napak = 0, vrstic = 20.
+-- Ce napak > 0: odkomentiraj podrobni preverbi spodaj in ju pozeni vsako posebej.
+with pricak(sig, pricak_anon, pricak_auth) as (values
+    ('public.sync_my_account(text)',            false, true),
+    ('public.my_profile()',                     false, true),
+    ('public.set_username(text)',               false, true),
+    ('public.delete_my_account()',              false, true),
+    ('public.join_waitlist(text,boolean,boolean,text)', true, true),
+    ('public.confirm_waitlist(uuid)',           true,  true),
+    ('public.referrer_public(text)',            true,  true),
+    ('public.auth_email()',                     false, false),
+    ('public.gen_ref_code()',                   false, false),
+    ('public.mask_email(text)',                 false, false),
+    ('public.mask_name(text)',                  false, false),
+    ('public.waitlist_set_ref_code()',          false, false),
+    ('public.waitlist_publish()',               false, false),
+    ('public.referral_status(uuid)',            false, false),
+    ('public.referral_leaderboard(integer)',    false, false)
+), preverbe as (
+  select has_function_privilege('anon', sig::regprocedure, 'execute') = pricak_anon
+     and has_function_privilege('authenticated', sig::regprocedure, 'execute') = pricak_auth
+     and has_function_privilege('public', sig::regprocedure, 'execute') = false as ok
+    from pricak
+  union all
+  select coalesce('search_path=public' = any (p.proconfig), false)
+    from pg_proc p
+   where p.pronamespace = 'public'::regnamespace
+     and p.proname in ('auth_email', 'gen_ref_code', 'mask_email', 'mask_name', 'waitlist_set_ref_code')
+)
+select count(*) filter (where not ok) as napak, count(*) as vrstic from preverbe;
+
+/* PODROBNO (samo ob napaki; vsako poizvedbo pozeni posebej):
 -- Preverba 1: pravice. Stolpec "ok" mora biti povsod true (in vrstic mora biti 15).
 select f.sig,
        has_function_privilege('anon',          f.sig::regprocedure, 'execute') as anon,
@@ -99,3 +131,4 @@ select p.oid::regprocedure::text as funkcija,
  where p.pronamespace = 'public'::regnamespace
    and p.proname in ('auth_email', 'gen_ref_code', 'mask_email', 'mask_name', 'waitlist_set_ref_code')
  order by 1;
+*/

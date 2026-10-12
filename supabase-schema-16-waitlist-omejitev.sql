@@ -2,13 +2,7 @@
 -- Varnostni pregled 12. 10. 2026 (outly-backend#223). POZENE MARTIN v Supabase SQL Editorju (projekt zbewqcxnvrwebxonvebx),
 -- po shemah 14 in 15 (od njiju ni tehnicno odvisna, a vrstni red je 14 -> 15 -> 16).
 --
--- Kaj je bilo narobe v join_waitlist (shema 9, v produkciji enaka):
---   (a) Ponovno posiljanje potrditve ('resent') ni steto nikamor. Napadalec je lahko ze obstojeco NEPOTRJENO vrstico (tuj
---       naslov) zasipal z mailom z luka@outly.si vsaki 2 minuti, neomejeno dolgo; ker so omejevale samo NOVE vrstice
---       (60/h), je to veljalo za vse nepotrjene naslove, ki so se nabrali v preteklosti. Posledica: poraba Brevo kvote,
---       slab sloves posiljatelja, nadlegovanje tujcev.
---   (b) Meja 60 novih vrstic/uro se je preverjala PRED vsem ostalim, zato je 61 smetnih prijav v uri vsem (tudi ze
---       potrjenim in tistim, ki le ponovno prosijo za mail) vrnilo 'busy'.
+-- Zakaj: ponovna posiljanja potrditvenega maila niso bila omejena, urna meja pa je stela samo nove vrstice (outly-backend#223).
 --
 -- Kaj naredi ta skripta (podpis funkcije, pravice in vrnjene vrednosti ostanejo enaki: 'invalid' | 'disposable' | 'busy' |
 -- 'already_confirmed' | 'sent' | 'resent'; waitlist.js se ne spremeni):
@@ -22,11 +16,7 @@
 --      pravi uporabniki v nekaj minutah potrdijo, mejo sprostijo, zato naval pravih prijav ne povzroca 'busy'. Meja se
 --      preverja samo tam, kjer bi funkcija res poslala mail (nova vrstica, ponovno posiljanje); 'already_confirmed',
 --      2-minutna zapora ('sent') in dosezena meja ponovnih posiljanj ('resent') ne vrnejo vec 'busy'.
---   OMEJITEV (iskreno): funkcija ne pozna IP-ja, zato ne more prepoznati napadalca od pravih uporabnikov. Kdor namenoma polni
---   mejo z 61 nepotrjenimi naslovi v uri, jo se vedno zapre za nove prijave do izteka ure (najvec 1 ura, ponavljati mora
---   vsako uro). Pravo zdravilo je preverjanje na robu (Cloudflare Turnstile ali prijava prek backenda z mejo po IP) - to je
---   locena odlocitev. Mejo steje po naslovih (vrstica se v uri steje enkrat), skupno pa jo omejuje se meja 3 ponovnih
---   posiljanj na vrstico: dolgorocno najvec 4 maili na naslov.
+--   OMEJITEV: meja je globalna (funkcija ne pozna IP-ja); nadaljnji ukrepi so v outly-backend#223.
 --   Stranski ucinek: pravi uporabnik, ki je ze 3x prosil za ponovno posiljanje, dobi odgovor 'resent' brez maila (stran mu
 --   pise "On its way"). Takemu je treba pomagati rocno (npr. v SQL Editorju: update public.waitlist_signups set confirm_sends = 0
 --   where lower(email) = '...';) ali pa se registrira v aplikaciji / na strani z geslom (sync_my_account potrdi naslov sam).
@@ -35,6 +25,8 @@
 --
 -- Povratno: pozeni funkcijo join_waitlist iz supabase-schema-9-referral.sql (razdelek 2, brez "drop function ... " vrstice)
 -- in po zelji: alter table public.waitlist_signups drop column if exists confirm_sends;
+
+begin;
 
 alter table public.waitlist_signups
   add column if not exists confirm_sends int not null default 0;
@@ -145,6 +137,8 @@ $$;
 -- Pravice kot doslej: anon in authenticated NAMERNO smeta klicati (waitlist.js z javnim kljucem).
 revoke all on function public.join_waitlist(text, boolean, boolean, text) from public;
 grant execute on function public.join_waitlist(text, boolean, boolean, text) to anon, authenticated;
+
+commit;
 
 -- Preverba (mora vrniti: stolpec dodan = true, funkcija ima podpis 4 parametrov, security definer, search_path=public,
 -- anon lahko klice = true, javno (PUBLIC) = false):
