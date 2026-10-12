@@ -61,7 +61,7 @@ export function NadzornaPlosca({ klub }) {
   const s = prodaja;
   const povzetek = (s && s.summary) || {};
   // Napis temelji na payment_mode TEGA kluba (backend #149); star backend ga nima -> kot doslej globalni `mode`.
-  // payment_mode "unavailable": kupci ne morejo kupovati, dokler klub ne poveze Stripa (Nastavitve -> Connect Stripe, views/posel.js).
+  // payment_mode "unavailable": kupci ne morejo kupovati; zakaj, pove payment_unavailable_reason (backend #221, opombaBrezPlacil spodaj).
   const brezStripa = !!s && s.payment_mode === "unavailable";
   const test = !!s && (s.payment_mode ? s.payment_mode === "test" : s.mode === "test");
   return html`<div class="zaslon plosca">
@@ -103,12 +103,12 @@ export function NadzornaPlosca({ klub }) {
 }
 
 /** Besedilo ob payment_mode "unavailable" po razlogu (backend #221). Star backend polja nima, null ali neznana vrednost = splosno besedilo kot doslej.
-    Povezava na Nastavitve samo za lastnika (podatke prodajalca in Stripe ureja samo on). */
+    Povezava samo za lastnika (podatke prodajalca in Stripe ureja samo on): podatki prodajalca -> Club info (/info, PodatkiProdajalca), Stripe -> Nastavitve. */
 function opombaBrezPlacil(razlog, jeLastnik, baza) {
-  const povezava = besedilo => html`<a href=${baza + "/settings"}>${besedilo}</a>`;
+  const povezava = (besedilo, pot = "/settings") => html`<a href=${baza + pot}>${besedilo}</a>`;
   if (razlog === "seller_incomplete") {
-    return jeLastnik ? povezava(t("Buyers can't purchase yet: complete your seller details in Settings."))
-      : t("Buyers can't purchase yet: the club owner needs to complete the seller details in Settings.");
+    return jeLastnik ? povezava(t("Buyers can't purchase yet: complete your seller details in Club info."), "/info")
+      : t("Buyers can't purchase yet: the club owner needs to complete the seller details in Club info.");
   }
   if (razlog === "payments_not_configured") return t("Payments aren't set up yet. Contact Outly.");
   return jeLastnik ? povezava(t("Buyers can't purchase yet. Connect Stripe in Settings, or contact Outly if it's already connected."))
