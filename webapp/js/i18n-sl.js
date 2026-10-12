@@ -1158,6 +1158,7 @@ export const SL = {
  "Seller details": "Podatki prodajalca",
  "Shown to buyers before payment and on receipts (required by consumer law).": "Kupci jih vidijo pred plačilom in na potrdilih (zahteva potrošniška zakonodaja).",
  "Only the club owner can change seller details.": "Podatke prodajalca lahko spremeni samo lastnik kluba.",
+ "Purchases aren't available yet: the organizer hasn't completed their seller details.": "Nakup še ni mogoč: organizator še ni izpolnil podatkov prodajalca.",
  "Company name": "Firma",
  "Registered address": "Sedež",
  "Registration number": "Matična številka",

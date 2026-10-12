@@ -127,7 +127,7 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
       if (ziv.current && odprtRef.current) { navigiraj("/app/guest/order"); return; }
       // List se je medtem odmontiral: zeton je shranjen, kupec ga najde na /app/guest/order (in v mailu).
     } catch (err) {
-      // Nakupa NE ponavljamo sami: uporabnik pritisne znova (isti kljuc, razen ob 422, 400 in 409 order_not_active).
+      // Nakupa NE ponavljamo sami: uporabnik pritisne znova (isti kljuc, razen ob 422, 400, 409 order_not_active, free_limit in seller_incomplete - jeKljucZavrzen v napake.js).
       const izid = izidNakupa(err);
       if (izid === "zavrzen") { pozabiKljucNakupa("gost", m, e.id, kljuc); pozabiGostNakup({ kljuc }); }   // 409 order_not_active, 422, 400: nov kljuc ob naslednjem kliku
       else oznaciIzidNakupa("gost", m, e.id, kljuc, izid);

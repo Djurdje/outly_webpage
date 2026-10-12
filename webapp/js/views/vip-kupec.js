@@ -8,7 +8,7 @@ import { send, pocistiPredpomnilnik, kljucNakupa, pozabiKljucNakupa, nerazresenN
 import { uidSeje, useSeja } from "../seja.js";
 import {
   sporocilo, ApiError, jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo,
-  jeNakupVObdelavi, NAKUP_V_OBDELAVI_S, izidNakupa, jeNarociloNeaktivno, nakupNapakaSporocilo, nakupBrezOdgovoraSporocilo, potekloPlacilo, placiloVObdelavi, placiloNepripravljeno, jeMejaBrezplacnih
+  jeNakupVObdelavi, NAKUP_V_OBDELAVI_S, izidNakupa, jeNarociloNeaktivno, nakupNapakaSporocilo, nakupBrezOdgovoraSporocilo, potekloPlacilo, placiloVObdelavi, placiloNepripravljeno, jeMejaBrezplacnih, jeProdajalecNepopoln
 } from "../napake.js";
 import { navigiraj } from "../usmerjanje.js";
 import { odpriStripe, izidStripeNakupa, jeStripeUrl } from "../stripe.js";
@@ -170,8 +170,9 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
       // 409 order_not_active tudi NI "zasedeno": prejsnje narocilo ni vec aktivno - izbira ostane, tloris se tiho osvezi (miza je morda spet prosta).
       if (jeNarociloNeaktivno(err)) nalozi(true, { miza: miza.id, paket: paketId });
       else if (jeMejaBrezplacnih(err)) { /* miza za 0 EUR: izbira ostane, sporocilo pove omejitev */ }
+      else if (jeProdajalecNepopoln(err)) { /* klub brez podatkov prodajalca: miza ni zasedena, izbira ostane, sporocilo pove razlog */ }
       else if (err && err.status === 409 && !jeNakupVObdelavi(err)) { nalozi(true); setMizaId(null); }   // zasedeno ali prodaja zaprta: osvezi tloris
-      // Nakupa NE ponavljamo sami: uporabnik pritisne znova (isti kljuc, razen ob 422, 400 in 409 order_not_active).
+      // Nakupa NE ponavljamo sami: uporabnik pritisne znova (isti kljuc, razen ob 422, 400, 409 order_not_active, free_limit in seller_incomplete - jeKljucZavrzen v napake.js).
       const izid = izidNakupa(err);
       if (izid === "zavrzen") pozabiKljucNakupa("vip", uid, e.id, kljuc);   // nov nakup
       else oznaciIzidNakupa("vip", uid, e.id, kljuc, izid);   // nerazresen: predizpolnitev in napotek ob ponovnem odprtju
