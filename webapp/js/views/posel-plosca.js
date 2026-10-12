@@ -69,9 +69,7 @@ export function NadzornaPlosca({ klub }) {
     <div class="naslov-z-gumbom"><h1 class="velik-naslov">${t("Dashboard")}</h1>${test ? html`<span class="znacka-test">${t("TEST")}</span>` : null}</div>
     ${ime ? html`<p class="podnaslov-plosce">${ime}</p>` : null}
     ${test ? html`<p class="opomba oranzna">${t("Test mode: purchases are simulated, no money moves. Numbers show how the real dashboard will look.")}</p>` : null}
-    ${brezStripa ? html`<p class="opomba oranzna" role="status">${jeLastnik
-      ? html`<a href=${baza + "/settings"}>${t("Buyers can't purchase yet. Connect Stripe in Settings, or contact Outly if it's already connected.")}</a>`
-      : t("Buyers can't purchase yet. Ask the club owner to connect Stripe, or contact Outly if it's already connected.")}</p>` : null}
+    ${brezStripa ? html`<p class="opomba oranzna" role="status">${opombaBrezPlacil(s.payment_unavailable_reason, jeLastnik, baza)}</p>` : null}
     ${nalaga && !s ? html`<${Nalaganje} />` : null}
     ${napaka && !s ? html`<${PoslovnaNapaka} napaka=${napaka} znova=${nalozi} />` : null}
     ${napaka && s ? html`<${Napaka} besedilo=${sporocilo(napaka)} />` : null}
@@ -102,6 +100,19 @@ export function NadzornaPlosca({ klub }) {
         </a>`)}
       </div>`}` : null}
   </div>`;
+}
+
+/** Besedilo ob payment_mode "unavailable" po razlogu (backend #221). Star backend polja nima, null ali neznana vrednost = splosno besedilo kot doslej.
+    Povezava na Nastavitve samo za lastnika (podatke prodajalca in Stripe ureja samo on). */
+function opombaBrezPlacil(razlog, jeLastnik, baza) {
+  const povezava = besedilo => html`<a href=${baza + "/settings"}>${besedilo}</a>`;
+  if (razlog === "seller_incomplete") {
+    return jeLastnik ? povezava(t("Buyers can't purchase yet: complete your seller details in Settings."))
+      : t("Buyers can't purchase yet: the club owner needs to complete the seller details in Settings.");
+  }
+  if (razlog === "payments_not_configured") return t("Payments aren't set up yet. Contact Outly.");
+  return jeLastnik ? povezava(t("Buyers can't purchase yet. Connect Stripe in Settings, or contact Outly if it's already connected."))
+    : t("Buyers can't purchase yet. Ask the club owner to connect Stripe, or contact Outly if it's already connected.");
 }
 
 function Stevilka({ naslov, vrednost, opis, modra }) {
