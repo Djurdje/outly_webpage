@@ -362,7 +362,7 @@ export function VstopniceDogodkaKluba({ klub, dogodek }) {
       const vstopnice = (Array.isArray(v) ? v : []).map(x => ({ id: x.id, status: x.status, qr: typeof x.qr === "string" ? x.qr : "",
         public_ref: x.public_ref || "", kratka: String(x.serial || "").slice(0, 8).toUpperCase(),
         is_vip: x.is_vip === true, table_label: x.table_label || "", package_name: x.package_name || "",
-        payment_disputed: x.payment_disputed === true,
+        payment_disputed: x.payment_disputed === true,   // polje na tej poti doda backend PR #233; do takrat false (rocni vstop zavrne streznik z 409)
         is_guest_list: x.is_guest_list === true, guest_list_host_username: x.guest_list_host_username || "" }));
       setS(x => ({ nalaga: false, napaka: null, vstopnice, naslov: e ? e.title : x.naslov,
         // Ob padlem branju obdrzimo prej znan dogodek (sicer bi po vsakem vstopu zgubili okno).

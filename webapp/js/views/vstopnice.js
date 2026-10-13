@@ -106,7 +106,7 @@ export function Vstopnice() {
 function Karta({ v, odprta, preklopi, stara, poslji }) {
   const jaz = useSeja(x => (x.me && x.me.username) || "");
   const uporabljena = v.status === "used";
-  const spor = vSporu(v) && v.status === "valid";
+  const spor = vSporu(v) && !stara;   // pretekla vstopnica ostane "ENDED"
   const stanje = uporabljena ? t("ALREADY USED") : spor ? t("Payment disputed") : v.status === "valid" ? (stara ? t("ENDED") : "") : statusNapis(v.status);
   const vip = v.is_vip === true;
   return html`<div class=${"vstopnica" + (stara ? " stara" : "") + (vip ? " vip" : "") + (spor ? " spor" : "")}>
@@ -171,7 +171,7 @@ function Skupina({ vst, stara, razprta, preklopi, odprta, preklopiVstopnico, pos
       ${!stara && razdeljive.length >= 2 ? html`<button type="button" class="gumb-siv majhen" onClick=${() => razdeli(razdeljive)}>
         <${Ikona} ime="users" velikost=${16} /> ${t("Send to friends")}</button>` : null}
       ${vst.map((x, i) => {
-        const spor = vSporu(x) && x.status === "valid";
+        const spor = vSporu(x) && !stara;
         const stanje = x.status === "used" ? t("USED") : spor ? t("Payment disputed") : x.status === "valid" ? (stara ? t("ENDED") : t("VALID")) : statusNapis(x.status);
         const naVoljo = !stara && x.status === "valid";
         const od = x.transferred && x.buyer_username ? t("from {name}", { name: x.buyer_username }) : "";

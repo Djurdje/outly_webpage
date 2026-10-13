@@ -67,7 +67,7 @@ export function GostVstopnica() {
   const zacetek = e.start_at || v.start_at ? new Date(e.start_at || v.start_at) : null;
   const kraj = [e.address, e.city].map(x => (x || "").trim()).filter(Boolean).join(", ");
   const minStarost = Number(e.min_age ?? v.min_age) || 0;
-  const spor = vSporu(v) && v.status === "valid";
+  const spor = vSporu(v);
   const veljavna = (v.status === "valid" || v.status === "paid") && !!v.qr && !spor;
   const uporabljena = v.status === "used";
   const dogodek = e.id != null ? html`<a class="kartica-vrstica" href=${"/app/event/" + e.id}>

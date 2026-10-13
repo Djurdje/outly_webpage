@@ -176,7 +176,7 @@ export function GostNarocilo() {
         <strong>${e.title}</strong>
         ${v.status === "valid" && !vSporu(v)
           ? html`<${QrTelo} v=${{ ...v, public_ref: v.public_ref || ref, min_age: v.min_age ?? e.min_age }} />`
-          : vSporu(v) && v.status === "valid" ? html`<${QrTelo} v=${v} />`
+          : vSporu(v) ? html`<${QrTelo} v=${v} />`
           : html`<span class="cip-plan">${v.status === "used" ? t("ALREADY USED") : statusNapis(v.status)}</span>`}
       </div>`)}
     </div>
