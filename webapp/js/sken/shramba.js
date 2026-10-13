@@ -151,3 +151,19 @@ export function zahtevajTrajno() {
 export async function pocistiPodatkeKluba() {
   try { await (await odpriShrambo()).kvPocisti(["seznam:", "dogodki:", "izbran:"]); } catch { /* najboljsi trud */ }
 }
+
+/* Hramba poslanih skenov: najvec 3 dni od skena (politika zasebnosti, razdelka 2 in 4). Neposlani skeni ("caka") ostanejo, dokler
+   se ne posljejo. Isti pogoj uporablja skener ob odprtju kluba (motor.js) in ciscenje ob zagonu aplikacije (spodaj). */
+export const OBDRZI_POSLANE_MS = 3 * 24 * 3600e3;
+export const jeStarPoslan = (r, zdaj) => !!r && r.stanje === "poslan" && zdaj - (Date.parse(r.scanned_at) || 0) > OBDRZI_POSLANE_MS;
+
+/** Ob zagonu aplikacije: pobrise poslane skene, starejse od 3 dni, za VSE klube (tudi konflikte, ki jih osebje ni videlo; streznik
+    jih ima). Najboljsi trud: napaka shrambe nikoli ne vrze. Vrne stevilo izbrisanih. */
+export async function pocistiStareSkene(zdaj = Date.now()) {
+  try {
+    const shramba = await odpriShrambo();
+    const stari = (await shramba.skeniVsi()).filter(r => jeStarPoslan(r, zdaj));
+    const izidi = await Promise.allSettled(stari.map(r => shramba.skenDel(r.id)));
+    return izidi.filter(i => i.status === "fulfilled").length;
+  } catch { return 0; }
+}

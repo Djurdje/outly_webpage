@@ -70,7 +70,7 @@ function poslusajSejo() {
   koNalozen(c => c.auth.onAuthStateChange((dogodek, nova) => {
     const prej = zadnjiUid;
     posodobiIzSeje(nova);
-    if (dogodek === "SIGNED_OUT") { seja.set({ me: null }); pocistiPredpomnilnik(); pozabiVseKljuceNakupa(); }
+    if (dogodek === "SIGNED_OUT") { seja.set({ me: null }); pocistiPredpomnilnik(); pozabiVseKljuceNakupa(); pocistiNaOdjavi().catch(() => {}); }
     else if (nova && nova.user && nova.user.id !== prej) {
       if (prej) pozabiVseKljuceNakupa();   // drug uporabnik: kljuci nakupov prejsnjega ne smejo ostati
       naloziMe();
@@ -108,13 +108,30 @@ async function pocistiSkener() {
   } catch { /* najboljsi trud */ }
 }
 
-export async function odjava(obvestilo = "") {
+/* Poslani skeni so v brskalniku najvec 3 dni (politika zasebnosti): ob vsakem zagonu pobrisemo starejse, za vse klube.
+   Klice main.js PO izrisu, brez cakanja. Samo ce je bil skener v tem brskalniku kdaj odprt (id naprave v localStorage):
+   sicer ne nalagamo modula in ne ustvarjamo baze IndexedDB obiskovalcem, ki skenerja nikoli niso videli. */
+export function pocistiStareSkeneOdZagona() {
+  let uporabljen = false;
+  try { uporabljen = !!localStorage.getItem("outly_sken_naprava"); } catch { /* brez */ }
+  if (!uporabljen) return;
+  const zazeni = () => import("./sken/shramba.js").then(m => m.pocistiStareSkene()).catch(() => {});
+  if (window.requestIdleCallback) requestIdleCallback(zazeni, { timeout: 5000 }); else setTimeout(zazeni, 3000);
+}
+
+/* Vse, kar mora ob odjavi izginiti iz brskalnika: nastavitve, obraz profila, seznami skenerja. Isto tece, ko odjavo zazna
+   odjemalec Supabase v tem ali v DRUGEM zavihku (dogodek SIGNED_OUT), ne samo ob kliku "Log out" v tem zavihku. */
+async function pocistiNaOdjavi() {
   // Lokalne nastavitve niso vezane na racun - na skupni napravi jih ob odjavi pocistimo (zasebnost).
   try { localStorage.removeItem("outly_nastavitve"); } catch { /* brez */ }
-  pozabiCakajociMail();   // e-naslov iz prijavnega toka ne sme ostati na skupni napravi
   nastavitve.set({ genres: [], maxKm: 20, ageMin: 18, ageMax: 30, priceMin: 0, priceMax: 3000, shranjeno: false });
   nastaviObraz("club");   // obraz lastnika (klubski/osebni) je vezan na prijavljeno osebo
   await pocistiSkener();
+}
+
+export async function odjava(obvestilo = "") {
+  pozabiCakajociMail();   // e-naslov iz prijavnega toka ne sme ostati na skupni napravi
+  await pocistiNaOdjavi();
   try { await supabase.auth.signOut({ scope: "local" }); } catch { /* lokalno vseeno pocistimo */ }
   pocistiPredpomnilnik();
   pozabiVseKljuceNakupa();   // Idempotency-Key nakupa je vezan na uporabnika: naslednji uporabnik ga ne sme podedovati
