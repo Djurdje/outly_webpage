@@ -19,7 +19,7 @@
   <div class="datum">Stanje 13. 10. 2026 · aplikacija za iPhone in spletna aplikacija outly.si/app</div>
 </header>
 
-<nav class="kazalo" aria-label="Kazalo"><h2>Kazalo</h2><ol><li><a href="#r1">Kaj je Outly</a></li><li><a href="#r2">Vloge v aplikaciji</a></li><li><a href="#r3">Jedro aplikacije: Domov</a></li><li><a href="#r4">Za obiskovalce</a></li><li><a href="#r5">Za zaposlene v klubu</a></li><li><a href="#r6">Za klube</a></li><li><a href="#r7">Kako klub dobi denar</a></li><li><a href="#r8">Pogosta vprašanja</a></li></ol></nav>
+<nav class="kazalo" aria-label="Kazalo"><h2>Kazalo</h2><ol><li><a href="#r1">Kaj je Outly</a></li><li><a href="#r2">Vloge v aplikaciji</a></li><li><a href="#r3">Jedro aplikacije: Domov</a></li><li><a href="#r4">Za obiskovalce</a></li><li><a href="#r5">Za zaposlene v klubu</a></li><li><a href="#r6">Za klube</a></li><li><a href="#r7">Kako klub dobi denar</a></li><li><a href="#r8">Kako dobiš aplikacijo (TestFlight)</a></li></ol></nav>
 
 <h2 id="r1"><span class="st">1</span>Kaj je Outly</h2>
 
@@ -155,19 +155,15 @@
 
 <p>Zaposleni uporablja svoj običajni Outly račun. Vse za delo je v <b>Profil → Moji klubi</b> <span class="en">My Clubs</span> → klub → <b>Prikaži</b> <span class="en">View</span>.</p>
 
-<h3>Kaj vidi posamezna vloga</h3>
+<h3>Kaj ima posamezna vloga</h3>
 
-<div class="drsnik"><table>
-  <thead><tr><th>Funkcija</th><th>Upravitelj</th><th>Vratar</th><th>Natakar</th></tr></thead>
-  <tbody>
-    <tr><td>Skeniraj vstopnico</td><td>da</td><td>da</td><td>ne</td></tr>
-    <tr><td>Strežba miz</td><td>da</td><td>ne</td><td>da</td></tr>
-    <tr><td>Pregled, dogodki, stran kluba, ekipa</td><td>da</td><td>ne</td><td>ne</td></tr>
-    <tr><td>Zapusti ekipo</td><td>da</td><td>da</td><td>da</td></tr>
-  </tbody>
-</table></div>
+<ul>
+  <li><b>Upravitelj</b> <span class="en">Manager</span>: skenira vstopnice, streže VIP mize, ureja dogodke in stran kluba, vidi Pregled in sestavlja ekipo vratarjev in natakarjev. Ne more dodati drugega upravitelja, ne vidi podatkov prodajalca in ne povezuje Stripa.</li>
+  <li><b>Vratar</b> <span class="en">Door staff</span>: samo skenira vstopnice na vhodu.</li>
+  <li><b>Natakar</b> <span class="en">Bartender</span>: samo streže VIP mize. Podatkov o gostih ne vidi.</li>
+</ul>
 
-<p>Vse, kar zmore upravitelj, je opisano tudi v razdelku <i>Za klube</i>. Upravitelj ne more dodati drugega upravitelja in ne vidi podatkov prodajalca.</p>
+<p>Vsak lahko ekipo kadarkoli zapusti. Kar zmore upravitelj, je podrobno opisano v razdelku <i>Za klube</i>.</p>
 
 <h3>Sprejmi vabilo v ekipo</h3>
 
@@ -214,13 +210,13 @@
 <h3>Streži VIP mize (natakar, upravitelj)</h3>
 
 <ol>
-  <li><b>Moji klubi</b> → klub → <b>Strežba miz</b> <span class="en">Table service</span>.</li>
-  <li>Izberi dogodek (privzeto tisti, ki teče).</li>
-  <li>Miza se pokaže, ko vratar skenira VIP vstopnico. Vidiš mizo, paket in število mest.</li>
+  <li>Ko vratar skenira VIP vstopnico, dobiš obvestilo <b>VIP miza</b> <span class="en">VIP table</span>, tudi na zaklenjenem telefonu.</li>
+  <li>Pritisni obvestilo. Odpre se <b>Strežba miz</b> <span class="en">Table service</span> za dogodek, ki teče.</li>
+  <li>Vidiš mizo, paket in število mest.</li>
   <li>Ko postrežeš, pritisni <b>Dostavljeno</b> <span class="en">Delivered</span>. Napaka? <b>Razveljavi</b> <span class="en">Undo</span>.</li>
 </ol>
 
-<p>Seznam se osveži sam na 30 sekund ali s potegom navzdol.</p>
+<p>Obvestila moraš ob prvem zagonu aplikacije dovoliti. Strežbo miz odpreš tudi ročno: <b>Moji klubi</b> → klub → <b>Strežba miz</b>.</p>
 
 <h3>Zapusti ekipo</h3>
 
@@ -413,31 +409,34 @@
 
 <p class="opomba"><b>Trenutno stanje:</b> Outly je v testnem načinu. Nakupi so simulirani, denar se še ne premika (oznaka <b>TEST</b> v Pregledu). Ko preklopimo na pravo plačevanje, klube obvestimo.</p>
 
-<h2 id="r8"><span class="st">8</span>Pogosta vprašanja</h2>
+<h2 id="r8"><span class="st">8</span>Kako dobiš aplikacijo (TestFlight)</h2>
 
-<p class="vprasanje">Kje dobim aplikacijo?</p>
-<p>Aplikacija za iPhone je trenutno v testiranju prek TestFlighta. Vse funkcije so tudi v brskalniku na <a href="https://outly.si/app">outly.si/app</a>, tudi za Android, z istim računom.</p>
+<p>Aplikacija za iPhone je zdaj v testiranju. Namešča se prek Applove aplikacije <b>TestFlight</b>, ne prek App Stora.</p>
 
-<p class="vprasanje">Lahko vratar z Androidom skenira vstopnice?</p>
-<p>Da. Skener je tudi v spletni aplikaciji na <a href="https://outly.si/app">outly.si/app</a>, za vse vloge v klubu.</p>
+<h3>Kaj potrebuješ</h3>
 
-<p class="vprasanje">Vstopnice ni med Vstopnicami.</p>
-<p>Preveri, ali si prijavljen z računom, s katerim si jo kupil. Če ti jo je poslal prijatelj, je v tvojem računu z novo QR-kodo.</p>
+<ul>
+  <li>iPhone z iOS 17 ali novejšim.</li>
+  <li>Apple račun (Apple ID).</li>
+</ul>
 
-<p class="vprasanje">Koda za potrditev e-pošte ni prišla.</p>
-<p>Preveri mapo z neželeno pošto, nato pritisni <b>Znova pošlji kodo</b>.</p>
+<h3>Koraki</h3>
 
-<p class="vprasanje">Pozabil sem geslo.</p>
-<p>Na prijavi pritisni <b>Pozabljeno geslo?</b>. Geslo ponastaviš s kodo, ki jo dobiš po e-pošti.</p>
+<ol>
+  <li>Pošlji nam e-naslov svojega Apple računa na <a href="mailto:luka@outly.si">luka@outly.si</a>.</li>
+  <li>Iz App Stora namesti aplikacijo <b>TestFlight</b>.</li>
+  <li>Po e-pošti dobiš povabilo. Odpri ga na iPhonu in pritisni <b>View in TestFlight</b>.</li>
+  <li>V TestFlightu pritisni <b>Accept</b>, nato <b>Install</b>.</li>
+  <li>Outly se pokaže na začetnem zaslonu. Odpri ga in se registriraj ali prijavi.</li>
+</ol>
 
-<p class="vprasanje">Kako dodam svoj klub?</p>
-<p><b>Profil → Moj račun → Prošnja za ustvarjalca</b>. Ko Outly prošnjo odobri, se odpre nastavitev kluba.</p>
+<h3>Posodobitve</h3>
 
-<p class="vprasanje">Delam v več klubih. Kako preklopim?</p>
-<p>V <b>Moji klubi</b> ima vsak klub svojo kartico z vlogo. Odpri tistega, v katerem ta večer delaš.</p>
+<p>Novo različico TestFlight javi sam. Odpri TestFlight in pritisni <b>Update</b>.</p>
 
-<p class="vprasanje">Kako izbrišem račun?</p>
-<p><b>Profil → Pomoč</b> → članek <i>Izbriši svoj račun</i>.</p>
+<h3>Android ali računalnik</h3>
+
+<p>TestFlight je samo za iPhone. Vse funkcije so tudi v brskalniku na <a href="https://outly.si/app">outly.si/app</a>, z istim računom. Tam lahko vratar z Androidom tudi skenira vstopnice.</p>
 
 <footer>
   Vprašanja in težave: <a href="mailto:luka@outly.si">luka@outly.si</a> ·
