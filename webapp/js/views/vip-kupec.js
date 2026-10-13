@@ -179,7 +179,7 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
       else if (jeProdajalecNepopoln(err)) { /* klub brez podatkov prodajalca: miza ni zasedena, izbira ostane, sporocilo pove razlog */ }
       else if (jeDemoKlub(err)) { /* demo klub: narocila ni, miza ostane izbrana, sporocilo pove razlog */ }
       else if (err && err.status === 409 && !jeNakupVObdelavi(err)) { nalozi(true); setMizaId(null); }   // zasedeno ali prodaja zaprta: osvezi tloris
-      // Nakupa NE ponavljamo sami: uporabnik pritisne znova (isti kljuc, razen ob 422, 400, 409 order_not_active, free_limit in seller_incomplete - jeKljucZavrzen v napake.js).
+      // Nakupa NE ponavljamo sami: uporabnik pritisne znova (isti kljuc, razen ob 422, 400, 409 order_not_active, free_limit, seller_incomplete in demo_club - jeKljucZavrzen v napake.js).
       const izid = izidNakupa(err);
       if (izid === "zavrzen") pozabiKljucNakupa("vip", uid, e.id, kljuc);   // nov nakup
       else oznaciIzidNakupa("vip", uid, e.id, kljuc, izid);   // nerazresen: predizpolnitev in napotek ob ponovnem odprtju

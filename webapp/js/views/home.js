@@ -271,7 +271,6 @@ function KarticaHit({ dogodek: e, klub, napis }) {
     <div class="kh-levo">
       <span class="kh-logo">${klub && klub.logo_url ? html`<${Slika} src=${klub.logo_url} sirina=${120} alt="" />` : html`<${Ikona} ime="building" velikost=${18} />`}</span>
       <div class="kh-besedilo">
-        ${jeDemo(e) ? html`<${OznakaDemo} />` : null}
         <span class="nadnapis">${napis}</span>
         <strong>${e.title}</strong>
         <span class="kh-meta">${[klub && klub.name, danInUra(e._zacetek)].filter(Boolean).join(" · ")}</span>
@@ -279,7 +278,7 @@ function KarticaHit({ dogodek: e, klub, napis }) {
         ${e.sold_count > 0 ? html`<span class="kh-gre">${t("{n} going", { n: e.sold_count })}</span>` : null}
       </div>
     </div>
-    <div class="kh-plakat"><${Slika} src=${e.poster_url} sirina=${300} alt="" /></div>
+    <div class="kh-plakat"><${Slika} src=${e.poster_url} sirina=${300} alt="" />${jeDemo(e) ? html`<${OznakaDemo} kot=${true} />` : null}</div>
   </a>`;
 }
 

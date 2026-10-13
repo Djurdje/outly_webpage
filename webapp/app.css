@@ -230,7 +230,7 @@ h1,h2,h3,p{ margin:0; }
 .kh-meta{ font-size:11px; font-weight:500; color:var(--b70); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
 .kh-zanri{ font-size:10px; font-weight:700; letter-spacing:.05em; color:rgba(255,255,255,.5); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
 .kh-gre{ font-size:11px; font-weight:600; padding:3px 8px; border-radius:999px; background:rgba(255,255,255,.14); }
-.kh-plakat{ width:130px; flex:none; }
+.kh-plakat{ position:relative; width:130px; flex:none; }
 
 .kartica-velika{ position:relative; display:block; height:380px; border-radius:18px; overflow:hidden; border:1px solid rgba(255,255,255,.15); }
 .kartica-velika > .slika{ position:absolute; inset:0; }

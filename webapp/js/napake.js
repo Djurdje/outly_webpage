@@ -31,7 +31,7 @@ export function nakupPocakajS(e, privzeto = NAKUP_PREMOR_S) {
   return s >= 1 ? Math.min(Math.ceil(s), 30) : privzeto;
 }
 
-/* Napake idempotentnega kljuca (backend #123) so JSON { error, message }; ostali odgovori nakupa so navadno besedilo.
+/* Napake idempotentnega kljuca (backend #123) in 409 demo_club (backend #243) so JSON { error, message }; ostali odgovori nakupa so navadno besedilo.
    Koda se bere iz `raw` (ApiError hrani telo kot besedilo). */
 export function kodaNapake(e) {
   if (!(e instanceof ApiError) || !e.raw || e.raw[0] !== "{") return "";
@@ -54,7 +54,7 @@ export const jeKljucNeveljaven = e => e instanceof ApiError && e.status === 400 
    Neuspela osvezitev seje to NI (zahtevek ni odsel). Samo po takem izidu se list ob ponovnem odprtju predizpolni. */
 export const jeNerazresenIzid = e => jeNakupVObdelavi(e) || (e instanceof ApiError && e.status === -1 && !jeOsvezitevSeje(e));
 /* Napake, po katerih se kljuc zavrze (nov nakup): 422, 400 neveljaven kljuc, 409 order_not_active, 409 free_limit,
-   409 seller_incomplete. */
+   409 seller_incomplete, 409 demo_club (narocila ni nastalo). */
 export const jeKljucZavrzen = e => jeKljucPonovljen(e) || jeKljucNeveljaven(e) || jeNarociloNeaktivno(e) || jeMejaBrezplacnih(e) || jeProdajalecNepopoln(e) || jeDemoKlub(e);
 /* Izid napake nakupa za shrambo kljucev (api.js oznaciIzidNakupa): "zavrzen" (nov nakup), "neposlan" (zahtevek ni odsel),
    "nerazresen" (narocilo je morda nastalo) ali "dokoncen". */
