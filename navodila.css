@@ -10,7 +10,7 @@
   unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
 }
 :root{
-  --bg:#111111; --panel:#171717; --text:#EDEDED; --muted:#A9A9A9; --faint:#7A7A7A;
+  --bg:#111111; --panel:#171717; --text:#EDEDED; --muted:#A9A9A9; --faint:#8C8C8C;
   --line:rgba(255,255,255,.09); --link:#9DB4FF;
   --ok:#3FBF7F; --stop:#F06A6A; --check:#E8B44C;
 }
@@ -58,4 +58,5 @@ tbody tr:last-child td{border-bottom:0}
 .vprasanje{margin:0 0 4px;font-weight:650}
 .vprasanje + p{color:var(--muted)}
 footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);font-size:13.5px;color:var(--faint)}
-@media(max-width:560px){th,td{padding:10px 12px} td:first-child{width:38%}}
+@media(max-width:560px){th,td{padding:10px 12px} .dva td:first-child{width:38%}}
+td:has(.pika){white-space:nowrap}
