@@ -4,7 +4,7 @@ import { html, useEffect, useRef, useState } from "../lib.js";
 import { t, tn } from "../i18n.js";
 import { send, pocistiPlacanoPlacilo } from "../api.js";
 import { sporocilo, kodaNapake } from "../napake.js";
-import { danInUra, statusNapis } from "../oblika.js";
+import { danInUra, statusNapis, vSporu } from "../oblika.js";
 import { GlavaNazaj, Nalaganje, Napaka, Ikona, Slika, Avatar, List } from "../ui.js";
 import { KodaQR } from "../qr.js";
 import { VipVrstica, OznakaGuestList, doOseb } from "../vip.js";
@@ -106,16 +106,17 @@ export function Vstopnice() {
 function Karta({ v, odprta, preklopi, stara, poslji }) {
   const jaz = useSeja(x => (x.me && x.me.username) || "");
   const uporabljena = v.status === "used";
-  const stanje = uporabljena ? t("ALREADY USED") : v.status === "valid" ? (stara ? t("ENDED") : "") : statusNapis(v.status);
+  const spor = vSporu(v) && v.status === "valid";
+  const stanje = uporabljena ? t("ALREADY USED") : spor ? t("Payment disputed") : v.status === "valid" ? (stara ? t("ENDED") : "") : statusNapis(v.status);
   const vip = v.is_vip === true;
-  return html`<div class=${"vstopnica" + (stara ? " stara" : "") + (vip ? " vip" : "")}>
+  return html`<div class=${"vstopnica" + (stara ? " stara" : "") + (vip ? " vip" : "") + (spor ? " spor" : "")}>
     <button type="button" class="vstopnica-glava-gumb" onClick=${preklopi} disabled=${stara} aria-expanded=${odprta}>
       <span class="vd-slika"><${Slika} src=${v.poster_url} sirina=${150} alt="" /></span>
       <span class="kv-besedilo"><span class="nadnapis">${(v.club_name || "").toUpperCase()}</span><strong>${v.event_title}</strong>
         <span>${danInUra(v._zacetek)}</span>
         ${vip ? html`<${VipVrstica} v=${v} />` : null}
         <${OznakaGuestList} v=${v} jaz=${jaz} /></span>
-      ${stanje ? html`<span class="cip-plan">${stanje}</span>` : null}
+      ${stanje ? html`<span class=${"cip-plan" + (spor ? " spor" : "")}>${stanje}</span>` : null}
     </button>
     ${odprta && !stara ? html`<${QrTelo} v=${v} poslji=${poslji} />` : null}
   </div>`;
@@ -124,6 +125,16 @@ function Karta({ v, odprta, preklopi, stara, poslji }) {
 /* QR, polja in "Send to a friend" ene vstopnice (v navadni karti in v skupini VIP mize). */
 export function QrTelo({ v, poslji }) {
   const vip = v.is_vip === true;
+  // Placilo v sporu (chargeback): QR se NE pokaze (ne sme izgledati veljaven), prenos je blokiran.
+  if (vSporu(v)) return html`<div class="vstopnica-qr vstopnica-spor" role="alert" data-testid="vstopnica-spor">
+    <${Ikona} ime="circle-x" velikost=${34} />
+    <strong>${t("Payment disputed")}</strong>
+    <p class="opomba srednje">${t("This ticket is not valid while its payment is disputed. Contact Outly if you think this is a mistake.")}</p>
+    <div class="vstopnica-polja">
+      <span><small>${t("ORDER")}</small>${v.public_ref}</span>
+      <span><small>${t("TICKET")}</small>${String(v.serial || "").slice(0, 8).toUpperCase()}</span>
+    </div>
+  </div>`;
   return html`<div class="vstopnica-qr">
     ${vip && (v.package_description || v.table_seats) ? html`<div class="vip-paket-opis">
       ${v.package_description ? html`<span>${v.package_description}</span>` : null}
@@ -145,7 +156,7 @@ export function QrTelo({ v, poslji }) {
    kompaktnih vrstic "Ticket N"; klik na vrstico pokaze QR te vstopnice. */
 function Skupina({ vst, stara, razprta, preklopi, odprta, preklopiVstopnico, poslji, razdeli }) {
   const v = vst[0];
-  const razdeljive = vst.filter(x => x.status === "valid" && x.transferable !== false);
+  const razdeljive = vst.filter(x => x.status === "valid" && x.transferable !== false && !vSporu(x));
   const id = "skupina-" + v.order_id + (stara ? "-s" : "-p");
   return html`<div class=${"vstopnica vip skupina" + (stara ? " stara" : "")}>
     <button type="button" class="vstopnica-glava-gumb" onClick=${preklopi} aria-expanded=${razprta} aria-controls=${id}>
@@ -160,7 +171,8 @@ function Skupina({ vst, stara, razprta, preklopi, odprta, preklopiVstopnico, pos
       ${!stara && razdeljive.length >= 2 ? html`<button type="button" class="gumb-siv majhen" onClick=${() => razdeli(razdeljive)}>
         <${Ikona} ime="users" velikost=${16} /> ${t("Send to friends")}</button>` : null}
       ${vst.map((x, i) => {
-        const stanje = x.status === "used" ? t("USED") : x.status === "valid" ? (stara ? t("ENDED") : t("VALID")) : statusNapis(x.status);
+        const spor = vSporu(x) && x.status === "valid";
+        const stanje = x.status === "used" ? t("USED") : spor ? t("Payment disputed") : x.status === "valid" ? (stara ? t("ENDED") : t("VALID")) : statusNapis(x.status);
         const naVoljo = !stara && x.status === "valid";
         const od = x.transferred && x.buyer_username ? t("from {name}", { name: x.buyer_username }) : "";
         const serial = String(x.serial || "").slice(0, 8).toUpperCase();
@@ -169,7 +181,7 @@ function Skupina({ vst, stara, razprta, preklopi, odprta, preklopiVstopnico, pos
           <button type="button" class="skupina-vrstica" onClick=${() => preklopiVstopnico(x.id)} disabled=${!naVoljo} aria-expanded=${o}>
             <span class="kv-besedilo"><strong>${t("Ticket {n}", { n: i + 1 })}</strong>
               ${serial || od ? html`<span>${[serial, od].filter(Boolean).join(" · ")}</span>` : null}</span>
-            <span class="cip-plan">${stanje}</span>
+            <span class=${"cip-plan" + (spor ? " spor" : "")}>${stanje}</span>
             ${naVoljo ? html`<${Ikona} ime="chevron-down" velikost=${16} razred=${"utisano skupina-puscica" + (o ? " odprta" : "")} />` : null}
           </button>
           ${o ? html`<${QrTelo} v=${x} poslji=${poslji} />` : null}

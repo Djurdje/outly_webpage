@@ -25,6 +25,7 @@ export const naslovRezultata = r => {
     case "unknown": return t("UNKNOWN TICKET");
     case "unpaid": return t("NOT PAID");
     case "not_today": return t("NOT TODAY'S EVENT");
+    case "payment_disputed": return t("Payment disputed");
     default: return t("REFUSED");
   }
 };
@@ -33,6 +34,8 @@ const uraMinute = d => d.toLocaleTimeString(locale(), { hour: "2-digit", minute:
 
 /** Sporocilo streznika (angl.) -> prevod, ce ga imamo; used_at doda uro prvega skena. */
 export function opisRezultata(r) {
+  // Spor (chargeback): vedno nase besedilo za vratarja (streznikovo sporocilo je angleski opis za razvijalca).
+  if (r.result === "payment_disputed") return t("Ticket not valid. Send the guest to the club manager.");
   const deli = [t(String(r.message || ""))];
   if (r.result === "already_used" && r.used_at) {
     const d = new Date(r.used_at);
@@ -57,6 +60,7 @@ function besedilaSklepa(s) {
     case "neveljavna": return [t("INVALID CODE"), t("The signature does not match. Outly did not issue this code.")];
     case "ni-vstopnica": return [t("NOT A TICKET"), t("This is not an Outly ticket code.")];
     case "neplacano": return [t("NOT PAID"), t("The order for this ticket is not paid.")];
+    case "placilo-v-sporu": return [t("Payment disputed"), t("Ticket not valid. Send the guest to the club manager.")];
     case "stara-potrebna-povezava": return [t("OLD CODE - CONNECTION NEEDED"), s.mogoceVpisana
       ? t("The server did not answer in time. The ticket may already be checked in: scan it again - if it says Already scanned with the time just now, let the guest in.")
       : t("This ticket was issued before offline scanning. Only the server can check it. Try again when the connection is back.")];
@@ -75,6 +79,7 @@ const RAZLOG_KONFLIKTA = {
   refunded: "Ticket was refunded",
   void: "Ticket was cancelled",
   unpaid: "Order not paid",
+  payment_disputed: "Payment disputed",
   unknown: "Server does not know this ticket",
   wrong_club: "Ticket belongs to another club",
   invalid: "Code rejected by the server"

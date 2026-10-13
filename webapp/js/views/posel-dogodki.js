@@ -9,7 +9,7 @@ import { naloziNaCloudinary, pomanjsajSliko } from "../api.js";
 import { sporocilo } from "../napake.js";
 import { navigiraj, nazaj } from "../usmerjanje.js";
 import * as P from "../podatki.js";
-import { zanrIme, napisCene, seJeKoncal, normalizirajDogodek, koordinata } from "../oblika.js";
+import { zanrIme, napisCene, seJeKoncal, normalizirajDogodek, koordinata, vSporu } from "../oblika.js";
 import { GlavaNazaj, Ikona, Slika, Nalaganje, List } from "../ui.js";
 import { idKluba, poslovno, useKlub, normalizirajDogodke, centiIz, evriBesedilo, NAJVEC_VIDEA } from "../posel.js";
 import { PoslovnaNapaka, IzbiraLokacije } from "./posel.js";
@@ -362,6 +362,7 @@ export function VstopniceDogodkaKluba({ klub, dogodek }) {
       const vstopnice = (Array.isArray(v) ? v : []).map(x => ({ id: x.id, status: x.status, qr: typeof x.qr === "string" ? x.qr : "",
         public_ref: x.public_ref || "", kratka: String(x.serial || "").slice(0, 8).toUpperCase(),
         is_vip: x.is_vip === true, table_label: x.table_label || "", package_name: x.package_name || "",
+        payment_disputed: x.payment_disputed === true,
         is_guest_list: x.is_guest_list === true, guest_list_host_username: x.guest_list_host_username || "" }));
       setS(x => ({ nalaga: false, napaka: null, vstopnice, naslov: e ? e.title : x.naslov,
         // Ob padlem branju obdrzimo prej znan dogodek (sicer bi po vsakem vstopu zgubili okno).
@@ -428,8 +429,8 @@ export function VstopniceDogodkaKluba({ klub, dogodek }) {
             <span class="kv-besedilo"><strong class="mono">${v.kratka}</strong><span>${v.public_ref || ""}</span>
               ${v.is_vip ? html`<${VipVrstica} v=${v} />` : null}
               ${v.is_guest_list ? html`<${OznakaGuestList} v=${v} skener=${true} />` : null}</span>
-            ${noterJe || !v.qr
-              ? html`<span class=${"oznaka-vstopa" + (noterJe ? " noter" : "")}>${noterJe ? t("IN") : t("Not yet")}</span>`
+            ${noterJe || !v.qr || vSporu(v)
+              ? html`<span class=${"oznaka-vstopa" + (noterJe ? " noter" : vSporu(v) ? " spor" : "")} data-testid=${vSporu(v) && !noterJe ? "spor" : null}>${noterJe ? t("IN") : vSporu(v) ? t("Payment disputed") : t("Not yet")}</span>`
               : html`<button type="button" class="gumb-vstopa" disabled=${delujoc !== null} onClick=${() => vstop(v)}
                   aria-label=${t("Check in") + " " + v.kratka}>
                   ${delujoc === v.id ? html`<span class="vrtavka majhna" aria-hidden="true"></span>` : t("Check in")}</button>`}

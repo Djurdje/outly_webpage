@@ -116,6 +116,10 @@ export function denar(centi, valuta = "EUR") {
 }
 
 /* ---------- stanje narocila in vstopnice (backend: orders_status_chk, tickets_status_chk) ---------- */
+/** Placilo vstopnice je v sporu (chargeback; backend outly-backend#232, novo polje). Status ostane "valid", a vstopnica NE velja:
+    na vratih je ne spustimo. Stari backend polja nima -> false. */
+export const vSporu = v => !!v && v.payment_disputed === true;
+
 /** Stanje kot veliki napis v jeziku aplikacije (nakupna informacija, ZVPot-1 7/1): znana stanja prevedena, neznano ostane surovo. */
 export function statusNapis(status) {
   const s = String(status || "");
