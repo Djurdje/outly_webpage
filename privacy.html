@@ -61,15 +61,18 @@
     <div class="container legal">
       <p class="kicker">LEGAL</p>
       <h1>Privacy Policy</h1>
-      <p class="legal__meta">Last updated: 11 October 2026 &middot; version 2.4.1 &middot; applies to the Outly app and outly.si</p>
+      <p class="legal__meta">Last updated: 14 October 2026 &middot; version 2.4.2 &middot; applies to the Outly app, the web app at outly.si/app and outly.si</p>
 
       <p class="legal__lead">
         This policy explains what personal data Outly collects &mdash; on this website (waitlist, your
-        account, creator applications) and in the Outly app (account, friends, tickets) &mdash; why we collect
-        it, who processes it on our behalf and what rights you have. The Slovenian version for the
-        app and this website is at <a href="/privacy-app">outly.si/privacy-app</a>; if the two differ, the Slovenian
+        account, creator applications), in the Outly app and in the web app at outly.si/app (account, friends,
+        tickets) &mdash; why we collect it, who processes it on our behalf and what rights you have. The Slovenian
+        version is at <a href="/privacy-app">outly.si/privacy-app</a>; if the two differ, the Slovenian
         version prevails.
       </p>
+      <p>Version 2.4.2 adds the web app at outly.si/app (browser storage, location, camera for ticket scanning) and
+        corrects the description of sign-in security. It describes processing the web app already does; it adds no
+        new purposes.</p>
 
       <h2>1. Who is responsible for your data</h2>
       <p>
@@ -92,13 +95,13 @@
         <li>if you came through a friend&rsquo;s invite link: the invite code, so we can count the invite
             (one point for your friend once you confirm). We do not tell your friend your address.</li>
       </ul>
-      <p><strong>Account (website and app)</strong> &mdash; one account works in both.</p>
+      <p><strong>Account (website, app and web app)</strong> &mdash; one account works in all of them.</p>
       <ul>
         <li>your email address and username;</li>
         <li>your password, stored only as a cryptographic hash (bcrypt) by our authentication provider
             Supabase &mdash; we never see or store the password itself;</li>
         <li>email confirmation and password-reset codes, valid for a limited time;</li>
-        <li>when you sign up on this website: which version of the Terms of Use you accepted, and when;</li>
+        <li>when you sign up on this website or in the web app: which version of the Terms of Use you accepted, and when;</li>
         <li>when you complete your profile in the app: phone number (optional), date of birth (used for
             event age limits), country, the music genres you pick, a profile picture if you upload one;</li>
         <li>events you save with the heart (only you see them) and clubs you follow (the club sees only
@@ -115,10 +118,11 @@
         <li>ticket transfers: who sent a ticket to whom and when. The rules are in the
             <a href="/terms">Terms of Use</a>.</li>
       </ul>
-      <p><strong>Using the app</strong></p>
+      <p><strong>Using the app and the web app</strong></p>
       <ul>
-        <li>your IP address, used to limit sign-in and sign-up attempts from one address and so prevent
-            password guessing; kept in server memory for at most one hour;</li>
+        <li>your IP address, used to limit requests from one address (for example purchases, ticket transfers,
+            searches and friend requests) and so prevent abuse; we keep it in our database only as an irreversible
+            hash (HMAC). Sign-in and sign-up attempts are limited by our authentication provider Supabase;</li>
         <li>technical server error logs and error and crash reports (see Sentry in section 4).</li>
       </ul>
       <p><strong>Buying a ticket</strong></p>
@@ -139,9 +143,35 @@
             coordinates, logo, photos and videos; the email address and role of staff the owner invites
             (manager, door); the account identifier and onboarding status at the payment provider.</li>
       </ul>
-      <p><strong>Location.</strong> The app asks for your device location the first time you open the map. Your
-        location is never sent to our servers or stored &mdash; it is used only on your device to centre the map
-        and sort clubs by distance. You can refuse or revoke access in your phone settings at any time.</p>
+      <p><strong>Ticket scanning in the web app (club staff)</strong></p>
+      <ul>
+        <li><strong>Camera.</strong> Your browser asks for the camera only when you open the scanning screen. The camera
+            image is processed by the browser on your device; it is not recorded, stored or sent anywhere. Only the
+            content of the scanned QR code is sent to our server to check that the ticket is valid. The camera turns off
+            when you leave the screen or close the tab. You can revoke access in your browser settings at any time.</li>
+        <li><strong>Scanning without a connection.</strong> So the door keeps working when the internet drops, the staff
+            member&rsquo;s browser keeps a list of tickets for events currently taking place: ticket code, status, entry
+            time, table and package and the holder&rsquo;s username (for guest lists also the host&rsquo;s username)
+            &mdash; no email addresses. The list is deleted when the staff member logs out. Scans not yet sent to the
+            server stay in the browser until they are sent; sent scans stay for at most three days so the device can
+            recognise a second entry.</li>
+        <li><strong>Who scanned.</strong> With each scan we store the time, the staff member who scanned and a device
+            marker: for online scans the browser or app type, for offline scans a random marker the browser creates when
+            the scanner is first opened and that is not linked to anything else.</li>
+      </ul>
+      <p><strong>Web app (outly.si/app).</strong> The web app is the browser version of the Outly app. It uses the same
+        account, server and data as the app, so everything this policy says about the app also applies to it. What it
+        keeps in your browser is described in section 10.</p>
+      <p><strong>Location.</strong> The app asks for your device location the first time you open the map. In the web
+        app your browser asks only when you tap &ldquo;Use my location&rdquo;; if you have already allowed it, the web
+        app reads your location by itself when it opens. Your location is never sent to our servers or stored &mdash;
+        it is used only on your device to centre the map and sort clubs by distance; in the web app it stays in the open
+        page and is not saved in the browser. You can refuse or revoke access in your phone or browser settings at any
+        time.</p>
+      <p>The web app&rsquo;s map uses OpenStreetMap data served from our own domain outly.si; map requests do not go to
+        any map provider. Your browser downloads from our domain the parts of the map for the area you are looking at.
+        Club owners can set the club&rsquo;s location in the web app by clicking on the map; these coordinates are part
+        of the club&rsquo;s details.</p>
 
       <h2>3. Why we use it and on what legal basis</h2>
       <ul>
@@ -171,6 +201,11 @@
         <li><strong>Purchase data</strong> &mdash; completing the purchase and issuing the ticket (contract);
             keeping it afterwards for accounting and tax (legal obligation, Art. 6(1)(c)).</li>
         <li><strong>Ticket scanning</strong> &mdash; preventing double entry. Basis: contract.</li>
+        <li><strong>Ticket list on staff devices, device marker with each scan</strong> &mdash; scanning at the door
+            without a connection, resolving double entries. Basis: legitimate interest (Art. 6(1)(f)) in reliable entry.</li>
+        <li><strong>Data in your browser</strong> (session, language, preferences; section 10) &mdash; making the service
+            you use work. Basis: contract (Art. 6(1)(b)); storing it in the browser is strictly necessary for the service
+            you request, so it needs no consent (Article 225 of the Slovenian Electronic Communications Act, ZEKom-2).</li>
         <li><strong>Creator applications</strong> &mdash; assessing whether to work together. Basis: steps
             prior to a contract (Art. 6(1)(b)).</li>
       </ul>
@@ -182,8 +217,9 @@
       <p>We use a small number of service providers who process data on our behalf, under data processing
         agreements and only on our instructions:</p>
       <ul>
-        <li><strong>Supabase</strong> &mdash; the waitlist database and account authentication (email,
-            password hash). Data is stored in the European Union (Frankfurt, Germany).</li>
+        <li><strong>Supabase</strong> &mdash; the waitlist database and account authentication in the app, the web app
+            and on this website (email, password hash; your IP address when you sign in, to limit attempts). Data is
+            stored in the European Union (Frankfurt, Germany).</li>
         <li><strong>Brevo</strong> (Sendinblue SAS, France) &mdash; emails from this website (waitlist
             confirmations, account emails). Brevo records delivery events and whether an email was opened or a
             link clicked; we use this only to check that our emails arrive.</li>
@@ -191,12 +227,14 @@
             saved events, tickets, purchases, creator applications). Servers in the EU (Frankfurt).</li>
         <li><strong>Resend</strong> &mdash; emails sent from the app and about creator applications.</li>
         <li><strong>Cloudinary</strong> &mdash; storing and serving uploaded images and videos (profile pictures,
-            club logos, posters and videos).</li>
+            club logos, posters and videos). The web app uploads and shows them directly from Cloudinary&rsquo;s servers,
+            which receive the technical data any web server receives, such as your IP address.</li>
         <li><strong>Stripe</strong> &mdash; payment processing. Amount, email and card details, entered
             directly with Stripe, never through us.</li>
         <li><strong>Event organiser</strong> &mdash; your email, your tickets and whether you entered.</li>
-        <li><strong>Cloudflare</strong> &mdash; hosting and delivery of this website. Cloudflare processes the
-            technical data any web server receives when you open a page, such as your IP address.</li>
+        <li><strong>Cloudflare</strong> &mdash; hosting and delivery of this website and of the web app at outly.si/app,
+            including map tiles. Cloudflare processes the technical data any web server receives when you open a page,
+            such as your IP address and the page or map tile requested.</li>
         <li><strong>Sentry</strong> (Functional Software, Inc.) &mdash; error and crash reports from the app, from
             the web app at outly.si/app and from our server, so we can fix what breaks: the error message and stack
             trace, time and version; in the app also the device model, iOS version and a
@@ -220,9 +258,14 @@
         <li><strong>Unconfirmed sign-ups:</strong> deleted no later than 90 days after sign-up if you never
             confirm.</li>
         <li><strong>Account data:</strong> for as long as you have an account. You can delete it yourself in the
-            app (Account settings) or on this website (profile &rarr; Delete account).</li>
+            app (Account settings), in the web app (My Account &rarr; Delete account) or on this website (profile &rarr;
+            Delete account).</li>
         <li><strong>Confirmation and reset codes:</strong> valid for a limited time, then invalidated.</li>
-        <li><strong>IP address for rate limiting:</strong> server memory only, gone within one hour.</li>
+        <li><strong>IP address for rate limiting:</strong> only as a hash, deleted about one hour after the first
+            counted request at the latest.</li>
+        <li><strong>Data in your browser</strong> (website and web app): as described for each item in section 10; you
+            can remove all of it by clearing site data for outly.si. The ticket list on a club staff device is deleted at
+            log-out, sent scans after three days at the latest.</li>
         <li><strong>Error and crash reports:</strong> 30 days, then deleted automatically by Sentry.</li>
         <li><strong>Purchase data:</strong> as long as tax and accounting rules require. When you delete your
             account, purchases are detached from you: your email is replaced by an anonymous marker; the
@@ -242,7 +285,7 @@
       <ul>
         <li>ask what data we hold about you and get a copy of it;</li>
         <li>have inaccurate data corrected;</li>
-        <li>have your data deleted &mdash; you can delete your account yourself in the app or on this website;</li>
+        <li>have your data deleted &mdash; you can delete your account yourself in the app, in the web app or on this website;</li>
         <li>ask us to restrict how we use it, and object where we rely on legitimate interest;</li>
         <li>receive your data in a machine-readable format, or have it sent to another controller;</li>
         <li>withdraw your consent at any time. Withdrawing it does not affect what we did before.</li>
@@ -257,22 +300,46 @@
         Dunajska cesta 22, 1000 Ljubljana, Slovenia, <a href="mailto:gp.ip@ip-rs.si">gp.ip@ip-rs.si</a>
         &middot; <a href="https://www.ip-rs.si" target="_blank" rel="noopener">www.ip-rs.si</a></p>
 
-      <h2>10. Cookies and third-party content</h2>
-      <p>This website does not set advertising or analytics cookies and does not track you across other sites.
-        We do not use Google Analytics, advertising pixels or similar tools, so there is no cookie banner.
-        The browser&rsquo;s local storage holds only what the service you ask for needs:</p>
+      <h2>10. Cookies, browser storage and third-party content</h2>
+      <p>This website and the web app at outly.si/app do not set advertising or analytics cookies and do not track you
+        across other sites. We do not use Google Analytics, advertising pixels or similar tools, so there is no cookie
+        banner. Your browser keeps only what the service you ask for needs:</p>
       <ul>
-        <li>your login session, if you log in, so you stay signed in;</li>
-        <li>the invite code, if you came through a friend&rsquo;s link, so the point goes to the right person
-            when you sign up. It is removed once you join the waitlist.</li>
+        <li><strong>your login session</strong>, if you log in, so you stay signed in (one session for the website and
+            the web app); removed when you log out;</li>
+        <li><strong>the invite code</strong>, if you came through a friend&rsquo;s link, so the point goes to the right
+            person when you sign up. It is removed once you join the waitlist;</li>
+        <li><strong>your email address</strong>, when you enter it to sign up or reset your password in the web app, so
+            you do not have to type it again on the next step (entering the code). It is removed when you sign in or
+            log out;</li>
+        <li>in the web app also: <strong>your language</strong>, if you choose one; <strong>&ldquo;My
+            preferences&rdquo;</strong> (genres, distance, age, price), removed when you log out; for club owners, whether
+            the profile shows the club or the personal account;</li>
+        <li>for club staff who scan tickets: the ticket list, scans and a random device marker (section 2, Ticket
+            scanning in the web app);</li>
+        <li>for as long as the tab is open (sessionStorage): temporary data of a purchase in progress, such as an order
+            key that prevents a double purchase when you come back from the payment page. The browser deletes it when you
+            close the tab.</li>
       </ul>
-      <p>The typeface and scripts are served from our own domain, not from Google Fonts or a public CDN. The site
-        has no embedded third-party content (videos, maps, social widgets); the Instagram link is a plain link.</p>
+      <p>To open faster and work without a connection, the web app stores <strong>its own code</strong>, typeface and
+        icons in the browser (service worker cache). None of your data, tickets or responses from our server are stored
+        there. If you add the web app to your phone&rsquo;s home screen, it opens like an app; this does not change what
+        data we process.</p>
+      <p>You can remove all of this by clearing site data for outly.si in your browser settings. When you log out, we
+        remove the items marked above as removed at log-out.</p>
+      <p>The typeface and scripts are served from our own domain, not from Google Fonts or a public CDN. The website
+        has no embedded third-party content (videos, maps, social widgets); the Instagram link is a plain link. The web
+        app shows club and event images and videos from Cloudinary&rsquo;s servers (section 4) and the map from our own
+        domain. Payment takes place on the page of our payment provider Stripe, to which we redirect you.</p>
 
       <h2>11. Security</h2>
-      <p>The website and the app talk to our servers over HTTPS only. Passwords are stored as bcrypt hashes and
-        cannot be recovered. Confirmation and reset codes are time-limited. Sign-in attempts are rate-limited.
-        In the app, your session token is kept in the system&rsquo;s secure storage. Full email addresses on the
+      <p>The website, the app and the web app talk to our servers over HTTPS only. Passwords are stored as bcrypt
+        hashes and cannot be recovered. Confirmation and reset codes are time-limited. Our authentication provider
+        Supabase limits sign-in and code verification attempts. In the app, your session token is kept in the
+        phone&rsquo;s secure system storage; on this website and in the web app it is kept in the browser&rsquo;s local
+        storage, where code running on outly.si can read it. That is why outly.si loads only our own code from our own
+        domain, with no advertising, analytics or other third-party scripts, and the web app also has a strict Content
+        Security Policy that stops the browser from running code from other domains. Full email addresses on the
         waitlist are held in a private table the website itself cannot read: the public waitlist on our home page
         shows only masked addresses such as <code>j***@example.com</code> or a chosen username. Club data is
         visible only to the club owner and the staff the owner has added.</p>
