@@ -201,11 +201,6 @@ buyBtn?.addEventListener("click", () => {
     if (Math.random() < .5 && nIn < nSold)  { nIn++;  inEl.textContent = String(nIn); }
   }, 1400);
 
-  // Promocija: boost stikalo vklopi/izklopi znacko.
-  const boost = document.getElementById("boostToggle");
-  const badge = document.getElementById("clubBadge");
-  boost?.addEventListener("change", () => { badge.hidden = !boost.checked; });
-
   // Skener: prvi sken veljaven, drugi isti zavrnjen, nato nova vstopnica.
   const box = document.getElementById("scanBox");
   const scanBtn = document.getElementById("scanBtn");
@@ -254,18 +249,18 @@ const FEATURES = {
   user: [
     { title: "Tonight feed", desc: "What’s relevant right now — no outdated posts." },
     { title: "Pick your vibe", desc: "Genre + price + distance — tailored suggestions." },
-    { title: "In your area", desc: "Instant options around you (tourists & locals)." },
+    { title: "In your area", desc: "Open the map and see every club and party around you." },
     { title: "Tickets & entry", desc: "Buy tickets fast and keep everything in one place." },
     { title: "Save & share", desc: "Favorites + share plans with friends." },
-    { title: "Map view", desc: "See nightlife hotspots at a glance." }
+    { title: "Earn money", desc: "Make money working at a club or promoting one.", soon: true }
   ],
   creator: [
     { title: "Event publishing", desc: "Post events fast and keep them updated." },
     { title: "Audience targeting", desc: "Reach people who actually like your vibe." },
     { title: "Ticketing", desc: "Sell tickets and manage capacity." },
     { title: "Analytics dashboard", desc: "Track performance, revenue, and trends." },
-    { title: "Promotions", desc: "Boost visibility for key nights." },
-    { title: "Creator profile", desc: "Build credibility with reviews and history." }
+    { title: "Beat your competition", desc: "Sell the most tickets in a week and your party becomes Last week's biggest hit, right at the top of everyone's Home." },
+    { title: "Create your profile", desc: "Put up photos, a promo video and your events. Make it the page that pulls the biggest crowd." }
   ]
 };
 
@@ -274,7 +269,17 @@ function renderFeatures(mode){
   FEATURES[mode].forEach(item => {
     const card = document.createElement("article");
     card.className = "card";
-    card.innerHTML = `<h3>${item.title}</h3><p>${item.desc}</p>`;
+    const h = document.createElement("h3");
+    h.textContent = item.title;
+    if (item.soon) {
+      const tag = document.createElement("span");
+      tag.className = "card__soon";
+      tag.textContent = "Coming soon";
+      h.append(" ", tag);
+    }
+    const p = document.createElement("p");
+    p.textContent = item.desc;
+    card.append(h, p);
     featuresGrid.appendChild(card);
   });
 
