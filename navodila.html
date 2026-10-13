@@ -1,11 +1,12 @@
 <!doctype html>
 <html lang="sl"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<!-- Stran je dostopna samo s povezavo: ni v meniju, iskalniki je ne indeksirajo. Ni pa zascitena z geslom. -->
+<!-- Stran je dostopna samo s povezavo: ni v meniju, iskalniki je ne indeksirajo. Ni pa zascitena z geslom.
+     Vsebina se ureja v dokumentu (Claude Docs) in se generira iz njegovega izvoza v markdown. -->
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="theme-color" content="#111111">
-<title>Navodila za uporabo — Outly</title>
+<title>Predstavitev aplikacije Outly</title>
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <link rel="stylesheet" href="/navodila.css">
@@ -13,315 +14,429 @@
 
 <header>
   <div class="znamka"><img src="/assets/icon-192.png" alt="" width="28" height="28">Outly</div>
-  <h1>Kako deluje Outly</h1>
-  <p class="podnaslov">Predstavitev in navodila za obiskovalce, zaposlene in klube</p>
-  <div class="datum">Stanje 13. 10. 2026 · velja za aplikacijo za iPhone in spletno aplikacijo outly.si/app</div>
+  <h1>Predstavitev aplikacije Outly</h1>
+  <p class="podnaslov">Navodila za obiskovalce, zaposlene in klube</p>
+  <div class="datum">Stanje 13. 10. 2026 · aplikacija za iPhone in spletna aplikacija outly.si/app</div>
 </header>
 
-<nav class="kazalo" aria-label="Kazalo"><ol>
-  <li><a href="#outly">Kaj je Outly</a></li>
-  <li><a href="#home">Jedro aplikacije: Domov</a></li>
-  <li><a href="#obiskovalci">Za obiskovalce</a></li>
-  <li><a href="#zaposleni">Za zaposlene v klubu</a></li>
-  <li><a href="#klubi">Za klube</a></li>
-  <li><a href="#vprasanja">Pogosta vprašanja</a></li>
-</ol></nav>
+<nav class="kazalo" aria-label="Kazalo"><h2>Kazalo</h2><ol><li><a href="#r1">Kaj je Outly</a></li><li><a href="#r2">Vloge v aplikaciji</a></li><li><a href="#r3">Jedro aplikacije: Domov</a></li><li><a href="#r4">Za obiskovalce</a></li><li><a href="#r5">Za zaposlene v klubu</a></li><li><a href="#r6">Za klube</a></li><li><a href="#r7">Kako klub dobi denar</a></li><li><a href="#r8">Kako dobiš aplikacijo (TestFlight)</a></li></ol></nav>
 
-<p class="opomba">Aplikacija se prikaže v jeziku, ki ga ima nastavljen tvoj telefon. Zato so gumbi tu napisani
-slovensko, v oklepaju pa angleško, na primer <b>Skeniraj vstopnico</b> <span class="en">Scan ticket</span>.</p>
+<h2 id="r1"><span class="st">1</span>Kaj je Outly</h2>
 
-<!-- ============================================================ -->
-<h2 id="outly"><span class="st">1</span>Kaj je Outly</h2>
-<p class="vodilo">Outly združi cel večer v eno aplikacijo: odkriješ dogodek, pogledaš klub, kupiš vstopnico in z njo
-vstopiš.</p>
-<p>Danes je ta pot razdrobljena. Dogodke ljudje najdejo na TikToku, vzdušje kluba preverijo na Instagramu, lokacijo na
-Google Maps, vstopnico kupijo na drugi platformi, VIP mizo pa rezervirajo po telefonu. Outly vse to zbere na enem mestu,
-klubom pa da pregled nad dogodki, prodajo in ekipo.</p>
-<p>Aplikacija je ena, vsak pa vidi svoj del, odvisno od tega, kdo je:</p>
+<p>Outly je nova mobilna platforma, s katero želimo spremeniti način, kako ljudje odkrivajo in načrtujejo nočno življenje.</p>
+
+<p>Trenutno je celoten proces načrtovanja večera precej razdrobljen. Tako turisti kot lokalni uporabniki dogodke odkrivajo prek različnih družbenih omrežij, kot je TikTok, informacije o klubih in njihovem vzdušju iščejo na Instagramu, vstopnice kupujejo na ločenih platformah, VIP mize pa pogosto rezervirajo prek telefonskih klicev.</p>
+
+<p>Z Outlyjem želimo celotno izkušnjo poenostaviti in jo dvigniti na višjo raven. Vse ključne korake združujemo na eni platformi. Tako uporabnikom omogočamo, da svoj večer odkrijejo, načrtujejo in organizirajo hitro, enostavno in brez nepotrebnega preklapljanja med različnimi aplikacijami.</p>
+
+<p class="opomba"><b>O jeziku:</b> aplikacija se prikaže v jeziku, ki ga ima nastavljen tvoj telefon. Zato so gumbi tu napisani slovensko, v oklepaju pa angleško, na primer <b>Skeniraj vstopnico</b> <span class="en">Scan ticket</span>.</p>
+
+<h2 id="r2"><span class="st">2</span>Vloge v aplikaciji</h2>
+
+<p>Aplikacija je ena za vse. Kaj vidiš, je odvisno od tega, kdo si.</p>
+
 <div class="drsnik"><table class="dva">
-  <thead><tr><th>Kdo</th><th>Kaj dobi</th></tr></thead>
+  <thead><tr><th>Kdo</th><th>Kaj dela v aplikaciji</th></tr></thead>
   <tbody>
-    <tr><td>Obiskovalec</td><td>Odkrije, načrtuje in kupi večer na enem mestu; vstopnica je v telefonu.</td></tr>
-    <tr><td>Zaposleni v klubu<br>(upravitelj, vratar, natakar)</td><td>Skener vstopnic na vhodu, ki beleži prihode in deluje tudi brez interneta; seznam VIP miz za strežbo.</td></tr>
-    <tr><td>Klub (lastnik)</td><td>Upravljanje dogodkov, cenika bara in ekipe; pregled prihodkov, prodanih vstopnic in obiska profila.</td></tr>
+    <tr><td>Obiskovalec</td><td>Išče dogodke in klube, kupi vstopnico in z njo vstopi.</td></tr>
+    <tr><td>Zaposleni v klubu</td><td>Dela za klub: upravitelj ureja dogodke in ekipo, vratar skenira vstopnice, natakar streže VIP mize.</td></tr>
+    <tr><td>Klub (lastnik)</td><td>Ureja stran kluba, dogodke, cenik in ekipo, spremlja prodajo in prejema denar od vstopnic.</td></tr>
   </tbody>
 </table></div>
 
-<!-- ============================================================ -->
-<h2 id="home"><span class="st">2</span>Jedro aplikacije: Domov</h2>
-<p class="vodilo">Zaslon <b>Domov</b> <span class="en">Home</span> se odpre prvi in na njem je vse, kar rabiš za večer:
-kaj je nocoj, kaj je blizu, kam gredo prijatelji in kaj prihaja.</p>
-<p>Vsaka kartica te z enim dotikom pelje na dogodek ali klub, od tam pa do nakupa vstopnice.</p>
+<p>Vsak zaposleni in lastnik je hkrati tudi obiskovalec: z istim računom lahko kupuje vstopnice.</p>
 
-<h3>Vrh zaslona</h3>
+<h2 id="r3"><span class="st">3</span>Jedro aplikacije: Domov</h2>
+
+<p><b>Domov</b> <span class="en">Home</span> je prvi zaslon in na njem je vse, kar rabiš za večer. Pritisni katerokoli kartico in prideš do dogodka ali kluba, od tam pa do vstopnice.</p>
+
+<h3>Zgoraj</h3>
+
 <ul>
-  <li><b>Profilna slika levo</b> odpre tvoj profil.</li>
-  <li><b>Pozdrav</b> s tvojim uporabniškim imenom, glede na uro dneva.</li>
-  <li><b>Zvonec desno</b> odpre <b>Obvestila</b> <span class="en">Notifications</span>, ki zberejo vse, kar čaka nate: vabilo kluba k delu,
-    prošnjo za prijateljstvo, nov dogodek kluba, ki mu slediš, vstopnico od prijatelja in uvrstitev na seznam gostov.</li>
-  <li><b>Kam gremo?</b> <span class="en">Where to?</span> odpre iskanje. Ikona ob njem odpre <b>Filtri</b>
-    <span class="en">Filters</span>: mesto, glasbene zvrsti, razdalja, starost in cena vstopa. Z
-    <b>Uporabi moje nastavitve</b> <span class="en">Use my preferences</span> filtri vzamejo zvrsti iz tvojega profila.
-    Potrdiš z <b>Uporabi filtre</b> <span class="en">Apply filters</span>, počistiš s <b>Ponastavi</b>
-    <span class="en">Reset</span>.</li>
+  <li><b>Profilna slika</b> (levo) odpre tvoj profil.</li>
+  <li><b>Zvonec</b> (desno) odpre <b>Obvestila</b> <span class="en">Notifications</span>: vabila, prijatelji, novi dogodki, vstopnice od prijateljev.</li>
+  <li><b>Kam gremo?</b> <span class="en">Where to?</span> odpre iskanje.</li>
+  <li><b>Filtri</b> <span class="en">Filters</span> so ikona ob iskanju: izberi mesto, glasbo, razdaljo, starost in ceno, nato <b>Uporabi filtre</b> <span class="en">Apply filters</span>.</li>
 </ul>
 
-<h3>Razdelki, od zgoraj navzdol</h3>
-<p>Razdelek se pokaže samo, če ima vsebino.</p>
+<h3>Razdelki</h3>
+
+<p>Pomikaj se navzdol. Razdelek se pokaže samo, če ima vsebino.</p>
+
 <div class="drsnik"><table class="dva">
-  <thead><tr><th>Razdelek</th><th>Kaj pokaže</th></tr></thead>
+  <thead><tr><th>Razdelek</th><th>Kaj vidiš</th></tr></thead>
   <tbody>
-    <tr><td>Organized by Outly</td><td>Dogodki, ki jih organizira Outly.</td></tr>
-    <tr><td>Predlogi <span class="en">Suggestions</span></td><td>Klubi in dogodki, ki bi ti utegnili biti všeč.</td></tr>
-    <tr><td>Nocoj <span class="en">Tonight</span></td><td>Dogodki nocoj; če nocoj ni ničesar, razdelek <i>Ta teden</i>.</td></tr>
-    <tr><td>Zanima me <span class="en">Interested events</span></td><td>Dogodki, ki si jih označil kot zanimive.</td></tr>
-    <tr><td>Največji hiti prejšnjega tedna <span class="en">Last week's biggest hits</span></td><td>Najbolj izpostavljeni dogodki preteklega tedna.</td></tr>
-    <tr><td>V tvoji bližini <span class="en">In your area</span></td><td>Klubi blizu tebe.</td></tr>
-    <tr><td>Načrti prijateljev <span class="en">Friends plans</span></td><td>Kam gredo prijatelji (<i>Grem</i> / <i>Zanima me</i>). <b>Povabi še koga</b> pošlje povezavo do Outlyja.</td></tr>
-    <tr><td>Veliki dogodki, ki prihajajo <span class="en">Big events coming up</span></td><td>Večji prihajajoči dogodki.</td></tr>
-    <tr><td>Ta vikend <span class="en">This weekend</span></td><td>Dogodki za konec tedna; sicer <i>V trendu</i>.</td></tr>
-    <tr><td>Odkrij svoj žanr <span class="en">Discover your genre</span></td><td>Brskanje po glasbenih zvrsteh.</td></tr>
+    <tr><td>Organized by Outly</td><td>Dogodki, ki jih organizira Outly</td></tr>
+    <tr><td>Predlogi <span class="en">Suggestions</span></td><td>Predlogi zate</td></tr>
+    <tr><td>Nocoj <span class="en">Tonight</span></td><td>Kaj je nocoj</td></tr>
+    <tr><td>Zanima me <span class="en">Interested events</span></td><td>Dogodki, ki si jih označil</td></tr>
+    <tr><td>Največji hiti prejšnjega tedna <span class="en">Last week&#x27;s biggest hits</span></td><td>Najboljše od prejšnjega tedna</td></tr>
+    <tr><td>V tvoji bližini <span class="en">In your area</span></td><td>Klubi blizu tebe</td></tr>
+    <tr><td>Načrti prijateljev <span class="en">Friends plans</span></td><td>Kam gredo prijatelji</td></tr>
+    <tr><td>Veliki dogodki, ki prihajajo <span class="en">Big events coming up</span></td><td>Večji dogodki v prihodnje</td></tr>
+    <tr><td>Ta vikend <span class="en">This weekend</span></td><td>Dogodki za vikend</td></tr>
+    <tr><td>Odkrij svoj žanr <span class="en">Discover your genre</span></td><td>Brskanje po glasbi</td></tr>
   </tbody>
 </table></div>
-<p>Na dnu je gumb <b>Prikaži vse dogodke</b> <span class="en">See all events</span>.</p>
 
-<h3>Spodnja vrstica</h3>
-<p><b>Domov · Iskanje · Zemljevid · Profil</b>. Domov je izhodišče. Iskanje in Zemljevid sta za ciljno iskanje, v Profilu pa
-so vstopnice, prijatelji in delo v klubu.</p>
+<h3>Spodaj</h3>
 
-<!-- ============================================================ -->
-<h2 id="obiskovalci"><span class="st">3</span>Za obiskovalce</h2>
-<p class="vodilo">Račun ustvariš v nekaj minutah, potem pa vse narediš z zaslona Domov in štirih zavihkov na dnu.</p>
+<p>Vrstica na dnu: <b>Domov · Iskanje · Zemljevid · Profil</b>.</p>
 
-<h3>Prvič v aplikaciji</h3>
+<h2 id="r4"><span class="st">4</span>Za obiskovalce</h2>
+
+<h3>Ustvari račun</h3>
+
 <ol>
-  <li><b>Registracija</b> <span class="en">Sign up</span>: vpiši uporabniško ime (vsaj 3 znaki), e-naslov in geslo, ki
-    ga ponoviš. Če račun že imaš, izberi <b>Prijava</b> <span class="en">Sign in</span>.</li>
-  <li><b>Potrdi e-pošto</b> <span class="en">Verify your email</span>: kodo, ki ti jo pošljemo po e-pošti, vpiši v
-    aplikacijo in pritisni <b>Potrdi</b> <span class="en">Verify</span>. Če kode ni, pritisni <b>Znova pošlji kodo</b>
-    <span class="en">Resend code</span>. Če si se pri naslovu zmotil, izberi <b>Spremeni e-pošto</b>
-    <span class="en">Change email</span>.</li>
-  <li><b>Dokončaj svoj račun</b> <span class="en">Complete your account</span>: datum rojstva in država. Telefonska
-    številka ni obvezna.</li>
-  <li><b>Izberi svoj žanr</b> <span class="en">Select your genre</span>: izberi eno ali več glasbenih zvrsti (izbrane
-    se obarvajo modro) in pritisni <b>Dokončaj</b> <span class="en">Complete</span>. Po teh zvrsteh ti aplikacija
-    predlaga dogodke.</li>
+  <li>Pritisni <b>Registracija</b> <span class="en">Sign up</span>. Vpiši uporabniško ime (vsaj 3 znaki), e-naslov in dvakrat geslo.</li>
+  <li>Odpri e-pošto, prepiši kodo v aplikacijo in pritisni <b>Potrdi</b> <span class="en">Verify</span>. Ni kode? <b>Znova pošlji kodo</b> <span class="en">Resend code</span>.</li>
+  <li>Vpiši datum rojstva in državo. Telefon ni obvezen.</li>
+  <li>Izberi glasbo, ki ti je všeč, in pritisni <b>Dokončaj</b> <span class="en">Complete</span>.</li>
 </ol>
 
-<h3>Dogodek in klub</h3>
+<p>Račun že imaš? Pritisni <b>Prijava</b> <span class="en">Sign in</span>.</p>
+
+<h3>Poišči dogodek</h3>
+
 <ul>
-  <li><b>Dogodek</b> odpreš s pritiskom na kartico. Vidiš ime, klub, datum in uro, ceno vstopnice, lokacijo z zemljevidom,
-    kontakt, opis in starostno omejitev. Če je klub objavil cene pijač, je tu še <b>Cenik bara</b>
-    <span class="en">Bar prices</span>. Pretekli dogodek ima oznako <i>Končano</i>.</li>
-  <li><b>Klub</b> odpreš s pritiskom na ime kluba ali <b>Poglej klub</b> <span class="en">View club</span>. Vidiš mesto,
-    glasbene zvrsti, najnižjo starost, število sledilcev in prihajajoče dogodke. S <b>Sledi</b>
-    <span class="en">Follow</span> klub spremljaš; ponoven pritisk sledenje prekliče.</li>
+  <li><b>Domov</b>: predlogi, nocoj, vikend, prijatelji.</li>
+  <li><b>Iskanje</b> <span class="en">Search</span>: vpiši ime kluba ali dogodka ali izberi glasbo.</li>
+  <li><b>Zemljevid</b> <span class="en">Map</span>: pritisni modro oznako, nato ime kluba.</li>
 </ul>
 
-<h3>Nakup vstopnice</h3>
+<p>Na dogodku vidiš datum, uro, ceno, lokacijo, opis in starostno mejo. <b>Cenik bara</b> <span class="en">Bar prices</span> pokaže cene pijač. Na klubu pritisni <b>Sledi</b> <span class="en">Follow</span>, če ga želiš spremljati.</p>
+
+<h3>Kupi vstopnico</h3>
+
 <ol>
-  <li>Na dogodku pritisni modri gumb s ceno vstopnice.</li>
-  <li>Na zaslonu <b>Blagajna</b> <span class="en">Checkout</span> s + in − izberi število vstopnic in preveri skupni znesek.</li>
-  <li>Pod <b>Plačilo</b> <span class="en">Payment</span> preveri način plačila in nadaljuj z gumbom na dnu.
-    <b>Prekliči</b> <span class="en">Cancel</span> nakup prekine.</li>
+  <li>Na dogodku pritisni modri gumb s ceno.</li>
+  <li>Izberi število vstopnic (+ in −).</li>
+  <li>Plačaj z gumbom na dnu.</li>
 </ol>
 
-<h3>Iskanje in zemljevid</h3>
-<ul>
-  <li><b>Iskanje</b> <span class="en">Search</span>: išči po imenu kluba ali dogodka, brskaj po zvrsteh ali izberi klub
-    s seznama, kjer je ob vsakem število prihajajočih dogodkov.</li>
-  <li><b>Zemljevid</b> <span class="en">Map</span>: klubi so modre oznake. Pritisk na oznako pokaže ime kluba, pritisk na
-    ime odpre njegov profil.</li>
-</ul>
+<p>Vstopnica se shrani v <b>Profil → Vstopnice</b> <span class="en">Tickets</span>.</p>
+
+<h3>Vstopi v klub</h3>
+
+<ol>
+  <li>Odpri <b>Profil → Vstopnice</b>.</li>
+  <li>Izberi vstopnico.</li>
+  <li>Pokaži QR-kodo na vhodu.</li>
+</ol>
+
+<p>Koda velja samo enkrat.</p>
+
+<h3>Pošlji vstopnico prijatelju</h3>
+
+<ol>
+  <li>Odpri vstopnico in pritisni <b>Pošlji prijatelju</b> <span class="en">Send to a friend</span>.</li>
+  <li>Izberi prijatelja ali vpiši njegov e-naslov.</li>
+  <li>Če ima dogodek starostno mejo, potrdi, da jo prijatelj izpolnjuje.</li>
+</ol>
+
+<p>Prijatelj dobi novo QR-kodo, tvoja preneha veljati. Vstopnic s seznama gostov ni mogoče poslati.</p>
 
 <h3>Profil</h3>
+
 <div class="drsnik"><table class="dva">
-  <thead><tr><th>Razdelek</th><th>Kaj je tam</th></tr></thead>
+  <thead><tr><th>Razdelek</th><th>Za kaj je</th></tr></thead>
   <tbody>
-    <tr><td>Vstopnice <span class="en">Tickets</span></td><td>Kupljene vstopnice s QR-kodo in stanjem vstopnice. S <b>Pošlji prijatelju</b> vstopnico preneseš.</td></tr>
-    <tr><td>Moji prijatelji <span class="en">My Friends</span></td><td><b>Dodaj prijatelje</b> → išči po uporabniškem imenu (vsaj 2 črki) → <b>Dodaj</b>. Gumb se spremeni v <i>Poslano</i>, dokler prijatelj ne sprejme.</td></tr>
-    <tr><td>Moji klubi <span class="en">My Clubs</span></td><td>Klubi, v katerih delaš. Zvonec zgoraj desno pokaže vabila klubov.</td></tr>
-    <tr><td>Moj račun <span class="en">My Account</span></td><td>Podatki računa in prošnja za poslovni račun (za klube).</td></tr>
-    <tr><td>Plačilo <span class="en">Payment</span></td><td>Kako poteka plačevanje vstopnic.</td></tr>
-    <tr><td>Pomoč <span class="en">Support</span></td><td>Center za pomoč s članki: nakup, vstop, vračila, starostne omejitve, izbris računa …</td></tr>
-    <tr><td>O aplikaciji <span class="en">About</span></td><td>O Outlyju, ocena aplikacije, pogoji uporabe in politika zasebnosti.</td></tr>
-    <tr><td>Odjava <span class="en">Log out</span></td><td>Odjava iz računa. Pozabljeno geslo ponastaviš na prijavi s <b>Pozabljeno geslo?</b></td></tr>
+    <tr><td>Vstopnice <span class="en">Tickets</span></td><td>Tvoje vstopnice</td></tr>
+    <tr><td>Moji prijatelji <span class="en">My Friends</span></td><td>Dodaj prijatelja po uporabniškem imenu</td></tr>
+    <tr><td>Moji klubi <span class="en">My Clubs</span></td><td>Klubi, v katerih delaš</td></tr>
+    <tr><td>Moj račun <span class="en">My Account</span></td><td>Podatki računa, prošnja za klub</td></tr>
+    <tr><td>Pomoč <span class="en">Support</span></td><td>Odgovori na pogosta vprašanja</td></tr>
+    <tr><td>O aplikaciji <span class="en">About</span></td><td>Pogoji uporabe in zasebnost</td></tr>
+    <tr><td>Odjava <span class="en">Log out</span></td><td>Odjava iz računa</td></tr>
   </tbody>
 </table></div>
 
-<h3>Na vhodu</h3>
-<p>Odpri <b>Profil → Vstopnice</b>, izberi vstopnico in pokaži QR-kodo osebju. Posnetek zaslona deluje, a koda je
-podpisana in velja samo enkrat.</p>
-<p class="opomba"><b>Prenos vstopnice:</b> v vstopnici izberi <b>Pošlji prijatelju</b> <span class="en">Send to a friend</span>
-in izberi prijatelja s seznama ali vpiši njegov e-naslov. Če ima dogodek starostno mejo, potrdiš, da jo prijatelj
-izpolnjuje. Prijatelj dobi novo QR-kodo, tvoja pa v tistem trenutku preneha veljati. Vstopnic s seznama gostov ni mogoče
-prenesti.</p>
+<h2 id="r5"><span class="st">5</span>Za zaposlene v klubu</h2>
 
-<!-- ============================================================ -->
-<h2 id="zaposleni"><span class="st">4</span>Za zaposlene v klubu</h2>
-<p class="vodilo">Kot zaposleni uporabljaš svoj običajni Outly račun. Delo v klubu najdeš v <b>Profil → Moji klubi</b>
-<span class="en">My Clubs</span>, kaj vidiš, pa je odvisno od vloge, ki ti jo dodeli klub.</p>
+<p>Zaposleni uporablja svoj običajni Outly račun. Vse za delo je v <b>Profil → Moji klubi</b> <span class="en">My Clubs</span> → klub → <b>Prikaži</b> <span class="en">View</span>.</p>
 
-<h3>Kako postaneš zaposleni</h3>
+<h3>Kaj ima posamezna vloga</h3>
+
+<ul>
+  <li><b>Upravitelj</b> <span class="en">Manager</span>: skenira vstopnice, streže VIP mize, ureja dogodke in stran kluba, vidi Pregled in sestavlja ekipo vratarjev in natakarjev. Ne more dodati drugega upravitelja, ne vidi podatkov prodajalca in ne povezuje Stripa.</li>
+  <li><b>Vratar</b> <span class="en">Door staff</span>: samo skenira vstopnice na vhodu.</li>
+  <li><b>Natakar</b> <span class="en">Bartender</span>: samo streže VIP mize. Podatkov o gostih ne vidi.</li>
+</ul>
+
+<p>Vsak lahko ekipo kadarkoli zapusti. Kar zmore upravitelj, je podrobno opisano v razdelku <i>Za klube</i>.</p>
+
+<h3>Sprejmi vabilo v ekipo</h3>
+
 <ol>
-  <li>Klub te povabi na e-naslov tvojega Outly računa. Račun mora že obstajati.</li>
-  <li>Vabilo vidiš pod zvoncem na zaslonu Domov ali v <b>Moji klubi</b>, kjer zvonec zgoraj desno pokaže število vabil.</li>
-  <li>Odpri ga in izberi <b>Sprejmi</b> <span class="en">Accept</span> ali <b>Zavrni</b> <span class="en">Reject</span>.
-    Po sprejemu se klub pokaže v Moji klubi skupaj s tvojo vlogo.</li>
-  <li>Iz ekipe lahko kadarkoli izstopiš z <b>Zapusti ekipo</b> <span class="en">Leave the team</span>.</li>
+  <li>Klub te povabi na e-naslov tvojega Outly računa.</li>
+  <li>Odpri <b>Profil → Moji klubi</b> in pritisni zvonec zgoraj desno (rdeča številka).</li>
+  <li>Pritisni <b>Sprejmi</b> <span class="en">Accept</span> ali <b>Zavrni</b> <span class="en">Reject</span>.</li>
 </ol>
 
-<h3>Vloge</h3>
-<div class="drsnik"><table class="dva">
-  <thead><tr><th>Vloga</th><th>Kaj lahko dela</th></tr></thead>
-  <tbody>
-    <tr><td>Lastnik <span class="en">Owner</span></td><td>Vse. Edini lahko doda upravitelja in ureja podatke prodajalca.</td></tr>
-    <tr><td>Upravitelj <span class="en">Manager</span></td><td>Dogodki, prodaja, stran kluba, ekipa (vratarji in natakarji), skeniranje in strežba miz. Drugega upravitelja ne more dodati.</td></tr>
-    <tr><td>Vratar <span class="en">Door staff</span></td><td>Samo skeniranje vstopnic na vhodu.</td></tr>
-    <tr><td>Natakar <span class="en">Bartender</span></td><td>Samo strežba miz: vidi VIP mize, ki jih mora postreči, brez podatkov o gostih.</td></tr>
-  </tbody>
-</table></div>
-<p>Pravice preverja Outly ob vsakem dejanju. Česar tvoja vloga ne dovoli, v aplikaciji sploh ne vidiš.</p>
+<p>Klub se nato pokaže v Moji klubi.</p>
 
-<h3>Skeniranje vstopnic</h3>
-<p>Za vratarje, upravitelje in lastnike. Lastnik pride do skenerja tako, da v <b>Settings</b> izbere
-<b>Switch to personal account</b> in odpre <b>Moji klubi</b>; nazaj preklopi v <b>Moj račun</b>.</p>
+<h3>Skeniraj vstopnice (vratar, upravitelj)</h3>
+
 <ol>
-  <li>Odpri <b>Profil → Moji klubi →</b> klub <b>→ Skeniraj vstopnico</b> <span class="en">Scan ticket</span>.</li>
-  <li>Kamero usmeri v QR-kodo gosta. Dogodka ti ni treba izbirati, ker koda sama pove, za kateri dogodek je.</li>
-  <li>Zaslon pokaže rezultat. Z <b>Naprej</b> <span class="en">Next</span> preideš na naslednjega gosta.</li>
+  <li><b>Moji klubi</b> → klub → <b>Skeniraj vstopnico</b> <span class="en">Scan ticket</span>.</li>
+  <li>Kamero usmeri v QR-kodo gosta.</li>
+  <li>Poglej barvo in pritisni <b>Naprej</b> <span class="en">Next</span>.</li>
 </ol>
-<p>Skener je odprt od 12 ur pred začetkom do 6 ur po koncu dogodka. Zunaj tega časa piše <i>Zdaj ni dogodka</i> in kdaj se
-odpre naslednji. Med skeniranjem zaslon ne ugasne, svetilko vklopiš zgoraj.</p>
-<div class="drsnik"><table>
-  <thead><tr><th>Barva</th><th>Kaj narediš</th><th>Sporočila</th></tr></thead>
+
+<div class="drsnik"><table class="dva">
+  <thead><tr><th>Barva</th><th>Kaj narediš</th></tr></thead>
   <tbody>
-    <tr><td><span class="pika ok"></span>Zelena</td><td>Gost vstopi.</td><td>DOBRODOŠLI <span class="en">WELCOME IN</span></td></tr>
-    <tr><td><span class="pika stop"></span>Rdeča</td><td>Gost ne vstopi.</td><td>ŽE SKENIRANO, VSTOPNICA PRENESENA, VRNJENO, PREKLICANO, NEPLAČANO, DRUG DOGODEK, NI ZA DANES, NAPAČEN KLUB, NEVELJAVNA KODA, NEZNANA VSTOPNICA, DOGODEK ODPOVEDAN …</td></tr>
-    <tr><td><span class="pika check"></span>Rumena</td><td>Preveri ročno.</td><td>STARA KODA, ŠE NI PODATKOV, KLJUČ ZASTAREL</td></tr>
+    <tr><td>Zelena: DOBRODOŠLI</td><td>Gost vstopi.</td></tr>
+    <tr><td>Rdeča: npr. ŽE SKENIRANO, NEPLAČANO, DOGODEK ODPOVEDAN</td><td>Gost ne vstopi.</td></tr>
+    <tr><td>Rumena: npr. STARA KODA</td><td>Preveri ročno.</td></tr>
   </tbody>
 </table></div>
-<p>Pri VIP gostu se pokaže krona, pri gostu s seznama gostov pa ime gostitelja.</p>
+
+<ul>
+  <li>Dogodka ni treba izbrati. Skener dela od 12 ur pred začetkom do 6 ur po koncu dogodka.</li>
+  <li>Zgoraj sta <b>Svetilka</b> <span class="en">Flashlight</span> in osvežitev.</li>
+  <li>Pri VIP gostu se pokaže miza, pri gostu s seznama gostov pa ime gostitelja.</li>
+</ul>
 
 <h3>Brez interneta</h3>
-<p>Skener deluje tudi, ko povezave ni. Dokler je telefon povezan, vsaki 2 minuti prenese seznam vstopnic za aktualne
-dogodke, brez povezave pa veljavnost kode preveri kar na telefonu. Vsak sken se shrani in pošlje, takoj ko je povezava
-spet na voljo.</p>
+
+<p>Skener dela tudi brez povezave. Skeni se shranijo in pošljejo, ko je povezava spet tu. Vrstica zgoraj kaže <i>Povezan</i> ali <i>Brez povezave</i>.</p>
+
 <ul>
-  <li>Vrstica na vrhu kaže, ali si <i>Povezan</i> ali <i>Brez povezave</i>, koliko skenov še čaka na pošiljanje, koliko
-    gostov je že noter in kdaj je bil seznam nazadnje osvežen.</li>
-  <li>Če te telefon opozori, da ima napačno uro ali da seznama dolgo ni osvežil, to uredi, preden se nabere vrsta.</li>
-  <li>Ikona s številko zgoraj zbere skene, ki jih Outly po ponovni povezavi ni potrdil, da jih lahko pregledaš.</li>
+  <li><b>Rumena STARA KODA brez povezave:</b> če gosta vseeno spustiš, pritisni <b>Spusti</b> <span class="en">Let in</span> in potrdi.</li>
+  <li><b>Konflikti</b> (oranžna številka zgoraj): gostje, ki si jih spustil, a jih Outly pozneje ni potrdil. Preglej jih in pritisni <b>Potrdi</b> <span class="en">Dismiss</span>.</li>
 </ul>
-<p>Brez kamere: upravitelj ali lastnik odpre <b>Pregled</b> <span class="en">Dashboard</span> → dogodek →
-<b>Vstop pri vratih</b> <span class="en">Door check-in</span> in gosta označi s <b>Prijavi vstop</b>
-<span class="en">Check in</span>.</p>
 
-<h3>Strežba miz</h3>
-<p>Za natakarje, upravitelje in lastnike. Odpri <b>Moji klubi →</b> klub <b>→ Strežba miz</b>
-<span class="en">Table service</span>, izberi dogodek in ob vsaki mizi pritisni <b>Dostavljeno</b>
-<span class="en">Delivered</span>, ko je naročilo postreženo. <b>Razveljavi</b> <span class="en">Undo</span> to prekliče.</p>
+<h3>Streži VIP mize (natakar, upravitelj)</h3>
 
-<!-- ============================================================ -->
-<h2 id="klubi"><span class="st">5</span>Za klube</h2>
-<p class="vodilo">Lastnik kluba ima namesto osebnega profila profil kluba: logotip, ime, povezavo
-<b>Uredi svojo stran</b> <span class="en">Edit your page</span> in meni <b>Pregled · Dogodki · My team · Settings</b>.</p>
-<p>V <b>Settings</b> je tudi <b>Switch to personal account</b>: z njim aplikacijo uporabljaš kot obiskovalec in
-dobiš dostop do skenerja. Nazaj na profil kluba preklopiš v <b>Moj račun</b>.</p>
-
-<h3>Kako klub pride na Outly</h3>
 <ol>
-  <li>Oddaj prošnjo v <b>Profil → Moj račun → Prošnja za ustvarjalca</b> <span class="en">Request for creator</span>
-    in pritisni <b>Oddaj prošnjo</b> <span class="en">Submit Application</span>.</li>
-  <li>Outly prošnjo pregleda in tvoj račun spremeni v poslovnega.</li>
-  <li>Ob naslednjem odprtju se pokaže <b>Set up your club</b>: logotip, ime, naslov, mesto, najnižja starost in glasbene
-    zvrsti, nato <b>Create club</b>. Če dogodke organiziraš brez lastnega prostora, vklopi
-    <b>Organiziram dogodke brez lastnega prizorišča</b>.</li>
+  <li>Ko vratar skenira VIP vstopnico, dobiš obvestilo <b>VIP miza</b> <span class="en">VIP table</span>, tudi na zaklenjenem telefonu.</li>
+  <li>Pritisni obvestilo. Odpre se <b>Strežba miz</b> <span class="en">Table service</span> za dogodek, ki teče.</li>
+  <li>Vidiš mizo, paket in število mest.</li>
+  <li>Ko postrežeš, pritisni <b>Dostavljeno</b> <span class="en">Delivered</span>. Napaka? <b>Razveljavi</b> <span class="en">Undo</span>.</li>
 </ol>
 
-<h3>Stran kluba</h3>
-<p>V <b>Settings → Podatki o klubu</b> <span class="en">Club info</span> urediš ime, telefon, spletno stran, Instagram,
-e-naslov, opis, naslov, najnižjo starost, glasbene zvrsti, galerijo slik in video kluba.</p>
-<p>Tam je tudi <b>Cenik bara</b> <span class="en">Bar prices</span>: vpiši pijačo, ceno v evrih in po želji kategorijo,
-pritisni <b>Dodaj postavko</b> <span class="en">Add item</span> in na koncu <b>Shrani</b> <span class="en">Save</span>.</p>
-<p class="opomba"><b>Podatki prodajalca</b> <span class="en">Seller details</span>: podjetje, sedež, matično in davčno
-številko ter status DDV izpolni lastnik, preden klub začne prodajati vstopnice.</p>
+<p>Obvestila moraš ob prvem zagonu aplikacije dovoliti. Strežbo miz odpreš tudi ročno: <b>Moji klubi</b> → klub → <b>Strežba miz</b>.</p>
 
-<h3>Dogodki</h3>
-<p>V <b>Dogodki → Dodaj dogodek</b> <span class="en">Add event</span> izpolniš:</p>
+<h3>Zapusti ekipo</h3>
+
+<p><b>Moji klubi</b> → klub → <b>Zapusti ekipo</b> <span class="en">Leave the team</span> → potrdi.</p>
+
+<h2 id="r6"><span class="st">6</span>Za klube</h2>
+
+<p>Lastnik ima namesto osebnega profila <b>profil kluba</b>. V njem so <b>Uredi svojo stran</b> <span class="en">Edit your page</span>, <b>Pregled</b> <span class="en">Dashboard</span>, <b>Dogodki</b> <span class="en">Events</span>, <b>Moja ekipa</b> <span class="en">My team</span> in <b>Nastavitve</b> <span class="en">Settings</span>.</p>
+
+<h3>Kako klub pride na Outly</h3>
+
+<ol>
+  <li><b>Profil → Moj račun → Prošnja za ustvarjalca</b> <span class="en">Request for creator</span>.</li>
+  <li>Izpolni obrazec in pritisni <b>Oddaj prošnjo</b> <span class="en">Submit Application</span>.</li>
+  <li>Ko Outly prošnjo odobri, odpri aplikacijo. Pokaže se <b>Set up your club</b>.</li>
+  <li>Vpiši ime, logotip, naslov, mesto, najnižjo starost in glasbo, nato <b>Create club</b>.</li>
+</ol>
+
+<p>Organiziraš dogodke brez lastnega prostora? Vklopi <b>Organiziram dogodke brez lastnega prizorišča</b>.</p>
+
+<h3>Uredi stran kluba</h3>
+
+<ol>
+  <li><b>Nastavitve</b> → <b>Podatki o klubu</b> <span class="en">Club info</span>.</li>
+  <li>Na kartici, ki jo želiš spremeniti, pritisni <b>Uredi</b> <span class="en">Edit</span>.</li>
+  <li>Popravi in pritisni <b>Shrani</b> <span class="en">Save</span>.</li>
+</ol>
+
 <div class="drsnik"><table class="dva">
-  <thead><tr><th>Polje</th><th>Pomen</th></tr></thead>
+  <thead><tr><th>Kartica</th><th>Kaj vpišeš</th></tr></thead>
   <tbody>
-    <tr><td>Naslov, Opis</td><td>Ime in opis dogodka.</td></tr>
-    <tr><td>Začetek, Konec</td><td>Kdaj se dogodek začne; konec ni obvezen.</td></tr>
-    <tr><td>Najnižja starost, zvrsti</td><td>Komu je dogodek namenjen.</td></tr>
-    <tr><td>Cena (EUR)</td><td>Prazno pomeni, da vstopnic ne prodajaš prek Outlyja. 0 pomeni prost vstop.</td></tr>
-    <tr><td>Kapaciteta</td><td>Prazno pomeni brez omejitve.</td></tr>
-    <tr><td>Zunanja povezava do vstopnic</td><td>Neobvezno, če vstopnice prodajaš drugje.</td></tr>
-    <tr><td>Plakat, Video dogodka</td><td>Plakat dogodka. Video imajo lahko samo trije najbolj priljubljeni pretekli dogodki.</td></tr>
-    <tr><td>Objavljeno (vidno vsem)</td><td>Ko je vklopljeno, dogodek vidijo vsi; sicer ostane <i>Osnutek</i>.</td></tr>
+    <tr><td>Osnovno</td><td>Logotip, ime, telefon, spletna stran, Instagram, e-pošta, opis</td></tr>
+    <tr><td>Naslov in mesto</td><td>Lokacijo na zemljevidu izračuna aplikacija. Na spletu jo lahko popraviš z <b>Nastavi na zemljevidu</b> <span class="en">Set on map</span>.</td></tr>
+    <tr><td>Najnižja starost, glasba</td><td>Komu je klub namenjen</td></tr>
+    <tr><td>Galerija <span class="en">Slideshow</span></td><td>Do 3 slike na vrhu strani kluba: <b>Izberi fotografije</b> <span class="en">Choose photos</span></td></tr>
+    <tr><td>Video kluba <span class="en">Club video</span></td><td>Video do 100 MB, predvaja se brez zvoka: <b>Naloži</b> <span class="en">Upload</span></td></tr>
+    <tr><td>Cenik bara <span class="en">Bar prices</span></td><td>Pijača, cena, kategorija → <b>Dodaj postavko</b> <span class="en">Add item</span> → <b>Shrani</b>. Do 60 postavk.</td></tr>
+    <tr><td>Podatki prodajalca <span class="en">Seller details</span></td><td>Podatki podjetja za račune. Vpiše samo lastnik. Glej <i>Kako klub dobi denar</i>.</td></tr>
   </tbody>
 </table></div>
-<p>Vsak dogodek ima eno ceno vstopnice; več vrst vstopnic (npr. early bird ali VIP) aplikacija še nima. Dogodek odpoveš
-ali izbrišeš s <b>Prekliči ali izbriši dogodek</b>.</p>
 
-<h3>Ekipa</h3>
+<h3>Dodaj dogodek</h3>
+
+<ol>
+  <li><b>Dogodki</b> → <b>Dodaj dogodek</b> <span class="en">Add event</span>.</li>
+  <li>Izpolni polja (spodaj).</li>
+  <li>Vklopi <b>Objavljeno (vidno vsem)</b>, da ga vidijo obiskovalci. Izklopljeno pomeni osnutek.</li>
+  <li>Pritisni <b>Shrani</b> <span class="en">Save</span>.</li>
+</ol>
+
+<div class="drsnik"><table class="dva">
+  <thead><tr><th>Polje</th><th>Kaj vpišeš</th></tr></thead>
+  <tbody>
+    <tr><td>Naslov, Opis</td><td>Ime in opis dogodka</td></tr>
+    <tr><td>Začetek, Konec</td><td>Datum in ura; konec ni obvezen</td></tr>
+    <tr><td>Najnižja starost, glasba</td><td>Komu je namenjen</td></tr>
+    <tr><td>Cena (EUR)</td><td>Cena vstopnice. 0 = prost vstop. Prazno = vstopnic ne prodajaš na Outlyju.</td></tr>
+    <tr><td>Kapaciteta</td><td>Največ vstopnic. Prazno = brez omejitve.</td></tr>
+    <tr><td>Zunanja povezava</td><td>Če vstopnice prodajaš drugje (neobvezno)</td></tr>
+    <tr><td>Plakat</td><td>Slika dogodka</td></tr>
+  </tbody>
+</table></div>
+
+<p>Vsak dogodek ima eno ceno vstopnice.</p>
+
+<h3>Uredi, odpovej ali izbriši dogodek</h3>
+
 <ul>
-  <li>V <b>My team</b> pritisni <b>Povabi člana</b> <span class="en">Invite member</span>, vpiši e-naslov njegovega
-    Outly računa, izberi vlogo in pritisni <b>Pošlji vabilo</b> <span class="en">Send invite</span>. Upravitelja lahko
-    povabi samo lastnik.</li>
-  <li>Neodgovorjena vabila so pod <i>Čaka na odgovor</i>; prekličeš jih s križcem.</li>
-  <li>Člana odstraniš s križcem in potrdiš z <b>Odstrani</b> <span class="en">Remove</span>.</li>
-  <li>Vloge obstoječemu članu ni mogoče spremeniti: odstrani ga in ga povabi znova z novo vlogo.</li>
+  <li><b>Uredi:</b> <b>Dogodki</b> → pritisni dogodek → popravi → <b>Shrani</b>.</li>
+  <li><b>Odpovej ali izbriši:</b> v dogodku pritisni <b>Prekliči ali izbriši dogodek</b> → <b>Izbriši dogodek</b> <span class="en">Delete event</span>.<ul><li>Brez prodanih vstopnic se dogodek izbriše.</li><li>S prodanimi vstopnicami se dogodek odpove. Vstopnice na vhodu ne veljajo, kupci dobijo denar vrnjen.</li></ul></li>
+  <li><b>Video dogodka:</b> ko se dogodek konča, v njem pritisni <b>Upload video</b>. Video imajo lahko samo trije najbolj priljubljeni pretekli dogodki.</li>
 </ul>
 
-<h3>Pregled poslovanja</h3>
+<p>Oznake na seznamu: <i>Prihajajoče</i>, <i>Končano</i>, <i>Osnutek</i>, <i>Preklicano</i>.</p>
+
+<h3>VIP mize</h3>
+
+<p>Tloris in pakete nastaviš na spletu, <b>outly.si/app</b>:</p>
+
+<ol>
+  <li><b>Tloris:</b> profil kluba → <b>VIP mize</b> <span class="en">VIP tables</span> → <b>Urejevalnik tlorisa</b> <span class="en">Floor plan editor</span> → <b>Dodaj na tloris</b> <span class="en">Add to the floor plan</span>. Vsaki mizi določi ime, obliko, število mest in ceno.</li>
+  <li><b>Paketi:</b> <b>Paketi steklenic</b> <span class="en">Bottle packages</span> → <b>Dodaj paket</b> <span class="en">Add package</span>, npr. »Jameson 0,7 l«. Paketi veljajo za vse dogodke.</li>
+  <li><b>Prodaja za dogodek:</b> uredi dogodek → <b>VIP mize</b> → vklopi <b>Prodajaj VIP mize za ta dogodek</b> → <b>Shrani nastavitve VIP</b>.</li>
+</ol>
+
+<p>Mizo, rezervirano po telefonu, označiš v aplikaciji: <b>Pregled</b> → dogodek → <b>Označi kot rezervirano</b> <span class="en">Mark as reserved</span> → ime gosta → <b>Rezerviraj</b>. Rezervacijo odstraniš s <b>Sprosti</b> <span class="en">Release</span>.</p>
+
+<h3>Seznami gostov</h3>
+
+<p>Seznam gostov za dogodek ustvari Outly in določi gostitelja ter število mest. Gostitelj v <b>Vstopnice → Seznami gostov</b> pritisne <b>Povabi prijatelje</b>. Vsak gost dobi svojo QR-kodo, na vhodu se skenira kot navadna vstopnica.</p>
+
+<h3>Ekipa</h3>
+
+<ul>
+  <li><b>Povabi:</b> <b>Moja ekipa</b> → <b>Povabi člana</b> <span class="en">Invite member</span> → e-naslov Outly računa → vloga → <b>Pošlji vabilo</b> <span class="en">Send invite</span>.</li>
+  <li><b>Prekliči vabilo:</b> pri vabilu pritisni X → <b>Prekliči vabilo</b>.</li>
+  <li><b>Odstrani člana:</b> pri članu pritisni X → <b>Odstrani</b> <span class="en">Remove</span>. Dostop izgubi takoj.</li>
+</ul>
+
+<p>Vloge ni mogoče spremeniti. Odstrani člana in ga povabi znova z novo vlogo. Upravitelja lahko povabi samo lastnik.</p>
+
+<h3>Pregled (Dashboard)</h3>
+
 <div class="drsnik"><table class="dva">
-  <thead><tr><th>Del</th><th>Kaj pokaže</th></tr></thead>
+  <thead><tr><th>Del</th><th>Kaj vidiš</th></tr></thead>
   <tbody>
-    <tr><td>Povzetek</td><td>Skupni prihodek, prodane vstopnice, provizija Outly in tvoje izplačilo (po proviziji in vračilih).</td></tr>
-    <tr><td>Prodaja <span class="en">Sales</span></td><td>Graf prodaje po letih, mesecih ali tednih.</td></tr>
-    <tr><td>Preveri aktivnost <span class="en">Check activity</span></td><td>Ogledi profila, kliki na dogodke in sledilci, vsak s prirastom v tem tednu.</td></tr>
-    <tr><td>Aktivnost ekipe <span class="en">Staff activity</span></td><td>Koliko vstopnic je skeniral posamezni zaposleni.</td></tr>
-    <tr><td>Uspešnost dogodkov <span class="en">Event performance</span></td><td>Po dogodku: prodane vstopnice, vstopi in zainteresirani. Tu sta tudi vstop pri vratih in VIP rezervacije.</td></tr>
+    <tr><td>Kartice zgoraj</td><td>Skupni prihodek, prodane vstopnice, provizija Outly, tvoje izplačilo</td></tr>
+    <tr><td>Prodaja</td><td>Graf po letih, mesecih ali tednih</td></tr>
+    <tr><td>Preveri aktivnost</td><td>Ogledi profila, kliki na dogodke, sledilci; koliko novih ta teden</td></tr>
+    <tr><td>Aktivnost ekipe</td><td>Koliko vstopnic je skeniral kdo. Pritisni člana za podrobnosti.</td></tr>
+    <tr><td>Uspešnost dogodkov</td><td>Prodano, vstopilo, zainteresirani po dogodkih</td></tr>
   </tbody>
 </table></div>
 
-<h3>Plačila</h3>
-<p>Obiskovalci plačajo vstopnice prek Stripa. Denar gre neposredno na Stripe račun kluba, zato gumba za dvig sredstev v
-aplikaciji ni.</p>
-<p>Povezavo s Stripom ter tloris in pakete VIP miz kluba nastaviš v spletni aplikaciji na
-<a href="https://outly.si/app">outly.si/app</a>. VIP mize za posamezen dogodek urediš tudi v aplikaciji, v obrazcu
-dogodka. Dokler Stripe ni povezan, Pregled opozori, da kupci še ne morejo kupovati.</p>
+<p><b>Vstop brez kamere:</b> <b>Pregled</b> → dogodek → <b>Vstop pri vratih</b> <span class="en">Door check-in</span> → ob gostu <b>Prijavi vstop</b> <span class="en">Check in</span>.</p>
 
-<!-- ============================================================ -->
-<h2 id="vprasanja"><span class="st">6</span>Pogosta vprašanja</h2>
+<h3>Skener in strežba miz za lastnika</h3>
 
-<p class="vprasanje">Kje dobim aplikacijo?</p>
-<p>Aplikacija za iPhone je trenutno v testiranju prek TestFlighta. Vse funkcije so tudi v brskalniku na
-<a href="https://outly.si/app">outly.si/app</a>, tudi za Android, z istim računom.</p>
+<ul>
+  <li><b>V aplikaciji:</b> <b>Nastavitve</b> → <b>Switch to personal account</b> → <b>Moji klubi</b> → klub → <b>Skeniraj vstopnico</b> ali <b>Strežba miz</b>. Nazaj na profil kluba preklopiš v <b>Moj račun</b>.</li>
+  <li><b>Na spletu (outly.si/app):</b> oboje je neposredno v profilu kluba.</li>
+</ul>
 
-<p class="vprasanje">Lahko vratar z Androidom skenira vstopnice?</p>
-<p>Da. Skener je tudi v spletni aplikaciji na <a href="https://outly.si/app">outly.si/app</a>, za vse vloge v klubu.</p>
+<p>Kako delata, piše v razdelku <i>Za zaposlene v klubu</i>.</p>
 
-<p class="vprasanje">Vstopnice ni med Vstopnicami.</p>
-<p>Preveri, ali si prijavljen z računom, s katerim si jo kupil. Če ti jo je poslal prijatelj, je v tvojem računu z novo
-QR-kodo.</p>
+<h3>Geslo</h3>
 
-<p class="vprasanje">Koda za potrditev e-pošte ni prišla.</p>
-<p>Preveri mapo z neželeno pošto, nato pritisni <b>Znova pošlji kodo</b>.</p>
+<p><b>Uredi svojo stran</b> → <b>Geslo in varnost</b> <span class="en">Password and security</span>.</p>
 
-<p class="vprasanje">Pozabil sem geslo.</p>
-<p>Na prijavi pritisni <b>Pozabljeno geslo?</b>. Geslo ponastaviš s kodo, ki jo dobiš po e-pošti.</p>
+<h2 id="r7"><span class="st">7</span>Kako klub dobi denar</h2>
 
-<p class="vprasanje">Kako dodam svoj klub?</p>
-<p><b>Profil → Moj račun → Prošnja za ustvarjalca</b>. Ko Outly prošnjo odobri, se odpre nastavitev kluba.</p>
+<p>Denar od vstopnic gre neposredno na bančni račun kluba, prek Stripa. Outly denarja ne hrani in nima denarnice.</p>
 
-<p class="vprasanje">Delam v več klubih. Kako preklopim?</p>
-<p>V <b>Moji klubi</b> ima vsak klub svojo kartico z vlogo. Odpri tistega, v katerem ta večer delaš.</p>
+<h3>Pot denarja</h3>
 
-<p class="vprasanje">Kako izbrišem račun?</p>
-<p><b>Profil → Pomoč</b> → članek <i>Izbriši svoj račun</i>.</p>
+<ol>
+  <li>Obiskovalec v aplikaciji kupi vstopnico in plača s kartico.</li>
+  <li>Plačilo obdela <b>Stripe</b>, ponudnik spletnih plačil.</li>
+  <li>Stripe od zneska odbije provizijo Outly.</li>
+  <li>Preostanek gre na Stripe račun kluba.</li>
+  <li>Stripe ga samodejno izplača na bančni račun kluba.</li>
+</ol>
+
+<p>Prodajalec vstopnice je klub, Outly je posrednik. Klub zato izda račun in obračuna DDV.</p>
+
+<h3>Provizija</h3>
+
+<ul>
+  <li>Provizija Outly se odbije od cene vstopnice, kupcu se ne prišteje.</li>
+  <li>Višino provizije določa dogovor med klubom in Outlyjem.</li>
+  <li>Enako velja za VIP mize. Seznami gostov in brezplačni vstop so brez provizije.</li>
+</ul>
+
+<h3>Kaj potrebujemo od kluba</h3>
+
+<div class="drsnik"><table class="dva">
+  <thead><tr><th>Kaj</th><th>Kje se vpiše</th></tr></thead>
+  <tbody>
+    <tr><td>Podatki podjetja: ime, sedež, matična in davčna številka, ali je zavezanec za DDV, telefon ali e-naslov</td><td>Aplikacija: <b>Nastavitve → Podatki o klubu → Podatki prodajalca</b> <span class="en">Seller details</span>. Vpiše samo lastnik.</td></tr>
+    <tr><td>Stripe račun: bančni račun (IBAN), osebni dokument, podatki podjetja in zastopnika, potrditev Stripovih pogojev</td><td>Spletna aplikacija <b>outly.si/app</b> → Nastavitve → Plačila → <b>Poveži Stripe</b> <span class="en">Connect Stripe</span>. Podatke vpišeš neposredno pri Stripu, Outly jih ne vidi.</td></tr>
+    <tr><td>Dogovor o proviziji</td><td>Z Outlyjem.</td></tr>
+  </tbody>
+</table></div>
+
+<h3>Kako povežeš Stripe (samo lastnik)</h3>
+
+<ol>
+  <li>V brskalniku odpri <b>outly.si/app</b> in se prijavi.</li>
+  <li>Odpri <b>Nastavitve</b> <span class="en">Settings</span> → <b>Plačila</b> <span class="en">Payments</span>.</li>
+  <li>Pritisni <b>Poveži Stripe</b> <span class="en">Connect Stripe</span>. Odpre se Stripe.</li>
+  <li>Izpolni Stripov obrazec in se vrni v Outly.</li>
+  <li>Ko Stripe preveri podatke, piše, da klub sprejema plačila s kartico.</li>
+</ol>
+
+<p>Si prekinil? Pritisni <b>Nadaljuj nastavitev Stripa</b> <span class="en">Continue Stripe setup</span>. Izplačila in urnik izplačil vidiš z <b>Odpri Stripe pregled</b> <span class="en">Open Stripe dashboard</span>.</p>
+
+<h3>Kje vidiš zaslužek</h3>
+
+<p>V <b>Pregled</b> <span class="en">Dashboard</span>:</p>
+
+<ul>
+  <li><b>Skupni prihodek</b> <span class="en">Total revenue</span>: vse prodane vstopnice in mize.</li>
+  <li><b>Provizija Outly</b> <span class="en">Outly fee</span>: koliko je od tega Outly.</li>
+  <li><b>Tvoje izplačilo</b> <span class="en">Your payout</span>: kar ostane klubu po proviziji in vračilih.</li>
+</ul>
+
+<h3>Odpovedan dogodek</h3>
+
+<p>Kupec ima pravico do vračila denarja. Vračilo prek Stripa izvede Outly v imenu kluba. Vstopnice odpovedanega dogodka na vhodu ne veljajo.</p>
+
+<p class="opomba"><b>Trenutno stanje:</b> Outly je v testnem načinu. Nakupi so simulirani, denar se še ne premika (oznaka <b>TEST</b> v Pregledu). Ko preklopimo na pravo plačevanje, klube obvestimo.</p>
+
+<h2 id="r8"><span class="st">8</span>Kako dobiš aplikacijo (TestFlight)</h2>
+
+<p>Aplikacija za iPhone je zdaj v testiranju. Namešča se prek Applove aplikacije <b>TestFlight</b>, ne prek App Stora.</p>
+
+<h3>Kaj potrebuješ</h3>
+
+<ul>
+  <li>iPhone z iOS 17 ali novejšim.</li>
+  <li>Apple račun (Apple ID).</li>
+</ul>
+
+<h3>Koraki</h3>
+
+<ol>
+  <li>Pošlji nam e-naslov svojega Apple računa na <a href="mailto:luka@outly.si">luka@outly.si</a>.</li>
+  <li>Iz App Stora namesti aplikacijo <b>TestFlight</b>.</li>
+  <li>Po e-pošti dobiš povabilo. Odpri ga na iPhonu in pritisni <b>View in TestFlight</b>.</li>
+  <li>V TestFlightu pritisni <b>Accept</b>, nato <b>Install</b>.</li>
+  <li>Outly se pokaže na začetnem zaslonu. Odpri ga in se registriraj ali prijavi.</li>
+</ol>
+
+<h3>Posodobitve</h3>
+
+<p>Novo različico TestFlight javi sam. Odpri TestFlight in pritisni <b>Update</b>.</p>
+
+<h3>Android ali računalnik</h3>
+
+<p>TestFlight je samo za iPhone. Vse funkcije so tudi v brskalniku na <a href="https://outly.si/app">outly.si/app</a>, z istim računom. Tam lahko vratar z Androidom tudi skenira vstopnice.</p>
 
 <footer>
   Vprašanja in težave: <a href="mailto:luka@outly.si">luka@outly.si</a> ·
