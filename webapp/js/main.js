@@ -3,7 +3,7 @@
 import { html, render, useEffect, useLayoutEffect, useState } from "./lib.js";
 import { t, useJezik, pripraviJezik } from "./i18n.js";
 import { usePot, navigiraj, obnoviDrsenje } from "./usmerjanje.js";
-import { zacniSejo, useSeja, potrebujeOnboarding } from "./seja.js";
+import { zacniSejo, useSeja, potrebujeOnboarding, pocistiStareSkeneOdZagona } from "./seja.js";
 import { Ikona, Avatar, Nalaganje, GlavaNazaj, Napaka } from "./ui.js";
 import { Home, OzadjeHome } from "./views/home.js";
 import { Iskanje } from "./views/search.js";
@@ -262,4 +262,5 @@ pripraviJezik().then(() => {
   koren.textContent = "";   // zacetna vrtavka iz index.html
   render(html`<${App} />`, koren);
   if (window.outlyZagnano) window.outlyZagnano();   // varovalo zagona (webapp/zagon.js)
+  pocistiStareSkeneOdZagona();   // po izrisu, brez cakanja (poslani skeni najvec 3 dni)
 });

@@ -8,8 +8,12 @@
 <header>
   <div class="znamka">Outly</div>
   <h1>Politika zasebnosti</h1>
-  <div class="datum">Veljavna od 11. 10. 2026 · različica 2.4.1 · velja za aplikacijo Outly in spletno stran outly.si</div>
+  <div class="datum">Veljavna od 14. 10. 2026 · različica 2.4.2 · velja za aplikacijo Outly, spletno aplikacijo na outly.si/app in spletno stran outly.si</div>
 </header>
+
+<p>Različica 2.4.2 dodaja opis spletne aplikacije na outly.si/app (shramba v brskalniku, lokacija, kamera za skeniranje
+vstopnic) in popravlja opis varnostnih ukrepov pri prijavi. Opisuje obdelavo, ki jo spletna aplikacija že izvaja;
+novih namenov obdelave ne uvaja.</p>
 
 
 <div class="kazalo"><ol>
@@ -20,7 +24,7 @@
   <li><a href="#b5">Komu podatke posredujemo</a></li>
   <li><a href="#b6">Prenosi izven EU</a></li>
   <li><a href="#b7">Lokacija</a></li>
-  <li><a href="#b8">Spletna stran: piškotki in zunanje vsebine</a></li>
+  <li><a href="#b8">Spletna stran in spletna aplikacija: piškotki in shramba v brskalniku</a></li>
   <li><a href="#b9">Tvoje pravice</a></li>
   <li><a href="#b10">Otroci</a></li>
   <li><a href="#b11">Varnost</a></li>
@@ -40,9 +44,9 @@ odgovarja organizator sam, po svoji politiki zasebnosti.</p>
 <h3>Ob ustvarjanju računa</h3>
 <ul>
   <li>elektronski naslov in uporabniško ime;</li>
-  <li>geslo — shrani ga naš ponudnik avtentikacije Supabase izključno v obliki kriptografskega odtisa (bcrypt); samega gesla ne poznamo in ga ne moremo prebrati; isti račun velja za aplikacijo in spletno stran outly.si;</li>
+  <li>geslo — shrani ga naš ponudnik avtentikacije Supabase izključno v obliki kriptografskega odtisa (bcrypt); samega gesla ne poznamo in ga ne moremo prebrati; isti račun velja za aplikacijo, spletno aplikacijo in spletno stran outly.si;</li>
   <li>potrditvene kode za elektronsko pošto, prav tako samo kot odtis.</li>
-  <li>različica Pogojev uporabe, ki si jih sprejel ob registraciji na spletni strani, in čas sprejema.</li>
+  <li>različica Pogojev uporabe, ki si jih sprejel ob registraciji na spletni strani ali v spletni aplikaciji, in čas sprejema.</li>
 </ul>
 
 <h3>Ob dokončanju profila</h3>
@@ -54,10 +58,11 @@ odgovarja organizator sam, po svoji politiki zasebnosti.</p>
   <li>profilna slika, če jo naložiš.</li>
 </ul>
 
-<h3>Ob uporabi aplikacije</h3>
+<h3>Ob uporabi aplikacije in spletne aplikacije</h3>
 <ul>
-  <li><strong>naslov IP</strong> — obdelujemo ga, da omejimo število poskusov prijave in registracije z istega naslova in tako preprečimo ugibanje gesel;</li>
-  <li>čas zadnjih neuspešnih prijav in morebitni zaklep računa;</li>
+  <li><strong>naslov IP</strong> — obdelujemo ga, da omejimo število zahtevkov z istega naslova (na primer nakupov,
+      prenosov vstopnic, iskanja in prošenj za prijateljstvo) in tako preprečimo zlorabe. V naši bazi ga hranimo samo kot
+      nepovraten odtis (HMAC). Število poskusov prijave in registracije omejuje naš ponudnik prijave Supabase;</li>
   <li>tehnični dnevniki napak strežnika.</li>
 </ul>
 
@@ -103,6 +108,23 @@ shranimo, kdo jo je komu poslal in kdaj. Prejemnik dobi obvestilo v aplikaciji. 
   <li>identifikator računa pri ponudniku plačilnih storitev in stanje vključitve.</li>
 </ul>
 
+<h3>Skeniranje vstopnic v spletni aplikaciji (osebje klubov)</h3>
+<p>Osebje kluba (lastnik, upravitelj, vratar) lahko vstopnice na vratih skenira s kamero v spletni aplikaciji.</p>
+<ul>
+  <li><strong>Kamera.</strong> Brskalnik za dostop do kamere vpraša šele, ko odpreš zaslon za skeniranje. Sliko kamere
+      obdela brskalnik na tvoji napravi; ne snemamo je, ne shranjujemo je in je ne pošiljamo nikamor. Na naš strežnik gre
+      samo vsebina prebrane kode QR, da preverimo, ali je vstopnica veljavna. Ko zaslon zapustiš ali zapreš zavihek, se
+      kamera ugasne. Dostop lahko kadar koli prekličeš v nastavitvah brskalnika.</li>
+  <li><strong>Skeniranje brez povezave.</strong> Da vrata delujejo tudi ob izpadu interneta, brskalnik osebja hrani seznam
+      vstopnic dogodkov, ki ta čas potekajo: kodo vstopnice, njeno stanje, čas vstopa, mizo in paket ter uporabniško ime
+      imetnika (pri guest listi tudi uporabniško ime gostitelja) — brez elektronskih naslovov. Seznam se izbriše, ko se
+      član osebja odjavi, sicer ob prvem odprtju spletne aplikacije po treh dneh od zadnjega prenosa. Skeni, ki še niso bili poslani na strežnik, ostanejo v brskalniku, dokler se ne pošljejo;
+      poslani skeni ostanejo tri dni, da naprava prepozna dvojni vstop, in se izbrišejo ob prvem odprtju spletne aplikacije po tem roku.</li>
+  <li><strong>Kdo je skeniral.</strong> Ob skenu shranimo čas, člana osebja, ki je vstopnico skeniral, in oznako naprave:
+      pri skenu s povezavo vrsto brskalnika oziroma aplikacije, pri skenu brez povezave naključno oznako, ki jo brskalnik
+      ustvari ob prvem odprtju skenerja in ni povezana z ničemer drugim.</li>
+</ul>
+
 <h3>Na spletni strani outly.si</h3>
 <ul>
   <li><strong>čakalna lista</strong>: elektronski naslov, čas prijave in potrditve ter naključni potrditveni žeton,
@@ -114,6 +136,11 @@ shranimo, kdo jo je komu poslal in kdaj. Prejemnik dobi obvestilo v aplikaciji. 
   <li><strong>prošnja ustvarjalca</strong> (Creator): naziv in vrsta podjetja, naslov, kraj, številka dovoljenja,
       ime in vloga kontaktne osebe, elektronski naslov, telefon in sporočilo.</li>
 </ul>
+
+<h3>V spletni aplikaciji (outly.si/app)</h3>
+<p>Spletna aplikacija je različica aplikacije Outly za brskalnik. Uporablja isti račun, isti strežnik in iste podatke
+kot aplikacija, zato zanjo velja vse, kar ta politika opisuje za aplikacijo. Kaj spletna aplikacija hrani v tvojem
+brskalniku, je opisano v razdelku 8, lokacija v razdelku 7, kamera za skeniranje vstopnic zgoraj.</p>
 
 <h2 id="b3"><span class="st">3</span>Zakaj in na kateri podlagi</h2>
 <div class="drsnik"><table>
@@ -130,6 +157,8 @@ shranimo, kdo jo je komu poslal in kdaj. Prejemnik dobi obvestilo v aplikaciji. 
     <tr><td><b>Podatki o nakupu</b></td><td>Izvedba nakupa in izdaja vstopnice</td><td>Izvajanje pogodbe</td></tr>
     <tr><td><b>Podatki o nakupu (hramba)</b></td><td>Računovodstvo in davki</td><td>Zakonska obveznost (člen 6(1)(c))</td></tr>
     <tr><td><b>Skeniranje vstopnice</b></td><td>Preprečitev dvojnega vstopa</td><td>Izvajanje pogodbe</td></tr>
+    <tr><td><b>Seznam vstopnic na napravi osebja, oznaka naprave ob skenu</b></td><td>Skeniranje na vratih tudi brez povezave, razreševanje dvojnih vstopov</td><td>Zakoniti interes (člen 6(1)(f)) — zanesljiv vstop na dogodek</td></tr>
+    <tr><td><b>Podatki v brskalniku</b> (seja, jezik, nastavitve, razdelek 8)</td><td>Delovanje storitve, ki jo uporabljaš</td><td>Izvajanje pogodbe (člen 6(1)(b)); shranjevanje v brskalniku je nujno za storitev, ki jo zahtevaš, zato privolitve ne potrebuje (225. člen ZEKom-2)</td></tr>
     <tr><td><b>Prijatelji (prošnje, seznam)</b></td><td>Povezovanje s prijatelji v aplikaciji, prenos vstopnice prijatelju</td><td>Izvajanje pogodbe</td></tr>
     <tr><td><b>Načrti, vidni prijateljem</b> (dogodki, za katere imaš vstopnico, in oznake »I'm in«)</td><td>Razdelek »Načrti prijateljev« in prijatelji na strani dogodka</td><td>Privolitev — stikalo v nastavitvah, ki ga lahko kadarkoli izklopiš</td></tr>
     <tr><td><b>Priljubljeni dogodki, sledenje klubom</b></td><td>Seznam priljubljenih, priporočila, obvestila o novih dogodkih</td><td>Izvajanje pogodbe</td></tr>
@@ -148,8 +177,9 @@ Podatkov ne prodajamo in ne oddajamo.</p>
 <h2 id="b4"><span class="st">4</span>Kako dolgo hranimo</h2>
 <ul>
   <li><strong>Podatki računa</strong> — dokler imaš račun. Ob izbrisu jih odstranimo.</li>
-  <li><strong>Potrditvene kode in kode za ponastavitev gesla</strong> — veljajo 10 oziroma 15 minut, nato se razveljavijo. Zapisi se redno brišejo.</li>
-  <li><strong>Naslov IP za omejevanje poskusov</strong> — hranimo ga v pomnilniku strežnika in se izbriše najpozneje v eni uri.</li>
+  <li><strong>Potrditvene kode in kode za ponastavitev gesla</strong> — veljajo omejen čas, nato se razveljavijo.</li>
+  <li><strong>Naslov IP za omejevanje poskusov</strong> — samo kot odtis, ki se izbriše najpozneje približno eno uro po prvem štetem zahtevku.</li>
+  <li><strong>Podatki v brskalniku</strong> (spletna stran in spletna aplikacija) — kot je opisano pri posameznem podatku v razdelku 8; vse izbrišeš z brisanjem podatkov strani outly.si v nastavitvah brskalnika. Seznam vstopnic na napravi osebja kluba se izbriše ob odjavi, sicer, tako kot poslani skeni, ob prvem odprtju spletne aplikacije po treh dneh.</li>
   <li><strong>Poročila o napakah in zrušitvah</strong> — 30 dni, nato jih Sentry samodejno izbriše.</li>
   <li><strong>Potrjene prijave na čakalno listo</strong> — dokler Outly ne zaživi v tvojem mestu in ti pošljemo obvestilo o zagonu, najdlje 24 mesecev od potrditve.</li>
   <li><strong>Nepotrjene prijave na čakalno listo</strong> — izbrišemo jih najpozneje 90 dni po prijavi.</li>
@@ -165,12 +195,12 @@ storitve, in samo v obsegu, ki je za to nujen.</p>
   <tbody>
     <tr><td><b>Render</b></td><td>Gostovanje strežnika in podatkovne baze (EU, Frankfurt)</td><td>Vsi podatki računa in nakupov</td></tr>
     <tr><td><b>Resend</b></td><td>Pošiljanje elektronske pošte iz aplikacije</td><td>Elektronski naslov, vsebina sporočila</td></tr>
-    <tr><td><b>Cloudinary</b></td><td>Shranjevanje in prikaz slik</td><td>Naložene slike</td></tr>
+    <tr><td><b>Cloudinary</b></td><td>Shranjevanje in prikaz slik in videov (spletna aplikacija jih naloži in prikaže neposredno s strežnikov Cloudinary)</td><td>Naložene slike in videi; pri prikazu tehnični podatki, ki jih prejme vsak spletni strežnik (naslov IP, brskalnik)</td></tr>
     <tr><td><b>Stripe</b></td><td>Obdelava plačil</td><td>Znesek, elektronski naslov, podatki o kartici (neposredno, brez nas)</td></tr>
     <tr><td><b>Organizator dogodka</b></td><td>Izvedba nakupa in vstopa</td><td>Elektronski naslov, vstopnice, podatek o vstopu</td></tr>
-    <tr><td><b>Supabase</b></td><td>Avtentikacija računa (prijava, geslo) in čakalna lista na outly.si (EU, Frankfurt)</td><td>Elektronski naslov, odtis gesla, prijava na čakalno listo</td></tr>
+    <tr><td><b>Supabase</b></td><td>Avtentikacija računa (prijava, geslo) v aplikaciji, spletni aplikaciji in na outly.si ter čakalna lista na outly.si (EU, Frankfurt)</td><td>Elektronski naslov, odtis gesla, prijava na čakalno listo; naslov IP ob prijavi za omejevanje poskusov</td></tr>
     <tr><td><b>Brevo</b> (Sendinblue SAS, Francija)</td><td>Pošiljanje elektronske pošte s spletne strani (potrditve, računi)</td><td>Elektronski naslov, vsebina sporočila, podatki o dostavi in odprtju</td></tr>
-    <tr><td><b>Cloudflare</b></td><td>Gostovanje in dostava spletne strani outly.si</td><td>Tehnični podatki, ki jih prejme vsak spletni strežnik (naslov IP, brskalnik)</td></tr>
+    <tr><td><b>Cloudflare</b></td><td>Gostovanje in dostava spletne strani outly.si in spletne aplikacije outly.si/app, vključno z deli zemljevida</td><td>Tehnični podatki, ki jih prejme vsak spletni strežnik (naslov IP, brskalnik, zahtevana stran oziroma del zemljevida)</td></tr>
     <tr><td><b>Sentry</b> (Functional Software, Inc.)</td><td>Poročila o napakah in zrušitvah aplikacije, spletne aplikacije outly.si/app in našega strežnika, da jih lahko odpravimo (EU, Nemčija)</td><td>Opis napake s skladom klicev, čas in različica; v aplikaciji še model naprave, različica iOS in naključna oznaka namestitve, ki ni povezana s tvojim računom; v spletni aplikaciji naslov strani ter vrsta brskalnika in naprave; pri strežniku pot zahtevka brez poizvedbe &mdash; brez imena, elektronskega naslova, računa, posnetkov zaslona in vsebine zahtevkov. Naslov IP Sentry ob prejemu vidi, a ga ne hrani, prav tako ne lokacije, izpeljane iz njega</td></tr>
   </tbody>
 </table></div>
@@ -185,32 +215,57 @@ oziroma na podlagi sklepa o ustreznosti, kadar ta za ponudnika velja.
 Kopijo ustreznih zaščitnih ukrepov lahko zahtevaš na <a href="mailto:luka@outly.si">luka@outly.si</a>.</p>
 
 <h2 id="b7"><span class="st">7</span>Lokacija</h2>
-<p>Aplikacija te ob prvi uporabi zemljevida vpraša za dostop do lokacije naprave.</p>
+<p>Aplikacija te ob prvi uporabi zemljevida vpraša za dostop do lokacije naprave. V spletni aplikaciji brskalnik
+za lokacijo vpraša šele, ko tapneš »Use my location«; če si dostop že dovolil, spletna aplikacija lokacijo ob odprtju
+prebere sama.</p>
 <p><strong>Lokacije ne pošiljamo na strežnik in je ne shranjujemo.</strong> Uporabi se
 izključno na tvoji napravi, da zemljevid pokaže območje, kjer si, in da razvrsti klube
 po oddaljenosti. Dostop lahko kadar koli zavrneš ali prekličeš v nastavitvah telefona;
-zemljevid bo v tem primeru deloval, le da se ne bo sam premaknil k tebi.</p>
+zemljevid bo v tem primeru deloval, le da se ne bo sam premaknil k tebi. V spletni aplikaciji lokacija ostane v
+odprti strani in se ne shrani v brskalnik; dostop prekličeš v nastavitvah brskalnika.</p>
+<p>Zemljevid v spletni aplikaciji uporablja podatke OpenStreetMap, ki jih strežemo z naše domene outly.si; zahteve
+za zemljevid ne gredo k nobenemu ponudniku zemljevidov. Brskalnik pri tem z naše domene prenese dele zemljevida za
+območje, ki ga gledaš. Lastnik kluba lahko lokacijo kluba v spletni aplikaciji označi s klikom na zemljevid; te
+koordinate so del podatkov kluba (razdelek 2, Za poslovne račune).</p>
 
-<h2 id="b8"><span class="st">8</span>Spletna stran: piškotki in zunanje vsebine</h2>
-<p>Spletna stran outly.si <strong>ne uporablja piškotkov za oglaševanje ali analitiko</strong> in te ne
-sledi po drugih straneh. Ne uporabljamo Google Analytics, oglasnih pikslov ali podobnih orodij, zato
-pasice za privolitev v piškotke ni.</p>
-<p>V lokalni shrambi brskalnika (localStorage) hranimo samo, kar je nujno za storitev, ki jo zahtevaš:</p>
+<h2 id="b8"><span class="st">8</span>Spletna stran in spletna aplikacija: piškotki in shramba v brskalniku</h2>
+<p>Spletna stran outly.si in spletna aplikacija outly.si/app <strong>ne uporabljata piškotkov za oglaševanje ali
+analitiko</strong> in te ne sledita po drugih straneh. Ne uporabljamo Google Analytics, oglasnih pikslov ali podobnih
+orodij, zato pasice za privolitev v piškotke ni.</p>
+<p>V brskalniku hranimo samo, kar je nujno za storitev, ki jo zahtevaš:</p>
 <ul>
-  <li>sejo prijave, če se prijaviš — da ostaneš prijavljen;</li>
-  <li>kodo povabila, če si prišel prek povezave prijatelja — da se točka
-      pripiše pravi osebi, ko se prijaviš ali ustvariš račun. Po prijavi na čakalno listo jo izbrišemo.</li>
+  <li><strong>sejo prijave</strong>, če se prijaviš — da ostaneš prijavljen (ena seja za spletno stran in spletno aplikacijo);
+      izbriše se ob odjavi;</li>
+  <li><strong>kodo povabila</strong>, če si prišel prek povezave prijatelja — da se točka pripiše pravi osebi, ko se
+      prijaviš ali ustvariš račun. Po prijavi na čakalno listo jo izbrišemo;</li>
+  <li><strong>elektronski naslov</strong>, ki ga vpišeš ob registraciji, ponastavitvi gesla ali prijavi s še nepotrjenim naslovom v spletni aplikaciji — da
+      ga na naslednjem koraku (vnos kode) ni treba vpisati znova. Izbrišemo ga, ko se v spletni aplikaciji prijaviš ali odjaviš;</li>
+  <li>v spletni aplikaciji še: <strong>jezik</strong>, če ga izbereš; <strong>»My preferences«</strong> (zvrsti, razdalja,
+      starost, cena), ki jih izbrišemo ob odjavi; pri lastnikih klubov izbiro, ali se v profilu prikaže klub ali osebni
+      račun;</li>
+  <li>pri osebju klubov, ki skenira vstopnice: seznam vstopnic, skene in naključno oznako naprave (razdelek 2,
+      Skeniranje vstopnic v spletni aplikaciji);</li>
+  <li>za čas odprtega zavihka (sessionStorage): začasne podatke tekočega nakupa, na primer oznako naročila, ki prepreči
+      dvojni nakup ob vrnitvi s plačilne strani. Ko zavihek zapreš, jih brskalnik izbriše.</li>
 </ul>
-<p>Pisava in programske knjižnice strani se nalagajo z naše domene, ne z zunanjih strežnikov
-(kot sta Google Fonts ali javni CDN). Stran ne vsebuje vdelanih vsebin tretjih oseb (videi,
-zemljevidi, gumbi družbenih omrežij); povezava na Instagram je navadna povezava.</p>
+<p>Spletna aplikacija za hitrejše odpiranje in delovanje brez povezave v brskalniku shrani <strong>svojo programsko
+kodo</strong>, pisavo in ikone (predpomnilnik service workerja). Tam niso shranjeni tvoji podatki, vstopnice ali odgovori
+našega strežnika. Če spletno aplikacijo dodaš na začetni zaslon telefona, se odpira kot aplikacija; to ne spremeni, katere
+podatke obdelujemo.</p>
+<p>Vse to izbrišeš tako, da v nastavitvah brskalnika izbrišeš podatke strani outly.si. Ob odjavi izbrišemo, kar je zgoraj
+pri posameznem podatku tako označeno.</p>
+<p>Pisava in programske knjižnice se nalagajo z naše domene, ne z zunanjih strežnikov (kot sta Google Fonts ali javni
+CDN). Spletna stran ne vsebuje vdelanih vsebin tretjih oseb (videi, zemljevidi, gumbi družbenih omrežij); povezava na
+Instagram je navadna povezava. Spletna aplikacija prikazuje slike in videe klubov in dogodkov s strežnikov Cloudinary
+(razdelek 5), zemljevid pa z naše domene (razdelek 7). Plačilo poteka na strani ponudnika plačilnih storitev Stripe,
+kamor te preusmerimo.</p>
 
 <h2 id="b9"><span class="st">9</span>Tvoje pravice</h2>
 <p>Glede svojih osebnih podatkov imaš pravico do:</p>
 <ul>
   <li><strong>dostopa</strong> — da izveš, katere podatke o tebi obdelujemo;</li>
   <li><strong>popravka</strong> — da netočne podatke popravimo;</li>
-  <li><strong>izbrisa</strong> — račun lahko izbrišeš sam v aplikaciji (Nastavitve računa) ali na outly.si (profil → Delete account); za izpis s čakalne liste nam pošlji en stavek, razloga ni treba navesti;</li>
+  <li><strong>izbrisa</strong> — račun lahko izbrišeš sam v aplikaciji (Nastavitve računa), v spletni aplikaciji (My Account → Delete account) ali na outly.si (profil → Delete account); za izpis s čakalne liste nam pošlji en stavek, razloga ni treba navesti;</li>
   <li><strong>omejitve obdelave</strong> in <strong>ugovora</strong>, kadar obdelujemo na podlagi zakonitega interesa;</li>
   <li><strong>prenosljivosti</strong> — da podatke prejmeš v strojno berljivi obliki;</li>
   <li><strong>preklica privolitve</strong>, kadar je podlaga privolitev. Preklic ne vpliva na obdelavo pred preklicem.</li>
@@ -232,12 +287,15 @@ ob vstopu.</p>
 
 <h2 id="b11"><span class="st">11</span>Varnost</h2>
 <ul>
-  <li>Vsa komunikacija med aplikacijo, spletno stranjo in strežnikom je šifrirana (HTTPS).</li>
+  <li>Vsa komunikacija med aplikacijo, spletno aplikacijo, spletno stranjo in strežnikom je šifrirana (HTTPS).</li>
   <li>Gesla so shranjena kot odtis bcrypt in jih ni mogoče razbrati nazaj.</li>
-  <li>Potrditvene kode in kode za ponastavitev gesla so shranjene kot odtis, veljajo omejen čas in se po petih napačnih poskusih razveljavijo.</li>
-  <li>Po osmih zaporednih napačnih prijavah se račun za petnajst minut zaklene.</li>
-  <li>Prijavni žeton je na napravi shranjen v varni shrambi sistema.</li>
-  <li>Dostop do podatkov kluba ima le lastnik kluba in osebje, ki mu ga je dodelil.</li>
+  <li>Potrditvene kode in kode za ponastavitev gesla so shranjene kot odtis in veljajo omejen čas.</li>
+  <li>Število poskusov prijave in preverjanja kod omejuje naš ponudnik prijave Supabase.</li>
+  <li>Prijavni žeton je v aplikaciji shranjen v varni shrambi sistema telefona, na spletni strani outly.si in v spletni
+      aplikaciji pa v lokalni shrambi brskalnika, kjer ga lahko prebere koda, ki teče na outly.si. Zato na outly.si
+      nalagamo samo lastno kodo z naše domene, brez oglasnih, analitičnih ali drugih tujih skript. Spletna aplikacija ima
+      poleg tega strogo varnostno politiko vsebine (CSP), ki brskalniku prepove izvajanje kode z drugih domen.</li>
+  <li>Dostop do podatkov kluba ima le lastnik kluba in osebje, ki mu ga je dodelil, v obsegu svoje vloge.</li>
   <li>Polni elektronski naslovi s čakalne liste so v zaprti tabeli, ki je spletna stran ne more brati; javno se kažejo samo zakriti.</li>
 </ul>
 

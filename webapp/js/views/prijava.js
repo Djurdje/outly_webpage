@@ -5,7 +5,7 @@ import { html, useEffect, useState } from "../lib.js";
 import { t } from "../i18n.js";
 import { supabase } from "../supabase.js";
 import { sporocilo } from "../napake.js";
-import { seja, useSeja, naloziMe } from "../seja.js";
+import { seja, useSeja, naloziMe, KLJUC_CAKAJOCI_MAIL as KLJUC_MAIL, pozabiCakajociMail } from "../seja.js";
 import { navigiraj, usePot } from "../usmerjanje.js";
 import { lokalno } from "../store.js";
 import { GlavaNazaj, Ikona } from "../ui.js";
@@ -13,7 +13,6 @@ import { JezikGumb } from "./jezik.js";
 import { TERMS_VERSION, EMAIL_RE } from "../pogoji.js";   // verzija pogojev kot auth.js na outly.si (terms.html)
 
 const USER_RE = /^[A-Za-z0-9_]{3,20}$/;   // enako kot backend PATCH /me
-const KLJUC_MAIL = "outly_cakajoci_mail";
 
 /* Kam po prijavi: ?next=/app/... (samo poti znotraj aplikacije). */
 export function naslednja(pot) {
@@ -85,6 +84,7 @@ export function Prijava() {
       setNapaka(sporocilo(error)); return;
     }
     seja.set({ obvestilo: "" });
+    pozabiCakajociMail();   // uspesna prijava: e-naslov iz toka ponastavitve/potrditve ni vec potreben
     await naloziMe();
     navigiraj(naslednja(pot), { zamenjaj: true });
   }
@@ -136,7 +136,7 @@ export function Registracija() {
     if (data && data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
       return setNapaka(t("That email is already registered. Sign in instead."));
     }
-    if (data && data.session) { await naloziMe(); navigiraj(naslednja(pot), { zamenjaj: true }); return; }
+    if (data && data.session) { pozabiCakajociMail(); await naloziMe(); navigiraj(naslednja(pot), { zamenjaj: true }); return; }
     lokalno.set(KLJUC_MAIL, m);
     navigiraj(zNaslednjo(pot, "/app/verify"), { zamenjaj: true });
   }
@@ -180,7 +180,7 @@ export function Potrditev() {
     const { error } = await supabase.auth.verifyOtp({ email, token: koda, type: "signup" });
     setTece(false);
     if (error) return setNapaka(sporocilo(error));
-    lokalno.set(KLJUC_MAIL, null);
+    pozabiCakajociMail();
     await naloziMe();
     navigiraj(naslednja(pot), { zamenjaj: true });
   }
