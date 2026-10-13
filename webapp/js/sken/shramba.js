@@ -191,17 +191,21 @@ export async function pocistiPodatkeKluba() {
 }
 
 /* Hramba v brskalniku osebja: najvec 3 dni (politika zasebnosti, razdelka 2 in 4). Poslani skeni ("poslan") 3 dni od skena, seznami
-   vstopnic in dogodkov 3 dni od prenosa (`cas`); NE krajse: vrata brez povezave med dolgim dogodkom ne smejo izgubiti seznama ob
+   vstopnic 3 dni od prenosa (`cas`); NE krajse: vrata brez povezave med dolgim dogodkom ne smejo izgubiti seznama ob
    ponovnem zagonu. Neposlani skeni ("caka") ostanejo, dokler se ne posljejo. Isti pogoj uporablja skener ob odprtju kluba (motor.js)
    in ciscenje ob zagonu aplikacije (spodaj). */
 export const OBDRZI_POSLANE_MS = 3 * 24 * 3600e3;
 export const OBDRZI_SEZNAM_MS = 3 * 24 * 3600e3;
-const PREDPONE_SEZNAMOV = ["seznam:", "dogodki:", "izbran:"];
+const PREDPONE_SEZNAMOV = ["seznam:", "dogodki:", "izbran:"];   // brise se ob odjavi (pocistiPodatkeKluba)
+/* Po starosti (ob zagonu) samo seznami vstopnic in izbira dogodka. `dogodki:<klub>` (id, naslov in cas dogodkov, nic osebnega) OSTANE:
+   iz njega skener brez povezave ugotovi, kateri dogodek je danes aktiven - brez njega bi vratar, ki je aplikacijo odprl drugje,
+   v kleti brez signala videl vsako veljavno vstopnico kot »ne-danes«. */
+const PREDPONE_ZA_STAROST = ["seznam:", "izbran:"];
 export const jeStarPoslan = (r, zdaj) => !!r && r.stanje === "poslan" && zdaj - (Date.parse(r.scanned_at) || 0) > OBDRZI_POSLANE_MS;
 
 /** Ob zagonu aplikacije: pobrise poslane skene, starejse od 3 dni, za VSE klube (tudi konflikte, ki jih osebje ni videlo: strezniski
     scan-batch zavrnjenega skena ne zapise, zato je zapis o njem po izbrisu izgubljen - zavestna odlocitev zaradi roka v politiki)
-    ter sezname vstopnic in dogodkov, ki so bili preneseni pred vec kot 3 dnevi.
+    ter sezname vstopnic (seznam:, izbran:), ki so bili preneseni pred vec kot 3 dnevi; seznam dogodkov (dogodki:) ostane.
     Ima LASTEN, enkratni odpiralnik: odpriShrambo() si zapomni uspeh ali neuspeh za skener na isti strani, ob zasedeni strani ob zagonu
     pa bi neuspeh skener za vedno preklopil na localStorage. Skeni gredo v ENI transakciji. Najboljsi trud: nikoli ne vrze. */
 export async function pocistiStareSkene(zdaj = Date.now()) {
@@ -213,7 +217,7 @@ export async function pocistiStareSkene(zdaj = Date.now()) {
     const ids = (await shramba.skeniVsi()).filter(r => jeStarPoslan(r, zdaj)).map(r => r.id);
     await shramba.skenDelVec(ids); izbrisanih = ids.length;
   } catch { /* naprej: seznami */ }
-  try { await shramba.kvPocistiStare(PREDPONE_SEZNAMOV, zdaj - OBDRZI_SEZNAM_MS); } catch { /* najboljsi trud */ }
+  try { await shramba.kvPocistiStare(PREDPONE_ZA_STAROST, zdaj - OBDRZI_SEZNAM_MS); } catch { /* najboljsi trud */ }
   try { if (db) db.close(); } catch { /* brez */ }
   return izbrisanih;
 }
