@@ -666,6 +666,21 @@
     color: rgba(255,255,255,.68);
     line-height:1.55;
   }
+  .card__soon{
+    display:inline-block;
+    margin-left: 6px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.16);
+    background: rgba(255,255,255,.06);
+    color: rgba(255,255,255,.75);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
   .creatorCta{
     margin-top: 14px;
     display:none;
@@ -2098,12 +2113,6 @@ body.drawer-open { overflow: hidden; }
 .clubCard__event { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); font-size: 13px; }
 .clubCard__event span { color: rgba(255,255,255,.6); }
 
-.switch { display: inline-flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 700; color: rgba(255,255,255,.75); cursor: pointer; }
-.switch input { position: absolute; opacity: 0; width: 0; height: 0; }
-.switch span { width: 40px; height: 22px; border-radius: 999px; background: rgba(255,255,255,.14); position: relative; transition: .2s var(--ease); flex: 0 0 auto; }
-.switch span::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: .2s var(--ease); }
-.switch input:checked + span { background: var(--accent); }
-.switch input:checked + span::after { left: 20px; }
 
 /* 3) Skener */
 .scanBox { display: grid; grid-template-columns: 120px 1fr; gap: 14px; align-items: center; padding: 14px; border-radius: 18px; border: 1px solid rgba(255,255,255,.10); background: rgba(0,0,0,.22); transition: .25s var(--ease); }
