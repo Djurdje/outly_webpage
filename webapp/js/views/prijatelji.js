@@ -4,10 +4,10 @@ import { html, useEffect, useRef, useState } from "../lib.js";
 import { t } from "../i18n.js";
 import { send } from "../api.js";
 import { sporocilo } from "../napake.js";
-import { naloziMe } from "../seja.js";
+import { naloziMe, useSeja, jeAdmin } from "../seja.js";
 import { navigiraj } from "../usmerjanje.js";
-import { normalizirajDogodek, seJeKoncal, danKratek, cena } from "../oblika.js";
-import { GlavaNazaj, Ikona, Avatar, Slika, Nalaganje, Napaka, List, NaslovSekcije } from "../ui.js";
+import { normalizirajDogodek, seJeKoncal, danKratek, cena, jeDemo } from "../oblika.js";
+import { GlavaNazaj, Ikona, Avatar, Slika, Nalaganje, Napaka, List, NaslovSekcije, OznakaDemo } from "../ui.js";
 
 /* ---------------- My friends ---------------- */
 export function MojiPrijatelji() {
@@ -185,6 +185,7 @@ const povzetek = (gredo, zanima) => {
 export function NacrtiPrijateljev() {
   const [s, setS] = useState({ nalaga: true, napaka: null, nacrti: [] });
   const [filter, setFilter] = useState("all");
+  const admin = useSeja(s => jeAdmin(s.me));   // demo klub: gumb za nakup samo adminu (kot na zaslonu dogodka)
   const nalozi = () => naloziNacrte().then(n => setS({ nalaga: false, napaka: null, nacrti: n })).catch(e => setS({ nalaga: false, napaka: sporocilo(e), nacrti: [] }));
   useEffect(() => { nalozi(); }, []);
   const prikazani = s.nacrti.filter(p => filter === "all" || (filter === "going" ? p.friends.length : p.interested.length));
@@ -202,13 +203,14 @@ export function NacrtiPrijateljev() {
       <a class="kn-vrh" href=${"/app/event/" + p.id}>
         <span class="vd-slika"><${Slika} src=${p.poster_url} sirina=${150} alt="" /></span>
         <span class="kv-besedilo"><strong>${p.title}</strong><span>${[p.club_name, danKratek(p._zacetek)].filter(Boolean).join(" · ")}</span></span>
+        ${jeDemo(p) ? html`<${OznakaDemo} />` : null}
       </a>
       <div class="prijatelji-vrsta">
         <span class="avatarji">${[...p.friends, ...p.interested].slice(0, 4).map(f => html`<${Avatar} key=${f.id} url=${f.avatar_url} ime=${f.username} velikost=${28} />`)}</span>
         <span>${povzetek(p.friends, p.interested)}</span>
       </div>
       <div class="kn-gumba">
-        ${p.ticket_price_cents != null && p.my_plan !== "going"
+        ${p.ticket_price_cents != null && p.my_plan !== "going" && !(jeDemo(p) && !admin)
           ? html`<a class="gumb-glavni majhen" href=${`/app/event/${p.id}?buy=1`}>${t("Join them")}${cena(p) ? " · " + cena(p) : ""}</a>` : null}
         <a class="gumb-siv majhen" href=${"/app/event/" + p.id}>${t("View event")}</a>
       </div>

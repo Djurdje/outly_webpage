@@ -5,7 +5,7 @@ import { send } from "../api.js";
 import { sporocilo } from "../napake.js";
 import { usePot, navigiraj } from "../usmerjanje.js";
 import * as P from "../podatki.js";
-import { zanrIme, danInUra } from "../oblika.js";
+import { zanrIme, danInUra, jeDemo } from "../oblika.js";
 import { Ikona, Vrstica, NaslovSekcije, Nalaganje, Napaka } from "../ui.js";
 
 export function Iskanje() {
@@ -66,10 +66,10 @@ export function Iskanje() {
     ${rez ? html`
       ${!rez.clubs.length && !rez.events.length && !nalaga ? html`<p class="utisano">${t("No results for \"{q}\".", { q: iskano })}</p>` : null}
       ${rez.clubs.length ? html`<${NaslovSekcije} naslov=${t("Clubs")} />
-        <div class="seznam">${rez.clubs.map(k => html`<${Vrstica} key=${"k" + k.id} href=${"/app/club/" + k.id} slikaUrl=${k.logo_url} ikona="building" naslov=${k.name} podnaslov=${k.city} />`)}</div>` : null}
+        <div class="seznam">${rez.clubs.map(k => html`<${Vrstica} key=${"k" + k.id} href=${"/app/club/" + k.id} slikaUrl=${k.logo_url} ikona="building" naslov=${k.name} podnaslov=${k.city} demo=${jeDemo(k)} />`)}</div>` : null}
       ${rez.events.length ? html`<${NaslovSekcije} naslov=${t("Events")} />
         <div class="seznam">${rez.events.map(e => html`<${Vrstica} key=${"e" + e.id} href=${"/app/event/" + e.id} slikaUrl=${e.poster_url} ikona="calendar"
-          naslov=${e.title} podnaslov=${[e.club_name, danInUra(e.start_at ? new Date(e.start_at) : null)].filter(Boolean).join(" · ")} />`)}</div>` : null}
+          naslov=${e.title} podnaslov=${[e.club_name, danInUra(e.start_at ? new Date(e.start_at) : null)].filter(Boolean).join(" · ")} demo=${jeDemo(e)} />`)}</div>` : null}
     ` : iskano.length === 1 ? html`<p class="utisano">${t("Type at least 2 characters.")}</p>` : html`
       ${brskanje.zanri.length ? html`<${NaslovSekcije} naslov=${t("Browse by genre")} />
         <div class="vrsta-drsna cipi">${brskanje.zanri.map(g => {
@@ -77,7 +77,7 @@ export function Iskanje() {
           return html`<a key=${g} class="cip-zanra" href=${"/app/genre/" + encodeURIComponent(g)}>${zanrIme(g)}${n ? html`<small>${n}</small>` : null}</a>`;
         })}</div>` : null}
       ${brskanje.klubi.length ? html`<${NaslovSekcije} naslov=${t("Clubs")} />
-        <div class="seznam">${brskanje.klubi.map(k => html`<${Vrstica} key=${k.id} href=${"/app/club/" + k.id} slikaUrl=${k.logo_url} naslov=${k.name} podnaslov=${podnaslovKluba(k)} />`)}</div>` : null}
+        <div class="seznam">${brskanje.klubi.map(k => html`<${Vrstica} key=${k.id} href=${"/app/club/" + k.id} slikaUrl=${k.logo_url} naslov=${k.name} podnaslov=${podnaslovKluba(k)} demo=${jeDemo(k)} />`)}</div>` : null}
     `}
   </div>`;
 }

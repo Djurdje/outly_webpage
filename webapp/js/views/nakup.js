@@ -4,13 +4,13 @@
 import { html, useEffect, useRef, useState } from "../lib.js";
 import { t, tn, kodaJezika } from "../i18n.js";
 import { send, pocistiPredpomnilnik, kljucNakupa, pozabiKljucNakupa, nerazresenNakup, oznaciIzidNakupa, zapomniCakajocePlacilo, obnoviCakajocePlacilo } from "../api.js";
-import { uidSeje, useSeja } from "../seja.js";
+import { uidSeje, useSeja, jeAdmin } from "../seja.js";
 import {
   jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo,
   jeNakupVObdelavi, NAKUP_V_OBDELAVI_S, sporocilo, ApiError, izidNakupa, nakupNapakaSporocilo, nakupBrezOdgovoraSporocilo, potekloPlacilo, placiloVObdelavi, placiloNepripravljeno
 } from "../napake.js";
-import { denar, jeRazprodan, preostanek, danInUra, nacinPlacila, ddvBesedilo } from "../oblika.js";
-import { List, Ikona, useZaklep } from "../ui.js";
+import { denar, jeRazprodan, preostanek, danInUra, nacinPlacila, ddvBesedilo, jeDemo } from "../oblika.js";
+import { List, Ikona, useZaklep, DemoBesedilo } from "../ui.js";
 import { KodaQR } from "../qr.js";
 import { odpriStripe, izidStripeNakupa, jeStripeUrl } from "../stripe.js";
 import { PogojiNakupa, BlokProdajalca, OpombaVracila, TERMS_VERSION } from "../pogoji.js";
@@ -27,6 +27,7 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
   const odprtRef = useRef(odprt);
   odprtRef.current = odprt;
   const sejaEmail = useSeja(s => s.email);   // uid seje je ob hladnem zagonu lahko se prazen: obnova se ponovi, ko seja dobi uporabnika
+  const admin = useSeja(s => jeAdmin(s.me));   // demo klub (backend #243): nakup samo adminu (testiranje)
   useEffect(() => () => { ziv.current = false; }, []);
   // Nazaj iz Stripove strani (gumb Nazaj, bfcache): stran se obnovi s stanjem "Processing..." - gumb odklenemo (kot nakup-gost.js).
   useEffect(() => {
@@ -59,7 +60,9 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
   const skupaj = cenaEna * kolicina;
   const razprodano = (jeRazprodan(e) || ostane === 0) && !cakaPlacilo;   // zadnje vstopnice lahko drzi ravno to (cakajoce) narocilo
   const nacin = nacinPlacila(e);   // "test" | "stripe" | "unavailable" (backend #149)
-  const neprodaja = nacin === "unavailable";
+  const demoZapora = jeDemo(e) && !admin;   // demo klub: namesto gumba besedilo
+  // Admin na demo klubu: payment_mode je "unavailable" za vse (I17), a streznik admina prepusti -> gumb aktiven.
+  const neprodaja = (nacin === "unavailable" && !jeDemo(e)) || demoZapora;
 
   async function kupi() {
     if (tece.current || neprodaja) return;
@@ -93,7 +96,7 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
       // Uspeh, ki ga uporabnik ni videl (list se je medtem odmontiral): kljuca NE pozabimo - ponovitev vrne isto narocilo (Idempotent-Replayed).
       else oznaciIzidNakupa("vstopnice", uid, e.id, kljuc, "nerazresen");
     } catch (err) {
-      // Nakupa NE ponavljamo sami: uporabnik pritisne znova (isti kljuc, razen ob 422, 400, 409 order_not_active, free_limit in seller_incomplete - jeKljucZavrzen v napake.js).
+      // Nakupa NE ponavljamo sami: uporabnik pritisne znova (isti kljuc, razen ob 422, 400, 409 order_not_active, free_limit, seller_incomplete in demo_club - jeKljucZavrzen v napake.js).
       const izid = izidNakupa(err);
       if (izid === "zavrzen") { pozabiKljucNakupa("vstopnice", uid, e.id, kljuc); if (ziv.current) setCakaPlacilo(false); }   // nov nakup
       else oznaciIzidNakupa("vstopnice", uid, e.id, kljuc, izid);   // nerazresen: predizpolnitev in napotek ob ponovnem odprtju
@@ -157,17 +160,18 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
 
     <${BlokProdajalca} prodajalec=${e.seller} />
 
-    ${neprodaja ? html`<p class="opomba" role="status">${t("Tickets aren't on sale in the app yet.")}</p>`
+    ${demoZapora ? html`<${DemoBesedilo} />`
+      : neprodaja ? html`<p class="opomba" role="status">${t("Tickets aren't on sale in the app yet.")}</p>`
       : nacin === "test" && !brezplacno ? html`<p class="opomba">${t("Test mode — nothing is charged")}</p>` : null}
     ${cakaPlacilo ? html`<p class="opomba" role="status">${t("You have an unfinished payment for this order. Continue to payment to finish it.")}</p>` : null}
     ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}
 
-    <button type="button" class="gumb-glavni" onClick=${kupi} disabled=${posiljam || razprodano || zaklenjeno || neprodaja}>
+    ${demoZapora ? null : html`<button type="button" class="gumb-glavni" onClick=${kupi} disabled=${posiljam || razprodano || zaklenjeno || neprodaja}>
       ${razprodano ? t("Sold out") : posiljam ? t("Processing...")
         : cakaPlacilo ? t("Continue to payment")
         : brezplacno ? (kolicina === 1 ? t("Get ticket") : t("Get tickets"))
         : t("Pay {amount}", { amount: denar(skupaj, e.currency) })}
-    </button>
+    </button>`}
     <${PogojiNakupa} />
     <${OpombaVracila} prodajalec=${e.seller} />
   <//>`;

@@ -31,7 +31,7 @@ export function nakupPocakajS(e, privzeto = NAKUP_PREMOR_S) {
   return s >= 1 ? Math.min(Math.ceil(s), 30) : privzeto;
 }
 
-/* Napake idempotentnega kljuca (backend #123) so JSON { error, message }; ostali odgovori nakupa so navadno besedilo.
+/* Napake idempotentnega kljuca (backend #123) in 409 demo_club (backend #243) so JSON { error, message }; ostali odgovori nakupa so navadno besedilo.
    Koda se bere iz `raw` (ApiError hrani telo kot besedilo). */
 export function kodaNapake(e) {
   if (!(e instanceof ApiError) || !e.raw || e.raw[0] !== "{") return "";
@@ -54,8 +54,8 @@ export const jeKljucNeveljaven = e => e instanceof ApiError && e.status === 400 
    Neuspela osvezitev seje to NI (zahtevek ni odsel). Samo po takem izidu se list ob ponovnem odprtju predizpolni. */
 export const jeNerazresenIzid = e => jeNakupVObdelavi(e) || (e instanceof ApiError && e.status === -1 && !jeOsvezitevSeje(e));
 /* Napake, po katerih se kljuc zavrze (nov nakup): 422, 400 neveljaven kljuc, 409 order_not_active, 409 free_limit,
-   409 seller_incomplete. */
-export const jeKljucZavrzen = e => jeKljucPonovljen(e) || jeKljucNeveljaven(e) || jeNarociloNeaktivno(e) || jeMejaBrezplacnih(e) || jeProdajalecNepopoln(e);
+   409 seller_incomplete, 409 demo_club (narocila ni nastalo). */
+export const jeKljucZavrzen = e => jeKljucPonovljen(e) || jeKljucNeveljaven(e) || jeNarociloNeaktivno(e) || jeMejaBrezplacnih(e) || jeProdajalecNepopoln(e) || jeDemoKlub(e);
 /* Izid napake nakupa za shrambo kljucev (api.js oznaciIzidNakupa): "zavrzen" (nov nakup), "neposlan" (zahtevek ni odsel),
    "nerazresen" (narocilo je morda nastalo) ali "dokoncen". */
 export function izidNakupa(e) {
@@ -91,6 +91,8 @@ export const jeMejaBrezplacnih = e => e instanceof ApiError && e.status === 409 
    "nerazresen" (list se ne predizpolni, ni napotka "may have gone through"); kljuc se zavrze (kot free_limit), da se po dopolnitvi
    podatkov nakup ne veze na zavrnjen poskus. Velja za POST /events/:id/orders, .../tables/:id/orders in /guest/events/:id/orders. */
 export const jeProdajalecNepopoln = e => e instanceof ApiError && e.status === 409 && kodaNapake(e) === "seller_incomplete";
+/* 409 demo_club (backend #243): klub je demo, nakup ni mogoc (razen adminu). Narocilo NI nastalo: kljuc se zavrze, izbira ostane. */
+export const jeDemoKlub = e => e instanceof ApiError && e.status === 409 && kodaNapake(e) === "demo_club";
 export function nakupZasedenoSporocilo() {
   return t("Lots of people are buying right now. Please try again in a few seconds.");
 }
@@ -217,6 +219,8 @@ function prevediApi(e) {
     case "free_limit": return t("You've reached the limit of free tickets for this event.");
     // Nakup pri klubu brez popolnih podatkov prodajalca (backend #219, 409 JSON). Isto besedilo kot iOS; gumb za nakup ostane viden.
     case "seller_incomplete": if (e.status === 409) return t("Purchases aren't available yet: the organizer hasn't completed their seller details."); break;
+    // Demo klub (backend #243, 409 JSON { error, message }): isto besedilo kot sporocilo streznika; prevod en/sl.
+    case "demo_club": if (e.status === 409) return t("This is a demo club. Tickets can't be bought."); break;
     // Prenos vstopnice prijatelju brez racuna (POST /tickets/:id/transfer z allow_guest)
     case "age_confirmation_required": {
       let n = 0;

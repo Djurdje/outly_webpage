@@ -6,10 +6,10 @@ import { t } from "../i18n.js";
 import { send } from "../api.js";
 import { sporocilo } from "../napake.js";
 import { navigiraj } from "../usmerjanje.js";
-import { razdaljaKm, napisRazdalje, zanrIme, slika } from "../oblika.js";
+import { razdaljaKm, napisRazdalje, zanrIme, slika, jeDemo } from "../oblika.js";
 import { useLokacija, zahtevajLokacijo } from "../lokacija.js";
 import { naloziKnjiznice, slog, povecavaZa, SLOVENIJA, LJUBLJANA } from "../karta.js";
-import { Ikona, Vrstica, Nalaganje, Napaka, Slika } from "../ui.js";
+import { Ikona, Vrstica, Nalaganje, Napaka, Slika, OznakaDemo } from "../ui.js";
 
 export function Zemljevid() {
   const [klubi, setKlubi] = useState(null);
@@ -122,6 +122,7 @@ export function Zemljevid() {
       <span class="okrogla-slika">${izbran.logo_url ? html`<${Slika} src=${izbran.logo_url} sirina=${130} alt="" />` : html`<${Ikona} ime="building" velikost=${20} />`}</span>
       <span class="kv-besedilo"><strong>${izbran.name}</strong>
         <span>${[izbran.city, razdalja, (izbran.genres || []).slice(0, 2).map(zanrIme).join(" • ")].filter(Boolean).join(" · ")}</span></span>
+      ${jeDemo(izbran) ? html`<${OznakaDemo} />` : null}
       <button type="button" class="gumb-glavni majhen" onClick=${() => navigiraj("/app/club/" + izbran.id)}>${t("Open")}</button>
     </div>` : null}
   </div>`;
@@ -148,7 +149,7 @@ function SeznamKlubov({ klubi, lok, napaka }) {
     <${Napaka} besedilo=${napaka} />
     ${!klubi ? html`<${Nalaganje} />` : html`<div class="seznam">
       ${seznam.map(({ k, d }) => html`<${Vrstica} key=${k.id} href=${"/app/club/" + k.id} slikaUrl=${k.logo_url}
-        naslov=${k.name} podnaslov=${[k.city, d != null ? napisRazdalje(d) : ""].filter(Boolean).join(" · ")} />`)}
+        naslov=${k.name} podnaslov=${[k.city, d != null ? napisRazdalje(d) : ""].filter(Boolean).join(" · ")} demo=${jeDemo(k)} />`)}
     </div>`}
   </div>`;
 }

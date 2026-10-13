@@ -23,6 +23,10 @@ export function nacinPlacila(x) {
   return v === "test" || v === "unavailable" ? v : "stripe";
 }
 
+/* Demo klub / dogodek demo kluba (backend #243, polje is_demo): oznaka »Demo« in brez nakupa. Manjkajoce polje (star backend) = false.
+   Preverjamo `=== true` neposredno, da deluje tudi za objekte, ki niso presli skozi normaliziraj*. */
+export const jeDemo = x => !!x && x.is_demo === true;
+
 /** Dogodek iz API-ja + razclenjena datuma (_zacetek, _konec). Manjkajoca polja dobijo privzetke. */
 export function normalizirajDogodek(e) {
   return {
@@ -45,6 +49,7 @@ export function normalizirajDogodek(e) {
     venue_lat: e.venue_lat ?? null,
     venue_lng: e.venue_lng ?? null,
     hosted: e.hosted === true,
+    is_demo: e.is_demo === true,
     seller: normalizirajProdajalca(e.seller),   // podatki prodajalca (backend #94): star backend polja nima -> null
     _zacetek: datum(e.start_at),
     _konec: datum(e.end_at)
@@ -83,6 +88,7 @@ export function normalizirajKlub(c) {
     min_age: c.min_age ?? 18,
     is_organizer: c.is_organizer === true,
     is_official: c.is_official === true,
+    is_demo: c.is_demo === true,
     seller: normalizirajProdajalca(c.seller),
     followers_count: c.followers_count ?? 0,
     // Slideshow; stari klubi brez galerije pokazejo pasico (DECISIONS 22. 9.).

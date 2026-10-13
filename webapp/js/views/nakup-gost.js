@@ -11,8 +11,8 @@ import {
   jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo, jeNakupVObdelavi, NAKUP_V_OBDELAVI_S,
   ApiError, izidNakupa, nakupBrezOdgovoraSporocilo, gostSporocilo, potekloPlacilo, placiloVObdelavi, placiloNepripravljeno
 } from "../napake.js";
-import { denar, jeRazprodan, preostanek, danInUra, nacinPlacila, ddvBesedilo } from "../oblika.js";
-import { List, useZaklep } from "../ui.js";
+import { denar, jeRazprodan, preostanek, danInUra, nacinPlacila, ddvBesedilo, jeDemo } from "../oblika.js";
+import { List, useZaklep, DemoBesedilo } from "../ui.js";
 import { navigiraj } from "../usmerjanje.js";
 import { odpriStripe, izidStripeNakupa } from "../stripe.js";
 import { TERMS_VERSION, EMAIL_RE, BlokProdajalca, OpombaVracila } from "../pogoji.js";
@@ -66,7 +66,8 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
   const skupaj = cenaEna * kolicina;
   const razprodano = jeRazprodan(e) || ostane === 0;
   const nacin = nacinPlacila(e);   // "test" | "stripe" | "unavailable" (backend #149)
-  const neprodaja = nacin === "unavailable";
+  const demo = jeDemo(e);   // demo klub (backend #243): gost nima vloge admin -> nakup je vedno zavrnjen; namesto gumba besedilo
+  const neprodaja = nacin === "unavailable" || demo;
   const potrebujeStarost = e.min_age > 0;
   const zasebnost = koda === "sl" ? "/privacy-app" : "/privacy";   // politika v jeziku obrazca (pravno 2.2: EN /privacy, SL /privacy-app)
 
@@ -127,7 +128,7 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
       if (ziv.current && odprtRef.current) { navigiraj("/app/guest/order"); return; }
       // List se je medtem odmontiral: zeton je shranjen, kupec ga najde na /app/guest/order (in v mailu).
     } catch (err) {
-      // Nakupa NE ponavljamo sami: uporabnik pritisne znova (isti kljuc, razen ob 422, 400, 409 order_not_active, free_limit in seller_incomplete - jeKljucZavrzen v napake.js).
+      // Nakupa NE ponavljamo sami: uporabnik pritisne znova (isti kljuc, razen ob 422, 400, 409 order_not_active, free_limit, seller_incomplete in demo_club - jeKljucZavrzen v napake.js).
       const izid = izidNakupa(err);
       if (izid === "zavrzen") { pozabiKljucNakupa("gost", m, e.id, kljuc); pozabiGostNakup({ kljuc }); }   // 409 order_not_active, 422, 400: nov kljuc ob naslednjem kliku
       else oznaciIzidNakupa("gost", m, e.id, kljuc, izid);
@@ -194,7 +195,8 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
 
       <${BlokProdajalca} prodajalec=${e.seller} />
 
-      ${neprodaja ? html`<p class="opomba" role="status">${t("Tickets aren't on sale in the app yet.")}</p>`
+      ${demo ? html`<${DemoBesedilo} />`
+        : neprodaja ? html`<p class="opomba" role="status">${t("Tickets aren't on sale in the app yet.")}</p>`
         : brezplacno ? null
         : nacin === "test" ? html`<p class="opomba">${t("Test mode — nothing is charged")}</p>`
         : html`<p class="opomba">${t("You pay by card on the next page. Your tickets are sent by email right after payment.")}</p>`}
@@ -209,11 +211,11 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
       ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}
       ${brezGosta ? html`<button type="button" class="gumb-siv" onClick=${prijava}>${t("Sign in to buy")}</button>` : null}
 
-      <button type="submit" class="gumb-glavni" disabled=${posiljam || razprodano || zaklenjeno || neprodaja}>
+      ${demo ? null : html`<button type="submit" class="gumb-glavni" disabled=${posiljam || razprodano || zaklenjeno || neprodaja}>
         ${razprodano ? t("Sold out") : posiljam ? t("Processing...")
           : brezplacno ? (kolicina === 1 ? t("Get ticket") : t("Get tickets"))
           : t("Pay {amount}", { amount: denar(skupaj, e.currency) })}
-      </button>
+      </button>`}
     </form>
     <button type="button" class="povezava-gumb" onClick=${prijava} disabled=${posiljam}>${t("Have an account? Sign in")}</button>
   <//>`;
