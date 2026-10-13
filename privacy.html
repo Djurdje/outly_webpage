@@ -152,9 +152,9 @@
         <li><strong>Scanning without a connection.</strong> So the door keeps working when the internet drops, the staff
             member&rsquo;s browser keeps a list of tickets for events currently taking place: ticket code, status, entry
             time, table and package and the holder&rsquo;s username (for guest lists also the host&rsquo;s username)
-            &mdash; no email addresses. The list is deleted when the staff member logs out. Scans not yet sent to the
-            server stay in the browser until they are sent; sent scans stay for at most three days so the device can
-            recognise a second entry.</li>
+            &mdash; no email addresses. The list is deleted when the staff member logs out, otherwise the first time the web app is opened three days after it was downloaded. Scans not yet sent to the
+            server stay in the browser until they are sent; sent scans stay for three days so the device can
+            recognise a second entry, and are deleted the first time the web app is opened after that.</li>
         <li><strong>Who scanned.</strong> With each scan we store the time, the staff member who scanned and a device
             marker: for online scans the browser or app type, for offline scans a random marker the browser creates when
             the scanner is first opened and that is not linked to anything else.</li>
@@ -265,7 +265,7 @@
             counted request at the latest.</li>
         <li><strong>Data in your browser</strong> (website and web app): as described for each item in section 10; you
             can remove all of it by clearing site data for outly.si. The ticket list on a club staff device is deleted at
-            log-out, sent scans after three days at the latest.</li>
+            log-out, otherwise, like sent scans, the first time the web app is opened after three days.</li>
         <li><strong>Error and crash reports:</strong> 30 days, then deleted automatically by Sentry.</li>
         <li><strong>Purchase data:</strong> as long as tax and accounting rules require. When you delete your
             account, purchases are detached from you: your email is replaced by an anonymous marker; the
@@ -309,9 +309,9 @@
             the web app); removed when you log out;</li>
         <li><strong>the invite code</strong>, if you came through a friend&rsquo;s link, so the point goes to the right
             person when you sign up. It is removed once you join the waitlist;</li>
-        <li><strong>your email address</strong>, when you enter it to sign up or reset your password in the web app, so
+        <li><strong>your email address</strong>, when you enter it to sign up, reset your password or sign in with a not yet confirmed address in the web app, so
             you do not have to type it again on the next step (entering the code). It is removed when you sign in or
-            log out;</li>
+            log out in the web app;</li>
         <li>in the web app also: <strong>your language</strong>, if you choose one; <strong>&ldquo;My
             preferences&rdquo;</strong> (genres, distance, age, price), removed when you log out; for club owners, whether
             the profile shows the club or the personal account;</li>

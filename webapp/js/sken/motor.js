@@ -646,13 +646,15 @@ export function ustvariMotor({ klub }) {
     const imaShranjene = !!shranjeniDogodki && Array.isArray(shranjeniDogodki.dogodki);
     if (imaShranjene) { dogodki = shranjeniDogodki.dogodki; dogodkiCas = Number.isFinite(shranjeniDogodki.cas) ? shranjeniDogodki.cas : 0; }
     const zdaj = Date.now();
+    const stariId = [];
     for (const r of Array.isArray(vsi) ? vsi : []) {
       if (!r || typeof r.id !== "string" || r.klub !== klub) continue;
       const stara = jeStarPoslan(r, zdaj);   // 3 dni od skena, tudi konflikt (politika zasebnosti); isti pogoj kot ciscenje ob zagonu
-      if (stara) { bere(() => shramba.skenDel(r.id)); continue; }
+      if (stara) { stariId.push(r.id); continue; }
       skeni.set(r.id, r);
       if (!poSerialu.has(r.serial) || r.scanned_at < poSerialu.get(r.serial).scanned_at) poSerialu.set(r.serial, r);
     }
+    if (stariId.length) bere(() => shramba.skenDelVec(stariId));   // ena transakcija, ne po en zapis (drug zavihek ne caka)
     preverjevalnik().then(ver => { if (zivo) stanje.set({ preverjanje: ver ? ver.ime : "ni" }); });
     objavi({ pripravljen: true, nacinShrambe: shramba.nacin });
     // Brez shranjenih dogodkov in brez povezave se ne bo nic prenesenega: zaslon naj pokaze "ni dogodka" namesto vrtavke.

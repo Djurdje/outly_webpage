@@ -118,8 +118,8 @@ shranimo, kdo jo je komu poslal in kdaj. Prejemnik dobi obvestilo v aplikaciji. 
   <li><strong>Skeniranje brez povezave.</strong> Da vrata delujejo tudi ob izpadu interneta, brskalnik osebja hrani seznam
       vstopnic dogodkov, ki ta čas potekajo: kodo vstopnice, njeno stanje, čas vstopa, mizo in paket ter uporabniško ime
       imetnika (pri guest listi tudi uporabniško ime gostitelja) — brez elektronskih naslovov. Seznam se izbriše, ko se
-      član osebja odjavi. Skeni, ki še niso bili poslani na strežnik, ostanejo v brskalniku, dokler se ne pošljejo;
-      poslani skeni ostanejo še največ tri dni, da naprava prepozna dvojni vstop.</li>
+      član osebja odjavi, sicer ob prvem odprtju spletne aplikacije po treh dneh od prenosa. Skeni, ki še niso bili poslani na strežnik, ostanejo v brskalniku, dokler se ne pošljejo;
+      poslani skeni ostanejo tri dni, da naprava prepozna dvojni vstop, in se izbrišejo ob prvem odprtju spletne aplikacije po tem roku.</li>
   <li><strong>Kdo je skeniral.</strong> Ob skenu shranimo čas, člana osebja, ki je vstopnico skeniral, in oznako naprave:
       pri skenu s povezavo vrsto brskalnika oziroma aplikacije, pri skenu brez povezave naključno oznako, ki jo brskalnik
       ustvari ob prvem odprtju skenerja in ni povezana z ničemer drugim.</li>
@@ -179,7 +179,7 @@ Podatkov ne prodajamo in ne oddajamo.</p>
   <li><strong>Podatki računa</strong> — dokler imaš račun. Ob izbrisu jih odstranimo.</li>
   <li><strong>Potrditvene kode in kode za ponastavitev gesla</strong> — veljajo omejen čas, nato se razveljavijo.</li>
   <li><strong>Naslov IP za omejevanje poskusov</strong> — samo kot odtis, ki se izbriše najpozneje približno eno uro po prvem štetem zahtevku.</li>
-  <li><strong>Podatki v brskalniku</strong> (spletna stran in spletna aplikacija) — kot je opisano pri posameznem podatku v razdelku 8; vse izbrišeš z brisanjem podatkov strani outly.si v nastavitvah brskalnika. Seznam vstopnic na napravi osebja kluba se izbriše ob odjavi, poslani skeni najpozneje po treh dneh.</li>
+  <li><strong>Podatki v brskalniku</strong> (spletna stran in spletna aplikacija) — kot je opisano pri posameznem podatku v razdelku 8; vse izbrišeš z brisanjem podatkov strani outly.si v nastavitvah brskalnika. Seznam vstopnic na napravi osebja kluba se izbriše ob odjavi, sicer, tako kot poslani skeni, ob prvem odprtju spletne aplikacije po treh dneh.</li>
   <li><strong>Poročila o napakah in zrušitvah</strong> — 30 dni, nato jih Sentry samodejno izbriše.</li>
   <li><strong>Potrjene prijave na čakalno listo</strong> — dokler Outly ne zaživi v tvojem mestu in ti pošljemo obvestilo o zagonu, najdlje 24 mesecev od potrditve.</li>
   <li><strong>Nepotrjene prijave na čakalno listo</strong> — izbrišemo jih najpozneje 90 dni po prijavi.</li>
@@ -238,8 +238,8 @@ orodij, zato pasice za privolitev v piškotke ni.</p>
       izbriše se ob odjavi;</li>
   <li><strong>kodo povabila</strong>, če si prišel prek povezave prijatelja — da se točka pripiše pravi osebi, ko se
       prijaviš ali ustvariš račun. Po prijavi na čakalno listo jo izbrišemo;</li>
-  <li><strong>elektronski naslov</strong>, ki ga vpišeš ob registraciji ali ponastavitvi gesla v spletni aplikaciji — da
-      ga na naslednjem koraku (vnos kode) ni treba vpisati znova. Izbrišemo ga, ko se prijaviš ali odjaviš;</li>
+  <li><strong>elektronski naslov</strong>, ki ga vpišeš ob registraciji, ponastavitvi gesla ali prijavi z še nepotrjenim naslovom v spletni aplikaciji — da
+      ga na naslednjem koraku (vnos kode) ni treba vpisati znova. Izbrišemo ga, ko se v spletni aplikaciji prijaviš ali odjaviš;</li>
   <li>v spletni aplikaciji še: <strong>jezik</strong>, če ga izbereš; <strong>»My preferences«</strong> (zvrsti, razdalja,
       starost, cena), ki jih izbrišemo ob odjavi; pri lastnikih klubov izbiro, ali se v profilu prikaže klub ali osebni
       račun;</li>
