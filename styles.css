@@ -1835,6 +1835,15 @@
   .nav__cta { gap: 6px; }
   .nav__cta .btn--sm { padding: 7px 10px; font-size: 12px; }
   .nav__cta [data-cta="creator"] { display: none; }   /* prostor za ikono profila */
+  .nav__cta .btn--sm { white-space: nowrap; }
+}
+@media (max-width: 380px) {
+  .nav__cta { gap: 4px; }
+  .nav__cta .btn--sm { padding: 7px 8px; font-size: 11.5px; }
+  .avatarBtn { margin-left: 0; }
+}
+@media (max-width: 359px) {
+  .nav__cta [data-cta="app"] { display: none; }   /* ozek zaslon: Open app ostane v hero in nogi */
 }
 
 /* =========================================================
