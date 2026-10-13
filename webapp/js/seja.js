@@ -26,6 +26,9 @@ export const useSeja = (izb = s => s) => useStore(seja, izb);
 export const KLJUC_CAKAJOCI_MAIL = "outly_cakajoci_mail";
 export const pozabiCakajociMail = () => lokalno.set(KLJUC_CAKAJOCI_MAIL, null);
 
+/** Admin (vloga odloca streznik, GET /me): na demo klubu sme kupovati zaradi testiranja (strežnik ga prepusti). */
+export const jeAdmin = me => !!me && me.role === "admin";
+
 /** Onboarding: samo navaden uporabnik brez onboarded_at (business/admin nikoli, kot iOS). */
 export const potrebujeOnboarding = me => !!me && (me.role || "user") === "user" && !me.onboarded_at;
 

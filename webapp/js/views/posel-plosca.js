@@ -110,6 +110,7 @@ function opombaBrezPlacil(razlog, jeLastnik, baza) {
     return jeLastnik ? povezava(t("Buyers can't purchase yet: complete your seller details in Club info."), "/info")
       : t("Buyers can't purchase yet: the club owner needs to complete the seller details in Club info.");
   }
+  if (razlog === "demo_club") return t("This is a demo club. Tickets can't be bought.");   // backend #243: demo klub, nakup zaprt (brez povezave; ureja ga samo Outly)
   if (razlog === "payments_not_configured") return t("Payments aren't set up yet. Contact Outly.");
   return jeLastnik ? povezava(t("Buyers can't purchase yet. Connect Stripe in Settings, or contact Outly if it's already connected."))
     : t("Buyers can't purchase yet. Ask the club owner to connect Stripe, or contact Outly if it's already connected.");

@@ -7,8 +7,8 @@ import { useSeja } from "../seja.js";
 import { sporocilo } from "../napake.js";
 import { navigiraj } from "../usmerjanje.js";
 import * as P from "../podatki.js";
-import { denar, zanrIme, varenUrl, napisPrizorisca } from "../oblika.js";
-import { Ikona, Slika, GlavaNazaj, Nalaganje, Napaka, List, VrsticaDogodka } from "../ui.js";
+import { denar, zanrIme, varenUrl, napisPrizorisca, jeDemo } from "../oblika.js";
+import { Ikona, Slika, GlavaNazaj, Nalaganje, Napaka, List, VrsticaDogodka, OznakaDemo } from "../ui.js";
 import { MiniKarta } from "./zemljevid.js";
 import { PrijaviGumb } from "./zloraba-gumb.js";
 
@@ -56,6 +56,7 @@ export function Klub({ id }) {
       <${Diaprojekcija} slike=${k._slike} ime=${k.name} />
       <span class="hero-senca spodaj" aria-hidden="true"></span>
       <${GlavaNazaj} prosojna=${true} />
+      ${jeDemo(k) ? html`<${OznakaDemo} kot=${true} razred="hero" />` : null}
       <h1 class="klub-ime">${k.name}</h1>
     </div>
 

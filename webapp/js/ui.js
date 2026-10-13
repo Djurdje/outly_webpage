@@ -4,7 +4,18 @@ import { html, useEffect, useRef, useState } from "./lib.js";
 import { IKONE } from "./ikone.js";
 import { t } from "./i18n.js";
 import { nazaj } from "./usmerjanje.js";
-import { napisCene, znacka, jeRazprodan, danInUra, danKratek, zanrIme, slika } from "./oblika.js";
+import { napisCene, znacka, jeRazprodan, danInUra, danKratek, zanrIme, slika, jeDemo } from "./oblika.js";
+
+/** Oznaka »Demo« (backend #243: is_demo): majhna siva pilula, NE modra (modra je samo za glavni gumb). Besedilo, brez emojija.
+    `kot` = absolutno v kotu kartice (razred demo-kot), sicer vrstica v toku. Uporabi jeDemo() pri klicu. */
+export function OznakaDemo({ kot = false, razred = "" }) {
+  return html`<small class=${"oznaka-demo" + (kot ? " demo-kot" : "") + (razred ? " " + razred : "")}>${t("Demo")}</small>`;
+}
+
+/** Jasno besedilo namesto gumba za nakup na demo klubu (dogodek, VIP mize, nakupni listi). */
+export function DemoBesedilo() {
+  return html`<p class="opomba-okvir demo-besedilo" role="status"><${Ikona} ime="info" velikost=${18} />${t("This is a demo club. Tickets can't be bought.")}</p>`;
+}
 
 /** Zaklep gumba po omejitvi streznika (503 semafor nakupov): [zaklenjeno, zakleni(sekunde)]. Samo cas, brez ponovitve zahteve. */
 export function useZaklep() {
@@ -88,6 +99,7 @@ export function KarticaDogodka({ dogodek: e, klub, sirina = 150 }) {
       ${e.poster_url ? html`<${Slika} src=${e.poster_url} sirina=${sirina * 2} alt="" />`
                      : html`<div class="plakat-prazen"><${Ikona} ime="music" velikost=${32} /></div>`}
       ${z ? html`<span class=${"znacka" + (jeRazprodan(e) ? " rdeca" : "")}>${z}</span>` : null}
+      ${jeDemo(e) ? html`<${OznakaDemo} kot=${true} />` : null}
       <div class="kd-pas">
         <div class="kd-besedilo">
           <strong>${e.title}</strong>
@@ -113,6 +125,7 @@ export function KarticaPredloga({ klub }) {
     ${klub._slike[0] ? html`<${Slika} src=${klub._slike[0]} sirina=${400} alt="" />`
                      : html`<div class="plakat-prazen"><${Ikona} ime="music" velikost=${26} /></div>`}
     <span class="kp-senca"></span>
+    ${jeDemo(klub) ? html`<${OznakaDemo} kot=${true} />` : null}
     <strong>${klub.name}</strong>
   </a>`;
 }
@@ -123,6 +136,7 @@ export function KarticaLogo({ klub, razdalja }) {
     <span class="kl-slika">
       ${klub.logo_url ? html`<${Slika} src=${klub.logo_url} sirina=${250} alt="" />`
                       : html`<span class="kl-crka">${klub.name.charAt(0).toUpperCase()}</span>`}
+      ${jeDemo(klub) ? html`<${OznakaDemo} kot=${true} />` : null}
       ${razdalja ? html`<span class="kl-razdalja"><${Ikona} ime="navigation" velikost=${11} /> ${razdalja}</span>` : null}
     </span>
     <strong>${klub.name}</strong>
@@ -130,10 +144,11 @@ export function KarticaLogo({ klub, razdalja }) {
 }
 
 /** Vrstica s sliko (iskanje, seznami). */
-export function Vrstica({ href, slikaUrl, ikona = "building", naslov, podnaslov, desno }) {
+export function Vrstica({ href, slikaUrl, ikona = "building", naslov, podnaslov, desno, demo = false }) {
   return html`<a class="vrstica" href=${href}>
     <span class="vrstica-slika">${slikaUrl ? html`<${Slika} src=${slikaUrl} sirina=${120} alt="" />` : html`<${Ikona} ime=${ikona} velikost=${20} />`}</span>
     <span class="vrstica-besedilo"><strong>${naslov}</strong>${podnaslov ? html`<span>${podnaslov}</span>` : null}</span>
+    ${demo ? html`<${OznakaDemo} />` : null}
     ${desno || html`<${Ikona} ime="chevron-right" velikost=${16} razred="utisano" />`}
   </a>`;
 }
@@ -179,6 +194,7 @@ export function VrsticaDogodka({ dogodek: e, klub, desno }) {
     <span class="kv-besedilo"><strong>${e.title}</strong>
       ${klub ? html`<span>${klub}</span>` : e.genres.length ? html`<span>${e.genres.map(zanrIme).join(" • ")}</span>` : null}
       <span>${danKratek(e._zacetek)}</span></span>
+    ${jeDemo(e) ? html`<${OznakaDemo} />` : null}
     ${desno || html`<span class="vd-cena">${napisCene(e)}</span>`}
   </a>`;
 }

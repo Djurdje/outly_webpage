@@ -10,11 +10,11 @@ import { sporocilo } from "../napake.js";
 import * as P from "../podatki.js";
 import {
   jeDanes, jeTaVikend, jeRazprodan, razdaljaKm, napisRazdalje, pozdrav, danInUra,
-  cena, znacka, zanrIme, steviloDogodkov, normalizirajDogodek, napisPrizorisca, prizorisce
+  cena, znacka, zanrIme, steviloDogodkov, normalizirajDogodek, napisPrizorisca, prizorisce, jeDemo
 } from "../oblika.js";
 import {
   Ikona, Slika, Avatar, NaslovSekcije, Skeleton, Napaka, VrstaDogodkov, KarticaPredloga,
-  KarticaLogo, KarticaDogodka
+  KarticaLogo, KarticaDogodka, OznakaDemo
 } from "../ui.js";
 import { zahtevajLokacijo, useLokacija } from "../lokacija.js";
 import { SekcijaNacrtov, naloziNacrte } from "./prijatelji.js";
@@ -271,6 +271,7 @@ function KarticaHit({ dogodek: e, klub, napis }) {
     <div class="kh-levo">
       <span class="kh-logo">${klub && klub.logo_url ? html`<${Slika} src=${klub.logo_url} sirina=${120} alt="" />` : html`<${Ikona} ime="building" velikost=${18} />`}</span>
       <div class="kh-besedilo">
+        ${jeDemo(e) ? html`<${OznakaDemo} />` : null}
         <span class="nadnapis">${napis}</span>
         <strong>${e.title}</strong>
         <span class="kh-meta">${[klub && klub.name, danInUra(e._zacetek)].filter(Boolean).join(" · ")}</span>
@@ -291,6 +292,7 @@ function KarticaVelika({ dogodek: e, klub, napis = t("BIG EVENT COMING UP") }) {
     <div class="kv-vrh">
       <span class="kv-logo">${klub && klub.logo_url ? html`<${Slika} src=${klub.logo_url} sirina=${130} alt="" />` : html`<${Ikona} ime="building" velikost=${20} />`}</span>
       <div><strong>${klub ? klub.name : ""}</strong>${napis ? html`<span class="nadnapis">${napis}</span>` : null}</div>
+      ${jeDemo(e) ? html`<${OznakaDemo} />` : null}
       ${z ? html`<span class=${"znacka staticna" + (jeRazprodan(e) ? " rdeca" : "")}>${z}</span>` : null}
     </div>
     <div class="kv-dno">

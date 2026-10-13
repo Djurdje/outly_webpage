@@ -5,15 +5,15 @@
 import { html, useEffect, useState } from "../lib.js";
 import { t } from "../i18n.js";
 import { send, zabeleziOgled } from "../api.js";
-import { useSeja } from "../seja.js";
+import { useSeja, jeAdmin } from "../seja.js";
 import { sporocilo } from "../napake.js";
 import { navigiraj } from "../usmerjanje.js";
 import * as P from "../podatki.js";
 import {
   denar, cena, jeMimo, jeRazprodan, jeMaloVstopnic, preostanek, seJeKoncal, danDolg, ura, mesecKratko, relativno, varenUrl,
-  prizorisce, koordinata
+  prizorisce, koordinata, jeDemo
 } from "../oblika.js";
-import { Ikona, Slika, Avatar, GlavaNazaj, Nalaganje, Napaka, List } from "../ui.js";
+import { Ikona, Slika, Avatar, GlavaNazaj, Nalaganje, Napaka, List, OznakaDemo, DemoBesedilo } from "../ui.js";
 import { NakupList } from "./nakup.js";
 import { GostNakupList } from "./nakup-gost.js";
 import { gostNakupVklopljen } from "../gost.js";
@@ -23,6 +23,8 @@ import { PrijaviGumb } from "./zloraba-gumb.js";
 
 export function Dogodek({ id }) {
   const prijavljen = useSeja(s => s.prijavljen);
+  const meNalozen = useSeja(s => !!s.me);
+  const admin = useSeja(s => jeAdmin(s.me));   // demo klub: nakup samo adminu (testiranje; strezniku se zapira ob 409 demo_club)
   const [e, setE] = useState(null);
   const [klub, setKlub] = useState(null);
   const [gostitelj, setGostitelj] = useState(null);   // klub prizorisca (venue_club_id), ce ga dogodek ima
@@ -53,9 +55,10 @@ export function Dogodek({ id }) {
   useEffect(() => { zabeleziOgled({ event_id: Number(id) }); }, [id]);   // en ogled na obisk
   // Po prijavi z namenom "kupi" odpremo nakup samodejno (?buy=1); enako VIP mize (?vip=1, z izbrano mizo in paketom).
   useEffect(() => {
+    if (e && jeDemo(e) && prijavljen && !meNalozen) return;   // demo: pocakaj na GET /me (vloga admin), preden se odloci o nakupu
     if (e && prijavljen && new URLSearchParams(location.search).get("buy") === "1") {
       history.replaceState(history.state, "", location.pathname);
-      if (moznoKupiti(e)) setList("nakup");
+      if (moznoKupiti(e) && !(jeDemo(e) && !admin)) setList("nakup");
     }
     const q = new URLSearchParams(location.search);
     if (e && prijavljen && q.get("vip") === "1") {
@@ -65,7 +68,7 @@ export function Dogodek({ id }) {
         setList("vip");
       }
     }
-  }, [e, prijavljen]);
+  }, [e, prijavljen, meNalozen]);
   // Dogodek z VIP mizami: modul za tloris se v ozadju nalozi vnaprej (list se odpre brez cakanja).
   useEffect(() => { if (e && e.vip_enabled === true) naloziVip().catch(() => {}); }, [e && e.vip_enabled]);
 
@@ -88,7 +91,9 @@ export function Dogodek({ id }) {
     setPosiljam(false);
   }
 
+  const demoZapora = jeDemo(e) && !admin;   // demo klub: namesto gumba za nakup besedilo
   function obVstopnicah() {
+    if (demoZapora) return;
     if (e.ticket_price_cents != null) {
       // Prijavljen: navaden nakup; gost z vklopljeno zastavico: obrazec z e-naslovom; sicer prijava kot doslej.
       if (!prijavljen && !gostNakup) { navigiraj(`/app/login?next=${encodeURIComponent(`/app/event/${id}?buy=1`)}`); return; }
@@ -113,7 +118,8 @@ export function Dogodek({ id }) {
       <span class="hero-senca" aria-hidden="true"></span>
       <${GlavaNazaj} prosojna=${true} />
       <button type="button" class="krog-gumb deli" onClick=${() => deli(e)} aria-label=${t("Share")}><${Ikona} ime="share-2" velikost=${18} /></button>
-      <${PasVstopnic} e=${e} ob=${obVstopnicah} />
+      ${jeDemo(e) ? html`<${OznakaDemo} kot=${true} razred="hero deli-levo" />` : null}
+      <${PasVstopnic} e=${e} ob=${obVstopnicah} demo=${demoZapora} />
     </div>
 
     <div class="dogodek-naslov">
@@ -123,6 +129,7 @@ export function Dogodek({ id }) {
 
     <${Prijatelji} gredo=${e.friends_going} zanima=${e.friends_interested} />
     <${Napaka} besedilo=${napaka} />
+    ${demoZapora ? html`<${DemoBesedilo} />` : null}
     ${preklic ? html`<p class="opomba-okvir" role="status"><${Ikona} ime="info" velikost=${18} />${t("Payment cancelled. You have not been charged.")}</p>` : null}
 
     <a class="kartica-vrstica" href=${"/app/club/" + e.club_id}>
@@ -292,12 +299,13 @@ function KarticaKdaj({ e }) {
 }
 
 /* Pas z ceno na plakatu (ticketBar): aktiven = kupi / free / zunanja povezava. */
-function PasVstopnic({ e, ob }) {
+function PasVstopnic({ e, ob, demo = false }) {
   const c = cena(e) || t("Tickets");
   let zgoraj, spodaj, aktiven = false;
   const n = preostanek(e);
   if (jeMimo(e)) { zgoraj = t("Ended"); spodaj = t("event is over"); }
   else if (jeRazprodan(e)) { zgoraj = c; spodaj = t("sold out"); }
+  else if (demo) { zgoraj = c; spodaj = t("demo, not for sale"); }   // demo klub: pas ni gumb
   else if (e.ticket_price_cents != null) {
     aktiven = true;
     if (e.ticket_price_cents === 0) { zgoraj = t("FREE"); spodaj = t("free entry"); }
