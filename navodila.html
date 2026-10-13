@@ -9,7 +9,8 @@
 <title>Predstavitev aplikacije Outly</title>
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-<link rel="stylesheet" href="/navodila.css">
+<!-- ?v=N: Cloudflare (Browser Cache TTL) brskalniku drzi CSS do 4 h; ob spremembi navodila.css dvigni N -->
+<link rel="stylesheet" href="/navodila.css?v=3">
 </head><body><div class="ovoj">
 
 <header>
@@ -19,7 +20,7 @@
   <div class="datum">Stanje 13. 10. 2026 · aplikacija za iPhone in spletna aplikacija outly.si/app</div>
 </header>
 
-<nav class="kazalo" aria-label="Kazalo"><h2>Kazalo</h2><ol><li><a href="#r1">Kaj je Outly</a></li><li><a href="#r2">Vloge v aplikaciji</a></li><li><a href="#r3">Jedro aplikacije: Domov</a></li><li><a href="#r4">Za obiskovalce</a></li><li><a href="#r5">Za zaposlene v klubu</a></li><li><a href="#r6">Za klube</a></li><li><a href="#r7">Kako klub dobi denar</a></li><li><a href="#r8">Kako dobiš aplikacijo (TestFlight)</a></li></ol></nav>
+<nav class="kazalo" aria-label="Kazalo"><h2>Kazalo</h2><ol><li><a href="#r1">Kaj je Outly</a></li><li><a href="#r2">Vloge v aplikaciji</a></li><li><a href="#r3">Jedro aplikacije</a></li><li><a href="#r4">Za obiskovalce</a></li><li><a href="#r5">Za zaposlene v klubu</a></li><li><a href="#r6">Za klube</a></li><li><a href="#r7">Kako dobiš aplikacijo (TestFlight)</a></li></ol></nav>
 
 <h2 id="r1"><span class="st">1</span>Kaj je Outly</h2>
 
@@ -46,7 +47,7 @@
 
 <p>Vsak zaposleni in lastnik je hkrati tudi obiskovalec: z istim računom lahko kupuje vstopnice.</p>
 
-<h2 id="r3"><span class="st">3</span>Jedro aplikacije: Domov</h2>
+<h2 id="r3"><span class="st">3</span>Jedro aplikacije</h2>
 
 <p><b>Domov</b> <span class="en">Home</span> je prvi zaslon in na njem je vse, kar rabiš za večer. Pritisni katerokoli kartico in prideš do dogodka ali kluba, od tam pa do vstopnice.</p>
 
@@ -258,6 +259,8 @@
   </tbody>
 </table></div>
 
+<p class="opomba"><b>Nasvet:</b> stran kluba je vaša izložba na Outlyju. Uredite jo čim bolj skrbno: dodajte galerijo slik, predstavitveni video, dober opis, cenik bara in vse kontakte. Popolna in urejena stran vas loči od konkurence in obiskovalca prepriča, da izbere vaš klub.</p>
+
 <h3>Dodaj dogodek</h3>
 
 <ol>
@@ -346,11 +349,11 @@
 
 <p><b>Uredi svojo stran</b> → <b>Geslo in varnost</b> <span class="en">Password and security</span>.</p>
 
-<h2 id="r7"><span class="st">7</span>Kako klub dobi denar</h2>
+<h3>Kako klub dobi denar</h3>
 
 <p>Denar od vstopnic gre neposredno na bančni račun kluba, prek Stripa. Outly denarja ne hrani in nima denarnice.</p>
 
-<h3>Pot denarja</h3>
+<h4>Pot denarja</h4>
 
 <ol>
   <li>Obiskovalec v aplikaciji kupi vstopnico in plača s kartico.</li>
@@ -362,7 +365,7 @@
 
 <p>Prodajalec vstopnice je klub, Outly je posrednik. Klub zato izda račun in obračuna DDV.</p>
 
-<h3>Provizija</h3>
+<h4>Provizija</h4>
 
 <ul>
   <li>Provizija Outly se odbije od cene vstopnice, kupcu se ne prišteje.</li>
@@ -370,7 +373,7 @@
   <li>Enako velja za VIP mize. Seznami gostov in brezplačni vstop so brez provizije.</li>
 </ul>
 
-<h3>Kaj potrebujemo od kluba</h3>
+<h4>Kaj potrebujemo od kluba</h4>
 
 <div class="drsnik"><table class="dva">
   <thead><tr><th>Kaj</th><th>Kje se vpiše</th></tr></thead>
@@ -381,7 +384,7 @@
   </tbody>
 </table></div>
 
-<h3>Kako povežeš Stripe (samo lastnik)</h3>
+<h4>Kako povežeš Stripe (samo lastnik)</h4>
 
 <ol>
   <li>V brskalniku odpri <b>outly.si/app</b> in se prijavi.</li>
@@ -393,7 +396,7 @@
 
 <p>Si prekinil? Pritisni <b>Nadaljuj nastavitev Stripa</b> <span class="en">Continue Stripe setup</span>. Izplačila in urnik izplačil vidiš z <b>Odpri Stripe pregled</b> <span class="en">Open Stripe dashboard</span>.</p>
 
-<h3>Kje vidiš zaslužek</h3>
+<h4>Kje vidiš zaslužek</h4>
 
 <p>V <b>Pregled</b> <span class="en">Dashboard</span>:</p>
 
@@ -403,13 +406,13 @@
   <li><b>Tvoje izplačilo</b> <span class="en">Your payout</span>: kar ostane klubu po proviziji in vračilih.</li>
 </ul>
 
-<h3>Odpovedan dogodek</h3>
+<h4>Odpovedan dogodek</h4>
 
 <p>Kupec ima pravico do vračila denarja. Vračilo prek Stripa izvede Outly v imenu kluba. Vstopnice odpovedanega dogodka na vhodu ne veljajo.</p>
 
 <p class="opomba"><b>Trenutno stanje:</b> Outly je v testnem načinu. Nakupi so simulirani, denar se še ne premika (oznaka <b>TEST</b> v Pregledu). Ko preklopimo na pravo plačevanje, klube obvestimo.</p>
 
-<h2 id="r8"><span class="st">8</span>Kako dobiš aplikacijo (TestFlight)</h2>
+<h2 id="r7"><span class="st">7</span>Kako dobiš aplikacijo (TestFlight)</h2>
 
 <p>Aplikacija za iPhone je zdaj v testiranju. Namešča se prek Applove aplikacije <b>TestFlight</b>, ne prek App Stora.</p>
 
