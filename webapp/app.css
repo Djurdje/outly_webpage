@@ -647,6 +647,12 @@ a.profil-ime{ white-space:normal; }
 .mono{ font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 .oznaka-vstopa{ font-size:12px; font-weight:700; padding:6px 10px; border-radius:999px; background:var(--b08); color:var(--b55); flex:none; }
 .oznaka-vstopa.noter{ background:rgba(53,199,122,.15); color:var(--zelena); }
+.oznaka-vstopa.spor{ background:rgba(255,90,90,.18); color:var(--rdeca); }
+.cip-plan.spor{ border-color:rgba(255,90,90,.6); color:var(--rdeca); }
+.vstopnica.spor{ border-color:rgba(255,90,90,.5); }
+.vstopnica-spor{ align-items:center; text-align:center; color:var(--rdeca); }
+.vstopnica-spor > strong{ font-size:18px; letter-spacing:.02em; }
+.vstopnica-spor .opomba{ color:var(--b70); }
 .znacka-test{ font-size:11px; font-weight:800; color:#FFA24C; background:rgba(255,162,76,.15); padding:3px 8px; border-radius:999px; }
 .podnaslov-plosce{ margin-top:-10px; font-size:16px; font-weight:600; color:var(--b70); }
 .opomba.oranzna{ color:rgba(255,162,76,.9); }

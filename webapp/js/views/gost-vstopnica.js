@@ -7,7 +7,7 @@ import { html, useEffect, useState } from "../lib.js";
 import { t } from "../i18n.js";
 import { send } from "../api.js";
 import { ApiError, sporocilo } from "../napake.js";
-import { danInUra, statusNapis } from "../oblika.js";
+import { danInUra, statusNapis, vSporu } from "../oblika.js";
 import { GlavaNazaj, Nalaganje, Napaka, Ikona, Slika } from "../ui.js";
 import { useSeja } from "../seja.js";
 import { prevzemiZetonIzUrl, preberiVstopnicaZeton, pozabiVstopnicaZeton, shraniVstopnicaZeton } from "../gost.js";
@@ -67,7 +67,8 @@ export function GostVstopnica() {
   const zacetek = e.start_at || v.start_at ? new Date(e.start_at || v.start_at) : null;
   const kraj = [e.address, e.city].map(x => (x || "").trim()).filter(Boolean).join(", ");
   const minStarost = Number(e.min_age ?? v.min_age) || 0;
-  const veljavna = (v.status === "valid" || v.status === "paid") && !!v.qr;
+  const spor = vSporu(v);
+  const veljavna = (v.status === "valid" || v.status === "paid") && !!v.qr && !spor;
   const uporabljena = v.status === "used";
   const dogodek = e.id != null ? html`<a class="kartica-vrstica" href=${"/app/event/" + e.id}>
       ${e.poster_url ? html`<span class="vd-slika"><${Slika} src=${e.poster_url} sirina=${150} alt="" /></span>` : null}
@@ -90,6 +91,7 @@ export function GostVstopnica() {
         <strong>${naslov}</strong>
         ${veljavna
           ? html`<${QrTelo} v=${{ ...v, transferable: false, min_age: v.min_age ?? e.min_age }} />`
+          : spor ? html`<${QrTelo} v=${v} />`
           : html`<span class="cip-plan">${uporabljena ? t("ALREADY USED") : statusNapis(v.status)}</span>`}
       </div>
     </div>

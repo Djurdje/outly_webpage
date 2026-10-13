@@ -116,6 +116,12 @@ export function denar(centi, valuta = "EUR") {
 }
 
 /* ---------- stanje narocila in vstopnice (backend: orders_status_chk, tickets_status_chk) ---------- */
+/** Placilo vstopnice je v sporu (chargeback; backend outly-backend#232, novo polje). Status ostane "valid", a vstopnica NE velja:
+    na vratih je ne spustimo. V prikazu kupca spor prevlada SAMO pri statusu "valid" (kot iOS #93): refunded/void/used ostanejo
+    kot prej. Stari backend polja nima -> false. Polje na GET /business/events/:id/tickets in /guest/ticket doda backend PR #233
+    (do takrat ga ni: false, rocni Check in zavrne streznik z 409). Skener (motor.js) bere seznam, kjer je spor status "unpaid". */
+export const vSporu = v => !!v && v.payment_disputed === true && v.status === "valid";
+
 /** Stanje kot veliki napis v jeziku aplikacije (nakupna informacija, ZVPot-1 7/1): znana stanja prevedena, neznano ostane surovo. */
 export function statusNapis(status) {
   const s = String(status || "");

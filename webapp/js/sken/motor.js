@@ -529,6 +529,8 @@ export function ustvariMotor({ klub }) {
     const prvi = poSerialu.get(r.serial);
     if (prvi) return { tip: "ze-skenirano", barva: "rdeca", cas: cas(prvi.scanned_at), ...(seznam && seznam.get(r.serial) ? sklepIzSeznama(seznam.get(r.serial)) : {}) };
     const v = seznam ? seznam.get(r.serial) : null;
+    // Spor (backend #232): seznam ima status "unpaid" + payment_disputed (stari odjemalci kazejo rdece); vratar mora videti pravi razlog.
+    if (v && v.payment_disputed === true && (v.status === "valid" || v.status === "unpaid")) return { tip: "placilo-v-sporu", barva: "rdeca" };
     if (v && v.status !== "valid") {
       if (v.status === "used") return { tip: "ze-skenirano", barva: "rdeca", cas: cas(v.used_at), ...sklepIzSeznama(v) };
       if (v.status === "refunded") return { tip: "vrnjeno", barva: "rdeca" };

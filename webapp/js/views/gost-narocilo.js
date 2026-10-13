@@ -6,7 +6,7 @@ import { html, useEffect, useRef, useState } from "../lib.js";
 import { t, tn } from "../i18n.js";
 import { send } from "../api.js";
 import { ApiError, sporocilo, kodaNapake, potekloPlacilo, placiloVObdelavi } from "../napake.js";
-import { danInUra, statusNapis } from "../oblika.js";
+import { danInUra, statusNapis, vSporu } from "../oblika.js";
 import { GlavaNazaj, Nalaganje, Napaka, Ikona, Slika } from "../ui.js";
 import { odpriStripe } from "../stripe.js";
 import { useSeja } from "../seja.js";
@@ -174,8 +174,9 @@ export function GostNarocilo() {
       ${vstopnice.map((v, i) => html`<div class="vstopnica" key=${v.id}>
         <div class="vstopnica-glava"><span class="nadnapis">${klub}</span><span class="nadnapis">${t("{i} OF {n}", { i: i + 1, n: vstopnice.length })}</span></div>
         <strong>${e.title}</strong>
-        ${v.status === "valid"
+        ${v.status === "valid" && !vSporu(v)
           ? html`<${QrTelo} v=${{ ...v, public_ref: v.public_ref || ref, min_age: v.min_age ?? e.min_age }} />`
+          : vSporu(v) ? html`<${QrTelo} v=${v} />`
           : html`<span class="cip-plan">${v.status === "used" ? t("ALREADY USED") : statusNapis(v.status)}</span>`}
       </div>`)}
     </div>
