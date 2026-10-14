@@ -436,6 +436,6 @@ export function OAplikaciji() {
       <a class="menijska-vrstica" href="/privacy-app" target="_blank" rel="noopener"><${Ikona} ime="lock" /><span>${t("Privacy Policy")}</span></a>
       <a class="menijska-vrstica" href="mailto:luka@outly.si"><${Ikona} ime="mail" /><span>${t("Contact us")}</span></a>
     </div>
-    <p class="opomba srednje vec-vrstic">${t("NEXT DIMENSIONS, družba za marketing, d.o.o.\nTrebče 81, 3256 Bistrica ob Sotli, Slovenia")}</p>
+    <p class="opomba srednje vec-vrstic">${t("TIP&TAP, storitve, razvoj in izobraževanje, d.o.o.\nKvedrova cesta 6, 1000 Ljubljana, Slovenia")}</p>
   </div>`;
 }
