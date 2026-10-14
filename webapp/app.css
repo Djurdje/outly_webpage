@@ -666,6 +666,8 @@ a.profil-ime{ white-space:normal; }
 .opomba.oranzna{ color:rgba(255,162,76,.9); }
 .opomba.oranzna a{ color:inherit; text-decoration:underline; }
 .mreza-stevilk{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.mreza-stevilk.ena{ grid-template-columns:1fr; }
+.mreza-stevilk.ena .ks-opis{ white-space:normal; }
 .kartica-stevilke{ display:flex; flex-direction:column; gap:4px; min-width:0; padding:12px; border-radius:16px; background:var(--b06); }
 .kartica-stevilke strong{ font-size:20px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .ks-naslov{ font-size:13px; color:rgba(255,255,255,.65); }
