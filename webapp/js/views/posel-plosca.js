@@ -68,7 +68,7 @@ export function NadzornaPlosca({ klub }) {
     <${GlavaNazaj} rezerva=${baza} />
     <div class="naslov-z-gumbom"><h1 class="velik-naslov">${t("Dashboard")}</h1>${test ? html`<span class="znacka-test">${t("TEST")}</span>` : null}</div>
     ${ime ? html`<p class="podnaslov-plosce">${ime}</p>` : null}
-    ${test ? html`<p class="opomba oranzna">${t("Test mode: purchases are simulated, no money moves. Numbers show how the real dashboard will look.")}</p>` : null}
+    ${test ? html`<p class="opomba oranzna">${t("Test mode: purchases are simulated, no money moves. They are counted under Test purchases, not in the totals.")}</p>` : null}
     ${brezStripa ? html`<p class="opomba oranzna" role="status">${opombaBrezPlacil(s.payment_unavailable_reason, jeLastnik, baza)}</p>` : null}
     ${nalaga && !s ? html`<${Nalaganje} />` : null}
     ${napaka && !s ? html`<${PoslovnaNapaka} napaka=${napaka} znova=${nalozi} />` : null}
@@ -81,6 +81,10 @@ export function NadzornaPlosca({ klub }) {
         <${Stevilka} naslov=${t("Outly fee")} vrednost=${denar(povzetek.fee_cents || 0)} opis=${s.fee_percent != null ? t("{p} % of gross", { p: Math.round(s.fee_percent) }) : ""} />
         <${Stevilka} naslov=${t("Your payout")} vrednost=${denar(povzetek.net_cents || 0)} opis=${t("after fee and refunds")} modra=${true} />
       </div>
+      ${(s.test_summary && s.test_summary.orders) > 0 ? html`<div class="mreza-stevilk ena">
+        <${Stevilka} naslov=${t("Test purchases")} vrednost=${denar(s.test_summary.gross_cents || 0)}
+          opis=${t("Orders: {n} · not real money, not included above", { n: stevilka(s.test_summary.orders) })} />
+      </div>` : null}
       <div class="obdobja" role="group" aria-label=${t("Period")}>
         ${OBDOBJA.map(([o, napis]) => html`<button type="button" class=${"obdobje" + (o === obdobje ? " izbrano" : "")} aria-pressed=${o === obdobje} onClick=${() => zamenjajObdobje(o)}>${t(napis)}</button>`)}
       </div>
