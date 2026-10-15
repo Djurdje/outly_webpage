@@ -90,10 +90,12 @@ export function pozabiGostNakup({ kljuc, dogodek } = {}) {
   } catch { try { sessionStorage.removeItem(KLJUC_NAKUPA); } catch { /* brez */ } }
 }
 
-/* ZASTAVICA: nakup brez racuna je od 15. 10. 2026 JAVEN (pogoji 1.1.2 in politika zasebnosti 2.4.4 objavljeni 15. 10. 2026, Martinov DA;
-   pravno/2026-10-15-nakup-brez-racuna-objava.md). Neprijavljen ob nakupu vidi obrazec z e-naslovom; ?gost=0/1 je ob vklopljeni zastavici brez ucinka (ostaja za primer umika:
-   GOST_NAKUP_JAVNO = false vrne ekipni preklop ?gost=1 / ?gost=0). Stran /app/guest/order deluje vedno (povezava iz maila). */
-export const GOST_NAKUP_JAVNO = true;
+/* ZASTAVICA: pogoji 1.1.2 in politika zasebnosti 2.4.4 so objavljeni 15. 10. 2026 (nakup brez racuna je pravno opisan), a je javni
+   vklop (GOST_NAKUP_JAVNO = true) odlozen do preklopa Stripa na sk_live_ + GOST_NAKUP_LIVE=1 na Renderju (outly-backend#249; razlog:
+   na sk_test_ gost brez potrditve maila dobi brezplacne veljavne vstopnice; Martin 15. 10. 2026). Do takrat je nakup brez racuna
+   skrit: neprijavljen ob nakupu vidi stari tok (Sign in); ekipni preklop ?gost=1 v URL-ju (zapomni se v localStorage outly_gost=1),
+   ?gost=0 ga izklopi. Stran /app/guest/order deluje vedno (povezava iz maila). */
+export const GOST_NAKUP_JAVNO = false;
 const KLJUC_ZASTAVICE = "outly_gost";
 export function gostNakupVklopljen() {
   let q = null;

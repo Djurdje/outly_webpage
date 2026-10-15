@@ -102,7 +102,7 @@ odstraniš.</p>
 Kartico vneseš neposredno v obrazec ponudnika plačilnih storitev.</p>
 
 <h3>Ob nakupu brez računa (spletna aplikacija)</h3>
-<p>V spletni aplikaciji outly.si/app lahko vstopnico kupiš brez uporabniškega računa. Takrat obdelujemo:</p>
+<p>Kadar je ta možnost na voljo, lahko v spletni aplikaciji outly.si/app vstopnico kupiš brez uporabniškega računa. Takrat obdelujemo:</p>
 <ul>
   <li><strong>elektronski naslov</strong>, ki ga vpišeš — nanj pošljemo vstopnice, potrdilo o nakupu in sporočila o naročilu
       (na primer o vračilu). Brez elektronskega naslova nakupa brez računa ne moremo izvesti;</li>
@@ -111,7 +111,9 @@ Kartico vneseš neposredno v obrazec ponudnika plačilnih storitev.</p>
   <li>različico Pogojev uporabe, ki si jih sprejel, in čas sprejema;</li>
   <li>pri dogodku s starostno omejitvijo <strong>datum rojstva</strong>: strežnik iz njega izračuna, ali izpolnjuješ starostno
       mejo, <strong>datuma pa ne shranimo</strong>. Shranimo samo, katero starostno mejo si izpolnil;</li>
-  <li><strong>skrivno povezavo</strong> do naročila: v naši bazi je samo njen nepovraten odtis, ne povezava sama;</li>
+  <li><strong>skrivno povezavo</strong> do naročila: v naši bazi je samo njen nepovraten odtis, ne povezava sama. V celoti
+      jo vsebujeta sporočilo z vstopnicami, ki ga pošljemo prek ponudnika Resend, in pri plačljivem naročilu naslov za vrnitev
+      s plačilne strani, ki ga prejme ponudnik plačilnih storitev Stripe;</li>
   <li>naslov IP kot odtis za omejevanje števila nakupov (zgoraj, Ob uporabi aplikacije in spletne aplikacije).</li>
 </ul>
 <p>Tvoj elektronski naslov vidita lastnik in upravitelj kluba oziroma organizatorja dogodka v Outlyju, kot pri vsakem nakupu;
@@ -332,7 +334,8 @@ ob vstopu.</p>
       poleg tega strogo varnostno politiko vsebine (CSP), ki brskalniku prepove izvajanje kode z drugih domen.</li>
   <li>Dostop do podatkov kluba ima le lastnik kluba in osebje, ki mu ga je dodelil, v obsegu svoje vloge.</li>
   <li>Polni elektronski naslovi s čakalne liste so v zaprti tabeli, ki je spletna stran ne more brati; javno se kažejo samo zakriti.</li>
-  <li>Skrivna povezava do naročila brez računa je naključna in dolga; v naši bazi je shranjena samo kot odtis.</li>
+  <li>Skrivna povezava do naročila brez računa je naključna in dolga; v naši bazi je shranjena samo kot odtis. V celoti je
+      v sporočilu, ki ti ga pošljemo (prek Resenda), in pri plačljivem naročilu pri Stripu, ki jo uporabi za vrnitev s plačilne strani.</li>
 </ul>
 
 <h2 id="b12"><span class="st">12</span>Spremembe in stik</h2>

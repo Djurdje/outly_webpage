@@ -141,7 +141,7 @@
         We never receive, process or store your card details. You enter your card directly into the payment
         provider&rsquo;s form.
       </p>
-      <p><strong>Buying without an account (web app)</strong> &mdash; at outly.si/app you can buy a ticket without an account. We then process:</p>
+      <p><strong>Buying without an account (web app)</strong> &mdash; where this option is available, you can buy a ticket at outly.si/app without an account. We then process:</p>
       <ul>
         <li>the <strong>email address</strong> you enter &mdash; we send your tickets, the purchase receipt and messages about
             the order (for example about a refund) to it. Without an email address we cannot complete a purchase without an account;</li>
@@ -150,7 +150,9 @@
         <li>the version of the Terms of Use you accepted and when;</li>
         <li>for an age-restricted event, your <strong>date of birth</strong>: our server uses it to check whether you meet the
             age limit, <strong>but we do not store it</strong>. We store only which age limit you met;</li>
-        <li>the <strong>secret link</strong> to your order: our database holds only an irreversible hash of it, not the link itself;</li>
+        <li>the <strong>secret link</strong> to your order: our database holds only an irreversible hash of it, not the link itself.
+            The full link is contained in the email with your tickets, which we send through our provider Resend, and, for a paid
+            order, in the return address from the payment page, which our payment provider Stripe receives;</li>
         <li>your IP address as a hash, to limit the number of purchases (see &ldquo;Using the app and the web app&rdquo;).</li>
       </ul>
       <p>Your email address is visible to the owner and managers of the club or event organiser in Outly, as with every
@@ -390,7 +392,8 @@
         waitlist are held in a private table the website itself cannot read: the public waitlist on our home page
         shows only masked addresses such as <code>j***@example.com</code> or a chosen username. Club data is
         visible only to the club owner and the staff the owner has added. The secret link to an order made without an
-        account is random and long; our database stores it only as a hash.</p>
+        account is random and long; our database stores it only as a hash. The full link is in the email we send you (through
+        Resend) and, for a paid order, with Stripe, which uses it to return you from the payment page.</p>
 
       <h2>12. Changes to this policy</h2>
       <p>If we change how we handle your data, we update this page and change the date at the top. If the change
