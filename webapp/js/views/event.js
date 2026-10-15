@@ -1,6 +1,6 @@
 /* Zaslon dogodka (EventDetailView.swift). Glavni vhod za ljudi brez aplikacije (deljena povezava
    /app/event/:id) - dela brez prijave. "I'm in" in VIP mize zahtevajo prijavo; po prijavi se uporabnik vrne sem.
-   Navadne vstopnice lahko kupi tudi gost samo z e-naslovom (nakup-gost.js, /app/guest/order) - za zastavico gost.js (privzeto izklopljeno).
+   Navadne vstopnice lahko kupi tudi gost samo z e-naslovom (nakup-gost.js, /app/guest/order) - za zastavico gost.js (od 15. 10. 2026 javno vklopljena).
    Cena null = vstopnic ni na Outlyju (zunanja povezava ali na vratih), Free samo pri 0. */
 import { html, useEffect, useState } from "../lib.js";
 import { t } from "../i18n.js";
@@ -75,7 +75,7 @@ export function Dogodek({ id }) {
   if (napaka && !e) return html`<div class="zaslon"><${GlavaNazaj} /><${Napaka} besedilo=${napaka} znova=${nalozi} /></div>`;
   if (!e) return html`<div class="zaslon"><${GlavaNazaj} /><${Nalaganje} /></div>`;
 
-  const gostNakup = !prijavljen && gostNakupVklopljen();   // zastavica (gost.js): privzeto izklopljeno
+  const gostNakup = !prijavljen && gostNakupVklopljen();   // zastavica (gost.js): od 15. 10. 2026 javno vklopljena
   const povratek = `/app/login?next=${encodeURIComponent("/app/event/" + id)}`;
   async function preklopiZanimanje() {
     if (!prijavljen) { navigiraj(povratek); return; }
