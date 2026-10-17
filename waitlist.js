@@ -344,33 +344,6 @@
   }
 
   /* ---------------------------------------------------------------
-     Oddaja forme
-  ---------------------------------------------------------------- */
-  /* Rezervni način: neposreden vpis v tabelo, kot je delovalo pred
-     uvedbo potrditvenih mailov. Uporabi se samo, če funkcije v bazi ni. */
-  async function joinBrezPotrditve(email, isUser, isCreator) {
-    const { error } = await client.from("waitlist_signups").insert({
-      email,
-      is_user: isUser || !isCreator,
-      is_creator: isCreator
-    });
-
-    if (error && error.code === "23505") {
-      setMsg("This email is already on the waitlist — you're all set.", "ok");
-    } else if (error) {
-      console.warn("[waitlist] insert error:", error);
-      setMsg("Something went wrong. Please try again in a moment.", "error");
-      return;
-    } else {
-      const type = isCreator && isUser ? "user + creator" : isCreator ? "creator" : "user";
-      setMsg(`Thanks! You're on the waitlist as a ${type}. We'll email you at ${email}.`, "ok");
-    }
-
-    form.reset();
-    loadList();
-  }
-
-  /* ---------------------------------------------------------------
      "Check your inbox" — korak po uspesni oddaji
      ---------------------------------------------------------------
      Brez klika v potrditvenem mailu prijava ne steje in se na seznamu
@@ -546,20 +519,6 @@
     }
 
     if (error) {
-      // Če migracija `supabase-schema-2-confirm.sql` še ni pognana, funkcije
-      // v bazi ni. V tem primeru pademo nazaj na prvotni način (vpis brez
-      // potrditvenega maila), da se prijave nikoli ne zlomijo — ne glede na
-      // to, ali je bila prej objavljena stran ali baza.
-      const funkcijeNi =
-        error.code === "PGRST202" ||
-        /could not find the function/i.test(error.message || "");
-
-      if (funkcijeNi) {
-        console.info("[waitlist] join_waitlist še ne obstaja — vpis brez potrditve.");
-        await joinBrezPotrditve(email, isUser, isCreator);
-        return;
-      }
-
       console.warn("[waitlist] join error:", error);
       setMsg("Something went wrong. Please try again in a moment.", "error");
       return;
