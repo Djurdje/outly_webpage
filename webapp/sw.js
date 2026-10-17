@@ -6,7 +6,7 @@
      shranjeno samo ob izpadu - po objavi nikoli stara koda.
    - /vendor/*, pisave, ikone (razlicica v imenu / se ne spreminjajo): shranjeno najprej.
    - API (backend, Supabase, Cloudinary), vstopnice, ploscice zemljevida: NE prestrezamo (vedno sveze, kot iOS). */
-const RAZLICICA = "outly-app-9";   // ob dvigu uskladi tudi webapp/porocilo.js
+const RAZLICICA = "outly-app-10";   // ob dvigu uskladi tudi webapp/porocilo.js
 const LUPINA = "/app/";
 /* Staticni graf uvozov main.js (vsi moduli, ki jih aplikacija nalozi ob zagonu). Generira ga webapp/orodja/predhodno-nalaganje.mjs
    (isti izracun kot <link rel="modulepreload"> v app/index.html; `... --preveri` pade, ce se razideta). Brez tega bi po objavi
@@ -68,8 +68,14 @@ const JEDRO = [...new Set([
   ...GRAF
 ])];
 
+/* Namestitev: vse ali nic (kot addAll), a z istim filtrom kot drugje - HTML (Cloudflare za neznano pot vrne index.html
+   s 200) nikoli pod kljucem JS. Ce kaksna datoteka manjka ali pade, namestitev pade in ostane prejsnji SW. */
 self.addEventListener("install", e => {
-  e.waitUntil(caches.open(RAZLICICA).then(c => c.addAll(JEDRO.map(u => new Request(u, { cache: "no-cache" })))).then(() => self.skipWaiting()));
+  e.waitUntil(Promise.all(JEDRO.map(u => fetch(u, { cache: "no-cache" }).then(odg => {
+    if (!odg.ok || !pravaVsebina(u, odg)) throw new Error("JEDRO: " + u);
+    return [u, odg];
+  }))).then(sveze => caches.open(RAZLICICA).then(c => Promise.all(sveze.map(([u, odg]) => c.put(u, odg)))))
+    .then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", e => {
@@ -78,14 +84,50 @@ self.addEventListener("activate", e => {
     .then(() => self.clients.claim()));
 });
 
-/* Stran po nalaganju poslje seznam modulov, ki jih je nalozila (brez builda seznama ne poznamo vnaprej). */
+/* Stran po nalaganju poslje seznam modulov, ki jih je nalozila (brez builda seznama ne poznamo vnaprej).
+   - NASA KODA (/webapp/*, /supabase-config.js, lupina /app/ - brez razlicice v imenu): VSE, kar je v predpomnilniku, v JEDRU
+     ali na seznamu strani, preverimo pri strezniku (pogojno, ETag -> 304) in zamenjamo VSE ALI NIC. Zakaj: fetch strani
+     sproti shrani samo module, ki jih je nalozila (npr. domaca stran: svez oblika.js), skener pa bi ostal star -> brez
+     mreze "does not provide an export named" in skener ne dela (pregled PR #76, objava brez dviga RAZLICICA).
+     Ce kaksen prenos pade (izpad mreze), ne zapisemo nicesar: ostane prejsnja, med seboj skladna kopija.
+   - Ostalo (/vendor/*, pisave, ikone - razlicica v imenu): samo manjkajoce (samopopravilo, npr. po starem zagon.js,
+     ki je ob "Osvezi" pobrisal ves predpomnilnik). */
+const jeNasaKoda = p => p.startsWith("/webapp/") || p === "/supabase-config.js" || p === LUPINA;
+let osvezujem = null;   // vec sporocil hkrati (vec zavihkov) -> en sam krog
 self.addEventListener("message", e => {
   const d = e.data || {};
   if (d.tip !== "shrani" || !Array.isArray(d.poti)) return;
-  const poti = d.poti.filter(p => typeof p === "string" && /^\/(webapp|vendor)\/[\w./-]+$/.test(p) && !p.includes(".."));
-  e.waitUntil(caches.open(RAZLICICA).then(c => Promise.all(poti.map(p => c.match(p).then(z => z || fetch(p, { cache: "no-cache" })
-    .then(odg => { if (odg.ok && pravaVsebina(p, odg)) return c.put(p, odg); }).catch(() => {}))))));
+  const odStrani = d.poti.filter(p => typeof p === "string" && /^\/(webapp|vendor)\/[\w./-]+$/.test(p) && !p.includes(".."));
+  if (!osvezujem) osvezujem = osveziShrambo(odStrani).catch(() => {}).then(() => { osvezujem = null; });   // tudi ob preteku
+  e.waitUntil(osvezujem);
 });
+/* Casovna meja kroga (pregled PR #76, N-7): viseca zahteva pri slabem signalu ne sme drzati kroga do ugasnitve SW.
+   Ob preteku krog opusti BREZ zapisa nase kode (ostane prejsnja skladna kopija). */
+const MEJA_KROGA_MS = 20000;
+async function osveziShrambo(odStrani) {
+  const prekini = new AbortController();
+  const t = setTimeout(() => prekini.abort(), MEJA_KROGA_MS);
+  try { await krogShrambe(odStrani, prekini.signal); } finally { clearTimeout(t); }
+}
+async function krogShrambe(odStrani, signal) {
+  const c = await caches.open(RAZLICICA);
+  const shranjene = (await c.keys()).map(r => new URL(r.url).pathname);
+  const vse = [...new Set([...JEDRO, ...odStrani, ...shranjene])];
+  const nasa = vse.filter(jeNasaKoda), tuje = vse.filter(p => !jeNasaKoda(p));
+  // Ostalo: samo manjkajoce, vsako zase (razlicica v imenu - mesanja ni).
+  const zaTuje = Promise.all(tuje.map(p => c.match(p).then(z => z || fetch(p, { cache: "no-cache", signal })
+    .then(odg => { if (odg.ok && pravaVsebina(p, odg)) return c.put(p, odg); }).catch(() => {}))));
+  // Nasa koda: vse ali nic. Vnos, ki ga streznik nima vec (HTML/404) in ni v JEDRU, preskocimo (ostane, ne podre kroga).
+  // Telo preberemo v pomnilnik PRED zapisom: ce krog pretece (signal), ne zapisemo nicesar - tudi ne dela.
+  const sveze = await Promise.all(nasa.map(p => fetch(p, { cache: "no-cache", credentials: "same-origin", signal }).then(async odg => {
+    if (odg.ok && pravaVsebina(p, odg)) return [p, new Response(await odg.arrayBuffer(), { status: odg.status, statusText: odg.statusText, headers: odg.headers })];
+    if (JEDRO.includes(p) || odStrani.includes(p)) throw new Error("ni sveze kopije: " + p);
+    return null;
+  })));
+  if (signal.aborted) throw new Error("cas");
+  await Promise.all(sveze.filter(Boolean).map(([p, odg]) => c.put(p, odg)));
+  await zaTuje;
+}
 
 /* Shrani samo pravo datoteko: Cloudflare za neznano pot vrne korensko index.html s 200 - HTML pod kljucem JS bi
    (pri /vendor/ "shranjeno najprej") ostal za vedno. HTML je dovoljen samo za lupino. */
@@ -93,10 +135,14 @@ const pravaVsebina = (kljuc, odg) => {
   const tip = (odg.headers.get("content-type") || "").toLowerCase();
   return kljuc === LUPINA ? tip.includes("text/html") : !tip.includes("text/html");
 };
+/* Nasa koda (jeNasaKoda), ki je ze shranjena, se tu NE prepise: sicer bi domaca stran po objavi shranila svez oblika.js,
+   skener pa ostal star (mesanica brez mreze). Obstojece vnose nase kode zamenja samo osveziShrambo (vse ali nic);
+   tu dodamo le se neshranjene (npr. leno nalozen zaslon). */
 const shraniOdgovor = (e, kljuc, odg) => {
   if (odg && odg.ok && odg.type === "basic" && pravaVsebina(kljuc, odg)) {
     const kopija = odg.clone();
-    e.waitUntil(caches.open(RAZLICICA).then(c => c.put(kljuc, kopija)).catch(() => {}));
+    e.waitUntil(caches.open(RAZLICICA).then(c => (jeNasaKoda(kljuc) ? c.match(kljuc) : Promise.resolve(null))
+      .then(ze => ze ? null : c.put(kljuc, kopija))).catch(() => {}));
   }
   return odg;
 };

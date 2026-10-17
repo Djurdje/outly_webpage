@@ -2,8 +2,8 @@
    Zakaj: Cloudflare (nastavitev racuna "Browser Cache TTL") kodi /webapp/* doda max-age=14400 in povozi
    `no-cache` iz _headers. Brskalnik zato do 4 ure po objavi lahko pomesa stare in nove module: nov main.js,
    star home.js -> "does not provide an export named ..." in aplikacija obvisi na vrtavki (Martin, 29. 9. 2026).
-   Ob taki napaki pred zagonom: module znova prenese mimo predpomnilnika brskalnika (cache: "reload"), pocisti
-   kodo v predpomnilniku service workerja in stran enkrat osvezi. Ce ne pomaga (najvec 1x na 30 s), pokaze sporocilo z gumbom.
+   Ob taki napaki pred zagonom: module znova prenese mimo predpomnilnika brskalnika (cache: "reload"),
+   in stran enkrat osvezi (predpomnilnika service workerja ne brise in vanj ne pise - uskladi ga SW sam). Ce ne pomaga (najvec 1x na 30 s), pokaze sporocilo z gumbom.
    Brez innerHTML (CSP, XSS). */
 (function () {
   var KLJUC = "outly_obnova";
@@ -74,19 +74,18 @@
         if (u.origin === location.origin && u.pathname.indexOf("/webapp/") === 0) poti[u.pathname] = 1;
       }
     } catch (e) { /* brez */ }
-    // 1) moduli na novo mimo predpomnilnika brskalnika; 2) sele ko vsi uspejo, pobrisemo kodo v predpomnilniku SW;
-    // 3) osvezitev. Karkoli pade ali traja vec kot 10 s: gumb (nikoli vecna vrtavka).
+    // 1) moduli na novo mimo predpomnilnika brskalnika (cache: "reload" osvezi HTTP predpomnilnik) - ce kaj pade ali traja
+    // vec kot 10 s: gumb (nikoli vecna vrtavka); 2) osvezitev strani. Predpomnilnik SW po osvezitvi uskladi SW sam.
     zOmejitvijo(Promise.all(Object.keys(poti).map(function (p) {
       return fetch(p, { cache: "reload", credentials: "same-origin" }).then(function (o) { if (!o.ok) throw new Error(String(o.status)); });
-    })), 10000).then(function () {
-      var shramba = null;
-      try { shramba = window.caches || null; } catch (e) { shramba = null; }
-      if (!shramba) return;
-      return zOmejitvijo(shramba.keys().then(function (k) {
-        return Promise.all(k.filter(function (x) { return x.indexOf("outly-app-") === 0; }).map(function (x) { return shramba.delete(x); }));
-      }), 3000).catch(function () { /* ni kriticno */ });
-    }).then(function () { location.reload(); }, function () { obnavljam = false; pokaziNapako(); });
+    })), 10000).then(function () { location.reload(); }, function () { obnavljam = false; pokaziNapako(); });
   }
+
+  /* Predpomnilnika SW tu NE brisemo (do 10/2026 smo ga - v njem je JEDRO: skener, jsQR, slovenski prevodi, ki ga SW
+     napolni ob namestitvi; brez njega vratar po "Osvezi" ob slabem signalu ne bi mogel odpreti skenerja) in vanj tudi
+     NE pisemo: fetch strani gre skozi SW, ki ob izpadu mreze vrne staro kopijo s 200 - stran bi zapisala mesanico
+     (pregled PR #76, S-2). Skladnost predpomnilnika SW ureja samo SW (osveziShrambo, vse ali nic), ki ga po osvezitvi
+     sprozi sporocilo "shrani" (pwa.js). */
 
   /* Klice main.js, ko je aplikacija izrisana. */
   window.outlyZagnano = function () { zagnano = true; };

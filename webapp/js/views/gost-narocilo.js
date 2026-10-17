@@ -1,4 +1,4 @@
-/* Vstopnice, kupljene brez racuna (/app/guest/order): kupec pride iz maila ali iz Stripove vrnitve (?t=<guest_token>).
+/* Vstopnice, kupljene brez racuna (/app/guest/order): kupec pride iz maila ali iz Stripove vrnitve (#t=<guest_token>).
    Zeton se takoj shrani in odstrani iz naslovne vrstice (gost.js); vstopnice pridejo iz GET /guest/order (glava
    X-Guest-Token, brez prijave). Placilo se potrjuje (pending) nekaj sekund: stran se osvezi 5x na 2 s.
    QR kot pri prijavljenih (QrTelo iz vstopnice.js); prenosa vstopnice za goste ni. */

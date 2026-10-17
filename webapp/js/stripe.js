@@ -1,10 +1,15 @@
 /* Stripe (backend issue #19): Checkout (placilo vstopnic/miz) in Connect Express (klub sprejema placila).
    Kartice NIKOLI ne vnasamo v nas vmesnik - kupec placa na Stripovi gostovani strani, na katero samo preusmerimo.
-   Preusmerimo SAMO na https *.stripe.com (URL pride iz backenda, a varovalo ne skodi: odprta preusmeritev bi bila phishing). */
+   Preusmerimo SAMO na Stripova gostitelja, ki ju backend res vraca (URL pride iz backenda, a varovalo ne skodi: odprta
+   preusmeritev bi bila phishing; npr. buy.stripe.com je Payment Link, ki ga lahko ustvari kdorkoli s Stripovim racunom):
+   - checkout.stripe.com: Checkout seja (checkout_url pri nakupu vstopnic, miz, gosta);
+   - connect.stripe.com: Connect Express - onboarding (accountLinks) in nadzorna plosca kluba (createLoginLink).
+   Samo https, brez uporabnika/gesla v URL-ju in brez tujih vrat. */
+const STRIPE_GOSTITELJI = new Set(["checkout.stripe.com", "connect.stripe.com"]);
 export function jeStripeUrl(url) {
   try {
     const u = new URL(String(url || ""));
-    return u.protocol === "https:" && (u.hostname === "stripe.com" || u.hostname.endsWith(".stripe.com"));
+    return u.protocol === "https:" && STRIPE_GOSTITELJI.has(u.hostname) && u.port === "" && u.username === "" && u.password === "";
   } catch { return false; }
 }
 

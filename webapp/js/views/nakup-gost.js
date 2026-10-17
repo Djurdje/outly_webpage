@@ -2,7 +2,7 @@
    Samo navadne vstopnice - VIP mize ostanejo za prijavljene (views/vip-kupec.js). Backend: POST /guest/events/:id/orders
    (brez zetona, Idempotency-Key kot pri navadnem nakupu); odgovor { order, mode, checkout_url?, guest_token }.
    - test: narocilo je takoj placano -> shranimo guest_token in gremo na /app/guest/order;
-   - stripe: preusmeritev na checkout_url, Stripe po placilu vrne na /app/guest/order?t=<guest_token>.
+   - stripe: preusmeritev na checkout_url, Stripe po placilu vrne na /app/guest/order#t=<guest_token>.
    Kartice NIKOLI ne vnasamo v nas vmesnik. Kljuc nakupa (api.js) je vezan na e-naslov: ponovni klik ali timeout = isto narocilo. */
 import { html, useEffect, useRef, useState } from "../lib.js";
 import { t, useJezik, kodaJezika } from "../i18n.js";

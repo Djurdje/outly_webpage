@@ -1,5 +1,5 @@
 /* Nakup vstopnice brez racuna (gost): zeton narocila (guest_token) je skrivnost, s katero kupec odpre svoje vstopnice
-   (GET /guest/order, glava X-Guest-Token). Pride s Stripove vrnitve ali iz maila kot ?t=... v URL-ju; takoj ga shranimo
+   (GET /guest/order, glava X-Guest-Token). Pride s Stripove vrnitve ali iz maila kot #t=... v URL-ju; takoj ga shranimo
    v sessionStorage (osvezitev strani dela) in ga odstranimo iz naslovne vrstice (zgodovina, Referer). Brez localStorage:
    zeton ne ostane na napravi po zaprtju zavihka; kupec ima povezavo v mailu.
    Isti vzorec velja za vstopnico, ki jo je prijatelj prejel po e-naslovu (/app/guest/ticket#t=...; locen kljuc). */
@@ -39,15 +39,16 @@ export const shraniVstopnicaZeton = shrambaVstopnice.shrani;
 export const preberiVstopnicaZeton = shrambaVstopnice.preberi;
 export const pozabiVstopnicaZeton = shrambaVstopnice.pozabi;
 
-/** Zeton iz URL-ja: #t=<zeton> (prednostno; fragment nikoli ne gre na streznik ali v Referer) ali ?t=<zeton> (za vsak slucaj).
-    Shrani ga (privzeto med zetone narocila; shrani: funkcija druge shrambe) in ga takoj odstrani iz naslovne vrstice (replaceState);
-    drugi parametri in fragment ostanejo. Vrne zeton ali null. */
+/** Zeton iz URL-ja: samo #t=<zeton> (fragment nikoli ne gre na streznik, v Referer ali v ?pot= preusmeritve vstop.js;
+    backend povezavo vedno sestavi s #t=). ?t=<zeton> NE sprejmemo vec: query gre v dnevnike Cloudflara - tak zeton
+    samo odstranimo iz naslova in zavrzemo. Shrani ga (privzeto med zetone narocila; shrani: funkcija druge shrambe) in ga
+    takoj odstrani iz naslovne vrstice (replaceState); drugi parametri in fragment ostanejo. Vrne zeton ali null. */
 export function prevzemiZetonIzUrl(shrani = shraniGostZeton) {
   let zeton = null, najden = false;
   const fr = new URLSearchParams(location.hash.replace(/^#/, ""));
   const q = new URLSearchParams(location.search);
   if (fr.has("t")) { najden = true; zeton = fr.get("t"); fr.delete("t"); }
-  if (q.has("t")) { najden = true; if (!jeGostZeton(zeton)) zeton = q.get("t"); q.delete("t"); }
+  if (q.has("t")) { najden = true; q.delete("t"); }   // zavrzen (glej zgoraj)
   if (!najden) return null;
   const iskanje = q.toString(), fragment = fr.toString();
   history.replaceState(history.state, "", location.pathname + (iskanje ? "?" + iskanje : "") + (fragment ? "#" + fragment : ""));
