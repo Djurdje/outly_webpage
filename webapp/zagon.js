@@ -74,8 +74,8 @@
         if (u.origin === location.origin && u.pathname.indexOf("/webapp/") === 0) poti[u.pathname] = 1;
       }
     } catch (e) { /* brez */ }
-    // 1) moduli na novo mimo predpomnilnika brskalnika; 2) sele ko vsi uspejo, kodo v predpomnilniku SW ZAMENJAMO s svezo;
-    // 3) osvezitev. Karkoli pade ali traja vec kot 10 s: gumb (nikoli vecna vrtavka).
+    // 1) moduli na novo mimo predpomnilnika brskalnika - ce kaj pade ali traja vec kot 10 s: gumb (nikoli vecna vrtavka);
+    // 2) kodo v predpomnilniku SW osvezimo (najvec 8 s; ce ne uspe, vseeno naprej); 3) osvezitev. Vrtavka skupaj najvec ~18 s.
     zOmejitvijo(Promise.all(Object.keys(poti).map(function (p) {
       return fetch(p, { cache: "reload", credentials: "same-origin" }).then(function (o) { if (!o.ok) throw new Error(String(o.status)); });
     })), 10000).then(function () {
@@ -89,7 +89,9 @@
   /* Predpomnilnika SW NE brisemo (do 10/2026 smo ga): v njem je JEDRO (skener, jsQR, slovenski prevodi), ki ga SW
      napolni ob namestitvi - brez njega vratar po "Osvezi" ob slabem signalu ne bi mogel odpreti skenerja.
      Namesto tega nasa koda brez razlicice v imenu (/webapp/*, /supabase-config.js, lupina /app/) dobi svezo kopijo
-     pod istim kljucem. Zamenjava je "vse ali nic" na predpomnilnik: ce kaksen prenos pade, ostane prejsnja kopija. */
+     pod istim kljucem. To NI strogo atomsko: fetch strani gre skozi SW, ki ob izpadu mreze vrne shranjeno kopijo (to
+     zapisemo nazaj - mesanica starega in novega je mogoca, ce mreza pade sredi kroga). Skladnost celote po osvezitvi
+     znova preveri SW (sporocilo "shrani" -> vse ali nic). */
   function osveziPredpomnilnik(shramba) {
     function nasaKoda(pot) { return pot.indexOf("/webapp/") === 0 || pot === "/supabase-config.js" || pot === "/app/"; }
     return shramba.keys().then(function (imena) {
