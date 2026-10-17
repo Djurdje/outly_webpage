@@ -296,15 +296,27 @@ export function zabeleziOgled(cilj) {
 }
 
 /* Nalaganje slike na Cloudinary: podpis izda backend (POST /uploads/cloudinary-signature, zeton), datoteka
-   gre neposredno na Cloudinary (ne cez nas streznik). public_id je del podpisa - posljemo ga nespremenjenega.
-   Vrne secure_url. To ni klic backenda, zato gre mimo send(). */
+   gre neposredno na Cloudinary (ne cez nas streznik). Vrne secure_url. To ni klic backenda, zato gre mimo send().
+   Pogodba z backendom (outly-backend#257): VSAKO polje odgovora razen NEPODPISANA je podpisan parameter in gre
+   Cloudinaryju nespremenjeno (ime camelCase -> snake_case: publicId -> public_id). Tako backend lahko podpisu doda
+   npr. allowedFormats ("jpg,png") brez nove objave spleta. Ce podpis manjka parameter, ki ga posljemo (ali obratno),
+   Cloudinary vrne "Invalid Signature" - zato nikoli trdo kodiran seznam. */
+const NEPODPISANA = new Set(["signature", "apiKey", "api_key", "cloudName", "cloud_name", "resourceType", "resource_type"]);
+const vSnake = k => k.replace(/[A-Z]/g, c => "_" + c.toLowerCase());
+export function parametriPodpisa(p) {
+  const out = {};
+  for (const [k, v] of Object.entries(p || {})) {
+    if (NEPODPISANA.has(k) || v === undefined || v === null) continue;
+    out[vSnake(k)] = Array.isArray(v) ? v.join(",") : String(v);
+  }
+  return out;
+}
 export async function naloziNaCloudinary(datoteka, vrsta = "image") {
   const p = await send("/uploads/cloudinary-signature", { method: "POST", auth: true });
+  if (!p || !p.signature || !p.apiKey || !p.cloudName) throw new ApiError(500, "Upload failed.");
   const f = new FormData();
   f.append("api_key", p.apiKey);
-  f.append("timestamp", String(p.timestamp));
-  f.append("folder", p.folder);
-  f.append("public_id", p.publicId);
+  for (const [k, v] of Object.entries(parametriPodpisa(p))) f.append(k, v);
   f.append("signature", p.signature);
   f.append("file", datoteka);
   let odg;
