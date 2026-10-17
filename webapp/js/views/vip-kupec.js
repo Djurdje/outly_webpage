@@ -73,6 +73,7 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
         nacin: nacinPlacila({ payment_mode: (r && r.payment_mode) || e.payment_mode }),
         // Prodajalec (backend #94): iz odgovora VIP, sicer iz dogodka; star backend = null (blok se ne pokaze).
         prodajalec: normalizirajProdajalca(r && r.seller) || e.seller || null,
+        minPaket: r && Number(r.package_min_age) > 0 ? Number(r.package_min_age) : null,
         plan: normalizirajTloris(r && r.plan), mize: normalizirajMize(r && r.tables), paketi: normalizirajPakete(r && r.packages)
       };
       setS({ nalaga: false, napaka: "", d });
@@ -124,6 +125,8 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
   const miza = d && d.mize.find(m => m.id === mizaId);
   const paket = d && d.paketi.find(p => p.id === paketId);
   const imaPakete = !!d && d.paketi.length > 0;
+  // Starostna meja mize s paketom pijace: max(min_age dogodka, package_min_age ?? 18); star backend polja nima = 18.
+  const mejaPaketa = d ? Math.max(Number(e.min_age) > 0 ? Number(e.min_age) : 0, paket && Number(paket.package_min_age) > 0 ? Number(paket.package_min_age) : d.minPaket || 18) : 0;
   const demoZapora = !!d && d.demo && !admin;   // demo klub: namesto gumba besedilo (admin sme zaradi testiranja)
   // Demo: payment_mode je "unavailable" za vse (I17), admin pa kljub temu sme kupiti -> gumb aktiven.
   const neprodaja = !!d && ((d.nacin === "unavailable" && !d.demo) || demoZapora);
@@ -265,6 +268,7 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
       ${miza && !demoZapora ? html`<div class="vip-pas-nakupa">
         <p class="opomba">${ddvBesedilo(d.prodajalec)}</p>
         <${BlokProdajalca} prodajalec=${d.prodajalec} />
+        ${imaPakete ? html`<p class="opomba" data-testid="vip-starost">${t("{n}+ · ID at the door", { n: mejaPaketa })}</p>` : null}
         ${neprodaja ? html`<p class="opomba" role="status">${t("Tickets aren't on sale in the app yet.")}</p>`
           : d.nacin === "test" && miza.price_cents !== 0 ? html`<p class="opomba">${t("Test mode — nothing is charged")}</p>` : null}
         ${moja != null ? html`<p class="opomba" role="status">${t("You have an unfinished payment for this table. Continue to payment to finish it.")}</p>` : null}

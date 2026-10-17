@@ -429,8 +429,8 @@ export function VstopniceDogodkaKluba({ klub, dogodek }) {
             <span class="kv-besedilo"><strong class="mono">${v.kratka}</strong><span>${v.public_ref || ""}</span>
               ${v.is_vip ? html`<${VipVrstica} v=${v} />` : null}
               ${v.is_guest_list ? html`<${OznakaGuestList} v=${v} skener=${true} />` : null}</span>
-            ${noterJe || !v.qr || vSporu(v)
-              ? html`<span class=${"oznaka-vstopa" + (noterJe ? " noter" : vSporu(v) ? " spor" : "")} data-testid=${vSporu(v) && !noterJe ? "spor" : null}>${noterJe ? t("IN") : vSporu(v) ? t("Payment disputed") : t("Not yet")}</span>`
+            ${noterJe || !v.qr || vSporu(v) || v.status !== "valid"
+              ? html`<span class=${"oznaka-vstopa" + (noterJe ? " noter" : vSporu(v) ? " spor" : "")} data-testid=${vSporu(v) && !noterJe ? "spor" : null}>${noterJe ? t("IN") : vSporu(v) ? t("Payment disputed") : v.status === "refunded" || v.status === "void" ? t("Cancelled") : t("Not yet")}</span>`
               : html`<button type="button" class="gumb-vstopa" disabled=${delujoc !== null} onClick=${() => vstop(v)}
                   aria-label=${t("Check in") + " " + v.kratka}>
                   ${delujoc === v.id ? html`<span class="vrtavka majhna" aria-hidden="true"></span>` : t("Check in")}</button>`}
