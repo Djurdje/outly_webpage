@@ -1,31 +1,33 @@
-# Cloudflare Pages: glave odgovorov. Za zdaj samo spletna aplikacija (/app) - landing ostane, kot je.
+# Cloudflare Pages: glave odgovorov. Blok /* velja za vse strani, spodaj dodatno /app (CSP, kamera) in predpomnjenje.
 
 # Vse strani (pregled 5. 10. 2026): outly.si se ne sme prikazati v tujem okvirju (clickjacking - na index.html sta
-# sprememba gesla in brisanje racuna). Samo ta dva ukrepa, da landing ostane nespremenjen; /app ima spodaj svoj polni CSP
-# (Cloudflare ob vec ujemanjih glave zdruzi z vejico = dve politiki, obe veljata).
+# sprememba gesla in brisanje racuna); /app ima spodaj svoj polni CSP (Cloudflare ob vec ujemanjih ISTO glavo zdruzi
+# z vejico = dve politiki, obe veljata).
+# Pregled 17. 10. 2026: HSTS (samo outly.si - BREZ includeSubDomains/preload, poddomen ne poznamo), nosniff in
+# Referrer-Policy za vse strani. nosniff in Referrer-Policy sta zato SAMO tu (ne v blokih spodaj), da se vrednost ne
+# podvoji ("nosniff, nosniff"). Permissions-Policy NI tu: zdruzevanje z vejico bi dalo "camera=(), camera=(self)" za
+# /app/* - kaj brskalnik naredi z dvojnim kljucem, ni preverjeno, skener pa kamero nujno rabi.
 /*
   Content-Security-Policy: frame-ancestors 'none'
   X-Frame-Options: DENY
+  Strict-Transport-Security: max-age=31536000
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
 
 # CSP: skripte samo z nase domene (brez inline, brez eval, brez CDN-jev); povezave samo na backend, Sentry (porocila napak)
 # in Supabase; slike/video https (klubi nalagajo Cloudinary in druge https URL-je).
 /app
   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https: data: blob:; media-src 'self' https: blob:; font-src 'self'; connect-src 'self' https://outly-backend-roy3.onrender.com https://api.cloudinary.com https://zbewqcxnvrwebxonvebx.supabase.co wss://zbewqcxnvrwebxonvebx.supabase.co https://o4512176179773440.ingest.de.sentry.io; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
-  X-Content-Type-Options: nosniff
-  Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(self), geolocation=(self), microphone=(), payment=()
 
 /app/*
   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https: data: blob:; media-src 'self' https: blob:; font-src 'self'; connect-src 'self' https://outly-backend-roy3.onrender.com https://api.cloudinary.com https://zbewqcxnvrwebxonvebx.supabase.co wss://zbewqcxnvrwebxonvebx.supabase.co https://o4512176179773440.ingest.de.sentry.io; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
-  X-Content-Type-Options: nosniff
-  Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(self), geolocation=(self), microphone=(), payment=()
 
 # Koda aplikacije nima razlicice v imenu: brskalnik naj vsakic preveri (ETag), sicer bi po objavi
 # lahko pomesal stare in nove module. Knjiznice v vendor/ imajo razlicico v imenu in ostanejo privzete.
 /webapp/*
   Cache-Control: no-cache
-  X-Content-Type-Options: nosniff
 
 # Service worker lezi v /webapp/ (datotek pod /app/ ne streze _redirects zanesljivo), velja pa za /app/.
 /webapp/sw.js
@@ -34,4 +36,3 @@
 # Zemljevid (faza 3): ploscice in pisave se ne spreminjajo pogosto - dan predpomnjenja.
 /karta/*
   Cache-Control: public, max-age=86400
-  X-Content-Type-Options: nosniff
