@@ -205,7 +205,7 @@
       '  <a class="btn primary" href="index.html">Back to Outly</a>' +
       '</div>';
     const d = document.getElementById("doneMsg");
-    if (d) d.textContent = "We sent a confirmation to " + email + " and we'll get back to you there.";
+    if (d) d.textContent = "Thanks \u2014 we received your application and will contact you at " + email + ".";
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 

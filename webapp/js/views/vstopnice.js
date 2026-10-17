@@ -148,7 +148,7 @@ export function QrTelo({ v, poslji }) {
     </div>
     <p class="opomba srednje">${t("Show this QR code at the door. Turn your screen brightness up.")}</p>
     ${v.transferred === true && v.is_guest_list !== true ? html`<p class="opomba srednje">${t("This ticket was transferred to you. If the event is cancelled, the refund goes to the original buyer.")}</p>` : null}
-    ${v.transferable && v.is_guest_list !== true && poslji ? html`<button type="button" class="gumb-siv" onClick=${() => poslji(v)}><${Ikona} ime="send" velikost=${16} /> ${t("Send to a friend")}</button>` : null}
+    ${v.transferable && v.is_guest_list !== true && !vSporu(v) && poslji ? html`<button type="button" class="gumb-siv" onClick=${() => poslji(v)}><${Ikona} ime="send" velikost=${16} /> ${t("Send to a friend")}</button>` : null}
   </div>`;
 }
 
