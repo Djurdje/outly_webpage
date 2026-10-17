@@ -2,8 +2,8 @@
    Zakaj: Cloudflare (nastavitev racuna "Browser Cache TTL") kodi /webapp/* doda max-age=14400 in povozi
    `no-cache` iz _headers. Brskalnik zato do 4 ure po objavi lahko pomesa stare in nove module: nov main.js,
    star home.js -> "does not provide an export named ..." in aplikacija obvisi na vrtavki (Martin, 29. 9. 2026).
-   Ob taki napaki pred zagonom: module znova prenese mimo predpomnilnika brskalnika (cache: "reload"), pocisti
-   kodo v predpomnilniku service workerja in stran enkrat osvezi. Ce ne pomaga (najvec 1x na 30 s), pokaze sporocilo z gumbom.
+   Ob taki napaki pred zagonom: module znova prenese mimo predpomnilnika brskalnika (cache: "reload"),
+   kodo v predpomnilniku service workerja zamenja s svezo (ne brise je - skener brez povezave) in stran enkrat osvezi. Ce ne pomaga (najvec 1x na 30 s), pokaze sporocilo z gumbom.
    Brez innerHTML (CSP, XSS). */
 (function () {
   var KLJUC = "outly_obnova";
@@ -74,7 +74,7 @@
         if (u.origin === location.origin && u.pathname.indexOf("/webapp/") === 0) poti[u.pathname] = 1;
       }
     } catch (e) { /* brez */ }
-    // 1) moduli na novo mimo predpomnilnika brskalnika; 2) sele ko vsi uspejo, pobrisemo kodo v predpomnilniku SW;
+    // 1) moduli na novo mimo predpomnilnika brskalnika; 2) sele ko vsi uspejo, kodo v predpomnilniku SW ZAMENJAMO s svezo;
     // 3) osvezitev. Karkoli pade ali traja vec kot 10 s: gumb (nikoli vecna vrtavka).
     zOmejitvijo(Promise.all(Object.keys(poti).map(function (p) {
       return fetch(p, { cache: "reload", credentials: "same-origin" }).then(function (o) { if (!o.ok) throw new Error(String(o.status)); });
@@ -82,10 +82,35 @@
       var shramba = null;
       try { shramba = window.caches || null; } catch (e) { shramba = null; }
       if (!shramba) return;
-      return zOmejitvijo(shramba.keys().then(function (k) {
-        return Promise.all(k.filter(function (x) { return x.indexOf("outly-app-") === 0; }).map(function (x) { return shramba.delete(x); }));
-      }), 3000).catch(function () { /* ni kriticno */ });
+      return zOmejitvijo(osveziPredpomnilnik(shramba), 8000).catch(function () { /* ni kriticno: ostane prejsnja kopija */ });
     }).then(function () { location.reload(); }, function () { obnavljam = false; pokaziNapako(); });
+  }
+
+  /* Predpomnilnika SW NE brisemo (do 10/2026 smo ga): v njem je JEDRO (skener, jsQR, slovenski prevodi), ki ga SW
+     napolni ob namestitvi - brez njega vratar po "Osvezi" ob slabem signalu ne bi mogel odpreti skenerja.
+     Namesto tega nasa koda brez razlicice v imenu (/webapp/*, /supabase-config.js, lupina /app/) dobi svezo kopijo
+     pod istim kljucem. Zamenjava je "vse ali nic" na predpomnilnik: ce kaksen prenos pade, ostane prejsnja kopija. */
+  function osveziPredpomnilnik(shramba) {
+    function nasaKoda(pot) { return pot.indexOf("/webapp/") === 0 || pot === "/supabase-config.js" || pot === "/app/"; }
+    return shramba.keys().then(function (imena) {
+      return Promise.all(imena.filter(function (x) { return x.indexOf("outly-app-") === 0; }).map(function (ime) {
+        return shramba.open(ime).then(function (c) {
+          return c.keys().then(function (zahteve) {
+            var poti = zahteve.map(function (z) { return new URL(z.url).pathname; }).filter(nasaKoda);
+            return Promise.all(poti.map(function (p) {
+              return fetch(p, { cache: "reload", credentials: "same-origin" }).then(function (o) {
+                var tip = (o.headers.get("content-type") || "").toLowerCase();
+                // Cloudflare za neznano pot vrne index.html s 200 - HTML je pravi samo za lupino.
+                if (!o.ok || (p === "/app/") !== (tip.indexOf("text/html") >= 0)) throw new Error(p);
+                return [p, o];
+              });
+            })).then(function (sveze) {
+              return Promise.all(sveze.map(function (s) { return c.put(s[0], s[1]); }));
+            });
+          });
+        });
+      }));
+    });
   }
 
   /* Klice main.js, ko je aplikacija izrisana. */

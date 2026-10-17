@@ -6,7 +6,7 @@
      shranjeno samo ob izpadu - po objavi nikoli stara koda.
    - /vendor/*, pisave, ikone (razlicica v imenu / se ne spreminjajo): shranjeno najprej.
    - API (backend, Supabase, Cloudinary), vstopnice, ploscice zemljevida: NE prestrezamo (vedno sveze, kot iOS). */
-const RAZLICICA = "outly-app-9";   // ob dvigu uskladi tudi webapp/porocilo.js
+const RAZLICICA = "outly-app-10";   // ob dvigu uskladi tudi webapp/porocilo.js
 const LUPINA = "/app/";
 /* Staticni graf uvozov main.js (vsi moduli, ki jih aplikacija nalozi ob zagonu). Generira ga webapp/orodja/predhodno-nalaganje.mjs
    (isti izracun kot <link rel="modulepreload"> v app/index.html; `... --preveri` pade, ce se razideta). Brez tega bi po objavi
@@ -78,11 +78,13 @@ self.addEventListener("activate", e => {
     .then(() => self.clients.claim()));
 });
 
-/* Stran po nalaganju poslje seznam modulov, ki jih je nalozila (brez builda seznama ne poznamo vnaprej). */
+/* Stran po nalaganju poslje seznam modulov, ki jih je nalozila (brez builda seznama ne poznamo vnaprej).
+   Ob tem dopolnimo tudi manjkajoce JEDRO (samopopravilo): starejsi zagon.js je ob "Osvezi" pobrisal ves predpomnilnik
+   in skener brez povezave se ni vec odprl (do naslednje namestitve SW). Shranjenih vnosov ne prenasamo znova. */
 self.addEventListener("message", e => {
   const d = e.data || {};
   if (d.tip !== "shrani" || !Array.isArray(d.poti)) return;
-  const poti = d.poti.filter(p => typeof p === "string" && /^\/(webapp|vendor)\/[\w./-]+$/.test(p) && !p.includes(".."));
+  const poti = [...new Set([...d.poti.filter(p => typeof p === "string" && /^\/(webapp|vendor)\/[\w./-]+$/.test(p) && !p.includes("..")), ...JEDRO])];
   e.waitUntil(caches.open(RAZLICICA).then(c => Promise.all(poti.map(p => c.match(p).then(z => z || fetch(p, { cache: "no-cache" })
     .then(odg => { if (odg.ok && pravaVsebina(p, odg)) return c.put(p, odg); }).catch(() => {}))))));
 });
