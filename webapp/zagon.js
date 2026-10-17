@@ -3,7 +3,7 @@
    `no-cache` iz _headers. Brskalnik zato do 4 ure po objavi lahko pomesa stare in nove module: nov main.js,
    star home.js -> "does not provide an export named ..." in aplikacija obvisi na vrtavki (Martin, 29. 9. 2026).
    Ob taki napaki pred zagonom: module znova prenese mimo predpomnilnika brskalnika (cache: "reload"),
-   kodo v predpomnilniku service workerja zamenja s svezo (ne brise je - skener brez povezave) in stran enkrat osvezi. Ce ne pomaga (najvec 1x na 30 s), pokaze sporocilo z gumbom.
+   in stran enkrat osvezi (predpomnilnika service workerja ne brise in vanj ne pise - uskladi ga SW sam). Ce ne pomaga (najvec 1x na 30 s), pokaze sporocilo z gumbom.
    Brez innerHTML (CSP, XSS). */
 (function () {
   var KLJUC = "outly_obnova";
@@ -74,46 +74,18 @@
         if (u.origin === location.origin && u.pathname.indexOf("/webapp/") === 0) poti[u.pathname] = 1;
       }
     } catch (e) { /* brez */ }
-    // 1) moduli na novo mimo predpomnilnika brskalnika - ce kaj pade ali traja vec kot 10 s: gumb (nikoli vecna vrtavka);
-    // 2) kodo v predpomnilniku SW osvezimo (najvec 8 s; ce ne uspe, vseeno naprej); 3) osvezitev. Vrtavka skupaj najvec ~18 s.
+    // 1) moduli na novo mimo predpomnilnika brskalnika (cache: "reload" osvezi HTTP predpomnilnik) - ce kaj pade ali traja
+    // vec kot 10 s: gumb (nikoli vecna vrtavka); 2) osvezitev strani. Predpomnilnik SW po osvezitvi uskladi SW sam.
     zOmejitvijo(Promise.all(Object.keys(poti).map(function (p) {
       return fetch(p, { cache: "reload", credentials: "same-origin" }).then(function (o) { if (!o.ok) throw new Error(String(o.status)); });
-    })), 10000).then(function () {
-      var shramba = null;
-      try { shramba = window.caches || null; } catch (e) { shramba = null; }
-      if (!shramba) return;
-      return zOmejitvijo(osveziPredpomnilnik(shramba), 8000).catch(function () { /* ni kriticno: ostane prejsnja kopija */ });
-    }).then(function () { location.reload(); }, function () { obnavljam = false; pokaziNapako(); });
+    })), 10000).then(function () { location.reload(); }, function () { obnavljam = false; pokaziNapako(); });
   }
 
-  /* Predpomnilnika SW NE brisemo (do 10/2026 smo ga): v njem je JEDRO (skener, jsQR, slovenski prevodi), ki ga SW
-     napolni ob namestitvi - brez njega vratar po "Osvezi" ob slabem signalu ne bi mogel odpreti skenerja.
-     Namesto tega nasa koda brez razlicice v imenu (/webapp/*, /supabase-config.js, lupina /app/) dobi svezo kopijo
-     pod istim kljucem. To NI strogo atomsko: fetch strani gre skozi SW, ki ob izpadu mreze vrne shranjeno kopijo (to
-     zapisemo nazaj - mesanica starega in novega je mogoca, ce mreza pade sredi kroga). Skladnost celote po osvezitvi
-     znova preveri SW (sporocilo "shrani" -> vse ali nic). */
-  function osveziPredpomnilnik(shramba) {
-    function nasaKoda(pot) { return pot.indexOf("/webapp/") === 0 || pot === "/supabase-config.js" || pot === "/app/"; }
-    return shramba.keys().then(function (imena) {
-      return Promise.all(imena.filter(function (x) { return x.indexOf("outly-app-") === 0; }).map(function (ime) {
-        return shramba.open(ime).then(function (c) {
-          return c.keys().then(function (zahteve) {
-            var poti = zahteve.map(function (z) { return new URL(z.url).pathname; }).filter(nasaKoda);
-            return Promise.all(poti.map(function (p) {
-              return fetch(p, { cache: "reload", credentials: "same-origin" }).then(function (o) {
-                var tip = (o.headers.get("content-type") || "").toLowerCase();
-                // Cloudflare za neznano pot vrne index.html s 200 - HTML je pravi samo za lupino.
-                if (!o.ok || (p === "/app/") !== (tip.indexOf("text/html") >= 0)) throw new Error(p);
-                return [p, o];
-              });
-            })).then(function (sveze) {
-              return Promise.all(sveze.map(function (s) { return c.put(s[0], s[1]); }));
-            });
-          });
-        });
-      }));
-    });
-  }
+  /* Predpomnilnika SW tu NE brisemo (do 10/2026 smo ga - v njem je JEDRO: skener, jsQR, slovenski prevodi, ki ga SW
+     napolni ob namestitvi; brez njega vratar po "Osvezi" ob slabem signalu ne bi mogel odpreti skenerja) in vanj tudi
+     NE pisemo: fetch strani gre skozi SW, ki ob izpadu mreze vrne staro kopijo s 200 - stran bi zapisala mesanico
+     (pregled PR #76, S-2). Skladnost predpomnilnika SW ureja samo SW (osveziShrambo, vse ali nic), ki ga po osvezitvi
+     sprozi sporocilo "shrani" (pwa.js). */
 
   /* Klice main.js, ko je aplikacija izrisana. */
   window.outlyZagnano = function () { zagnano = true; };

@@ -98,23 +98,33 @@ self.addEventListener("message", e => {
   const d = e.data || {};
   if (d.tip !== "shrani" || !Array.isArray(d.poti)) return;
   const odStrani = d.poti.filter(p => typeof p === "string" && /^\/(webapp|vendor)\/[\w./-]+$/.test(p) && !p.includes(".."));
-  if (!osvezujem) osvezujem = osveziShrambo(odStrani).catch(() => {}).then(() => { osvezujem = null; });
+  if (!osvezujem) osvezujem = osveziShrambo(odStrani).catch(() => {}).then(() => { osvezujem = null; });   // tudi ob preteku
   e.waitUntil(osvezujem);
 });
+/* Casovna meja kroga (pregled PR #76, N-7): viseca zahteva pri slabem signalu ne sme drzati kroga do ugasnitve SW.
+   Ob preteku krog opusti BREZ zapisa nase kode (ostane prejsnja skladna kopija). */
+const MEJA_KROGA_MS = 20000;
 async function osveziShrambo(odStrani) {
+  const prekini = new AbortController();
+  const t = setTimeout(() => prekini.abort(), MEJA_KROGA_MS);
+  try { await krogShrambe(odStrani, prekini.signal); } finally { clearTimeout(t); }
+}
+async function krogShrambe(odStrani, signal) {
   const c = await caches.open(RAZLICICA);
   const shranjene = (await c.keys()).map(r => new URL(r.url).pathname);
   const vse = [...new Set([...JEDRO, ...odStrani, ...shranjene])];
   const nasa = vse.filter(jeNasaKoda), tuje = vse.filter(p => !jeNasaKoda(p));
   // Ostalo: samo manjkajoce, vsako zase (razlicica v imenu - mesanja ni).
-  const zaTuje = Promise.all(tuje.map(p => c.match(p).then(z => z || fetch(p, { cache: "no-cache" })
+  const zaTuje = Promise.all(tuje.map(p => c.match(p).then(z => z || fetch(p, { cache: "no-cache", signal })
     .then(odg => { if (odg.ok && pravaVsebina(p, odg)) return c.put(p, odg); }).catch(() => {}))));
   // Nasa koda: vse ali nic. Vnos, ki ga streznik nima vec (HTML/404) in ni v JEDRU, preskocimo (ostane, ne podre kroga).
-  const sveze = await Promise.all(nasa.map(p => fetch(p, { cache: "no-cache", credentials: "same-origin" }).then(odg => {
-    if (odg.ok && pravaVsebina(p, odg)) return [p, odg];
+  // Telo preberemo v pomnilnik PRED zapisom: ce krog pretece (signal), ne zapisemo nicesar - tudi ne dela.
+  const sveze = await Promise.all(nasa.map(p => fetch(p, { cache: "no-cache", credentials: "same-origin", signal }).then(async odg => {
+    if (odg.ok && pravaVsebina(p, odg)) return [p, new Response(await odg.arrayBuffer(), { status: odg.status, statusText: odg.statusText, headers: odg.headers })];
     if (JEDRO.includes(p) || odStrani.includes(p)) throw new Error("ni sveze kopije: " + p);
     return null;
   })));
+  if (signal.aborted) throw new Error("cas");
   await Promise.all(sveze.filter(Boolean).map(([p, odg]) => c.put(p, odg)));
   await zaTuje;
 }
