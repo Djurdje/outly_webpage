@@ -29,7 +29,7 @@
   // Isto pravilo kot v aplikaciji (backend PATCH /me): crke, stevilke, podcrtaj.
   const USER_RE  = /^[A-Za-z0-9_]{3,20}$/;
   // Razlicica Pogojev uporabe, ki jo uporabnik sprejme ob registraciji (terms.html).
-  const TERMS_VERSION = "1.1.2";
+  const TERMS_VERSION = "1.1.3";
   // Backend aplikacije: en profil (username, avatar) za stran in aplikacijo.
   // Sprejme Supabasov zeton; ob prvem klicu ustvari racun v aplikaciji.
   const API      = "https://outly-backend-roy3.onrender.com";

@@ -275,7 +275,7 @@ export const SL = {
  "My preferences": "Moje nastavitve",
  "My preferences are used by “Use my preferences” in Filters.": "Moje nastavitve uporablja »Uporabi moje nastavitve« v Filtrih.",
  "My team": "Moja ekipa",
- "TIP&TAP, storitve, razvoj in izobraževanje, d.o.o.\nKvedrova cesta 6, 1000 Ljubljana, Slovenia": "TIP&TAP, storitve, razvoj in izobraževanje, d.o.o.\nKvedrova cesta 6, 1000 Ljubljana, Slovenija",
+ "NEXT DIMENSIONS, družba za marketing, d.o.o.\nTrebče 81, 3256 Bistrica ob Sotli, Slovenia": "NEXT DIMENSIONS, družba za marketing, d.o.o.\nTrebče 81, 3256 Bistrica ob Sotli, Slovenija",
  "New event": "Nov dogodek",
  "New password must be different from the current one.": "Novo geslo mora biti drugačno od trenutnega.",
  "New passwords do not match.": "Novi gesli se ne ujemata.",
