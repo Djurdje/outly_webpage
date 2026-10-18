@@ -553,6 +553,9 @@
       setMsg(form, "3–20 characters: letters, numbers and underscores.", "error"); f.username.focus(); return;
     }
 
+    // Med brisanjem se pogled ne sme zapustiti (napaka bi se zapisala na skrit obrazec): vrni/nazaj sta onemogocena.
+    const zaklep = kind === "delete" ? Array.from(form.closest(".drawer__view").querySelectorAll("[data-go]")) : [];
+    zaklep.forEach((x) => { x.disabled = true; });
     busy = true;
     working(form, true, kind === "login" ? "Logging in…" : kind === "forgot" ? "Sending…" : kind === "delete" ? "Deleting…" : "Saving…");
     setMsg(form, "");
@@ -675,6 +678,7 @@
       setMsg(form, friendly(err), "error");
     } finally {
       busy = false;
+      zaklep.forEach((x) => { x.disabled = false; });
       working(form, false);
     }
   });
