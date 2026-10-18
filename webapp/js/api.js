@@ -312,7 +312,11 @@ export function parametriPodpisa(p) {
   }
   return out;
 }
+/* Blobi, ki jih je naredil pomanjsajSliko (canvas = brez EXIF/GPS). Slika gre na Cloudinary SAMO prek njega (obramba: klicatelj,
+   ki bi pozabil pomanjsajSliko, ne more poslati izvirnika z GPS). */
+const pomanjsaneSlike = new WeakSet();
 export async function naloziNaCloudinary(datoteka, vrsta = "image") {
+  if (vrsta === "image" && !pomanjsaneSlike.has(datoteka)) throw new NapakaDatoteke(t("This image could not be prepared for upload. Please choose a JPEG or PNG photo."));
   // Video gre ven SAMO ociscen metapodatkov (lokacija iz iPhona/Androida); ne uspe -> NapakaDatoteke, nalaganje se zavrne (#79).
   // Leno nalozen modul: video se nalaga redko; ce se ne nalozi, nalaganje pade (izvirnika ne posljemo).
   if (vrsta === "video") datoteka = await (await import("./video-metapodatki.js")).ocistiVideo(datoteka);
@@ -348,5 +352,6 @@ export async function pomanjsajSliko(datoteka, najvec = 1200) {
   bitmap.close && bitmap.close();
   const blob = await new Promise(res => { try { c.toBlob(res, "image/jpeg", 0.86); } catch { res(null); } });
   if (!blob) throw nepripravljena();
+  pomanjsaneSlike.add(blob);
   return blob;
 }

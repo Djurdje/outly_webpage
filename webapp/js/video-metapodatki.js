@@ -2,18 +2,22 @@
    (outly_webpage#79; iOS isto resi s ponovnim izvozom, outly-app#110). Politika zasebnosti trdi, da lokacija ostane na napravi.
 
    ISO BMFF (MP4/MOV): skatle `udta` (npr. (c)xyz) in `meta` (npr. com.apple.quicktime.location.ISO6709) v `moov` in v vsakem
-   `trak`, ter XMP (`uuid` BE7ACFCB-97A9-42E8-9C71-999491E3AFAC) na vrhu in v `moov`. Skatel NE brisemo (mdat bi se premaknil in
+   `trak`, v razdrobljenem MP4 (fMP4) tudi v vsakem `moof` (+ `traf`), ter XMP (`uuid` BE7ACFCB-97A9-42E8-9C71-999491E3AFAC) na vrhu
+   in v `moov`/`moof`. Skatel NE brisemo (mdat bi se premaknil in
    odmiki v stco/co64 bi bili napacni): tip preimenujemo v `free`, vsebino prepisemo z nicami - velikost ostane ista.
 
-   Pomnilnik: preberemo samo glave skatel (Blob.slice) in vsebino `moov`; `mdat` se ne kopira (nov File sestavimo iz kosov).
+   Pomnilnik: preberemo samo glave skatel (Blob.slice) in vsebino `moov` ter vsakega `moof` (majhna); `mdat` se ne kopira (nov File
+   sestavimo iz kosov).
+   ZNANA OMEJITEV: GPS v vzorcih casovne metapodatkovne sledi v `mdat` (GoPro `gpmd`, DJI ipd.) se ne ocisti (brez ponovnega
+   kodiranja ni mogoce); zavrnemo samo, ce se kljuc lokacije (ISO6709, (c)xyz) pokaze v `moov`/`moof`.
    Kar ni prepoznano kot MP4/MOV ali se ne razcleni, se ZAVRNE (NapakaDatoteke) - izvirnika ne posiljamo nikoli. */
 import { t } from "./i18n.js";
 import { NapakaDatoteke } from "./napake.js";
 
 const XMP_UUID = [0xBE, 0x7A, 0xCF, 0xCB, 0x97, 0xA9, 0x42, 0xE8, 0x9C, 0x71, 0x99, 0x94, 0x91, 0xE3, 0xAF, 0xAC];
-const KONTEJNERJI = new Set(["moov", "trak", "mdia", "minf", "edts"]);   // skatle, v katerih iscemo udta/meta/XMP
+const KONTEJNERJI = new Set(["moov", "trak", "mdia", "minf", "edts", "moof", "traf"]);   // skatle, v katerih iscemo udta/meta/XMP
 const ZACETNI_TIPI = new Set(["ftyp", "moov", "mdat", "wide", "free", "skip", "pnot"]);   // prva skatla MP4/MOV
-const NAJVEC_MOOV = 64 * 1024 * 1024;       // moov 100 MB videa je obicajno nekaj 100 KB
+const NAJVEC_MOOV = 64 * 1024 * 1024;       // moov 100 MB videa je obicajno nekaj 100 KB; ista meja za vsoto vseh moov + moof
 const NAJVEC_VRHNJA_SKATLA = 32 * 1024 * 1024;   // vrhnji udta/meta/XMP, ki ga prepisemo z nicami
 const NAJVEC_SKATEL = 20000;                 // vrhnjih skatel (razdrobljen MP4 jih ima vec sto)
 const NAJVEC_GLOBINE = 8;
@@ -72,7 +76,7 @@ async function ocisti(datoteka) {
   const velikost = datoteka.size;
   if (!velikost) throw new Error("prazna datoteka");
   const popravki = [];   // { od, bajti } po vrsti odmikov; vse ostalo se vzame iz izvirne datoteke
-  let o = 0, stevec = 0, moov = 0;
+  let o = 0, stevec = 0, moov = 0, prebrano = 0;
   while (o < velikost) {
     if (++stevec > NAJVEC_SKATEL) throw new Error("prevec skatel");
     const dv = new DataView(await datoteka.slice(o, Math.min(o + 16, velikost)).arrayBuffer());
@@ -82,14 +86,15 @@ async function ocisti(datoteka) {
     }
     const g = glava(dv, 0, velikost - o);
     if (stevec === 1 && !ZACETNI_TIPI.has(g.tip)) throw new Error("ni MP4/MOV");
-    if (g.tip === "moov") {
-      if (g.velikost > NAJVEC_MOOV) throw new Error("prevelik moov");
+    if (g.tip === "moov" || g.tip === "moof") {
+      prebrano += g.velikost;
+      if (g.velikost > NAJVEC_MOOV || prebrano > NAJVEC_MOOV) throw new Error("prevelik moov/moof");
       const u8 = new Uint8Array(await datoteka.slice(o, o + g.velikost).arrayBuffer());
-      if (u8.length !== g.velikost) throw new Error("branje moov");
+      if (u8.length !== g.velikost) throw new Error("branje " + g.tip);
       ociscenje(u8, new DataView(u8.buffer), g.glava, u8.length, 0);
       // Varovalo: ce se lokacija skriva se kje drugje (npr. kljuc v zapisu metapodatkovne sledi), raje zavrnemo.
-      if (IZDAJA_LOKACIJE.some(v => vsebuje(u8, v))) throw new Error("lokacija ostane v moov");
-      popravki.push({ od: o, bajti: u8 }); moov++;
+      if (IZDAJA_LOKACIJE.some(v => vsebuje(u8, v))) throw new Error("lokacija ostane v " + g.tip);
+      popravki.push({ od: o, bajti: u8 }); if (g.tip === "moov") moov++;
     } else if (g.tip === "udta" || g.tip === "meta" || g.tip === "uuid") {
       let prepisi = g.tip !== "uuid";
       if (!prepisi) {
