@@ -4,7 +4,7 @@
    Supabase Auth (e-mail + geslo). Plosca se odpre cez stran iz desnega
    zgornjega kota (ikona profila v glavi), ozadje se zamegli.
    Baza: supabase-schema-10-accounts.sql (sync_my_account, my_profile,
-   set_username, delete_my_account).
+   set_username). Brisanje racuna gre prek backenda (DELETE /me), ta sam pokliče Supabase.
 
    Odjemalec Supabase se ustvari TUKAJ in je na voljo kot
    window.OUTLY_CLIENT — waitlist.js, confirm.js in creator.js ga
@@ -246,9 +246,12 @@
       <button class="drawer__back" type="button" data-go="profile">${ICON.back} Profile</button>
       <p class="kicker">DELETE ACCOUNT</p>
       <h2>Are you sure?</h2>
-      <p class="drawer__lead">This removes your account, your spot on the waitlist and your points. Friends you invited keep theirs. There is no undo.</p>
-      <p class="formMsg" data-msg aria-live="polite"></p>
-      <button class="btn btn--danger btn--block" type="button" data-action="delete">Yes, delete my account</button>
+      <p class="drawer__lead">This removes your account, your spot on the waitlist and your points. Friends you invited keep theirs. Tickets you already bought stay valid, but are no longer linked to you. There is no undo.</p>
+      <form data-form="delete" novalidate>
+        <label class="field"><span>Password</span><input type="password" name="password" autocomplete="current-password" placeholder="Enter your password to confirm" required></label>
+        <p class="formMsg" data-msg aria-live="polite"></p>
+        <button class="btn btn--danger btn--block" type="submit">Yes, delete my account</button>
+      </form>
       <p class="drawer__switch"><button class="linklike" type="button" data-go="profile">Keep my account</button></p>
     </div>
   </div>
@@ -269,6 +272,7 @@
   const $ = (sel, root) => (root || drawer).querySelector(sel);
 
   function view(name) {
+    if (name !== "delete") { const df = drawer.querySelector('form[data-form="delete"]'); if (df) { df.reset(); setMsg(df, ""); } }
     views.forEach((v) => v.classList.toggle("is-active", v.dataset.view === name));
     const first = $('.drawer__view.is-active input:not([readonly])');
     if (first && !("ontouchstart" in window)) setTimeout(() => first.focus(), 60);
@@ -515,23 +519,6 @@
       close();
       return;
     }
-
-    if (t.dataset.action === "delete") {
-      if (busy) return;
-      busy = true;
-      const v = t.closest(".drawer__view");
-      working(v, true, "Deleting…");
-      const { error } = await client.rpc("delete_my_account");
-      busy = false;
-      if (error) {
-        working(v, false);
-        setMsg(v, friendly(error), "error");
-        return;
-      }
-      await client.auth.signOut().catch(() => {});
-      working(v, false);
-      close();
-    }
   });
 
   drawer.addEventListener("submit", async (e) => {
@@ -547,11 +534,14 @@
     if (f.email && !f.email.readOnly && !EMAIL_RE.test((f.email.value || "").trim())) {
       setMsg(form, "Please enter a valid email address.", "error"); f.email.focus(); return;
     }
-    if (f.password && (f.password.value || "").length < 8 && kind !== "login") {
+    if (f.password && (f.password.value || "").length < 8 && kind !== "login" && kind !== "delete") {
       setMsg(form, "Password must be at least 8 characters.", "error"); f.password.focus(); return;
     }
     if (kind === "login" && !(f.password.value || "")) {
       setMsg(form, "Please enter your password.", "error"); f.password.focus(); return;
+    }
+    if (kind === "delete" && !(f.password.value || "")) {
+      setMsg(form, "Enter your password to continue.", "error"); f.password.focus(); return;
     }
     if (kind === "password" && f.password.value !== f.password2.value) {
       setMsg(form, "The two passwords don't match.", "error"); f.password2.focus(); return;
@@ -563,8 +553,11 @@
       setMsg(form, "3–20 characters: letters, numbers and underscores.", "error"); f.username.focus(); return;
     }
 
+    // Med brisanjem se pogled ne sme zapustiti (napaka bi se zapisala na skrit obrazec): vrni/nazaj sta onemogocena.
+    const zaklep = kind === "delete" ? Array.from(form.closest(".drawer__view").querySelectorAll("[data-go]")) : [];
+    zaklep.forEach((x) => { x.disabled = true; });
     busy = true;
-    working(form, true, kind === "login" ? "Logging in…" : kind === "forgot" ? "Sending…" : "Saving…");
+    working(form, true, kind === "login" ? "Logging in…" : kind === "forgot" ? "Sending…" : kind === "delete" ? "Deleting…" : "Saving…");
     setMsg(form, "");
 
     try {
@@ -627,6 +620,36 @@
         else setMsg(form, "Password updated.", "ok");
       }
 
+      else if (kind === "delete") {
+        // Brisanje prek backenda (kot /app): preveri geslo, anonimizira narocila, izbrise racun in Supabase prijavo.
+        let r;
+        try { r = await backend("/me", "DELETE", { password: f.password.value }); }
+        catch (err) {
+          setMsg(form, err && err.message === "not signed in"
+            ? "Your session has expired. Log in again."
+            : "No response from the server. Log in again to check whether the account still exists.", "error");
+          return;
+        }
+        if (r.ok) {
+          form.reset();
+          profile = null;
+          await client.auth.signOut().catch(() => {});
+          close();
+          return;
+        }
+        // 401 tu pomeni napacno geslo (streznik: "Invalid credentials."), ne potekle seje.
+        let msg;
+        if (r.status === 401 && /credentials/i.test(r.text)) msg = "Wrong password.";
+        else if (r.status === 401) msg = "Your session has expired. Log in again.";
+        else if (r.status === 400) msg = "Enter your password to continue.";
+        else if (r.status === 409) msg = (r.json && r.json.message) || "Your club has sold tickets. Transfer club ownership before deleting your account.";
+        else if (r.status === 429) msg = "Too many attempts. Try again later.";
+        else if (r.status === 502 || r.status === 503) msg = "We couldn't delete the account right now. Please try again.";
+        else msg = "Something went wrong. Please try again.";
+        setMsg(form, msg, "error");
+        return;
+      }
+
       else if (kind === "username" || kind === "personal") {
         const name = f.username.value.trim();
         // 1. aplikacija (backend preveri, da ime ni zasedeno v aplikaciji)
@@ -655,6 +678,7 @@
       setMsg(form, friendly(err), "error");
     } finally {
       busy = false;
+      zaklep.forEach((x) => { x.disabled = false; });
       working(form, false);
     }
   });

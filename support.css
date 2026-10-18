@@ -1,0 +1,43 @@
+/* Stran za pomoc (support.html). Dopolnjuje .legal iz styles.css; brez JS in brez inline stilov. */
+.support h3{
+  margin: 28px 0 8px;
+  font-size: 15px;
+  letter-spacing: -.005em;
+  color: var(--text);
+}
+.support h4{
+  margin: 20px 0 6px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+.support__card{
+  padding: 18px 20px;
+  margin: 0 0 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(0,0,0,.22);
+}
+.support__card p:last-child{ margin-bottom: 0; }
+.support__label{
+  margin: 0 0 2px !important;
+  font-size: 12px !important;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.45) !important;
+}
+.support__mail{
+  margin: 0 0 12px !important;
+  font-size: 22px !important;
+  font-weight: 700;
+  line-height: 1.3 !important;
+  overflow-wrap: anywhere;
+}
+.support__company{ overflow-wrap: anywhere; }
+.support li,
+.support p{ overflow-wrap: break-word; }
+@media (max-width: 600px){
+  .support__mail{ font-size: 19px !important; }
+  .support h4{ font-size: 14.5px; }
+}
