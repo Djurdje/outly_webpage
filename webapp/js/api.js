@@ -3,7 +3,8 @@
    - 503 NIKOLI ne odjavi (invarianta I10: izpad Supabase ne sme odjaviti uporabnika),
    - napake kot ApiError(status, besedilo) -> napake.js/sporocilo() za uporabnika. */
 import { supabase } from "./supabase.js";
-import { ApiError } from "./napake.js";
+import { ApiError, NapakaDatoteke } from "./napake.js";
+import { t } from "./i18n.js";
 
 export const API_URL = "https://outly-backend-roy3.onrender.com";
 const CAKANJE_MS = 30000;
@@ -312,6 +313,9 @@ export function parametriPodpisa(p) {
   return out;
 }
 export async function naloziNaCloudinary(datoteka, vrsta = "image") {
+  // Video gre ven SAMO ociscen metapodatkov (lokacija iz iPhona/Androida); ne uspe -> NapakaDatoteke, nalaganje se zavrne (#79).
+  // Leno nalozen modul: video se nalaga redko; ce se ne nalozi, nalaganje pade (izvirnika ne posljemo).
+  if (vrsta === "video") datoteka = await (await import("./video-metapodatki.js")).ocistiVideo(datoteka);
   const p = await send("/uploads/cloudinary-signature", { method: "POST", auth: true });
   if (!p || !p.signature || !p.apiKey || !p.cloudName) throw new ApiError(500, "Upload failed.");
   const f = new FormData();
@@ -329,10 +333,12 @@ export async function naloziNaCloudinary(datoteka, vrsta = "image") {
 }
 
 /* Pomanjsa sliko v brskalniku pred nalaganjem (najvec 1200 px, JPEG) - manj podatkov in hitrejse
-   nalaganje (iOS lekcija 29. 9.: nikoli slike v polni locljivosti). */
+   nalaganje (iOS lekcija 29. 9.: nikoli slike v polni locljivosti). Canvas odstrani EXIF/GPS, zato ob neuspehu
+   (npr. HEIC v Chromu) NE vrnemo izvirnika, ampak zavrnemo nalaganje (NapakaDatoteke; #79). */
 export async function pomanjsajSliko(datoteka, najvec = 1200) {
+  const nepripravljena = () => new NapakaDatoteke(t("This image could not be prepared for upload. Please choose a JPEG or PNG photo."));
   const bitmap = await createImageBitmap(datoteka).catch(() => null);
-  if (!bitmap) return datoteka;
+  if (!bitmap) throw nepripravljena();
   const faktor = Math.min(1, najvec / Math.max(bitmap.width, bitmap.height));
   const c = document.createElement("canvas");
   c.width = Math.round(bitmap.width * faktor); c.height = Math.round(bitmap.height * faktor);
@@ -340,5 +346,7 @@ export async function pomanjsajSliko(datoteka, najvec = 1200) {
   g.fillStyle = "#ffffff"; g.fillRect(0, 0, c.width, c.height);   // prosojen PNG -> JPEG brez crnega ozadja
   g.drawImage(bitmap, 0, 0, c.width, c.height);
   bitmap.close && bitmap.close();
-  return await new Promise(res => c.toBlob(b => res(b || datoteka), "image/jpeg", 0.86));
+  const blob = await new Promise(res => { try { c.toBlob(res, "image/jpeg", 0.86); } catch { res(null); } });
+  if (!blob) throw nepripravljena();
+  return blob;
 }

@@ -12,6 +12,12 @@ export class ApiError extends Error {
   }
 }
 
+/* Datoteka (slika/video) ni primerna za nalaganje ali je ne moremo ocistiti metapodatkov (lokacija): nalaganje se zavrne,
+   izvirnika NIKOLI ne posljemo (outly_webpage#79). `message` je ze preveden, uporabnik ga vidi tak, kot je (sporocilo()). */
+export class NapakaDatoteke extends Error {
+  constructor(sporocilo, vzrok) { super(sporocilo); this.name = "NapakaDatoteke"; this.vzrok = vzrok; }
+}
+
 /* Semafor nakupov (backend #111): POST .../orders vrne 503 + Retry-After, ko hkrati kupuje preveliko ljudi.
    Nakupa NE ponavljamo samodejno: uporabnik ponovno pritisne gumb, zaslon pa pri ponovitvi ISTEGA nakupa
    poslje ISTI Idempotency-Key (api.js kljucNakupa; backend #123), zato ponovni klik ne ustvari drugega narocila.
@@ -299,6 +305,7 @@ function prevediAuth(e) {
 
 /** Sporocilo za uporabnika iz katerekoli napake. */
 export function sporocilo(e) {
+  if (e instanceof NapakaDatoteke) return e.message;
   if (e instanceof ApiError) return prevediApi(e);
   if (e instanceof AuthError) return prevediAuth(e);
   if (e && e.name === "AuthApiError") return prevediAuth(new AuthError(e.status, e.code, e.message));
