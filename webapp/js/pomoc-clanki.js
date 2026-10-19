@@ -59,11 +59,11 @@ export const CLANKI = [
   "id": "refund",
   "topic": "Refunds and cancellations",
   "title": "Refunds and cancelled events",
-  "body": "Tickets are sold by the club; Outly is the marketplace. Because a ticket is for a specific date, there is no 14-day right of withdrawal after purchase.\n\nIf the club cancels an event, you are entitled to a refund from the club, to your original payment method.\n\nFor anything else, contact the club or write to luka@outly.si with your ticket number.",
+  "body": "Tickets are sold by the club or event organiser; for Outly's own events the seller is the operator of Outly. Because a ticket is for a specific date, there is no 14-day right of withdrawal after purchase.\n\nIf the club cancels an event, you are entitled to a refund from the club, to your original payment method.\n\nFor anything else, contact the club or write to luka@outly.si with your ticket number.",
   "sl": {
    "topic": "Vračila in odpovedi",
    "title": "Vračila in odpovedani dogodki",
-   "body": "Vstopnice prodaja klub; Outly je tržnica. Ker je vstopnica vezana na določen datum, po nakupu ni 14-dnevne pravice do odstopa.\n\nČe klub odpove dogodek, imaš pravico do vračila denarja s strani kluba na izvirni način plačila.\n\nZa vse ostalo se obrni na klub ali piši na luka@outly.si s številko svoje vstopnice."
+   "body": "Vstopnice prodaja klub oziroma organizator; pri dogodkih Outly je prodajalec upravljavec Outlyja. Ker je vstopnica vezana na določen datum, po nakupu ni 14-dnevne pravice do odstopa.\n\nČe klub odpove dogodek, imaš pravico do vračila denarja s strani kluba na izvirni način plačila.\n\nZa vse ostalo se obrni na klub ali piši na luka@outly.si s številko svoje vstopnice."
   }
  },
  {
