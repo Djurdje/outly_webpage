@@ -343,7 +343,7 @@ export function gostSporocilo(e) {
     }
     if (e.status === 409 && /does not accept online payments/i.test(e.raw)) return t("This club does not accept online payments yet.");
     if (e.status === 403 && /date of birth/i.test(e.raw)) return t("Enter your date of birth to buy tickets for this event.");
-    if (e.status === 400 && /accept the terms/i.test(e.raw)) return t("Please confirm you are at least 18 and accept the Terms of Use.");
+    if (e.status === 400 && /accept the terms/i.test(e.raw)) return t("Please confirm you are at least 15 and accept the Terms of Use.");   // gost: meja nakupa brez racuna ostane 15 (Martin 19. 10. 2026), racun 18
     const s = sporocilo(e);
     if (e.status === 403 && s === t("You do not have permission to do that.")) return t("You do not meet the age requirement for this event.");
     if (e.status === 409 && s === t("This is already in use.")) {
