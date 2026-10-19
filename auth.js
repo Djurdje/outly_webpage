@@ -85,7 +85,7 @@
       <form data-form="register" novalidate>
         <label class="field"><span>Email</span><input type="email" name="email" autocomplete="email" placeholder="you@domain.com" required></label>
         <label class="field"><span>Password</span><input type="password" name="password" autocomplete="new-password" placeholder="At least 8 characters" minlength="8" required></label>
-        <label class="consent"><input type="checkbox" name="terms" required><span>I am at least 15 and accept the <a href="terms.html" target="_blank" rel="noopener">Terms of Use</a> and <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</span></label>
+        <label class="consent"><input type="checkbox" name="terms" required><span>I am at least 18 and accept the <a href="terms.html" target="_blank" rel="noopener">Terms of Use</a> and <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</span></label>
         <p class="formMsg" data-msg aria-live="polite"></p>
         <button class="btn btn--primary btn--ring btn--block" type="submit">Create account</button>
       </form>
@@ -547,7 +547,7 @@
       setMsg(form, "The two passwords don't match.", "error"); f.password2.focus(); return;
     }
     if (kind === "register" && f.terms && !f.terms.checked) {
-      setMsg(form, "Please confirm you are at least 15 and accept the Terms of Use.", "error"); f.terms.focus(); return;
+      setMsg(form, "Please confirm you are at least 18 and accept the Terms of Use.", "error"); f.terms.focus(); return;
     }
     if (f.username && !USER_RE.test((f.username.value || "").trim())) {
       setMsg(form, "3–20 characters: letters, numbers and underscores.", "error"); f.username.focus(); return;

@@ -1,4 +1,4 @@
-/* Dokoncanje racuna (CompleteAccountView + SelectGenresView): datum rojstva (15+), drzava, telefon
+/* Dokoncanje racuna (CompleteAccountView + SelectGenresView): datum rojstva (18+), drzava, telefon
    (neobvezen), nato zanri. Streznik nastavi onboarded_at, ko ima datum rojstva in vsaj en zanr. */
 import { html, useEffect, useState } from "../lib.js";
 import { t, locale } from "../i18n.js";
@@ -60,13 +60,13 @@ function Racun({ naprej }) {
   const [napaka, setNapaka] = useState("");
   const [tece, setTece] = useState(false);
   const danes = new Date();
-  const najvec = new Date(danes.getFullYear() - 15, danes.getMonth(), danes.getDate()).toISOString().slice(0, 10);
+  const najvec = new Date(danes.getFullYear() - 18, danes.getMonth(), danes.getDate()).toISOString().slice(0, 10);
 
   async function poslji(ev) {
     ev.preventDefault();
     const l = dob ? starost(dob) : null;
     if (l == null) return setNapaka(t("Enter a valid date of birth."));
-    if (l < 15) return setNapaka(t("You must be at least 15 years old to use Outly."));
+    if (l < 18) return setNapaka(t("You must be at least 18 years old to use Outly."));
     if (l > 120) return setNapaka(t("That date of birth does not look right."));
     const telefon = tel.replace(/[\s\-()]/g, "");
     if (telefon && !/^\+[1-9]\d{7,14}$/.test(telefon)) return setNapaka(t("Enter the phone number with country code, e.g. +386 41 123 456."));

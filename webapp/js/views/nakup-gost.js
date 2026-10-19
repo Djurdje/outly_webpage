@@ -81,7 +81,7 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
       if (!/^\d{4}-\d{2}-\d{2}$/.test(dob) || dob < "1900-01-01") return setNapaka(t("Enter a valid date of birth."));
       if (dob > danes()) return setNapaka(t("Date of birth cannot be in the future."));
     }
-    if (!soglasje) return setNapaka(t("Please confirm you are at least 15 and accept the Terms of Use."));
+    if (!soglasje) return setNapaka(t("Please confirm you are at least 18 and accept the Terms of Use."));
     tece.current = true;
     setPosiljam(true); setNapaka(""); setBrezGosta(false);
     // Isti e-naslov + dogodek + kolicina = isti kljuc (api.js, 24 h): backend vrne isto narocilo (201). Datum rojstva ni del
@@ -205,7 +205,7 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
 
       <label class="soglasje">
         <input type="checkbox" checked=${soglasje} onChange=${x => polje(setSoglasje)(x.target.checked)} />
-        <span>${t("I am at least 15 years old and I accept the")} <a href="/terms" target="_blank" rel="noopener">${t("Terms of Use")}</a>.${" "}
+        <span>${t("I am at least 18 years old and I accept the")} <a href="/terms" target="_blank" rel="noopener">${t("Terms of Use")}</a>.${" "}
           ${t("I have read the")} <a href=${zasebnost} target="_blank" rel="noopener">${t("Privacy Policy")}</a>.</span>
       </label>
       ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}

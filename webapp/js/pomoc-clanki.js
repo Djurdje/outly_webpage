@@ -4,11 +4,11 @@ export const CLANKI = [
   "id": "account",
   "topic": "Getting started  >  Account",
   "title": "Creating an account",
-  "body": "Tap Sign up, enter your username, email and a password. We send a code (6–10 digits) to your email — type it in to confirm your address.\n\nThen complete your profile: date of birth, country and the music you like. Your date of birth is used only to check age limits on events.\n\nYou must be at least 15 to use Outly.",
+  "body": "Tap Sign up, enter your username, email and a password. We send a code (6–10 digits) to your email — type it in to confirm your address.\n\nThen complete your profile: date of birth, country and the music you like. Your date of birth is used only to check age limits on events.\n\nYou must be at least 18 to use Outly.",
   "sl": {
    "topic": "Prvi koraki  >  Račun",
    "title": "Ustvarjanje računa",
-   "body": "Tapni Sign up (registracija), vnesi uporabniško ime, e-pošto in geslo. Na e-pošto ti pošljemo kodo (6–10 števk) — vpiši jo, da potrdiš naslov.\n\nNato dokončaj profil: datum rojstva, državo in glasbo, ki jo imaš rad(a). Datum rojstva uporabimo samo za preverjanje starostnih omejitev pri dogodkih.\n\nZa uporabo Outlyja moraš imeti vsaj 15 let."
+   "body": "Tapni Sign up (registracija), vnesi uporabniško ime, e-pošto in geslo. Na e-pošto ti pošljemo kodo (6–10 števk) — vpiši jo, da potrdiš naslov.\n\nNato dokončaj profil: datum rojstva, državo in glasbo, ki jo imaš rad(a). Datum rojstva uporabimo samo za preverjanje starostnih omejitev pri dogodkih.\n\nZa uporabo Outlyja moraš imeti vsaj 18 let."
   }
  },
  {
@@ -70,11 +70,11 @@ export const CLANKI = [
   "id": "age",
   "topic": "Events  >  Age limits",
   "title": "Age limits",
-  "body": "You must be 15 or older to use Outly. Some events are 18+ — this is shown on the event and you need a date of birth in your profile to buy tickets for them.\n\nThe club may ask for an ID at the door.",
+  "body": "You must be 18 or older to use Outly. Some events have a higher age limit — this is shown on the event and you need a date of birth in your profile to buy tickets for them.\n\nThe club may ask for an ID at the door.",
   "sl": {
    "topic": "Dogodki  >  Starostne omejitve",
    "title": "Starostne omejitve",
-   "body": "Za uporabo Outlyja moraš imeti vsaj 15 let. Nekateri dogodki so 18+ — to je označeno pri dogodku, za nakup vstopnic pa potrebuješ datum rojstva v profilu.\n\nKlub lahko pri vhodu zahteva osebni dokument."
+   "body": "Za uporabo Outlyja moraš imeti vsaj 18 let. Nekateri dogodki imajo višjo starostno mejo — to je označeno pri dogodku, za nakup vstopnic pa potrebuješ datum rojstva v profilu.\n\nKlub lahko pri vhodu zahteva osebni dokument."
   }
  },
  {

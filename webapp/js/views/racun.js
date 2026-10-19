@@ -122,7 +122,7 @@ export function OsebniPodatki() {
 
   const naslovi = { username: t("Username"), phone: t("Phone number"), dob: t("Date of birth"), country: t("Country") };
   const danes = new Date();
-  const najvec = new Date(danes.getFullYear() - 15, danes.getMonth(), danes.getDate()).toISOString().slice(0, 10);
+  const najvec = new Date(danes.getFullYear() - 18, danes.getMonth(), danes.getDate()).toISOString().slice(0, 10);
   return html`<div class="zaslon">
     <${GlavaNazaj} naslov=${t("Personal info")} rezerva="/app/account" />
     <div class="kartica-avatar">
