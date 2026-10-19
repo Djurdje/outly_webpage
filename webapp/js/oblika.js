@@ -57,14 +57,15 @@ export function normalizirajDogodek(e) {
 }
 
 /** Prodajalec (klub) iz odgovora `seller` (backend #94): vsa polja dobijo privzetke; brez objekta (star backend) = null.
-    vat_payer je true | false | null (null = ni vpisano). */
+    vat_payer je true | false | null (null = ni vpisano). is_platform (backend #302) je true samo, ko prodaja uradni profil
+    Outly (NEXT DIMENSIONS sama, brez posrednika); pri navadnem klubu ga ni -> false. */
 export function normalizirajProdajalca(s) {
   if (!s || typeof s !== "object" || Array.isArray(s)) return null;
   const niz = v => (typeof v === "string" ? v.trim() : "");
   return {
     name: niz(s.name), address: niz(s.address), registration_number: niz(s.registration_number), tax_number: niz(s.tax_number),
     vat_payer: s.vat_payer === true ? true : s.vat_payer === false ? false : null,
-    phone: niz(s.phone), email: niz(s.email), complete: s.complete === true
+    phone: niz(s.phone), email: niz(s.email), complete: s.complete === true, is_platform: s.is_platform === true
   };
 }
 

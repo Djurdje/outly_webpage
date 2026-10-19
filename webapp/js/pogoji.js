@@ -18,7 +18,8 @@ export function PogojiNakupa() {
 }
 
 /* Podatki prodajalca nad gumbom za placilo (backend #94, ZVPot-1 18/1-2, 130/1-1): kupec pred nakupom izve, kdo mu prodaja.
-   Prodajalec je klub, Outly je posrednik. Podatki gredo v DOM samo kot besedilo (htm), nikoli prek innerHTML.
+   Prodajalec je klub, Outly je posrednik - razen pri lastnih dogodkih Outly (seller.is_platform, backend #302): tam prodaja
+   upravljavec Outlyja sam in stavka o posredniku ni. Podatki gredo v DOM samo kot besedilo (htm), nikoli prek innerHTML.
    Brez prodajalca (star backend, odgovor brez `seller`) bloka ni - kupec vidi stavek OpombaVracila kot doslej. */
 export function BlokProdajalca({ prodajalec: p }) {
   if (!p) return null;
@@ -33,7 +34,7 @@ export function BlokProdajalca({ prodajalec: p }) {
     ${p.address ? html`<span>${p.address}</span>` : null}
     ${stevilke ? html`<span>${stevilke}</span>` : null}
     ${kontakt ? html`<span>${kontakt}</span>` : null}
-    <span class="utisano">${t("Outly is the intermediary.")}</span>
+    <span class="utisano">${p.is_platform ? t("The seller is the operator of Outly.") : t("Outly is the intermediary.")}</span>
   </div>`;
 }
 
