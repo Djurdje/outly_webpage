@@ -1163,6 +1163,7 @@ export const SL = {
  "VAT according to the seller's VAT status": "DDV po davčnem statusu prodajalca",
  "Seller": "Prodajalec",
  "Outly is the intermediary.": "Outly je posrednik.",
+ "The seller is the operator of Outly.": "Prodajalec je upravljavec Outlyja.",
  "Reg. no. {n}": "Matična št. {n}",
  "Tax no. {n}": "Davčna št. {n}",
  "VIP tables (including any package) and tickets for a dated event cannot be returned after purchase (ZVPot-1, 135/12).": "VIP miz (skupaj s paketom) in vstopnic za dogodek z določenim datumom po nakupu ni mogoče vrniti (ZVPot-1, 135/12).",

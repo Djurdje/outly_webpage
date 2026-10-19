@@ -4,11 +4,11 @@ export const CLANKI = [
   "id": "account",
   "topic": "Getting started  >  Account",
   "title": "Creating an account",
-  "body": "Tap Sign up, enter your username, email and a password. We send a code (6–10 digits) to your email — type it in to confirm your address.\n\nThen complete your profile: date of birth, country and the music you like. Your date of birth is used only to check age limits on events.\n\nYou must be at least 18 to use Outly.",
+  "body": "Tap Sign up, enter your username, email and a password. We send a code (6–10 digits) to your email — type it in to confirm your address.\n\nThen complete your profile: date of birth, country and the music you like. Your date of birth is used to check the minimum age for an account and age limits on events.\n\nYou must be at least 18 to create an account.",
   "sl": {
    "topic": "Prvi koraki  >  Račun",
    "title": "Ustvarjanje računa",
-   "body": "Tapni Sign up (registracija), vnesi uporabniško ime, e-pošto in geslo. Na e-pošto ti pošljemo kodo (6–10 števk) — vpiši jo, da potrdiš naslov.\n\nNato dokončaj profil: datum rojstva, državo in glasbo, ki jo imaš rad(a). Datum rojstva uporabimo samo za preverjanje starostnih omejitev pri dogodkih.\n\nZa uporabo Outlyja moraš imeti vsaj 18 let."
+   "body": "Tapni Sign up (registracija), vnesi uporabniško ime, e-pošto in geslo. Na e-pošto ti pošljemo kodo (6–10 števk) — vpiši jo, da potrdiš naslov.\n\nNato dokončaj profil: datum rojstva, državo in glasbo, ki jo imaš rad(a). Datum rojstva uporabimo za preverjanje najnižje starosti za račun in starostnih omejitev pri dogodkih.\n\nZa ustvarjanje računa moraš imeti vsaj 18 let."
   }
  },
  {
@@ -59,22 +59,22 @@ export const CLANKI = [
   "id": "refund",
   "topic": "Refunds and cancellations",
   "title": "Refunds and cancelled events",
-  "body": "Tickets are sold by the club; Outly is the marketplace. Because a ticket is for a specific date, there is no 14-day right of withdrawal after purchase.\n\nIf the club cancels an event, you are entitled to a refund from the club, to your original payment method.\n\nFor anything else, contact the club or write to luka@outly.si with your ticket number.",
+  "body": "Tickets are sold by the club or event organiser; for Outly's own events the seller is the operator of Outly. Because a ticket is for a specific date, there is no 14-day right of withdrawal after purchase.\n\nIf an event is cancelled, you are entitled to a refund to your original payment method. The club or event organiser makes the refund; for Outly's own events, Outly makes it.\n\nFor anything else, contact the club or event organiser or write to luka@outly.si with your ticket number; for Outly's own events, write to luka@outly.si.",
   "sl": {
    "topic": "Vračila in odpovedi",
    "title": "Vračila in odpovedani dogodki",
-   "body": "Vstopnice prodaja klub; Outly je tržnica. Ker je vstopnica vezana na določen datum, po nakupu ni 14-dnevne pravice do odstopa.\n\nČe klub odpove dogodek, imaš pravico do vračila denarja s strani kluba na izvirni način plačila.\n\nZa vse ostalo se obrni na klub ali piši na luka@outly.si s številko svoje vstopnice."
+   "body": "Vstopnice prodaja klub oziroma organizator; pri dogodkih Outly je prodajalec upravljavec Outlyja. Ker je vstopnica vezana na določen datum, po nakupu ni 14-dnevne pravice do odstopa.\n\nČe je dogodek odpovedan, imaš pravico do vračila denarja na izvirni način plačila. Vračilo izvede klub oziroma organizator, pri dogodkih Outly pa Outly.\n\nZa vse ostalo se obrni na klub oziroma organizatorja ali piši na luka@outly.si s številko svoje vstopnice; pri dogodkih Outly piši na luka@outly.si."
   }
  },
  {
   "id": "age",
   "topic": "Events  >  Age limits",
   "title": "Age limits",
-  "body": "You must be 18 or older to use Outly. Some events have a higher age limit — this is shown on the event and you need a date of birth in your profile to buy tickets for them.\n\nThe club may ask for an ID at the door.",
+  "body": "You must be 18 or older to create an account. Some events have a higher age limit — this is shown on the event and you need a date of birth in your profile to buy tickets for them.\n\nThe club or event organiser may ask for an ID at the door.",
   "sl": {
    "topic": "Dogodki  >  Starostne omejitve",
    "title": "Starostne omejitve",
-   "body": "Za uporabo Outlyja moraš imeti vsaj 18 let. Nekateri dogodki imajo višjo starostno mejo — to je označeno pri dogodku, za nakup vstopnic pa potrebuješ datum rojstva v profilu.\n\nKlub lahko pri vhodu zahteva osebni dokument."
+   "body": "Za ustvarjanje računa moraš imeti vsaj 18 let. Nekateri dogodki imajo višjo starostno mejo — to je označeno pri dogodku, za nakup vstopnic pa potrebuješ datum rojstva v profilu.\n\nKlub oziroma organizator lahko pri vhodu zahteva osebni dokument."
   }
  },
  {
