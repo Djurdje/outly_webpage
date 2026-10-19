@@ -1,4 +1,4 @@
-/* Dokoncanje racuna (CompleteAccountView + SelectGenresView): datum rojstva (15+), drzava, telefon
+/* Dokoncanje racuna (CompleteAccountView + SelectGenresView): datum rojstva (18+), drzava, telefon
    (neobvezen), nato zanri. Streznik nastavi onboarded_at, ko ima datum rojstva in vsaj en zanr. */
 import { html, useEffect, useState } from "../lib.js";
 import { t, locale } from "../i18n.js";
@@ -22,6 +22,14 @@ export function seznamDrzav() {
   let imena;
   try { imena = new Intl.DisplayNames([locale()], { type: "region" }); } catch { imena = null; }
   return DRZAVE.map(k => ({ k, ime: (imena && imena.of(k)) || k })).sort((a, b) => a.ime.localeCompare(b.ime, locale()));
+}
+
+/** Najpoznejsi datum rojstva za racun (danes pred 18 leti) kot YYYY-MM-DD iz LOKALNIH komponent: toISOString() je UTC
+    in bi v UTC+1/+2 dal prejsnji dan. 29. 2. v neprestopnem letu -> 28. 2. */
+export function najvecDatumRojstva(danes = new Date()) {
+  const d = new Date(danes.getFullYear() - 18, danes.getMonth(), danes.getDate());
+  if (d.getMonth() !== danes.getMonth()) d.setDate(0);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 function starost(iso) {
@@ -59,20 +67,22 @@ function Racun({ naprej }) {
   const [tel, setTel] = useState((me && me.phone) || "");
   const [napaka, setNapaka] = useState("");
   const [tece, setTece] = useState(false);
-  const danes = new Date();
-  const najvec = new Date(danes.getFullYear() - 15, danes.getMonth(), danes.getDate()).toISOString().slice(0, 10);
+  const najvec = najvecDatumRojstva();
+  // Datum, ki ga streznik ze ima (racun iz casa meje 15 let): ne preverjamo ga znova in ga ne posljemo (streznik ga ze ima).
+  const shranjen = me && me.date_of_birth ? String(me.date_of_birth).slice(0, 10) : "";
+  const nespremenjen = !!shranjen && dob === shranjen;
 
   async function poslji(ev) {
     ev.preventDefault();
     const l = dob ? starost(dob) : null;
     if (l == null) return setNapaka(t("Enter a valid date of birth."));
-    if (l < 15) return setNapaka(t("You must be at least 15 years old to use Outly."));
-    if (l > 120) return setNapaka(t("That date of birth does not look right."));
+    if (!nespremenjen && l < 18) return setNapaka(t("You must be at least 18 years old to use Outly."));
+    if (!nespremenjen && l > 120) return setNapaka(t("That date of birth does not look right."));
     const telefon = tel.replace(/[\s\-()]/g, "");
     if (telefon && !/^\+[1-9]\d{7,14}$/.test(telefon)) return setNapaka(t("Enter the phone number with country code, e.g. +386 41 123 456."));
     setTece(true); setNapaka("");
     try {
-      const body = { dateOfBirth: dob, country: drzava };
+      const body = nespremenjen ? { country: drzava } : { dateOfBirth: dob, country: drzava };
       if (telefon) body.phone = telefon;
       const novi = await shrani(body);
       if (novi) { nastaviMe(zdruzi(novi)); naprej(); }

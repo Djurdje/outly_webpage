@@ -12,7 +12,7 @@ import { zanrIme, denar } from "../oblika.js";
 import { useNastavitve, shraniNastavitve } from "../nastavitve.js";
 import { GlavaNazaj, Ikona, Avatar, Nalaganje, Napaka, List } from "../ui.js";
 import { Razpon } from "./filtri.js";
-import { DRZAVE_SEZNAM } from "./onboarding.js";
+import { DRZAVE_SEZNAM, najvecDatumRojstva } from "./onboarding.js";
 import { CLANKI } from "../pomoc-clanki.js";
 import { nastaviObraz } from "../posel.js";
 
@@ -121,8 +121,7 @@ export function OsebniPodatki() {
   }
 
   const naslovi = { username: t("Username"), phone: t("Phone number"), dob: t("Date of birth"), country: t("Country") };
-  const danes = new Date();
-  const najvec = new Date(danes.getFullYear() - 15, danes.getMonth(), danes.getDate()).toISOString().slice(0, 10);
+  const najvec = najvecDatumRojstva();
   return html`<div class="zaslon">
     <${GlavaNazaj} naslov=${t("Personal info")} rezerva="/app/account" />
     <div class="kartica-avatar">

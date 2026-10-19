@@ -1,6 +1,6 @@
 /* Prijava, registracija, potrditev e-naslova s kodo, pozabljeno geslo (Auth/*.swift).
    Isti tok kot iOS: koda iz maila (6-10 stevk), ne povezava - zato spletna aplikacija ne rabi
-   dodatnih preusmeritvenih URL-jev v Supabase. Registracija: kljukica 15+ in pogoji (kot outly.si). */
+   dodatnih preusmeritvenih URL-jev v Supabase. Registracija: kljukica 18+ in pogoji (kot outly.si). */
 import { html, useEffect, useState } from "../lib.js";
 import { t } from "../i18n.js";
 import { supabase } from "../supabase.js";
@@ -120,7 +120,7 @@ export function Registracija() {
     if (!EMAIL_RE.test(m)) return setNapaka(t("Enter a valid email address."));
     if (p.geslo.length < 8) return setNapaka(t("Password must be at least 8 characters."));
     if (p.geslo !== p.geslo2) return setNapaka(t("Passwords do not match."));
-    if (!p.soglasje) return setNapaka(t("Please confirm you are at least 15 and accept the Terms of Use."));
+    if (!p.soglasje) return setNapaka(t("Please confirm you are at least 18 and accept the Terms of Use."));
     setTece(true); setNapaka("");
     const { data, error } = await supabase.auth.signUp({
       email: m, password: p.geslo,
@@ -149,7 +149,7 @@ export function Registracija() {
       <${Polje} tip="password" ime="password2" oznaka=${t("confirm password")} vrednost=${p.geslo2} ob=${nastavi("geslo2")} samodejno="new-password" />
       <label class="soglasje">
         <input type="checkbox" checked=${p.soglasje} onChange=${e => nastavi("soglasje")(e.target.checked)} />
-        <span>${t("I am at least 15 and accept the")} <a href="/terms" target="_blank" rel="noopener">${t("Terms of Use")}</a> ${t("and")} <a href="/privacy-app" target="_blank" rel="noopener">${t("Privacy Policy")}</a>.</span>
+        <span>${t("I am at least 18 and accept the")} <a href="/terms" target="_blank" rel="noopener">${t("Terms of Use")}</a> ${t("and")} <a href="/privacy-app" target="_blank" rel="noopener">${t("Privacy Policy")}</a>.</span>
       </label>
       <${Sporocilo} besedilo=${napaka} />
       <button class="gumb-glavni" type="submit" disabled=${tece}>${tece ? t("Signing up...") : t("Sign up")}</button>
