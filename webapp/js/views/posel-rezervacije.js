@@ -75,7 +75,8 @@ function Vrstica({ m, valuta, sprosti }) {
   const ime = b ? b.buyer_username || "-" : (h.guest_name || h.username || "-");
   const uporabnik = h && h.username && h.username !== ime ? "@" + h.username : "";
   const paket = b ? b.package_name : h.package_name;
-  const centi = b ? (b.price_cents != null ? Number(b.price_cents) : m.price_cents) : h.price_cents;
+  // Plačano v aplikaciji: dejansko plačan znesek (booking.total_cents, backend 23. 10. 2026); brez njega cena mize.
+  const centi = b ? (typeof b.total_cents === "number" && Number.isFinite(b.total_cents) ? b.total_cents : m.price_cents) : h.price_cents;
   const cena = centi != null && Number.isFinite(centi) ? denar(centi, valuta) : "";
   const kdaj = cas(b ? b.created_at : h.created_at);
   const sedezi = m.seats > 0 ? doOseb(m.seats) : "";
