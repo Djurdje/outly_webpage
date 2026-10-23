@@ -1198,5 +1198,22 @@ export const SL = {
  "sold": "prodano",
  "expected": "pričakovano",
  "cancelled": "preklicano",
- "draft": "osnutek"
+ "draft": "osnutek",
+ "Ticket sales are paused. Check back later.": "Prodaja vstopnic je začasno ustavljena. Preveri znova kasneje.",
+ "Ticket sales open on {date}.": "Prodaja vstopnic se odpre {date}.",
+ "Tickets for this event aren't on sale right now.": "Vstopnice za ta dogodek trenutno niso v prodaji.",
+ "sales paused": "prodaja ustavljena",
+ "on sale {date}": "v prodaji od {date}",
+ "sales closed": "prodaja zaprta",
+ "Sales paused": "Prodaja ustavljena",
+ "Sales closed": "Prodaja zaprta",
+ "The ticket price has changed. Check the new price and try again.": "Cena vstopnice se je spremenila. Preveri novo ceno in poskusi znova.",
+ "The title can have at most 200 characters.": "Naslov ima lahko največ 200 znakov.",
+ "Enter a valid website link, e.g. https://club.si.": "Vpiši veljavno povezavo do spletne strani, npr. https://klub.si.",
+ "Enter an Instagram username or a link starting with https://.": "Vpiši uporabniško ime na Instagramu ali povezavo, ki se začne s https://.",
+ "The image link is not valid. Upload the image again.": "Povezava do slike ni veljavna. Sliko naloži znova.",
+ "This event has already started or taken place, so its date can't be changed. Contact Outly.": "Dogodek se je že začel ali minil, zato datuma ni mogoče spremeniti. Piši Outlyju.",
+ "This event has already taken place. Outly handles refunds.": "Dogodek je že minil, vračila uredi Outly.",
+ "Capacity can't be lower than the number of tickets already sold ({n}).": "Kapaciteta ne sme biti manjša od števila že prodanih vstopnic ({n}).",
+ "Capacity can't be lower than the number of tickets already sold.": "Kapaciteta ne sme biti manjša od števila že prodanih vstopnic."
 };

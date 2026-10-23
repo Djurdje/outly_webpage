@@ -7,7 +7,7 @@ import { send, pocistiPredpomnilnik, kljucNakupa, pozabiKljucNakupa, nerazresenN
 import { uidSeje, useSeja, jeAdmin } from "../seja.js";
 import {
   jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo,
-  jeNakupVObdelavi, NAKUP_V_OBDELAVI_S, sporocilo, ApiError, izidNakupa, nakupNapakaSporocilo, nakupBrezOdgovoraSporocilo, potekloPlacilo, placiloVObdelavi, placiloNepripravljeno
+  jeNakupVObdelavi, NAKUP_V_OBDELAVI_S, sporocilo, ApiError, jeCenaVstopniceSpremenjena, izidNakupa, nakupNapakaSporocilo, nakupBrezOdgovoraSporocilo, potekloPlacilo, placiloVObdelavi, placiloNepripravljeno
 } from "../napake.js";
 import { denar, jeRazprodan, preostanek, danInUra, nacinPlacila, ddvBesedilo, jeDemo } from "../oblika.js";
 import { List, Ikona, useZaklep, DemoBesedilo } from "../ui.js";
@@ -15,7 +15,7 @@ import { KodaQR } from "../qr.js";
 import { odpriStripe, izidStripeNakupa, jeStripeUrl } from "../stripe.js";
 import { PogojiNakupa, BlokProdajalca, OpombaVracila, TERMS_VERSION } from "../pogoji.js";
 
-export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
+export function NakupList({ odprt, zapri, dogodek: e, imeKluba, osvezi }) {
   const [kolicina, setKolicina] = useState(1);
   const [posiljam, setPosiljam] = useState(false);
   const [napaka, setNapaka] = useState("");
@@ -75,7 +75,7 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
     // timeoutu/503/409 in po zaprtju ter ponovnem odprtju lista: backend vrne isto narocilo (201).
     const kljuc = kljucNakupa("vstopnice", uid, e.id, String(kolicina), { dogodek: e.id, kolicina });
     try {
-      const r = await send(`/events/${e.id}/orders`, { method: "POST", body: { quantity: kolicina, locale: kodaJezika(), terms_version: TERMS_VERSION }, auth: true, glave: { "Idempotency-Key": kljuc } });
+      const r = await send(`/events/${e.id}/orders`, { method: "POST", body: { quantity: kolicina, expected_price_cents: cenaEna, locale: kodaJezika(), terms_version: TERMS_VERSION }, auth: true, glave: { "Idempotency-Key": kljuc } });
       pocistiPredpomnilnik();
       // Stripe (backend #19): narocilo caka na placilo na Stripovi strani. Kljuca NE pozabimo: ce se kupec vrne brez
       // placila, ponovni pritisk vrne ISTO narocilo in isti checkout_url (ne rezervira se enkrat).
@@ -103,6 +103,9 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba }) {
       // Streznik je zaseden (503): kratek premor; sporocilo o navalu samo za znano telo (napake.js).
       if (jeNakup503(err)) zakleni(nakupPocakajS(err));   // gumb pri vsakem 503 na nakupu nekaj sekund onemogocen
       else if (jeNakupVObdelavi(err)) zakleni(nakupPocakajS(err, NAKUP_V_OBDELAVI_S));   // 409 request_in_progress: isti nakup se obdeluje
+      // Cena vstopnice se je med ogledom in nakupom spremenila (backend #277 N2, 409): narocila ni, dogodek preberemo znova
+      // (list pokaze novo ceno), kupec pritisne znova sam.
+      if (jeCenaVstopniceSpremenjena(err) && osvezi) osvezi();
       if (jeNakupZaseden(err)) setNapaka(nakupZasedenoSporocilo());
       // Brez odgovora: narocilo je morda nastalo - ponovni pritisk z istim kljucem ga najde, ne ustvari drugega.
       // (Neuspela osvezitev seje to NI: zahtevek ni odsel; nakupNapakaSporocilo ju loci.)

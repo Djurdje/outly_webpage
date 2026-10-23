@@ -11,7 +11,7 @@ import { navigiraj } from "../usmerjanje.js";
 import * as P from "../podatki.js";
 import {
   denar, cena, jeMimo, jeRazprodan, jeMaloVstopnic, preostanek, seJeKoncal, danDolg, ura, mesecKratko, relativno, varenUrl,
-  prizorisce, koordinata, jeDemo
+  prizorisce, koordinata, jeDemo, prodajaZaprta, prodajaUstavljena, odprtjeProdaje, danInUra
 } from "../oblika.js";
 import { Ikona, Slika, Avatar, GlavaNazaj, Nalaganje, Napaka, List, OznakaDemo, DemoBesedilo } from "../ui.js";
 import { NakupList } from "./nakup.js";
@@ -92,8 +92,9 @@ export function Dogodek({ id }) {
   }
 
   const demoZapora = jeDemo(e) && !admin;   // demo klub: namesto gumba za nakup besedilo
+  const prodajaNe = e.ticket_price_cents != null && !jeMimo(e) && prodajaZaprta(e);   // pavza / okno prodaje (backend #327): namesto gumba besedilo
   function obVstopnicah() {
-    if (demoZapora) return;
+    if (demoZapora || prodajaNe) return;
     if (e.ticket_price_cents != null) {
       // Prijavljen: navaden nakup; gost z vklopljeno zastavico: obrazec z e-naslovom; sicer prijava kot doslej.
       if (!prijavljen && !gostNakup) { navigiraj(`/app/login?next=${encodeURIComponent(`/app/event/${id}?buy=1`)}`); return; }
@@ -119,7 +120,7 @@ export function Dogodek({ id }) {
       <${GlavaNazaj} prosojna=${true} />
       <button type="button" class="krog-gumb deli" onClick=${() => deli(e)} aria-label=${t("Share")}><${Ikona} ime="share-2" velikost=${18} /></button>
       ${jeDemo(e) ? html`<${OznakaDemo} kot=${true} razred="hero deli-levo" />` : null}
-      <${PasVstopnic} e=${e} ob=${obVstopnicah} demo=${demoZapora} />
+      <${PasVstopnic} e=${e} ob=${obVstopnicah} demo=${demoZapora} prodajaNe=${prodajaNe} />
     </div>
 
     <div class="dogodek-naslov">
@@ -129,7 +130,7 @@ export function Dogodek({ id }) {
 
     <${Prijatelji} gredo=${e.friends_going} zanima=${e.friends_interested} />
     <${Napaka} besedilo=${napaka} />
-    ${demoZapora ? html`<${DemoBesedilo} />` : null}
+    ${demoZapora ? html`<${DemoBesedilo} />` : prodajaNe ? html`<${ProdajaBesedilo} e=${e} />` : null}
     ${preklic ? html`<p class="opomba-okvir" role="status"><${Ikona} ime="info" velikost=${18} />${t("Payment cancelled. You have not been charged.")}</p>` : null}
 
     <a class="kartica-vrstica" href=${"/app/club/" + e.club_id}>
@@ -195,9 +196,9 @@ export function Dogodek({ id }) {
     <${PrijaviGumb} tip="event" id=${e.id} klubId=${e.club_id} />
 
     ${!gostNakup
-      ? html`<${NakupList} odprt=${list === "nakup"} zapri=${() => setList(null)} dogodek=${e} imeKluba=${klub ? klub.name : ""} />`
+      ? html`<${NakupList} odprt=${list === "nakup"} zapri=${() => setList(null)} dogodek=${e} imeKluba=${klub ? klub.name : ""} osvezi=${nalozi} />`
       : html`<${GostNakupList} odprt=${list === "nakup"} zapri=${() => setList(null)} dogodek=${e} imeKluba=${klub ? klub.name : ""}
-          kraj=${lok.naslov === "-" ? "" : lok.naslov}
+          kraj=${lok.naslov === "-" ? "" : lok.naslov} osvezi=${nalozi}
           prijava=${() => navigiraj(`/app/login?next=${encodeURIComponent(`/app/event/${id}?buy=1`)}`)} />`}
     <${CenikList} odprt=${list === "cenik"} zapri=${() => setList(null)} klub=${cenikKluba} />
     ${e.vip_enabled === true
@@ -233,7 +234,16 @@ function VipLoader(props) {
 const prodajaVAplikaciji = e => !!(e.seller && e.seller.name) && e.availability !== "external" && (e.ticket_price_cents != null || e.vip_enabled === true);
 
 /* Nakup na Outlyju: cena mora obstajati (null = ne prodaja se pri nas), dogodek ni mimo ali razprodan. */
-const moznoKupiti = e => e.ticket_price_cents != null && !jeMimo(e) && !jeRazprodan(e);
+const moznoKupiti = e => e.ticket_price_cents != null && !jeMimo(e) && !jeRazprodan(e) && !prodajaZaprta(e);
+
+/* Zakaj vstopnic ni mogoce kupiti (backend #327): pavza, okno prodaje se ni odprto (datum samo, ce ga backend poslje) ali zaprto. */
+function ProdajaBesedilo({ e }) {
+  const od = odprtjeProdaje(e);
+  const besedilo = prodajaUstavljena(e) ? t("Ticket sales are paused. Check back later.")
+    : od ? t("Ticket sales open on {date}.", { date: danInUra(od) })
+    : t("Tickets for this event aren't on sale right now.");
+  return html`<p class="opomba-okvir" role="status" data-testid="prodaja-zaprta"><${Ikona} ime="info" velikost=${18} />${besedilo}</p>`;
+}
 
 /* Kje je dogodek: gostiteljski klub (venue_club_id) > prosto vpisano prizorisce (venue_*) > naslov kluba (kot doslej).
    Naslov "-" = ni znan; koordinate samo veljavna stevila (star backend polj nima). */
@@ -299,13 +309,18 @@ function KarticaKdaj({ e }) {
 }
 
 /* Pas z ceno na plakatu (ticketBar): aktiven = kupi / free / zunanja povezava. */
-function PasVstopnic({ e, ob, demo = false }) {
+function PasVstopnic({ e, ob, demo = false, prodajaNe = false }) {
   const c = cena(e) || t("Tickets");
   let zgoraj, spodaj, aktiven = false;
   const n = preostanek(e);
   if (jeMimo(e)) { zgoraj = t("Ended"); spodaj = t("event is over"); }
   else if (jeRazprodan(e)) { zgoraj = c; spodaj = t("sold out"); }
   else if (demo) { zgoraj = c; spodaj = t("demo, not for sale"); }   // demo klub: pas ni gumb
+  else if (prodajaNe) {   // pavza ali okno prodaje (backend #327): pas ni gumb
+    const od = odprtjeProdaje(e);
+    zgoraj = e.ticket_price_cents === 0 ? t("FREE") : c;
+    spodaj = prodajaUstavljena(e) ? t("sales paused") : od ? t("on sale {date}", { date: danInUra(od) }) : t("sales closed");
+  }
   else if (e.ticket_price_cents != null) {
     aktiven = true;
     if (e.ticket_price_cents === 0) { zgoraj = t("FREE"); spodaj = t("free entry"); }

@@ -97,6 +97,9 @@ export const jeMejaBrezplacnih = e => e instanceof ApiError && e.status === 409 
    "nerazresen" (list se ne predizpolni, ni napotka "may have gone through"); kljuc se zavrze (kot free_limit), da se po dopolnitvi
    podatkov nakup ne veze na zavrnjen poskus. Velja za POST /events/:id/orders, .../tables/:id/orders in /guest/events/:id/orders. */
 export const jeProdajalecNepopoln = e => e instanceof ApiError && e.status === 409 && kodaNapake(e) === "seller_incomplete";
+/* 409 "The ticket price has changed." (backend #277 N2, nakup vstopnic z expected_price_cents): narocila ni; zaslon dogodek prebere znova.
+   VIP ima svoje besedilo ("The table price has changed."), zato preverjamo "ticket price". */
+export const jeCenaVstopniceSpremenjena = e => e instanceof ApiError && e.status === 409 && /ticket price has changed/i.test(e.raw);
 /* 409 demo_club (backend #243): klub je demo, nakup ni mogoc (razen adminu). Narocilo NI nastalo: kljuc se zavrze, izbira ostane. */
 export const jeDemoKlub = e => e instanceof ApiError && e.status === 409 && kodaNapake(e) === "demo_club";
 export function nakupZasedenoSporocilo() {
@@ -142,6 +145,9 @@ const PRAVILA = [
   ["invalid club data", "Some club data is out of range. Check the values and try again."],
   ["invalid value type", "Please check what you entered and try again."],
   ["title is required", "Enter a title."],
+  // Naslov dogodka najvec 200 znakov (backend, 23. 10. 2026): 400 golo besedilo "Title is too long (max 200 characters)."
+  ["title is too long", "The title can have at most 200 characters."],
+  ["title must be a string", "Enter a title."],
   ["startat must be", "Enter a valid start date."],
   ["endat must be", "Enter a valid end date."],
   ["ticketpricecents", "Enter the price as a number, e.g. 12.50."],
@@ -166,6 +172,8 @@ const PRAVILA = [
   ["ticket not found", "This ticket is not available anymore."],
   ["no longer valid", "This ticket is no longer valid."],
   ["quantity must be", "Choose between 1 and 10 tickets."],
+  // Pavza prodaje (backend 055): "Ticket sales are paused. This event is not on sale right now." - pred splosnim "not on sale".
+  ["sales are paused", "Ticket sales are paused. Check back later."],
   ["not on sale", "This event is not on sale."],
   ["no tickets on outly", "Tickets for this event are not sold on Outly."],
   ["already started", "This event has already started."],
@@ -175,6 +183,8 @@ const PRAVILA = [
   ["not enough tickets", "Not enough tickets left."],
   // VIP mize (kupec): mizo je vmes kupil nekdo drug / paket ni izbran ali ni od tega kluba
   ["already booked", "This table is already booked."],
+  // Nakup vstopnic (backend #277 N2) pred splosnim "price has changed", ki je VIP.
+  ["ticket price has changed", "The ticket price has changed. Check the new price and try again."],
   ["price has changed", "The table price has changed. Check the new price and try again."],
   ["table not found", "This table is not available anymore."],
   ["choose a bottle package", "Choose a bottle for your table."],
@@ -240,6 +250,25 @@ function prevediApi(e) {
     case "invalid_email": return t("Enter your friend's email address.");
     // PATCH /me: prepovedano/neprimerno uporabnisko ime (backend #218, 400 JSON). Pred splosnim 400; drugi 400 pri imenu ostanejo po besedilu.
     case "username_not_allowed": if (e.status === 400) return t("That username isn't allowed. Choose another."); break;
+    // URL polja (backend #269, 400 { error: "invalid_url", field }): besedilo po polju.
+    case "invalid_url": if (e.status === 400) {
+      let polje = "";
+      try { polje = String(JSON.parse(e.raw).field || ""); } catch { /* brez */ }
+      if (polje === "ticket_url") return t("Ticket link must start with http:// or https://.");
+      if (polje === "website") return t("Enter a valid website link, e.g. https://club.si.");
+      if (polje === "instagram") return t("Enter an Instagram username or a link starting with https://.");
+      return t("The image link is not valid. Upload the image again.");
+    } break;
+    // Minil dogodek (backend #255, I42, 409 { error: "event_finished", message }): odpovedi ali spremembe datuma ni, vracila uredi Outly.
+    case "event_finished": if (e.status === 409) return /date/i.test(e.raw)
+      ? t("This event has already started or taken place, so its date can't be changed. Contact Outly.")
+      : t("This event has already taken place. Outly handles refunds."); break;
+    // Kapaciteta pod prodanim (backend 055, 400 { error: "capacity_below_sold", sold }).
+    case "capacity_below_sold": if (e.status === 400) {
+      let n = null;
+      try { const v = JSON.parse(e.raw).sold; n = v == null ? null : Number(v); } catch { /* brez */ }
+      return Number.isFinite(n) ? t("Capacity can't be lower than the number of tickets already sold ({n}).", { n }) : t("Capacity can't be lower than the number of tickets already sold.");
+    } break;
   }
   const s = e.raw.toLowerCase();
   // Guest lista (pogodba 8. 10. 2026): besedila s spremenljivko (stevilo mest, uporabnisko ime) pred splosnimi pravili.

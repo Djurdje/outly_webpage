@@ -151,6 +151,16 @@ export const jeRazprodan = e => e.availability === "sold_out";
 export const jeMaloVstopnic = e => e.availability === "few_left";
 export const preostanek = e => (e.capacity == null ? null : Math.max(0, e.capacity - e.sold_count));
 
+/* Prodaja vstopnic (backend 055 #327, I53): sales_paused = klub/admin je prodajo ustavil; on_sale = nakup je ta trenutek odprt
+   (objavljen, ni pavze, se ni zacel, okno prodaje odprto; zaloge in cene NE uposteva). Manjkajoce polje (star backend) = prodaja odprta.
+   Javni odgovor okna (sales_open_at) danes NIMA; ce ga backend kdaj doda, pokazemo datum odprtja. */
+export const prodajaUstavljena = e => !!e && e.sales_paused === true;
+export const prodajaZaprta = e => !!e && (e.sales_paused === true || e.on_sale === false);
+export function odprtjeProdaje(e) {
+  const d = datum(e && e.sales_open_at);
+  return d && d > new Date() ? d : null;
+}
+
 /** "Popular" = ze zacet (time_status backenda); sicer primerjava z zdaj. */
 export function jeMimo(e) {
   if (e.time_status) return e.time_status === "popular";
