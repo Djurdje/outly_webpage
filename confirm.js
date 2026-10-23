@@ -59,7 +59,7 @@
   const regBtn = document.getElementById("confirmRegister");
   if (regBtn) regBtn.addEventListener("click", () => {
     if (window.OutlyAuth) window.OutlyAuth.open("register");
-    else location.href = "index.html";
+    else location.href = "/about";
   });
 
   client.rpc("confirm_waitlist", { p_token: token }).then(({ data, error }) => {

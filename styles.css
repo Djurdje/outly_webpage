@@ -1835,6 +1835,8 @@
   .nav__cta { gap: 6px; }
   .nav__cta .btn--sm { padding: 7px 10px; font-size: 12px; }
   .nav__cta [data-cta="creator"] { display: none; }   /* prostor za ikono profila */
+  .nav__cta [data-cta="waitlist"] { display: none; }  /* waitlist je tudi v hero; v glavi ostane Open app */
+  .nav__cta .btn--sm { white-space: nowrap; }
 }
 
 /* =========================================================

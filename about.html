@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Outly</title>
+  <link rel="canonical" href="https://outly.si/about">
+
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon-32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/icon-192.png">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <meta name="theme-color" content="#111111">
+  <meta name="generator" content="Outly">
+
+  <meta name="description" content="Where should we go tonight? Outly finds what is on around you, tonight. Join the waitlist.">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Outly">
+  <meta property="og:url" content="https://outly.si/about">
+  <meta property="og:title" content="Outly — nightlife discovery, simplified.">
+  <meta property="og:description" content="Where should we go tonight? Outly finds what is on around you, tonight. Join the waitlist.">
+  <meta property="og:image" content="https://outly.si/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Outly — the app that shows what is on around you tonight">
+  <meta property="og:locale" content="en_GB">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Outly — nightlife discovery, simplified.">
+  <meta name="twitter:description" content="Where should we go tonight? Outly finds what is on around you, tonight. Join the waitlist.">
+  <meta name="twitter:image" content="https://outly.si/assets/og-image.png">
+
+  <link rel="preload" as="image" href="/assets/outly-promo-poster.jpg" fetchpriority="high">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="bgfx" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+
+  <!-- NAV -->
+  <header class="nav">
+    <div class="container nav__inner">
+      <a class="brand" href="#top" aria-label="Outly home">
+        <img src="/assets/transperent-logo.png" alt="Outly logo">
+      </a>
+
+      <nav class="nav__links" aria-label="Primary">
+        <a href="#how">How it works</a>
+        <a href="#features">Features</a>
+        <a href="#preview">Preview</a>
+        <a href="#waitlist">Waitlist</a>
+      </nav>
+
+      <div class="nav__cta">
+        <a class="btn btn--sm" href="Creator.html" data-cta="creator">For creators</a>
+        <a class="btn btn--sm" href="#waitlist" data-cta="waitlist">Join the waitlist</a>
+        <a class="btn btn--sm btn--primary btn--ring" href="/app/" data-cta="app">Open app</a>
+        <button class="avatarBtn" id="profileBtn" type="button" aria-label="Your profile" aria-haspopup="dialog" aria-expanded="false">
+          <svg class="avatarBtn__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M12 12.2a4.1 4.1 0 1 0 0-8.2 4.1 4.1 0 0 0 0 8.2Zm-7.5 8c.6-3.6 3.7-5.7 7.5-5.7s6.9 2.1 7.5 5.7"/></svg>
+          <span class="avatarBtn__initial" hidden></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <main id="top" class="hero">
+    <div class="container hero__grid">
+      <section class="hero__copy">
+        <p class="kicker">COMING SOON</p>
+        <h1>The way you discover nightlife is about to <span class="accent">change</span>.</h1>
+        <p class="lead">
+          Outly solves the classic question: <strong>“Where should we go tonight?”</strong>
+          Discover what’s happening now — tailored to your location, music taste, and budget.
+        </p>
+
+        <div class="hero__actions">
+          <a class="btn btn--primary btn--ring" href="/app/">Open app</a>
+          <a class="btn" href="#waitlist">Join the waitlist</a>
+          <a class="btn" href="#how">See how it works</a>
+        </div>
+      </section>
+
+      <aside class="phone" aria-label="App preview">
+        <div class="phone__card">
+          <div class="phone__img">
+            <video class="phone__bg" poster="/assets/outly-promo-poster.jpg" width="720" height="1280" autoplay muted loop playsinline disablepictureinpicture disableremoteplayback preload="auto" aria-label="Outly app preview video (tap to pause)">
+              <source src="/assets/outly-promo.mp4" type="video/mp4">
+              <source src="/assets/outly-promo.webm" type="video/webm">
+            </video>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- HOW IT WORKS -->
+  <section class="section how" id="how">
+    <div class="container">
+      <div class="section__head">
+        <div>
+          <p class="kicker">Plan your night in seconds</p>
+          <h2>HOW IT<span class="accent"> WORKS</span>.</h2>
+          <p class="section__sub" id="howSub">
+            Choose a genre, age and location, find an event, buy a ticket and scan your QR code at the door.
+          </p>
+        </div>
+
+        <div class="toggle" role="tablist" aria-label="How it works — user or creator">
+          <button class="toggle__btn is-active" role="tab" aria-selected="true" data-howmode="user">User</button>
+          <button class="toggle__btn" role="tab" aria-selected="false" data-howmode="creator">Creator</button>
+        </div>
+      </div>
+
+      <div class="how2__grid" id="howUser" data-howgrid="user">
+        <!-- Steps -->
+        <div class="how2__steps" role="tablist" aria-label="How Outly works steps">
+          <button class="step2 is-active" role="tab" aria-selected="true" data-step="1">
+            <span class="step2__num">01</span>
+            <span class="step2__text">
+              <strong>Pick your genre</strong>
+              <small>Choose what you feel like tonight.</small>
+            </span>
+          </button>
+
+          <button class="step2" role="tab" aria-selected="false" data-step="2">
+            <span class="step2__num">02</span>
+            <span class="step2__text">
+              <strong>Age & location</strong>
+              <small>Tell us your age and where you are.</small>
+            </span>
+          </button>
+
+          <button class="step2" role="tab" aria-selected="false" data-step="3">
+            <span class="step2__num">03</span>
+            <span class="step2__text">
+              <strong>Buy a ticket</strong>
+              <small>Secure entry in a few taps.</small>
+            </span>
+          </button>
+
+          <button class="step2" role="tab" aria-selected="false" data-step="4">
+            <span class="step2__num">04</span>
+            <span class="step2__text">
+              <strong>Scan QR</strong>
+              <small>Show your QR code at the door.</small>
+            </span>
+          </button>
+
+          <div class="how2__progress" aria-hidden="true">
+            <div class="how2__bar"><span class="how2__fill"></span></div>
+          </div>
+        </div>
+
+        <!-- Interactive Panel -->
+        <div class="how2__panel">
+          <div class="how2__panelRing" aria-hidden="true"></div>
+
+          <!-- Step 1 -->
+          <div class="how2__page is-active" data-page="1">
+            <h3>Pick your genre</h3>
+            <p>Choose a vibe. Outly will instantly adapt suggestions to your pick.</p>
+
+            <div class="genreGrid" role="group" aria-label="Genres">
+              <button class="chip is-selected" type="button" data-genre="Techno">Techno</button>
+              <button class="chip" type="button" data-genre="House">House</button>
+              <button class="chip" type="button" data-genre="Hip-hop">Hip-hop</button>
+              <button class="chip" type="button" data-genre="R&B">R&B</button>
+              <button class="chip" type="button" data-genre="Latin">Latin</button>
+              <button class="chip" type="button" data-genre="EDM">EDM</button>
+              <button class="chip" type="button" data-genre="Afro">Afro</button>
+              <button class="chip" type="button" data-genre="Pop">Pop</button>
+            </div>
+
+            <div class="how2__actions">
+              <div class="hint" id="genreHint">Selected: <strong>Techno</strong></div>
+              <button class="btn btn--primary btn--ring" type="button" data-next>Next</button>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="how2__page" data-page="2">
+            <h3>Age & location</h3>
+            <p>So we can show the right venues/events around you.</p>
+
+            <div class="formGrid">
+              <label class="field">
+                <span>Age</span>
+                <input id="ageInput" type="number" min="16" max="99" value="21" />
+              </label>
+
+              <label class="field">
+                <span>City</span>
+                <input id="cityInput" type="text" placeholder="e.g. Ljubljana" value="Ljubljana" />
+              </label>
+
+              <label class="field field--full">
+                <span>Distance</span>
+                <input id="distanceInput" type="range" min="1" max="30" value="8" />
+                <div class="rangeMeta">Up to <strong id="distanceVal">8</strong> km</div>
+              </label>
+            </div>
+
+            <div class="how2__actions">
+              <button class="btn" type="button" data-prev>Back</button>
+              <button class="btn btn--primary btn--ring" type="button" data-next>Next</button>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="how2__page" data-page="3">
+            <h3>Buy a ticket</h3>
+            <p>Skip uncertainty. Lock your entry and get your QR instantly.</p>
+
+            <div class="ticketCard">
+              <div>
+                <div class="ticketTitle">Tonight’s pick</div>
+                <div class="ticketName" id="ticketName">Techno Night — City Center</div>
+                <div class="ticketMeta" id="ticketMeta">Ljubljana • 8km • 21+</div>
+              </div>
+              <div class="ticketPrice">$12</div>
+            </div>
+
+            <div class="how2__actions">
+              <button class="btn" type="button" data-prev>Back</button>
+              <button class="btn btn--primary btn--ring" type="button" id="buyBtn">Buy ticket</button>
+            </div>
+
+            <p class="fineHint" id="buyHint" aria-live="polite"></p>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="how2__page" data-page="4">
+            <h3>Your QR code</h3>
+            <p>Show this at the door. Scan → enter → enjoy.</p>
+
+            <div class="qrWrap">
+              <div class="qr">
+                <!-- simple QR-like placeholder SVG -->
+                <svg viewBox="0 0 120 120" width="160" height="160" aria-label="QR code">
+                  <rect width="120" height="120" fill="#0f0f0f"/>
+                  <g fill="#eaeaea">
+                    <rect x="10" y="10" width="34" height="34"/>
+                    <rect x="76" y="10" width="34" height="34"/>
+                    <rect x="10" y="76" width="34" height="34"/>
+                    <rect x="18" y="18" width="18" height="18" fill="#0f0f0f"/>
+                    <rect x="84" y="18" width="18" height="18" fill="#0f0f0f"/>
+                    <rect x="18" y="84" width="18" height="18" fill="#0f0f0f"/>
+
+                    <rect x="52" y="52" width="8" height="8"/>
+                    <rect x="62" y="52" width="8" height="8"/>
+                    <rect x="52" y="62" width="8" height="8"/>
+                    <rect x="66" y="66" width="10" height="10"/>
+                    <rect x="48" y="70" width="8" height="8"/>
+                    <rect x="58" y="72" width="6" height="6"/>
+                    <rect x="72" y="54" width="8" height="8"/>
+                    <rect x="40" y="54" width="8" height="8"/>
+                    <rect x="40" y="64" width="8" height="8"/>
+                    <rect x="72" y="64" width="8" height="8"/>
+                    <rect x="58" y="44" width="6" height="6"/>
+                    <rect x="58" y="82" width="6" height="6"/>
+                    <rect x="90" y="58" width="8" height="8"/>
+                  </g>
+                </svg>
+              </div>
+
+              <div class="qrMeta">
+                <div class="qrLine"><span>Genre:</span> <strong id="qrGenre">Techno</strong></div>
+                <div class="qrLine"><span>City:</span> <strong id="qrCity">Ljubljana</strong></div>
+                <div class="qrLine"><span>Age:</span> <strong id="qrAge">21</strong></div>
+              </div>
+            </div>
+
+            <div class="how2__actions">
+              <button class="btn" type="button" data-prev>Back</button>
+              <a class="btn btn--primary btn--ring" href="#waitlist">Get early access</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CREATOR flow -->
+      <div class="how2__grid" id="howCreator" data-howgrid="creator" hidden>
+        <div class="how2__steps" role="tablist" aria-label="How Outly works for creators">
+          <button class="step2 is-active" role="tab" aria-selected="true" data-step="1">
+            <span class="step2__num">01</span>
+            <span class="step2__text"><strong>Dashboard</strong><small>Sales, check-ins and revenue, live.</small></span>
+          </button>
+          <button class="step2" role="tab" aria-selected="false" data-step="2">
+            <span class="step2__num">02</span>
+            <span class="step2__text"><strong>Beat your competition</strong><small>Photos, a promo video and a shot at the top spot.</small></span>
+          </button>
+          <button class="step2" role="tab" aria-selected="false" data-step="3">
+            <span class="step2__num">03</span>
+            <span class="step2__text"><strong>Scan tickets</strong><small>QR check-in at the door, no hardware.</small></span>
+          </button>
+          <button class="step2" role="tab" aria-selected="false" data-step="4">
+            <span class="step2__num">04</span>
+            <span class="step2__text"><strong>Your team</strong><small>Managers and door staff, each with their own access.</small></span>
+          </button>
+          <div class="how2__progress" aria-hidden="true">
+            <div class="how2__bar"><span class="how2__fill"></span></div>
+          </div>
+        </div>
+
+        <div class="how2__panel">
+          <div class="how2__panelRing" aria-hidden="true"></div>
+
+          <!-- C1 Dashboard -->
+          <div class="how2__page is-active" data-page="1">
+            <h3>Dashboard</h3>
+            <p>Everything about tonight on one screen — updated as tickets sell and people walk in.</p>
+            <div class="dash">
+              <div class="dash__stat"><span>Tickets sold</span><strong data-dash="sold">148</strong><small>of 220</small></div>
+              <div class="dash__stat"><span>Checked in</span><strong data-dash="in">63</strong><small>at the door</small></div>
+              <div class="dash__stat"><span>Revenue</span><strong data-dash="rev">1 776 €</strong><small>tonight</small></div>
+            </div>
+            <div class="dash__chart" aria-hidden="true">
+              <i style="--h:22%"></i><i style="--h:30%"></i><i style="--h:26%"></i><i style="--h:44%"></i><i style="--h:58%"></i><i style="--h:70%"></i><i style="--h:100%"></i>
+            </div>
+            <div class="how2__actions">
+              <div class="hint">Sales by day — this week</div>
+              <button class="btn btn--primary btn--ring" type="button" data-next>Next</button>
+            </div>
+          </div>
+
+          <!-- C2 Beat your competition -->
+          <div class="how2__page" data-page="2">
+            <h3>Beat your competition</h3>
+            <p>Show people what your club looks like with up to 3 photos and a promo video. Sell the most tickets in a week and your party shows up as Last week's biggest hit at the top of Home.</p>
+            <div class="clubCard">
+              <div class="clubCard__banner"><span class="clubCard__badge" id="clubBadge">Last week's biggest hit</span></div>
+              <div class="clubCard__body">
+                <div class="clubCard__name">Your Club <span class="clubCard__meta">· Ljubljana · 0.8 km</span></div>
+                <div class="clubCard__tags"><span class="chip is-selected">Techno</span><span class="chip">House</span><span class="chip">18+</span></div>
+                <div class="clubCard__event"><strong>Saturday Rave</strong><span>Sat 23:00 · from 12 €</span></div>
+              </div>
+            </div>
+            <div class="how2__actions">
+              <div class="how2__btns"><button class="btn" type="button" data-prev>Back</button><button class="btn btn--primary btn--ring" type="button" data-next>Next</button></div>
+            </div>
+          </div>
+
+          <!-- C3 Scan -->
+          <div class="how2__page" data-page="3">
+            <h3>Scan tickets</h3>
+            <p>Your phone is the scanner. Each QR works once — a second scan is rejected on the spot.</p>
+            <div class="scanBox" id="scanBox" data-state="ready">
+              <div class="scanBox__frame" aria-hidden="true"><i></i></div>
+              <div class="scanBox__result" aria-live="polite">
+                <strong id="scanTitle">Ready to scan</strong>
+                <span id="scanSub">Point the camera at a ticket</span>
+              </div>
+            </div>
+            <div class="how2__actions">
+              <button class="btn" type="button" id="scanBtn">Scan a ticket</button>
+              <div class="how2__btns"><button class="btn" type="button" data-prev>Back</button><button class="btn btn--primary btn--ring" type="button" data-next>Next</button></div>
+            </div>
+          </div>
+
+          <!-- C4 Team -->
+          <div class="how2__page" data-page="4">
+            <h3>Your team</h3>
+            <p>Add the people who run your nights. Everyone gets only what their role needs.</p>
+            <ul class="team">
+              <li class="team__row"><span class="person__avatar" aria-hidden="true">L</span><span class="team__who"><strong>Luka</strong><small>Owner</small></span><span class="team__perm">Everything</span></li>
+              <li class="team__row"><span class="person__avatar" aria-hidden="true">N</span><span class="team__who"><strong>Nina</strong><small>Manager</small></span><span class="team__perm">Events · tickets · stats</span></li>
+              <li class="team__row"><span class="person__avatar" aria-hidden="true">M</span><span class="team__who"><strong>Marko</strong><small>Door</small></span><span class="team__perm">Scan only</span></li>
+              <li class="team__row team__row--add" id="teamAdd"><span class="person__avatar" aria-hidden="true">+</span><span class="team__who"><strong>Add a teammate</strong><small>Invite by email</small></span></li>
+            </ul>
+            <div class="how2__actions">
+              <button class="btn" type="button" data-prev>Back</button>
+              <a class="btn btn--primary btn--ring" href="Creator.html">Apply as a creator</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="section" id="features">
+    <div class="container">
+      <div class="section__head">
+        <div>
+          <p class="kicker">Built for nightlife discovery</p>
+          <h2>FEATURE<span class="accent">S</span>.</h2>
+          <p class="section__sub">Switch between User and Creator to see what Outly offers.</p>
+        </div>
+
+        <div class="toggle" role="tablist" aria-label="Features toggle">
+          <button class="toggle__btn is-active" role="tab" aria-selected="true" data-mode="user">User</button>
+          <button class="toggle__btn" role="tab" aria-selected="false" data-mode="creator">Creator</button>
+        </div>
+      </div>
+
+      <div class="grid" id="featuresGrid"></div>
+
+      <div class="creatorCta" id="creatorCta">
+        <a class="btn btn--primary btn--ring" href="Creator.html" id="becomeCreatorBtn">Become a creator</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- PREVIEW -->
+  <section class="section" id="preview">
+    <div class="container">
+      <div class="section__head">
+        <div>
+          <p class="kicker">App screens early look</p>
+          <h2>PREVIE<span class="accent">W</span>.</h2>
+          <p class="section__sub">A quick teaser while we finish the final touches.</p>
+        </div>
+      </div>
+
+      <div class="preview">
+        <figure class="shot">
+          <img src="/assets/image1.png" alt="Outly sign up screen" width="1080" height="1920" loading="lazy" decoding="async">
+          <figcaption>Create an account</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="/assets/homesc.png" alt="Outly home screen" width="1080" height="1920" loading="lazy" decoding="async">
+          <figcaption>Discover tonight</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="/assets/dasboard.png" alt="Outly creator dashboard" width="941" height="1670" loading="lazy" decoding="async">
+          <figcaption>Creator analytics</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- WAITLIST -->
+  <section class="section" id="waitlist">
+    <div class="container">
+      <div class="waitlist">
+        <div class="waitlist__copy">
+          <p class="kicker">WAITLIST</p>
+          <h2>Join the waitlist for <span class="accent">Outly</span>.</h2>
+          <p class="section__sub">
+            Get in early, then invite friends from your profile. Every friend who confirms is a point
+            you can redeem in the app at launch.
+          </p>
+        </div>
+
+        <form class="waitlist__form" id="waitlistForm">
+          <div class="invitedBy" id="invitedBy" hidden>
+            <span class="person__avatar person__avatar--user" id="invitedByAvatar" aria-hidden="true">?</span>
+            <div>
+              <p class="invitedBy__title"><b id="invitedByName">Someone</b> invited you to Outly.</p>
+              <p class="invitedBy__text">Grab your spot below &mdash; they get a point once you confirm your email.</p>
+            </div>
+          </div>
+          <label class="field">
+            <span>Email</span>
+            <input type="email" name="email" placeholder="you@domain.com" required>
+          </label>
+
+          <div class="waitlist__btns">
+            <button class="btn btn--primary btn--ring" type="submit">Join the waitlist</button>
+            <button class="btn" type="button" id="inviteFriendsBtn">Invite friends</button>
+          </div>
+          <p class="fineprint">
+            We use your email only to confirm your spot and tell you when Outly launches (plus the invite
+            code, if a friend sent you). We never sell it; our hosting and email providers process it on
+            our behalf. Leave or ask us to delete it at any time &mdash; see our
+            <a href="privacy.html">Privacy Policy</a>.
+          </p>
+
+          <p class="formMsg" id="formMsg" aria-live="polite"></p>
+
+          <!-- Po oddaji: brez klika v mailu prijava ne steje, zato
+               uporabnika pripeljemo naravnost do njegovega predala. -->
+          <div class="checkmail" id="checkMail" hidden>
+            <span class="checkmail__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="26" height="26"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M3 7.5A2.5 2.5 0 0 1 5.5 5h13A2.5 2.5 0 0 1 21 7.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 16.5z"/><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="m3.6 6.9 7.3 5.2a2 2 0 0 0 2.2 0l7.3-5.2"/></svg>
+            </span>
+
+            <p class="kicker">ONE LAST STEP</p>
+            <h3 class="checkmail__title">Check your inbox.</h3>
+
+            <p class="checkmail__text">
+              We sent a confirmation link to <strong id="checkMailAddr"></strong>.
+              <b class="checkmail__warn">Your spot is not saved until you tap it.</b>
+            </p>
+
+            <div class="checkmail__actions">
+              <a class="btn btn--primary btn--ring" id="checkMailOpen" href="#" target="_blank" rel="noopener">Open my inbox</a>
+              <button class="btn" type="button" id="checkMailBack">Use another email</button>
+            </div>
+
+            <p class="checkmail__hint">
+              Nothing there? Look in spam or the Promotions tab &mdash; it comes from luka@outly.si.
+              <button type="button" class="linklike" id="checkMailResend">Send it again</button>
+              <span class="checkmail__note" id="checkMailNote" aria-live="polite"></span>
+            </p>
+          </div>
+
+          <p class="creatorLine">
+            Are you a creator? <a href="Creator.html">Apply here &rarr;</a>
+          </p>
+        </form>
+
+        <!-- Live waitlist -->
+        <aside class="waitlist__people" id="waitlistPeople" aria-label="People on the waitlist" hidden>
+          <div class="people__head">
+            <p class="people__count">
+              <strong id="waitlistCount">—</strong>
+              <span id="waitlistLabel">people are already in</span>
+            </p>
+            <span class="people__live" id="waitlistLive" aria-hidden="true">
+              <i></i><span>connecting</span>
+            </span>
+          </div>
+
+          <ul class="people__list" id="waitlistList" aria-live="polite"></ul>
+
+          <p class="people__more" id="waitlistMore" hidden></p>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container footer__top">
+      <div class="footer__social">
+        <a class="social" href="https://www.instagram.com/outly.si/" target="_blank" rel="noopener" aria-label="Instagram">
+          <!-- Instagram -->
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path fill="currentColor" d="M7.5 2h9A5.5 5.5 0 0 1 22 7.5v9A5.5 5.5 0 0 1 16.5 22h-9A5.5 5.5 0 0 1 2 16.5v-9A5.5 5.5 0 0 1 7.5 2Zm9 2h-9A3.5 3.5 0 0 0 4 7.5v9A3.5 3.5 0 0 0 7.5 20h9A3.5 3.5 0 0 0 20 16.5v-9A3.5 3.5 0 0 0 16.5 4ZM12 7a5 5 0 1 1 0 10a5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6a3 3 0 0 0 0-6Zm5.3-2.2a1 1 0 1 1 0 2a1 1 0 0 1 0-2Z"/>
+          </svg>
+          Instagram
+        </a>
+
+        <a class="social" href="#" aria-label="TikTok">
+          <!-- TikTok (simple) -->
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path fill="currentColor" d="M16 2c.3 2.2 1.6 3.8 4 4v4c-1.7.1-3.2-.4-4-1v7.2c0 3.2-2.6 5.8-5.8 5.8S4.4 19.4 4.4 16.2s2.6-5.8 5.8-5.8c.4 0 .8 0 1.2.1v3.9c-.3-.1-.6-.2-1-.2c-1.2 0-2.2 1-2.2 2.2s1 2.2 2.2 2.2s2.2-1 2.2-2.2V2h3.4Z"/>
+          </svg>
+          TikTok
+        </a>
+      </div>
+
+      <div class="footer__brand">
+        <img src="/assets/transperent-logo.png" alt="Outly logo">
+        <div>
+          <p>Nightlife discovery, simplified.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="container footer__cols">
+      <div class="footerCol">
+        <h4>Product</h4>
+        <a href="#how">How it works</a>
+        <a href="#features">Features</a>
+        <a href="#preview">Preview</a>
+        <a href="/app/">Web app</a>
+      </div>
+
+      <div class="footerCol">
+        <h4>Creators</h4>
+        <a href="#features" data-features="creator">Creator tools</a>
+        <a href="Creator.html" id="footerCreatorLink">Become a creator</a>
+        <a href="mailto:luka@outly.si">Partnerships</a>
+      </div>
+
+      <div class="footerCol">
+        <h4>Company</h4>
+        <a href="mailto:luka@outly.si">Contact</a>
+        <a href="/support">Support</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms of Use</a>
+      </div>
+    </div>
+
+    <div class="container footer__bottom">
+      <span>© <span id="year"></span> Outly. All rights reserved.</span>
+      <span class="footer__legal">NEXT DIMENSIONS, dru&#382;ba za marketing, d.o.o. &middot; Treb&#269;e 81, 3256 Bistrica ob Sotli, Slovenia &middot; Reg. no. 7238274000 &middot; <a href="mailto:luka@outly.si">luka@outly.si</a></span>
+    </div>
+  </footer>
+
+  <script src="/script.js"></script>
+
+  <!-- Waitlist (Supabase) -->
+  <script src="/vendor/supabase-2.115.0.js"></script>
+  <script src="/supabase-config.js"></script>
+  <script src="/auth.js"></script>
+  <script src="/waitlist.js"></script>
+</body>
+</html>

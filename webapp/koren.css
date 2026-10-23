@@ -1,0 +1,5 @@
+/* Koren outly.si (index.html): samo temno ozadje, da pred preusmeritvijo ne blisne bela stran, in <noscript>.
+   Zunanja datoteka, ker globoke povezave /app/... dobijo isti korenski index.html z CSP brez inline stilov. */
+html, body { margin: 0; background: #111; color: #f2f2f2; font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+body { min-height: 100vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: 0 16px; box-sizing: border-box; }
+a { color: #fff; }

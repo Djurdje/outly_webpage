@@ -34,7 +34,10 @@
   // Sprejme Supabasov zeton; ob prvem klicu ustvari racun v aplikaciji.
   const API      = "https://outly-backend-roy3.onrender.com";
   const REF_KEY  = "outly_ref";
+  // HOME = koren (https://outly.si/): ostane naslov za povratek iz maila (emailRedirectTo/redirectTo) - Supabase ga ima na
+  // seznamu dovoljenih URL-jev; koren (webapp/koren.js) hash in ?ref= preusmeri na /about. ABOUT = domaca stran (landing).
   const HOME     = new URL("./", location.href).href;   // https://outly.si/ ali podmapa
+  const ABOUT    = new URL("about", HOME).href;          // https://outly.si/about
   const START_HASH = location.hash;                     // #access_token=… iz potrditvenega maila
 
   let user    = null;
@@ -451,7 +454,7 @@
         ? (pend > 0 ? pend + " invited — waiting for them to confirm." : "No points yet. Invite a friend to get your first.")
         : (pts === 1 ? "1 point" : pts + " points") + (pend > 0 ? " · " + pend + " still to confirm" : "");
 
-    const link = HOME + "?ref=" + profile.ref_code;
+    const link = ABOUT + "?ref=" + profile.ref_code;
     const text = "Where should we go tonight? Get on the Outly list with me: " + link;
     $("[data-invite-link]", v).value = link;
     const nat = $("[data-share-native]", v);
