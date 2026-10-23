@@ -202,7 +202,7 @@
       '  <p class="hint">A real person reads every application. If we need documents ' +
       '     — business licence, proof of ownership, tax number or bank details — we will ask ' +
       '     for them in our reply. Please don\'t send them before we ask.</p>' +
-      '  <a class="btn primary" href="index.html">Back to Outly</a>' +
+      '  <a class="btn primary" href="/about">Back to Outly</a>' +
       '</div>';
     const d = document.getElementById("doneMsg");
     if (d) d.textContent = "Thanks \u2014 we received your application and will contact you at " + email + ".";

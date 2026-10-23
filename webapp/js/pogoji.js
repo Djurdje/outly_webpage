@@ -1,10 +1,15 @@
 import { html } from "./lib.js";
-import { t, useJezik } from "./i18n.js";
+import { t, useJezik, kodaJezika } from "./i18n.js";
 
 /* Skupno za prijavo in nakup brez racuna: verzija pogojev (kot auth.js na outly.si / terms.html) in oblika e-naslova. */
 export const TERMS_VERSION = "1.1.4";
 export const EMAIL_RE = /^[^@\s]+@[^@\s.]+\.[^@\s]+$/;
 
+
+/* Oznaka vrstice s povezavo na /terms: pravni dokument je »Terms of Use« / »Pogoji uporabe«. Kljuc "Terms of Use" ima v
+   slovenscini sklanjan prevod (»pogoje uporabe«, za stavke), zato oznako izberemo po jeziku; slovensko besedilo je kljuc
+   "Terms of Service" (»Pogoji uporabe«). Klicati iz komponente, ki naroca jezik (useJezik), da se ob menjavi osvezi. */
+export const oznakaPogojev = () => kodaJezika() === "sl" ? t("Terms of Service") : "Terms of Use";
 
 /* Opomba ob gumbu za placilo prijavljenega kupca (vstopnice, VIP miza): gost ima kljukico, prijavljen je pogoje sprejel ob
    registraciji. Prevod doloci sklon: povezavi sta v [oglatih oklepajih], prva = pogoji, druga = politika zasebnosti
