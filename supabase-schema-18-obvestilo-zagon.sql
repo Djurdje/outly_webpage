@@ -12,13 +12,28 @@
 --  Mail je potrdil Martin 23. 10. 2026 (seja Claude Code), besedilo je spodaj dobesedno.
 --
 --  KAJ DODA:
---    - stolpca waitlist_signups.launch_sent_at in launch_request_id (sled: kdo je že dobil mail in v katerem zahtevku),
---    - public.posli_obvestilo_zagon_test(naslov) pošlje isti mail na en naslov (preizkus, nič ne označi),
---    - public.posli_obvestilo_zagon(p_najvec)   pošlje do 100 neposlanih potrjenih prijav v ENEM zahtevku Resend batch,
---    - public.preveri_obvestilo_zagon()          po zahtevku: status Resend in število vrstic (brez e-naslovov),
---    - public.ponovi_obvestilo_zagon(p_zahtevek) neuspel zahtevek ponastavi, da gre znova.
+--    - stolpce waitlist_signups.launch_sent_at, launch_request_id in launch_status (sled: kdo je že dobil mail,
+--      v katerem zahtevku in s kakšnim statusom Resend),
+--    - public.posli_obvestilo_zagon_test(naslov)  pošlje isti mail na en naslov (preizkus, nič ne označi),
+--    - public.izloci_iz_obvestila(naslov)         označi naslov kot »ne pošiljaj« (preklic privolitve), brez pošiljanja,
+--    - public.posli_obvestilo_zagon(p_najvec, p_samo_prek_povezave)
+--                                                 pošlje do 100 neposlanih potrjenih prijav v ENEM zahtevku Resend batch,
+--    - public.preveri_obvestilo_zagon()           po zahtevku: status Resend (se ZAPIŠE v bazo, da ga pg_net ne izbriše)
+--                                                 in število vrstic (brez e-naslovov),
+--    - public.ponovi_obvestilo_zagon(p_zahtevek)  dokazano neuspel zahtevek ponastavi, da gre znova.
 --  Funkcije niso SECURITY DEFINER, iz brskalnika (anon, authenticated) niso dosegljive; teče jih samo Martin v
 --  SQL Editorju (kot postgres).
+--
+--  KDO DOBI MAIL: potrjene prijave (confirmed = true), ki še niso dobile maila, en naslov enkrat. Privzeto
+--  (p_samo_prek_povezave = true) samo tiste, kjer je med nastankom prijave in potrditvijo minilo vsaj 5 sekund
+--  (confirmed_at - created_at >= 5 s), torej dejanski klik potrditvene povezave v mailu; prijave, ki so se potrdile
+--  same ob ustvarjanju računa (sync_my_account) in starejše prijave iz časa pred potrjevanjem (confirmed_at = created_at),
+--  so privzeto izključene. Kdo je »potrjen«, odloča Martin/pravnik; zato je merilo parameter, ne vgrajeno.
+--  Preizkus, koliko prijav pade v vsako skupino (samo števila):
+--
+--        select count(*) filter (where confirmed_at - created_at >= interval '5 seconds') as prek_povezave,
+--               count(*) filter (where confirmed_at - created_at <  interval '5 seconds') as samodejno_ali_staro
+--          from public.waitlist_signups where confirmed and launch_sent_at is null;
 --
 -- ---------------------------------------------------------------------
 --  NAVODILA ZA MARTINA (po vrstnem redu)
@@ -35,7 +50,8 @@
 --
 --      (re_TVOJ_KLJUC zamenjaj s pravim ključem; v tej datoteki NIKOLI ne sme biti pravi ključ.)
 --
---  (b2) Pošlji si TESTNI mail (isti mail kot pravi, en naslov, nobena vrstica se ne označi):
+--  (b2) Pošlji si TESTNI mail (isti mail kot pravi, ista oblika zahtevka z Idempotency-Key, en naslov, nobena
+--      vrstica se ne označi):
 --
 --        select public.posli_obvestilo_zagon_test('tvoj@naslov');
 --
@@ -43,30 +59,43 @@
 --
 --        select * from net._http_response where id = <id>;
 --
---      Šele če je mail v predalu videti prav in je status_code 200, nadaljuj s (c).
+--      Šele če je mail v predalu videti prav in je status_code 200, nadaljuj. (Ponovni test na isti naslov isti dan
+--      Resend zaradi Idempotency-Key ne pošlje še enkrat; za nov test dodaj oznako:
+--      select public.posli_obvestilo_zagon_test('tvoj@naslov', 'drugic');)
+--
+--  (b3) Preklic privolitve: če je kdo po prijavi preklical privolitev (politika zasebnosti, razdelek 8; pisno,
+--      mail na luka@outly.si), ga PRED pošiljanjem izloči (označi se, da je že »poslano«, mail se mu ne pošlje):
+--
+--        select public.izloci_iz_obvestila('naslov@primer.si');     -- vrne 1, če je bil naslov na seznamu
 --
 --  (c) Pošlji prvih največ 100 prijav:
 --
 --        select public.posli_obvestilo_zagon(100);
 --
---      Vrne število vrstic v zahtevku. Poganjaj znova, dokler ne vrne 0 (Resend batch dovoli 100 mailov na zahtevek;
---      med dvema zagonoma počakaj nekaj sekund). Že poslanim se mail ne pošlje še enkrat.
+--      Vrne število vrstic v zahtevku. Poganjaj ZAPOREDNO (naslednji klic šele, ko je prejšnji končan; ne v dveh
+--      zavihkih hkrati) in ponavljaj, dokler ne vrne 0. »Dokler ne vrne 0« velja samo za zaporedno poganjanje
+--      (Resend batch dovoli 100 mailov na zahtevek; med dvema zagonoma počakaj nekaj sekund).
+--      Že poslanim se mail ne pošlje še enkrat. Privzeto se pošlje samo prijavam z dejanskim klikom potrditvene
+--      povezave (glej »KDO DOBI MAIL«); drugačno merilo samo po odločitvi Martina/pravnika:
+--      posli_obvestilo_zagon(100, false) pošlje vsem potrjenim.
 --
---  (d) Preveri izid (počakaj ~1 minuto):
+--  (d) NAJPREJ POŽENI preveri v 1 URI po pošiljanju (pg_net odgovore briše po ~6 urah; preveri jih prepiše
+--      v bazo, da se ne izgubijo). Počakaj ~1 minuto po (c), nato:
 --
 --        select * from public.preveri_obvestilo_zagon();
 --
---      Pričakovano: za vsak zahtevek status_code = 200. (pg_net hrani odgovore približno 6 ur — preveri še isti dan.
---      Podrobnosti napake: select id, status_code, content from net._http_response where id = <zahtevek>;)
+--      Pričakovano: za vsak zahtevek status = 200. Podrobnosti napake (dokler odgovor obstaja):
+--      select id, status_code, content from net._http_response where id = <zahtevek>;
 --
---  (e) Če status ni 200 (ali odgovora ni): ponastavi ta zahtevek in ponovi (c):
+--  (e) Če status ni 200: ponastavi ta zahtevek in ponovi (c):
 --
 --        select public.ponovi_obvestilo_zagon(<zahtevek iz preveri_obvestilo_zagon>);
 --        select public.posli_obvestilo_zagon(100);
 --
---      Funkcija ponovi zavrne zahtevek s statusom 200 in zahtevek, ki je mlajši od 5 minut brez odgovora
---      (verjetno še teče). Resend pri ponovljenem pošiljanju iste skupine v 24 urah prepozna isti
---      Idempotency-Key in ne pošlje dvojnika.
+--      Funkcija ponovi dovoli SAMO zahtevek z zapisanim ali še obstoječim odgovorom, ki ni 200 (ali je potekel čas /
+--      napaka mreže, status 0). Zavrne zahtevek s statusom 200 in vsak zahtevek BREZ odgovora in brez zapisanega
+--      statusa (npr. odgovor je pg_net že izbrisal): takrat NE ponavljaj in NE ugibaj, ampak vprašaj (mail je morda
+--      že odšel; ponovitev bi poslala dvojnike). Resend prepozna isti Idempotency-Key le 24 ur.
 -- =====================================================================
 
 
@@ -75,7 +104,8 @@
 -- ---------------------------------------------------------------------
 alter table public.waitlist_signups
   add column if not exists launch_sent_at    timestamptz,
-  add column if not exists launch_request_id bigint;
+  add column if not exists launch_request_id bigint,
+  add column if not exists launch_status     int;      -- status Resend (200 = uspelo, 0 = čas potekel/napaka mreže); zapiše ga preveri_obvestilo_zagon()
 
 
 -- ---------------------------------------------------------------------
@@ -153,7 +183,8 @@ $$;
 -- 3) Pošiljanje (Resend batch, en zahtevek na klic, največ 100 naslovov)
 --    Ključ: app_secrets.resend_api_key (glej korak (b) zgoraj). Brez ključa: izjema, nič se ne označi.
 -- ---------------------------------------------------------------------
-create or replace function public.posli_obvestilo_zagon(p_najvec int default 100)
+drop function if exists public.posli_obvestilo_zagon(int);   -- starejša različica brez drugega parametra
+create or replace function public.posli_obvestilo_zagon(p_najvec int default 100, p_samo_prek_povezave boolean default true)
 returns int
 language plpgsql
 set search_path = public
@@ -182,6 +213,8 @@ begin
             from public.waitlist_signups s
            where s.confirmed
              and s.launch_sent_at is null
+             and (not coalesce(p_samo_prek_povezave, true)
+                  or s.confirmed_at - s.created_at >= interval '5 seconds')   -- dejanski klik povezave, ne samodejna potrditev
              and not exists (select 1 from public.waitlist_signups d
                               where lower(d.email) = lower(s.email) and d.launch_sent_at is not null)
            order by lower(s.email), s.confirmed_at nulls last, s.id
@@ -236,10 +269,12 @@ $$;
 
 
 -- ---------------------------------------------------------------------
--- 3b) TESTNI mail: natanko isti mail (isti element, ista pot /emails/batch, en element) na en podan naslov.
---     NE označi nobene vrstice in ne bere waitlist_signups. Vrne id zahtevka (odgovor: net._http_response).
+-- 3b) TESTNI mail: natanko isti mail (isti element, ista pot /emails/batch, en element, ista oblika zahtevka z
+--     Idempotency-Key) na en podan naslov. NE označi nobene vrstice in ne bere waitlist_signups.
+--     Vrne id zahtevka (odgovor: net._http_response). p_oznaka: za nov test na isti naslov isti dan.
 -- ---------------------------------------------------------------------
-create or replace function public.posli_obvestilo_zagon_test(p_naslov text)
+drop function if exists public.posli_obvestilo_zagon_test(text);   -- starejša različica brez oznake
+create or replace function public.posli_obvestilo_zagon_test(p_naslov text, p_oznaka text default '')
 returns bigint
 language plpgsql
 set search_path = public
@@ -260,8 +295,9 @@ begin
   v_req := net.http_post(
     url     := 'https://api.resend.com/emails/batch',
     headers := jsonb_build_object(
-                 'Authorization', 'Bearer ' || v_key,
-                 'Content-Type',  'application/json'
+                 'Authorization',   'Bearer ' || v_key,
+                 'Content-Type',    'application/json',
+                 'Idempotency-Key', 'outly-launch-test-' || md5('test' || p_naslov || now()::date::text || coalesce(p_oznaka, ''))
                ),
     body    := jsonb_build_array(public.obvestilo_zagon_element(p_naslov)),
     timeout_milliseconds := 30000
@@ -272,32 +308,11 @@ $$;
 
 
 -- ---------------------------------------------------------------------
--- 4) Preverjanje: po zahtevku status Resend in število vrstic (samo števila, nobenih e-naslovov)
---    status_code je NULL, če odgovora (še) ni (pg_net ga hrani ~6 ur).
+-- 3c) Izločitev (preklic privolitve): vrstica se označi kot »poslano« (launch_sent_at = now()), mail se ne pošlje.
+--     Označi samo vrstice, ki še niso bile v pošiljanju. Vrne število označenih vrstic (0 = naslova ni ali je že poslano).
+--     Izločena vrstica: launch_sent_at nastavljen, launch_request_id in launch_status prazna.
 -- ---------------------------------------------------------------------
-create or replace function public.preveri_obvestilo_zagon()
-returns table (zahtevek bigint, poslano_ob timestamptz, vrstic bigint, status_code int, odgovor_je boolean)
-language sql
-set search_path = public
-as $$
-  select s.launch_request_id,
-         min(s.launch_sent_at),
-         count(*),
-         max(r.status_code),
-         bool_or(r.id is not null)
-    from public.waitlist_signups s
-    left join net._http_response r on r.id = s.launch_request_id
-   where s.launch_request_id is not null
-   group by s.launch_request_id
-   order by min(s.launch_sent_at), s.launch_request_id;
-$$;
-
-
--- ---------------------------------------------------------------------
--- 5) Ponovitev neuspelega zahtevka: vrstice zahtevka se ponastavijo, da jih posli_obvestilo_zagon vzame znova.
---    Zavrne zahtevek s statusom 200 in zahtevek brez odgovora, mlajši od 5 minut (verjetno še teče).
--- ---------------------------------------------------------------------
-create or replace function public.ponovi_obvestilo_zagon(p_zahtevek bigint)
+create or replace function public.izloci_iz_obvestila(p_naslov text)
 returns int
 language plpgsql
 set search_path = public
@@ -305,18 +320,95 @@ as $$
 declare
   v_n int;
 begin
-  if exists (select 1 from net._http_response where id = p_zahtevek and status_code = 200) then
+  update public.waitlist_signups
+     set launch_sent_at = now()
+   where lower(email) = lower(btrim(p_naslov))
+     and launch_sent_at is null;
+  get diagnostics v_n = row_count;
+  return v_n;
+end;
+$$;
+
+
+-- ---------------------------------------------------------------------
+-- 4) Preverjanje: po zahtevku status Resend in število vrstic (samo števila, nobenih e-naslovov).
+--    Status iz net._http_response se PREPIŠE v waitlist_signups.launch_status (pg_net odgovore po ~6 urah izbriše;
+--    ponovi_obvestilo_zagon brez zapisanega statusa ne dovoli ponovitve). Poženi v 1 uri po pošiljanju.
+--    status: 200 = uspelo, 0 = čas potekel/napaka mreže, NULL = odgovora še ni (ali ga ni več in ni bil zapisan).
+-- ---------------------------------------------------------------------
+drop function if exists public.preveri_obvestilo_zagon();   -- starejša različica z drugačnimi stolpci
+create or replace function public.preveri_obvestilo_zagon()
+returns table (zahtevek bigint, poslano_ob timestamptz, vrstic bigint, status int, odgovor_je boolean)
+language plpgsql
+set search_path = public
+as $$
+begin
+  update public.waitlist_signups s
+     set launch_status = coalesce(r.status_code, 0)
+    from net._http_response r
+   where r.id = s.launch_request_id
+     and (r.status_code is not null or r.timed_out or r.error_msg is not null)
+     and s.launch_status is distinct from coalesce(r.status_code, 0);
+
+  return query
+  select s.launch_request_id,
+         min(s.launch_sent_at),
+         count(*),
+         max(s.launch_status),
+         bool_or(r.id is not null)
+    from public.waitlist_signups s
+    left join net._http_response r on r.id = s.launch_request_id
+   where s.launch_request_id is not null
+   group by s.launch_request_id
+   order by min(s.launch_sent_at), s.launch_request_id;
+end;
+$$;
+
+
+-- ---------------------------------------------------------------------
+-- 5) Ponovitev neuspelega zahtevka: vrstice zahtevka se ponastavijo, da jih posli_obvestilo_zagon vzame znova.
+--    Dovoli SAMO zahtevek z dokazanim neuspehom: zapisan launch_status ali še obstoječ odgovor, ki ni 200 (ali čas
+--    potekel / napaka mreže). ZAVRNE zahtevek s statusom 200 in vsak zahtevek brez odgovora in brez zapisanega
+--    statusa (pg_net odgovor po ~6 urah izbriše; mail je morda že odšel, ponovitev bi poslala dvojnike).
+-- ---------------------------------------------------------------------
+create or replace function public.ponovi_obvestilo_zagon(p_zahtevek bigint)
+returns int
+language plpgsql
+set search_path = public
+as $$
+declare
+  v_status int;
+  v_vrstic int;
+  v_je     boolean;
+  v_kode   int;
+  v_cas    boolean;
+  v_napaka text;
+  v_n      int;
+begin
+  select max(launch_status), count(*) into v_status, v_vrstic
+    from public.waitlist_signups where launch_request_id = p_zahtevek;
+  if v_vrstic = 0 then
+    raise exception 'zahtevek % nima vrstic (neznan ali že ponastavljen)', p_zahtevek;
+  end if;
+
+  select r.status_code, r.timed_out, r.error_msg into v_kode, v_cas, v_napaka
+    from net._http_response r where r.id = p_zahtevek;
+  v_je := found;
+
+  if v_status = 200 or (v_je and v_kode = 200) then
     raise exception 'zahtevek % je uspel (status 200), ponovitev bi poslala dvojnike', p_zahtevek;
   end if;
 
-  if not exists (select 1 from net._http_response where id = p_zahtevek)
-     and exists (select 1 from public.waitlist_signups
-                  where launch_request_id = p_zahtevek and launch_sent_at > now() - interval '5 minutes') then
-    raise exception 'zahtevek % je mlajši od 5 minut in še nima odgovora; počakaj in poskusi znova', p_zahtevek;
+  if v_status is null and not v_je then
+    raise exception 'zahtevek % nima odgovora in nima zapisanega statusa (odgovor je pg_net morda že izbrisal): NE ponavljaj, vprašaj; mail je morda že odšel', p_zahtevek;
+  end if;
+
+  if v_status is null and v_kode is null and not coalesce(v_cas, false) and v_napaka is null then
+    raise exception 'zahtevek % še nima končnega odgovora; počakaj in poženi preveri_obvestilo_zagon()', p_zahtevek;
   end if;
 
   update public.waitlist_signups
-     set launch_sent_at = null, launch_request_id = null
+     set launch_sent_at = null, launch_request_id = null, launch_status = null
    where launch_request_id = p_zahtevek;
   get diagnostics v_n = row_count;
   return v_n;
@@ -327,19 +419,21 @@ $$;
 -- ---------------------------------------------------------------------
 -- 6) Pravice: samo lastnik (SQL Editor kot postgres). Brez SECURITY DEFINER.
 -- ---------------------------------------------------------------------
-revoke all on function public.posli_obvestilo_zagon(int)       from public, anon, authenticated;
-revoke all on function public.preveri_obvestilo_zagon()        from public, anon, authenticated;
-revoke all on function public.ponovi_obvestilo_zagon(bigint)   from public, anon, authenticated;
-revoke all on function public.posli_obvestilo_zagon_test(text) from public, anon, authenticated;
-revoke all on function public.obvestilo_zagon_element(text)    from public, anon, authenticated;
+revoke all on function public.posli_obvestilo_zagon(int, boolean)    from public, anon, authenticated;
+revoke all on function public.preveri_obvestilo_zagon()              from public, anon, authenticated;
+revoke all on function public.ponovi_obvestilo_zagon(bigint)         from public, anon, authenticated;
+revoke all on function public.posli_obvestilo_zagon_test(text, text) from public, anon, authenticated;
+revoke all on function public.izloci_iz_obvestila(text)              from public, anon, authenticated;
+revoke all on function public.obvestilo_zagon_element(text)          from public, anon, authenticated;
 
 do $$
 begin
   if exists (select 1 from pg_roles where rolname = 'service_role') then
-    revoke all on function public.posli_obvestilo_zagon(int)     from service_role;
-    revoke all on function public.preveri_obvestilo_zagon()      from service_role;
-    revoke all on function public.ponovi_obvestilo_zagon(bigint) from service_role;
-    revoke all on function public.posli_obvestilo_zagon_test(text) from service_role;
-    revoke all on function public.obvestilo_zagon_element(text)  from service_role;
+    revoke all on function public.posli_obvestilo_zagon(int, boolean)    from service_role;
+    revoke all on function public.preveri_obvestilo_zagon()              from service_role;
+    revoke all on function public.ponovi_obvestilo_zagon(bigint)         from service_role;
+    revoke all on function public.posli_obvestilo_zagon_test(text, text) from service_role;
+    revoke all on function public.izloci_iz_obvestila(text)              from service_role;
+    revoke all on function public.obvestilo_zagon_element(text)          from service_role;
   end if;
 end $$;
