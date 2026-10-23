@@ -277,7 +277,7 @@ export const SL = {
  "My preferences": "Moje nastavitve",
  "My preferences are used by “Use my preferences” in Filters.": "Moje nastavitve uporablja »Uporabi moje nastavitve« v Filtrih.",
  "My team": "Moja ekipa",
- "NEXT DIMENSIONS, družba za marketing, d.o.o.\nTrebče 81, 3256 Bistrica ob Sotli, Slovenia\nRegistration number 7238274000": "NEXT DIMENSIONS, družba za marketing, d.o.o.\nTrebče 81, 3256 Bistrica ob Sotli, Slovenija\nMatična številka 7238274000",
+ "NEXT DIMENSIONS, družba za marketing, d.o.o.\nTrebče 81, 3256 Bistrica ob Sotli, Slovenia\nRegistration number 7238274000\nTax number 57469911": "NEXT DIMENSIONS, družba za marketing, d.o.o.\nTrebče 81, 3256 Bistrica ob Sotli, Slovenija\nMatična številka 7238274000\nDavčna številka 57469911",
  "New event": "Nov dogodek",
  "New password must be different from the current one.": "Novo geslo mora biti drugačno od trenutnega.",
  "New passwords do not match.": "Novi gesli se ne ujemata.",

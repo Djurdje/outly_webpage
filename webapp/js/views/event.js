@@ -75,7 +75,7 @@ export function Dogodek({ id }) {
   if (napaka && !e) return html`<div class="zaslon"><${GlavaNazaj} /><${Napaka} besedilo=${napaka} znova=${nalozi} /></div>`;
   if (!e) return html`<div class="zaslon"><${GlavaNazaj} /><${Nalaganje} /></div>`;
 
-  const gostNakup = !prijavljen && gostNakupVklopljen();   // zastavica (gost.js): privzeto izklopljeno do sk_live_ (#249)
+  const gostNakup = !prijavljen && gostNakupVklopljen();   // zastavica (gost.js): javno od 23. 10. 2026
   const povratek = `/app/login?next=${encodeURIComponent("/app/event/" + id)}`;
   async function preklopiZanimanje() {
     if (!prijavljen) { navigiraj(povratek); return; }

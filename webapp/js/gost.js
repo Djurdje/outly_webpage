@@ -91,12 +91,13 @@ export function pozabiGostNakup({ kljuc, dogodek } = {}) {
   } catch { try { sessionStorage.removeItem(KLJUC_NAKUPA); } catch { /* brez */ } }
 }
 
-/* ZASTAVICA: pogoji 1.1.2 in politika zasebnosti 2.4.4 so objavljeni 15. 10. 2026 (zdaj 1.1.4 in 2.4.6; 1.1.3 in 2.4.5 18. 10. 2026: spet NEXT DIMENSIONS) (nakup brez racuna je pravno opisan), a je javni
-   vklop (GOST_NAKUP_JAVNO = true) odlozen do preklopa Stripa na sk_live_ + GOST_NAKUP_LIVE=1 na Renderju (outly-backend#249; razlog:
-   na sk_test_ gost brez potrditve maila dobi brezplacne veljavne vstopnice; Martin 15. 10. 2026). Do takrat je nakup brez racuna
-   skrit: neprijavljen ob nakupu vidi stari tok (Sign in); ekipni preklop ?gost=1 v URL-ju (zapomni se v localStorage outly_gost=1),
-   ?gost=0 ga izklopi. Stran /app/guest/order deluje vedno (povezava iz maila). */
-export const GOST_NAKUP_JAVNO = false;
+/* ZASTAVICA: nakup brez racuna je JAVEN od 23. 10. 2026 (Martin: »Da naredi«; GOST_NAKUP_LIVE=1 na Renderju od 21:57 UTC,
+   Stripe v live nacinu). Pogoji 1.1.4 in politika zasebnosti 2.4.6 nakup brez racuna pravno opisujeta (objavljeno 15. 10. 2026,
+   zdaj 1.1.4 in 2.4.6; 1.1.3 in 2.4.5 18. 10. 2026: spet NEXT DIMENSIONS). Prej je bil vklop odlozen (outly-backend#249; razlog:
+   na sk_test_ gost brez potrditve maila dobi brezplacne veljavne vstopnice; Martin 15. 10. 2026). Ekipni preklop ?gost=1 / ?gost=0
+   (localStorage outly_gost) deluje samo, ce zastavico spet nastavis na false (nujni umik); dokler je true, velja za vse.
+   Stran /app/guest/order deluje vedno (povezava iz maila). */
+export const GOST_NAKUP_JAVNO = true;
 const KLJUC_ZASTAVICE = "outly_gost";
 export function gostNakupVklopljen() {
   let q = null;
