@@ -437,7 +437,7 @@ export function OAplikaciji() {
       <a class="menijska-vrstica" href=${zasebnost} target="_blank" rel="noopener"><${Ikona} ime="lock" /><span>${t("Privacy Policy")}</span></a>
       <a class="menijska-vrstica" href="mailto:luka@outly.si"><${Ikona} ime="mail" /><span>${t("Contact us")}</span></a>
     </div>
-    <p class="opomba srednje vec-vrstic">${t("NEXT DIMENSIONS, družba za marketing, d.o.o.\nTrebče 81, 3256 Bistrica ob Sotli, Slovenia\nRegistration number 7238274000")}</p>
+    <p class="opomba srednje vec-vrstic">${t("NEXT DIMENSIONS, družba za marketing, d.o.o.\nTrebče 81, 3256 Bistrica ob Sotli, Slovenia\nRegistration number 7238274000\nTax number 57469911")}</p>
     <p class="opomba srednje"><a class="povezava-modra" href="mailto:luka@outly.si">luka@outly.si</a></p>
   </div>`;
 }
