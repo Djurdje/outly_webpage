@@ -1,5 +1,6 @@
-/* Dokoncanje racuna (CompleteAccountView + SelectGenresView): datum rojstva (18+), drzava, telefon
-   (neobvezen), nato zanri. Streznik nastavi onboarded_at, ko ima datum rojstva in vsaj en zanr. */
+/* Dokoncanje racuna (CompleteAccountView + SelectGenresView): datum rojstva (18+, obvezen), drzava, telefon
+   in zanri (neobvezni, "Skip for later"). Streznik nastavi onboarded_at ob `complete_onboarding: true`, ce ima datum
+   rojstva (ali samodejno, ko ima datum rojstva in vsaj en zanr - stari odjemalci). */
 import { html, useEffect, useState } from "../lib.js";
 import { t, locale } from "../i18n.js";
 import { send } from "../api.js";
@@ -72,12 +73,32 @@ function Racun({ naprej }) {
   const shranjen = me && me.date_of_birth ? String(me.date_of_birth).slice(0, 10) : "";
   const nespremenjen = !!shranjen && dob === shranjen;
 
+  /** Preverba datuma rojstva (18+), skupna za "Continue" in "Skip for later": sporocilo napake ali "". */
+  function preveriDatum() {
+    const l = dob ? starost(dob) : null;
+    if (l == null) return t("Enter a valid date of birth.");
+    if (!nespremenjen && l < 18) return t("You must be at least 18 years old to use Outly.");
+    if (!nespremenjen && l > 120) return t("That date of birth does not look right.");
+    return "";
+  }
+
+  /** "Skip for later": samo datum rojstva (brez drzave in telefona), nato zanri. */
+  async function preskoci() {
+    const n = preveriDatum();
+    if (n) return setNapaka(n);
+    if (nespremenjen) return naprej();   // streznik datum ze ima
+    setTece(true); setNapaka("");
+    try {
+      const novi = await shrani({ dateOfBirth: dob });
+      if (novi) { nastaviMe(zdruzi(novi)); naprej(); }
+    } catch (e) { setNapaka(sporocilo(e)); }
+    setTece(false);
+  }
+
   async function poslji(ev) {
     ev.preventDefault();
-    const l = dob ? starost(dob) : null;
-    if (l == null) return setNapaka(t("Enter a valid date of birth."));
-    if (!nespremenjen && l < 18) return setNapaka(t("You must be at least 18 years old to use Outly."));
-    if (!nespremenjen && l > 120) return setNapaka(t("That date of birth does not look right."));
+    const n = preveriDatum();
+    if (n) return setNapaka(n);
     const telefon = tel.replace(/[\s\-()]/g, "");
     if (telefon && !/^\+[1-9]\d{7,14}$/.test(telefon)) return setNapaka(t("Enter the phone number with country code, e.g. +386 41 123 456."));
     setTece(true); setNapaka("");
@@ -97,7 +118,7 @@ function Racun({ naprej }) {
       <label class="polje-oznaceno"><span>${t("Date of birth")}</span>
         <input type="date" value=${dob} max=${najvec} min="1900-01-01" onInput=${e => setDob(e.target.value)} required autocomplete="bday" />
       </label>
-      <label class="polje-oznaceno"><span>${t("Country")}</span>
+      <label class="polje-oznaceno"><span>${t("Country (optional)")}</span>
         <select value=${drzava} onChange=${e => setDrzava(e.target.value)} autocomplete="country">
           ${seznamDrzav().map(d => html`<option value=${d.k}>${d.ime}</option>`)}
         </select>
@@ -107,6 +128,7 @@ function Racun({ naprej }) {
       </label>
       ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}
       <button class="gumb-glavni" type="submit" disabled=${tece}>${tece ? t("Saving...") : t("Continue")}</button>
+      <button class="povezava-gumb" type="button" onClick=${preskoci} disabled=${tece}>${t("Skip for later")}</button>
       <button class="povezava-gumb" type="button" onClick=${() => odjava()}>${t("Log out")}</button>
     </form>
   </div>`;
@@ -122,11 +144,15 @@ function Zanri({ nazaj }) {
   useEffect(() => { nalozi(); }, []);
   const preklopi = g => setIzbrani(s => { const n = new Set(s); n.has(g) ? n.delete(g) : n.add(g); return n; });
 
-  async function koncaj() {
-    if (!izbrani.size) return setNapaka(t("Select at least one genre."));
+  /** "Continue" (zanri + complete_onboarding) ali "Skip for later" (complete_onboarding; zanri samo, ce je kaj izbrano). */
+  async function koncaj(preskok) {
+    if (!preskok && !izbrani.size) return setNapaka(t("Select at least one genre."));
     setTece(true); setNapaka("");
     try {
-      const novi = await shrani({ genres: vsi.filter(g => izbrani.has(g)) });   // vrstni red streznika
+      // "Skip for later" z ze izbranimi zanri jih ne zavrze; brez izbire poslje samo complete_onboarding.
+      const body = { complete_onboarding: true };
+      if (izbrani.size) body.genres = vsi.filter(g => izbrani.has(g));   // vrstni red streznika
+      const novi = await shrani(body);
       if (novi) {
         nastaviMe(zdruzi(novi));
         if (!novi.onboarded_at) setNapaka(t("Please fill in your date of birth on the previous step."));
@@ -143,7 +169,8 @@ function Zanri({ nazaj }) {
         ${vsi.map(g => html`<button type="button" class=${"cip" + (izbrani.has(g) ? " izbran" : "")} aria-pressed=${izbrani.has(g)} onClick=${() => preklopi(g)}>${zanrIme(g)}</button>`)}
       </div>
       ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}
-      <button class="gumb-glavni" type="button" onClick=${koncaj} disabled=${tece || !izbrani.size}>${tece ? t("Saving...") : t("Complete")}</button>
+      <button class="gumb-glavni" type="button" onClick=${() => koncaj(false)} disabled=${tece || !izbrani.size}>${tece ? t("Saving...") : t("Complete")}</button>
+      <button class="povezava-gumb" type="button" onClick=${() => koncaj(true)} disabled=${tece}>${t("Skip for later")}</button>
       <button class="povezava-gumb" type="button" onClick=${nazaj}>${t("Back")}</button>
     </div>
   </div>`;
