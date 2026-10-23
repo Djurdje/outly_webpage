@@ -2,7 +2,7 @@
    Lastnik kluba (vloga business) vidi klubski profil (OwnerProfileView -> views/posel.js), dokler v Settings
    ne preklopi na osebni racun; izbira je shranjena v tem brskalniku (kot iOS profilObraz). */
 import { html, useEffect } from "../lib.js";
-import { t } from "../i18n.js";
+import { t, useJezik } from "../i18n.js";
 import { useSeja, odjava, naloziMe } from "../seja.js";
 import { sporocilo } from "../napake.js";
 import { navigiraj } from "../usmerjanje.js";
@@ -27,6 +27,7 @@ export function Profil() {
       <a class="gumb-bel" href="/app/register?next=/app/profile">${t("Create an account")}</a>
     </div>
     <${MeniJezik} />
+    <${PravneVrstice} />
     <${VrsticaNamestitve} />
   </div>`;
   // Streznik ali Supabase ne odgovarja (npr. 503): seja ostane, pokazemo napako in "Try again" (I10).
@@ -53,6 +54,18 @@ export function Profil() {
     </div>
     <${VrsticaNamestitve} />
     <button type="button" class="povezava-gumb rdeca" onClick=${async () => { await odjava(); navigiraj("/app", { zamenjaj: true }); }}>${t("Log out")}</button>
+  </div>`;
+}
+
+/* Gost: stalna pot do pravnih in kontaktnih podatkov (ZEPT 5(1): podatki ponudnika stalno dostopni). Iste vrstice kot
+   prijavljen (Support, About) + povezavi na pogoje in politiko zasebnosti (EN /privacy, SL /privacy-app kot pogoji.js). */
+function PravneVrstice() {
+  const zasebnost = useJezik() === "sl" ? "/privacy-app" : "/privacy";
+  return html`<div class="seznam-kartica">
+    <${MenijskaVrstica} href="/app/help" ikona="circle-question-mark" naslov=${t("Support")} />
+    <${MenijskaVrstica} href="/app/about" ikona="info" naslov=${t("About")} />
+    <a class="menijska-vrstica" href="/terms" target="_blank" rel="noopener"><${Ikona} ime="link" /><span>${t("Terms of Service")}</span></a>
+    <a class="menijska-vrstica" href=${zasebnost} target="_blank" rel="noopener"><${Ikona} ime="lock" /><span>${t("Privacy Policy")}</span></a>
   </div>`;
 }
 

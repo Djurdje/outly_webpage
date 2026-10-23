@@ -426,15 +426,17 @@ export function ClanekPomoci({ id }) {
 }
 
 export function OAplikaciji() {
+  const zasebnost = useJezik() === "sl" ? "/privacy-app" : "/privacy";   // politika v jeziku aplikacije (kot pogoji.js)
   return html`<div class="zaslon">
     <${GlavaNazaj} naslov=${t("About")} rezerva="/app/profile" />
     <img class="avt-logo" src="/assets/transperent-logo.png" alt="Outly" width="220" height="220" />
     <p class="besedilo-opis srednje">${t("Outly helps you find where to go tonight: clubs, events and tickets.")}</p>
     <div class="seznam-kartica">
       <a class="menijska-vrstica" href="/terms" target="_blank" rel="noopener"><${Ikona} ime="link" /><span>${t("Terms of Service")}</span></a>
-      <a class="menijska-vrstica" href="/privacy-app" target="_blank" rel="noopener"><${Ikona} ime="lock" /><span>${t("Privacy Policy")}</span></a>
+      <a class="menijska-vrstica" href=${zasebnost} target="_blank" rel="noopener"><${Ikona} ime="lock" /><span>${t("Privacy Policy")}</span></a>
       <a class="menijska-vrstica" href="mailto:luka@outly.si"><${Ikona} ime="mail" /><span>${t("Contact us")}</span></a>
     </div>
-    <p class="opomba srednje vec-vrstic">${t("NEXT DIMENSIONS, družba za marketing, d.o.o.\nTrebče 81, 3256 Bistrica ob Sotli, Slovenia")}</p>
+    <p class="opomba srednje vec-vrstic">${t("NEXT DIMENSIONS, družba za marketing, d.o.o.\nTrebče 81, 3256 Bistrica ob Sotli, Slovenia\nRegistration number 7238274000")}</p>
+    <p class="opomba srednje"><a class="povezava-modra" href="mailto:luka@outly.si">luka@outly.si</a></p>
   </div>`;
 }
