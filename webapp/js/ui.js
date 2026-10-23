@@ -67,11 +67,12 @@ export function Slika({ src, sirina = 600, alt = "", razred = "", nujna = false 
 export function Plakat({ src, sirina = 600, alt = "", razred = "", nujna = false }) {
   const [nalozena, setNalozena] = useState(false);
   const [napaka, setNapaka] = useState(false);
+  const [ozadjeNapaka, setOzadjeNapaka] = useState(false);   // zamegljena kopija ni nalozena: ozadje skrijemo, plakat ostane
   const url = slika(src, sirina);
   if (!url || napaka) return html`<div class=${"slika slika-prazna " + razred} role=${alt ? "img" : null} aria-label=${alt || null}></div>`;
   const ozadje = slikaZamegljena(src);
   return html`<div class=${"slika plakat " + razred + (nalozena ? " nalozena" : "")}>
-    <img class=${"plakat-ozadje" + (ozadje.cssZamegli ? " css-zamegli" : "")} src=${ozadje.url} alt="" aria-hidden="true" loading=${nujna ? "eager" : "lazy"} decoding="async" />
+    ${ozadjeNapaka ? null : html`<img class=${"plakat-ozadje" + (ozadje.cssZamegli ? " css-zamegli" : "")} src=${ozadje.url} alt="" aria-hidden="true" loading=${nujna ? "eager" : "lazy"} decoding="async" onError=${() => setOzadjeNapaka(true)} />`}
     <img class="plakat-slika" src=${url} alt=${alt} loading=${nujna ? "eager" : "lazy"} decoding="async"
       fetchpriority=${nujna ? "high" : null}
       onLoad=${() => setNalozena(true)} onError=${() => setNapaka(true)} />

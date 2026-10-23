@@ -128,7 +128,7 @@ function TlorisDogodka({ plan, mize }) {
       return html`<g key=${m.id} class=${"tl-miza " + stanje} role="img"
         aria-label=${`${t("Table")} ${m.label}, ${m.booking ? t("Booked") : m.hold ? opisHold(m.hold) : t("Available")}`}>
         <${OblikaMize} m=${m} napis2=${m.booking ? t("Booked") : ""} />
-        ${m.hold ? html`<${IkonaTelefon} x=${ix} y=${iy} velikost=${ik} />` : null}
+        ${m.hold && m.hold.source !== "app" ? html`<${IkonaTelefon} x=${ix} y=${iy} velikost=${ik} />` : null}
       </g>`;
     })}
   <//></div>

@@ -248,7 +248,7 @@ function prevediApi(e) {
     // Rezervacija VIP mize za placilo na vratih (backend, 23. 10. 2026; 409 JSON { error, message }).
     case "reservation_limit": if (e.status === 409) return t("You already have a table reserved for this event."); break;
     case "vip_pay_in_app": if (e.status === 409) return t("Tables for this event are paid in the app."); break;
-    case "vip_pay_at_door": if (e.status === 409) return t("Tables for this event are paid in cash at the door. Reload the page to reserve one."); break;
+    case "vip_pay_at_door": if (e.status === 409) return t("Tables for this event are now paid in cash at the door. Choose a table again."); break;
     case "event_started": if (e.status === 409) return t("This event has already started."); break;
     // Prenos vstopnice prijatelju brez racuna (POST /tickets/:id/transfer z allow_guest)
     case "age_confirmation_required": {

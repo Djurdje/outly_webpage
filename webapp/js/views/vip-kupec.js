@@ -87,7 +87,7 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
       // kljucem vrne isti checkout_url (ali placano narocilo, ali order_not_active). Zato se TA miza (in samo ona, iz zapisa tega
       // uporabnika in dogodka) izbere tudi, ce je zasedena, in gumb postane "Continue to payment". Tuja zasedena miza ostane nedosegljiva.
       const cakajoca = nejasen && nejasen.cakaPlacilo === true ? nejasen : null;
-      const lastna = cakajoca && d.nacin === "stripe" ? d.mize.find(x => x.id === cakajoca.miza && x.available === false) : null;
+      const lastna = cakajoca && d.nacin === "stripe" && d.placilo !== "door" ? d.mize.find(x => x.id === cakajoca.miza && x.available === false) : null;
       // Izbira (tudi po vrnitvi s prijave): miza mora se obstajati in biti prosta; en sam paket se izbere sam.
       const miza = lastna || d.mize.find(m => m.id === (izbor ? izbor.miza : null) && m.available !== false);
       setMoja(lastna ? lastna.id : null);

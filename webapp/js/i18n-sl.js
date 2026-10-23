@@ -1252,5 +1252,5 @@ export const SL = {
  "{n} reservations": {"one": "{n} rezervacija", "two": "{n} rezervaciji", "few": "{n} rezervacije", "other": "{n} rezervacij"},
  "You already have a table reserved for this event.": "Za ta dogodek že imaš rezervirano mizo.",
  "Tables for this event are paid in the app.": "Mize za ta dogodek se plačajo v aplikaciji.",
- "Tables for this event are paid in cash at the door. Reload the page to reserve one.": "Mize za ta dogodek se plačajo z gotovino na vratih. Osveži stran in jo rezerviraj."
+ "Tables for this event are now paid in cash at the door. Choose a table again.": "Mize za ta dogodek se zdaj plačajo z gotovino na vratih. Izberi mizo znova."
 };

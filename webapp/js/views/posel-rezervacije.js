@@ -20,7 +20,8 @@ function uredi(seznam) {
   return [...vidni.filter(e => cas(e) >= zdaj).sort((a, b) => cas(a) - cas(b)), ...vidni.filter(e => cas(e) < zdaj).sort((a, b) => cas(b) - cas(a))];
 }
 
-const steviloRez = e => Math.max(0, Math.trunc(Number(e.vip_reservations)) || 0);
+/* Star backend polja vip_reservations nima: null = stevila ne kazemo (ne trdimo "No reservations yet"). */
+const steviloRez = e => (e.vip_reservations == null ? null : Math.max(0, Math.trunc(Number(e.vip_reservations)) || 0));
 
 /* ---------- Zaslon 1: dogodki ---------- */
 export function RezervacijeDogodkov({ klub }) {
@@ -52,7 +53,7 @@ export function RezervacijeDogodkov({ klub }) {
           <span class="kv-besedilo">
             <strong>${e.title}</strong>
             <span class="vdk-datum">${danInUra(e._zacetek)}</span>
-            <span class="vdk-meta">${n > 0 ? html`<span class="modra"><${Ikona} ime="crown" velikost=${12} /> ${tn("1 table reserved", "{n} tables reserved", n)}</span>`
+            <span class="vdk-meta">${n == null ? null : n > 0 ? html`<span class="modra"><${Ikona} ime="crown" velikost=${12} /> ${tn("1 table reserved", "{n} tables reserved", n)}</span>`
               : html`<span>${t("No reservations yet")}</span>`}
               ${seJeKoncal(e) ? html`<span class="utisano">${t("Ended")}</span>` : null}</span>
           </span>

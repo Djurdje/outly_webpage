@@ -985,14 +985,17 @@ a.profil-ime{ white-space:normal; }
 .vip-placilo{ display:flex; flex-direction:column; gap:8px; }
 .rez-placilo-vrata{ display:flex; align-items:flex-start; gap:8px; font-size:16px; font-weight:700; color:#fff; }
 .rez-placilo-vrata .ikona{ flex:none; margin-top:2px; color:var(--zlata); }
-.rez-podrobnosti{ display:flex; flex-direction:column; align-items:flex-start; gap:4px; padding:14px; border-radius:16px; background:var(--b06); }
+.rez-podrobnosti{ min-width:0; max-width:100%; display:flex; flex-direction:column; align-items:flex-start; gap:4px; padding:14px; border-radius:16px; background:var(--b06); }
+.rez-podrobnosti > *{ min-width:0; max-width:100%; overflow-wrap:anywhere; }
 .rez-miza{ font-size:18px; font-weight:800; color:var(--zlata); }
 .rez-paket{ font-size:15px; font-weight:600; overflow-wrap:anywhere; }
 .rez-placilo{ display:flex; align-items:flex-start; gap:8px; margin-top:6px; font-size:15px; font-weight:700; color:#fff; }
 .rez-placilo .ikona{ flex:none; margin-top:2px; color:var(--zlata); }
 .rez-odpoved{ display:flex; flex-direction:column; gap:10px; }
 .rez-razdelek{ display:flex; flex-direction:column; gap:12px; }
-.rez-kartica{ gap:12px; }
+.rez-kartica{ gap:12px; min-width:0; max-width:100%; }
+.rez-kartica .kv-besedilo, .rez-glava{ min-width:0; }
+.uspeh > span{ max-width:100%; overflow-wrap:anywhere; }
 .rez-glava{ display:flex; align-items:center; gap:12px; }
 .rez-glava .kv-besedilo{ flex:1; min-width:0; }
 .rez-seznam{ display:flex; flex-direction:column; gap:8px; }
