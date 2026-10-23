@@ -144,13 +144,14 @@ function Zanri({ nazaj }) {
   useEffect(() => { nalozi(); }, []);
   const preklopi = g => setIzbrani(s => { const n = new Set(s); n.has(g) ? n.delete(g) : n.add(g); return n; });
 
-  /** "Continue" (zanri + complete_onboarding) ali "Skip for later" (samo complete_onboarding, brez zanrov). */
+  /** "Continue" (zanri + complete_onboarding) ali "Skip for later" (complete_onboarding; zanri samo, ce je kaj izbrano). */
   async function koncaj(preskok) {
     if (!preskok && !izbrani.size) return setNapaka(t("Select at least one genre."));
     setTece(true); setNapaka("");
     try {
-      const body = preskok ? { complete_onboarding: true }
-        : { genres: vsi.filter(g => izbrani.has(g)), complete_onboarding: true };   // vrstni red streznika
+      // "Skip for later" z ze izbranimi zanri jih ne zavrze; brez izbire poslje samo complete_onboarding.
+      const body = { complete_onboarding: true };
+      if (izbrani.size) body.genres = vsi.filter(g => izbrani.has(g));   // vrstni red streznika
       const novi = await shrani(body);
       if (novi) {
         nastaviMe(zdruzi(novi));
