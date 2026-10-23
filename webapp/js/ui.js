@@ -17,6 +17,17 @@ export function DemoBesedilo() {
   return html`<p class="opomba-okvir demo-besedilo" role="status"><${Ikona} ime="info" velikost=${18} />${t("This is a demo club. Tickets can't be bought.")}</p>`;
 }
 
+/** Neobvezno polje »Promo code« na nakupnem listu navadnih vstopnic (samo statistika: cena se ne spremeni, brez gumba »Apply«).
+    Vrednost vedno trim (prazno = polja ne posljemo); velike crke naredi strežnik. Napaka (promo_code_invalid) je ob polju. */
+export const promoKoda = v => String(v || "").trim();
+export function PromoPolje({ vrednost, spremeni, napaka, onemogoceno }) {
+  return html`<label class="polje-oznaceno nakup-promo"><span>${t("Promo code (optional)")}</span>
+    <input type="text" name="promo_code" value=${vrednost} maxlength="40" onInput=${x => spremeni(x.target.value)} disabled=${onemogoceno}
+      autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" aria-invalid=${napaka ? "true" : "false"} />
+    ${napaka ? html`<small class="napaka-besedilo" role="alert">${napaka}</small>` : null}
+  </label>`;
+}
+
 /** Zaklep gumba po omejitvi streznika (503 semafor nakupov): [zaklenjeno, zakleni(sekunde)]. Samo cas, brez ponovitve zahteve. */
 export function useZaklep() {
   const [konec, setKonec] = useState(0);

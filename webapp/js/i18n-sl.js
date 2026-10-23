@@ -633,6 +633,8 @@ export const SL = {
  "demo, not for sale": "demo, ni naprodaj",
  "Your payment is being processed by your bank. We'll update your tickets when it's confirmed.": "Banka še obdeluje plačilo. Vstopnice posodobimo, ko bo potrjeno.",
  "The payment page isn't ready yet. Please try again.": "Plačilna stran še ni pripravljena. Poskusi znova.",
+ "Promo code (optional)": "Promo koda (neobvezno)",
+ "This promo code is not valid for this event.": "Ta promo koda za ta dogodek ne velja.",
  "Your previous payment is no longer active. Please try again.": "Prejšnje plačilo ni več aktivno. Poskusi znova.",
  "You have too many payments still processing. Wait for your bank to confirm them.": "Imaš preveč plačil, ki se še obdelujejo. Počakaj, da jih banka potrdi.",
  "You have too many unfinished payments. Please wait up to 30 minutes for them to expire, then try again.": "Imaš preveč nedokončanih plačil. Počakaj do 30 minut, da potečejo, nato poskusi znova.",

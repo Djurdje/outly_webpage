@@ -102,6 +102,9 @@ export const jeProdajalecNepopoln = e => e instanceof ApiError && e.status === 4
 export const jeCenaVstopniceSpremenjena = e => e instanceof ApiError && e.status === 409 && /ticket price has changed/i.test(e.raw);
 /* 409 demo_club (backend #243): klub je demo, nakup ni mogoc (razen adminu). Narocilo NI nastalo: kljuc se zavrze, izbira ostane. */
 export const jeDemoKlub = e => e instanceof ApiError && e.status === 409 && kodaNapake(e) === "demo_club";
+/* 400 promo_code_invalid (backend, samo statistika): neznana, neaktivna ali za ta dogodek neveljavna promo koda. Narocila NI; kljuc
+   nakupa ostane (koda ni del identitete kljuca, 400 ne ustvari narocila ne zapisa kljuca), kupec kodo popravi ali izbrise in kupi znova. */
+export const jePromoKodaNeveljavna = e => e instanceof ApiError && e.status === 400 && kodaNapake(e) === "promo_code_invalid";
 export function nakupZasedenoSporocilo() {
   return t("Lots of people are buying right now. Please try again in a few seconds.");
 }
@@ -228,6 +231,7 @@ function prevediApi(e) {
   // Najprej kode novih primerov (JSON { error, message }): njihovo besedilo ne sme zadeti splosnih pravil spodaj.
   switch (kodaNapake(e)) {
     case "request_in_progress": return t("Your previous attempt is still being processed. Please try again in a moment.");
+    case "promo_code_invalid": if (e.status === 400) return t("This promo code is not valid for this event."); break;
     case "idempotency_key_reused":
     case "invalid_idempotency_key": return t("Something changed, please try again.");
     // order_not_active = naroilo ni vec aktivno: potek seje, preklic, zavrnjeno placilo (SEPA) ali vracilo - ne trdimo, da je potekla seja.
