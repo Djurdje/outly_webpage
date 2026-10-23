@@ -7,10 +7,10 @@ import { send, pocistiPredpomnilnik, kljucNakupa, pozabiKljucNakupa, nerazresenN
 import { uidSeje, useSeja, jeAdmin } from "../seja.js";
 import {
   jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo,
-  jeNakupVObdelavi, NAKUP_V_OBDELAVI_S, sporocilo, ApiError, jeCenaVstopniceSpremenjena, izidNakupa, nakupNapakaSporocilo, nakupBrezOdgovoraSporocilo, potekloPlacilo, placiloVObdelavi, placiloNepripravljeno
+  jeNakupVObdelavi, NAKUP_V_OBDELAVI_S, sporocilo, ApiError, jeCenaVstopniceSpremenjena, jePromoKodaNeveljavna, izidNakupa, nakupNapakaSporocilo, nakupBrezOdgovoraSporocilo, potekloPlacilo, placiloVObdelavi, placiloNepripravljeno
 } from "../napake.js";
 import { denar, jeRazprodan, preostanek, danInUra, nacinPlacila, ddvBesedilo, jeDemo } from "../oblika.js";
-import { List, Ikona, useZaklep, DemoBesedilo } from "../ui.js";
+import { List, Ikona, useZaklep, DemoBesedilo, PromoPolje, promoKoda } from "../ui.js";
 import { KodaQR } from "../qr.js";
 import { odpriStripe, izidStripeNakupa, jeStripeUrl } from "../stripe.js";
 import { PogojiNakupa, BlokProdajalca, OpombaVracila, TERMS_VERSION } from "../pogoji.js";
@@ -19,6 +19,8 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba, osvezi }) {
   const [kolicina, setKolicina] = useState(1);
   const [posiljam, setPosiljam] = useState(false);
   const [napaka, setNapaka] = useState("");
+  const [promo, setPromo] = useState("");   // neobvezna promo koda (samo statistika, cena se ne spremeni)
+  const [promoNapaka, setPromoNapaka] = useState("");
   const [nakup, setNakup] = useState(null);
   const [cakaStanje, setCakaPlacilo] = useState(false);   // nedokoncano Stripe placilo tega nakupa: gumb "Continue to payment" (isti kljuc, isti URL)
   const tece = useRef(false);   // zascita pred dvojnim klikom v istem trenutku (stanje se posodobi prepozno)
@@ -48,6 +50,7 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba, osvezi }) {
     // Kupec je ze prisel do Stripa: ni "morda je nastalo", ampak nedokoncano placilo - ponovitev vrne isti checkout_url.
     setCakaPlacilo(!!(prej && prej.cakaPlacilo));
     setNapaka(prej && !prej.cakaPlacilo ? nakupBrezOdgovoraSporocilo() : ""); setNakup(null);
+    setPromoNapaka("");   // list ostane namescen: stara napaka kode ob ponovnem odprtju ne sme ostati
   }, [odprt, sejaEmail]);
   // Cena null = vstopnic ni na Outlyju; tak dogodek nima nakupa (in NI "Free").
   if (!odprt || e.ticket_price_cents == null) return null;
@@ -70,12 +73,15 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba, osvezi }) {
     const uid = uidSeje();
     if (!uid) return setNapaka(sporocilo(new ApiError(-1, "Could not refresh session.")));
     tece.current = true;
-    setPosiljam(true); setNapaka("");
+    setPosiljam(true); setNapaka(""); setPromoNapaka("");
     // Ista vsebina nakupa (uporabnik + dogodek + kolicina) = isti kljuc (api.js, 24 h od zadnje uporabe), tudi po
     // timeoutu/503/409 in po zaprtju ter ponovnem odprtju lista: backend vrne isto narocilo (201).
     const kljuc = kljucNakupa("vstopnice", uid, e.id, String(kolicina), { dogodek: e.id, kolicina });
+    const telo = { quantity: kolicina, expected_price_cents: cenaEna, locale: kodaJezika(), terms_version: TERMS_VERSION };
+    const promoVnos = promoKoda(promo);
+    if (promoVnos) telo.promo_code = promoVnos;   // prazno = polja ne posljemo; koda NI del kljuca nakupa (backend)
     try {
-      const r = await send(`/events/${e.id}/orders`, { method: "POST", body: { quantity: kolicina, expected_price_cents: cenaEna, locale: kodaJezika(), terms_version: TERMS_VERSION }, auth: true, glave: { "Idempotency-Key": kljuc } });
+      const r = await send(`/events/${e.id}/orders`, { method: "POST", body: telo, auth: true, glave: { "Idempotency-Key": kljuc } });
       pocistiPredpomnilnik();
       // Stripe (backend #19): narocilo caka na placilo na Stripovi strani. Kljuca NE pozabimo: ce se kupec vrne brez
       // placila, ponovni pritisk vrne ISTO narocilo in isti checkout_url (ne rezervira se enkrat).
@@ -92,7 +98,7 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba, osvezi }) {
       if (izidS === "obdelava") { oznaciIzidNakupa("vstopnice", uid, e.id, kljuc, "nerazresen"); zakleni(30); if (ziv.current) setNapaka(placiloVObdelavi()); }
       else if (izidS === "poteklo") { oznaciIzidNakupa("vstopnice", uid, e.id, kljuc, "dokoncen"); if (ziv.current) { setCakaPlacilo(false); setNapaka(potekloPlacilo()); } }
       else if (izidS === "nepripravljeno") { oznaciIzidNakupa("vstopnice", uid, e.id, kljuc, "nerazresen"); if (ziv.current) setNapaka(placiloNepripravljeno()); }
-      else if (ziv.current && odprtRef.current) { pozabiKljucNakupa("vstopnice", uid, e.id, kljuc); setNakup(r); }   // uspeh: naslednji nakup dobi nov kljuc
+      else if (ziv.current && odprtRef.current) { pozabiKljucNakupa("vstopnice", uid, e.id, kljuc); setNakup(r); setPromo(""); }   // uspeh: naslednji nakup dobi nov kljuc
       // Uspeh, ki ga uporabnik ni videl (list se je medtem odmontiral): kljuca NE pozabimo - ponovitev vrne isto narocilo (Idempotent-Replayed).
       else oznaciIzidNakupa("vstopnice", uid, e.id, kljuc, "nerazresen");
     } catch (err) {
@@ -106,7 +112,8 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba, osvezi }) {
       // Cena vstopnice se je med ogledom in nakupom spremenila (backend #277 N2, 409): narocila ni, dogodek preberemo znova
       // (list pokaze novo ceno), kupec pritisne znova sam.
       if (jeCenaVstopniceSpremenjena(err) && osvezi) osvezi();
-      if (jeNakupZaseden(err)) setNapaka(nakupZasedenoSporocilo());
+      if (jePromoKodaNeveljavna(err)) { if (ziv.current) setPromoNapaka(sporocilo(err)); }   // 400: narocila ni, kljuc ostane; kupec kodo popravi/izbrise
+      else if (jeNakupZaseden(err)) setNapaka(nakupZasedenoSporocilo());
       // Brez odgovora: narocilo je morda nastalo - ponovni pritisk z istim kljucem ga najde, ne ustvari drugega.
       // (Neuspela osvezitev seje to NI: zahtevek ni odsel; nakupNapakaSporocilo ju loci.)
       else setNapaka(nakupNapakaSporocilo(err));
@@ -115,7 +122,7 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba, osvezi }) {
     setPosiljam(false);
   }
   // Med letecim nakupom lista ni mogoce zapreti (odgovor bi se izgubil, uporabnik bi placal znova).
-  const zapriVarno = () => { if (!tece.current) zapri(); };
+  const zapriVarno = () => { if (!tece.current) { setPromoNapaka(""); zapri(); } };   // napaka kode ne sme ostati do naslednjega odprtja (brez utripa stare napake pred ucinkom)
 
   if (nakup) {
     const vst = (nakup.tickets || []).filter(v => v.qr);
@@ -155,6 +162,8 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba, osvezi }) {
         <button type="button" onClick=${() => { if (!tece.current && !cakaPlacilo) setKolicina(k => Math.min(najvec, k + 1)); }} disabled=${kolicina >= najvec || posiljam || cakaPlacilo} aria-label=${t("More")}>+</button>
       </div>
     </div>
+
+    ${demoZapora || neprodaja ? null : html`<${PromoPolje} vrednost=${promo} spremeni=${v => { setPromoNapaka(""); setPromo(v); }} napaka=${promoNapaka} onemogoceno=${posiljam || cakaPlacilo} />`}
 
     <div class="nakup-skupaj">
       <span>${t("Total")}<small class="utisano"> · ${ddvBesedilo(e.seller)}</small></span>

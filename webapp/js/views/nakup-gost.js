@@ -9,10 +9,10 @@ import { t, useJezik, kodaJezika } from "../i18n.js";
 import { send, pocistiPredpomnilnik, kljucNakupa, pozabiKljucNakupa, oznaciIzidNakupa, zasejKljucNakupa } from "../api.js";
 import {
   jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo, jeNakupVObdelavi, NAKUP_V_OBDELAVI_S,
-  ApiError, izidNakupa, nakupBrezOdgovoraSporocilo, gostSporocilo, jeCenaVstopniceSpremenjena, potekloPlacilo, placiloVObdelavi, placiloNepripravljeno
+  ApiError, izidNakupa, jePromoKodaNeveljavna, nakupBrezOdgovoraSporocilo, gostSporocilo, jeCenaVstopniceSpremenjena, potekloPlacilo, placiloVObdelavi, placiloNepripravljeno
 } from "../napake.js";
 import { denar, jeRazprodan, preostanek, danInUra, nacinPlacila, ddvBesedilo, jeDemo } from "../oblika.js";
-import { List, useZaklep, DemoBesedilo } from "../ui.js";
+import { List, useZaklep, DemoBesedilo, PromoPolje, promoKoda } from "../ui.js";
 import { navigiraj } from "../usmerjanje.js";
 import { odpriStripe, izidStripeNakupa } from "../stripe.js";
 import { TERMS_VERSION, EMAIL_RE, BlokProdajalca, OpombaVracila } from "../pogoji.js";
@@ -32,6 +32,8 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
   const [soglasje, setSoglasje] = useState(false);
   const [posiljam, setPosiljam] = useState(false);
   const [napaka, setNapaka] = useState("");
+  const [promo, setPromo] = useState("");   // neobvezna promo koda (samo statistika, cena se ne spremeni)
+  const [promoNapaka, setPromoNapaka] = useState("");
   const polje = nastavi => v => { setNapaka(""); nastavi(v); };   // napaka velja za zadnjo oddajo: ob spremembi polja izgine
   const [vRacunu, setVRacunu] = useState(false);   // ponovitev nakupa, ki je ze prevzet v racun
   const [brezGosta, setBrezGosta] = useState(false);   // backend: gostujoci nakup se ni vklopljen -> ponudi prijavo
@@ -54,7 +56,7 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
     const prej = preberiGostNakup(e.id);
     if (prej) { setEmail(prej.e); setKolicina(Math.max(1, Math.min(prej.q, najvec))); }
     else setKolicina(k => Math.min(k, najvec));
-    setNapaka("");
+    setNapaka(""); setPromoNapaka("");   // list ostane namescen: stara napaka kode ob ponovnem odprtju ne sme ostati
   }, [odprt]);
   // Cena null = vstopnic ni na Outlyju; tak dogodek nima nakupa (in NI "Free").
   if (!odprt || e.ticket_price_cents == null) return null;
@@ -83,7 +85,7 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
     }
     if (!soglasje) return setNapaka(t("Please confirm you are at least 15 and accept the Terms of Use."));
     tece.current = true;
-    setPosiljam(true); setNapaka(""); setBrezGosta(false);
+    setPosiljam(true); setNapaka(""); setPromoNapaka(""); setBrezGosta(false);
     // Isti e-naslov + dogodek + kolicina = isti kljuc (api.js, 24 h): backend vrne isto narocilo (201). Datum rojstva ni del
     // vsebine (backend primerja dogodek in kolicino) in se nikjer ne shranjuje.
     const vsebina = String(kolicina);
@@ -92,6 +94,8 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
     const kljuc = kljucNakupa("gost", m, e.id, vsebina, null);
     const telo = { email: m, quantity: kolicina, expected_price_cents: cenaEna, accept_terms: true, terms_version: TERMS_VERSION, locale: kodaJezika() };
     if (potrebujeStarost) telo.date_of_birth = dob;
+    const promoVnos = promoKoda(promo);
+    if (promoVnos) telo.promo_code = promoVnos;   // prazno = polja ne posljemo; koda NI del kljuca nakupa (backend)
     try {
       const r = await send(`/guest/events/${e.id}/orders`, { method: "POST", body: telo, glave: { "Idempotency-Key": kljuc } });
       pocistiPredpomnilnik();   // zaloga (sold_count) na karticah naj bo sveza
@@ -125,6 +129,7 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
       shraniGostZeton(zeton);
       pozabiGostNakup({ dogodek: e.id });
       pozabiKljucNakupa("gost", m, e.id, kljuc);   // uspeh: naslednji nakup dobi nov kljuc
+      if (ziv.current) setPromo("");   // koda ne sme tiho v naslednji nakup
       if (ziv.current && odprtRef.current) { navigiraj("/app/guest/order"); return; }
       // List se je medtem odmontiral: zeton je shranjen, kupec ga najde na /app/guest/order (in v mailu).
     } catch (err) {
@@ -136,7 +141,8 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
       else if (jeNakupVObdelavi(err)) zakleni(nakupPocakajS(err, NAKUP_V_OBDELAVI_S));
       if (jeCenaVstopniceSpremenjena(err) && osvezi) osvezi();   // backend #277 N2: nova cena v listu, kupec potrdi znova
       if (ziv.current) {
-        if (jeNakupZaseden(err)) setNapaka(nakupZasedenoSporocilo());
+        if (jePromoKodaNeveljavna(err)) setPromoNapaka(gostSporocilo(err));   // 400: narocila ni, kljuc ostane; kupec kodo popravi/izbrise
+        else if (jeNakupZaseden(err)) setNapaka(nakupZasedenoSporocilo());
         else if (err instanceof ApiError && err.status === -1 && izid === "nerazresen") setNapaka(nakupBrezOdgovoraSporocilo());
         else setNapaka(gostSporocilo(err));
         if (err instanceof ApiError && /guest checkout is not available/i.test(err.raw)) setBrezGosta(true);
@@ -146,7 +152,7 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
     if (ziv.current) setPosiljam(false);
   }
   // Med letecim nakupom lista ni mogoce zapreti (odgovor bi se izgubil, uporabnik bi placal znova).
-  const zapriVarno = () => { if (!tece.current) zapri(); };
+  const zapriVarno = () => { if (!tece.current) { setPromoNapaka(""); zapri(); } };   // napaka kode ne sme ostati do naslednjega odprtja (brez utripa stare napake pred ucinkom)
 
   if (vRacunu) {
     return html`<${List} odprt=${true} zapri=${() => { setVRacunu(false); zapri(); }} naslov=${t("Your tickets")}>
@@ -188,6 +194,8 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
           <button type="button" onClick=${() => { if (!tece.current) { setNapaka(""); setKolicina(k => Math.min(najvec, k + 1)); } }} disabled=${kolicina >= najvec || posiljam} aria-label=${t("More")}>+</button>
         </div>
       </div>
+
+      ${demo || neprodaja ? null : html`<${PromoPolje} vrednost=${promo} spremeni=${v => { setPromoNapaka(""); polje(setPromo)(v); }} napaka=${promoNapaka} onemogoceno=${posiljam} />`}
 
       <div class="nakup-skupaj">
         <span>${t("Total")}<small class="utisano"> · ${ddvBesedilo(e.seller)}</small></span>
