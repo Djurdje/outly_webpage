@@ -9,7 +9,7 @@ import { t, useJezik, kodaJezika } from "../i18n.js";
 import { send, pocistiPredpomnilnik, kljucNakupa, pozabiKljucNakupa, oznaciIzidNakupa, zasejKljucNakupa } from "../api.js";
 import {
   jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo, jeNakupVObdelavi, NAKUP_V_OBDELAVI_S,
-  ApiError, izidNakupa, nakupBrezOdgovoraSporocilo, gostSporocilo, potekloPlacilo, placiloVObdelavi, placiloNepripravljeno
+  ApiError, izidNakupa, nakupBrezOdgovoraSporocilo, gostSporocilo, jeCenaVstopniceSpremenjena, potekloPlacilo, placiloVObdelavi, placiloNepripravljeno
 } from "../napake.js";
 import { denar, jeRazprodan, preostanek, danInUra, nacinPlacila, ddvBesedilo, jeDemo } from "../oblika.js";
 import { List, useZaklep, DemoBesedilo } from "../ui.js";
@@ -24,7 +24,7 @@ const danes = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
-export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijava }) {
+export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijava, osvezi }) {
   const koda = useJezik();
   const [email, setEmail] = useState("");
   const [dob, setDob] = useState("");
@@ -90,7 +90,7 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
     const prej = preberiGostNakup(e.id);
     if (prej && prej.e === m && prej.q === kolicina) zasejKljucNakupa("gost", m, e.id, vsebina, prej.k);
     const kljuc = kljucNakupa("gost", m, e.id, vsebina, null);
-    const telo = { email: m, quantity: kolicina, accept_terms: true, terms_version: TERMS_VERSION, locale: kodaJezika() };
+    const telo = { email: m, quantity: kolicina, expected_price_cents: cenaEna, accept_terms: true, terms_version: TERMS_VERSION, locale: kodaJezika() };
     if (potrebujeStarost) telo.date_of_birth = dob;
     try {
       const r = await send(`/guest/events/${e.id}/orders`, { method: "POST", body: telo, glave: { "Idempotency-Key": kljuc } });
@@ -134,6 +134,7 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
       else oznaciIzidNakupa("gost", m, e.id, kljuc, izid);
       if (jeNakup503(err)) zakleni(nakupPocakajS(err));
       else if (jeNakupVObdelavi(err)) zakleni(nakupPocakajS(err, NAKUP_V_OBDELAVI_S));
+      if (jeCenaVstopniceSpremenjena(err) && osvezi) osvezi();   // backend #277 N2: nova cena v listu, kupec potrdi znova
       if (ziv.current) {
         if (jeNakupZaseden(err)) setNapaka(nakupZasedenoSporocilo());
         else if (err instanceof ApiError && err.status === -1 && izid === "nerazresen") setNapaka(nakupBrezOdgovoraSporocilo());

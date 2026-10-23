@@ -9,7 +9,7 @@ import { naloziNaCloudinary, pomanjsajSliko } from "../api.js";
 import { sporocilo } from "../napake.js";
 import { navigiraj, nazaj } from "../usmerjanje.js";
 import * as P from "../podatki.js";
-import { zanrIme, napisCene, seJeKoncal, normalizirajDogodek, koordinata, vSporu } from "../oblika.js";
+import { zanrIme, napisCene, seJeKoncal, normalizirajDogodek, koordinata, vSporu, prodajaZaprta, prodajaUstavljena } from "../oblika.js";
 import { GlavaNazaj, Ikona, Slika, Nalaganje, List } from "../ui.js";
 import { idKluba, poslovno, useKlub, normalizirajDogodke, centiIz, evriBesedilo, NAJVEC_VIDEA } from "../posel.js";
 import { PoslovnaNapaka, IzbiraLokacije } from "./posel.js";
@@ -17,6 +17,8 @@ import { skenirajVstopnico, naslovRezultata, opisRezultata } from "./posel-skene
 import { jeAktiven } from "../sken/okno.js";
 import { VipVrstica, OznakaGuestList } from "../vip.js";
 import { VipDogodka, RezervacijeVip, RazporedDogodka } from "./posel-vip-dogodek.js";
+
+const NASLOV_NAJVEC = 200;   // backend NASLOV_NAJVEC (ARCHITECTURE »Naslov dogodka«)
 
 /** Vsebina obrazca za primerjavo "neshranjeno" (zanri so Set). */
 const vsebinaObrazca = p => JSON.stringify({ ...p, genres: [...p.genres].sort() });
@@ -27,6 +29,14 @@ function stanje(e) {
   if (e.status === "cancelled") return { napis: t("Cancelled"), razred: "rdeca" };
   if (e.status === "draft") return { napis: t("Draft"), razred: "oranzna" };
   return seJeKoncal(e) ? { napis: t("Ended"), razred: "utisano" } : { napis: t("Upcoming"), razred: "zelena" };
+}
+
+/* Zakaj kupci ne morejo kupiti (backend 055 #327): pavza ali okno prodaje, ki ga nastavi Outly (admin). Samo objavljen prihajajoc
+   dogodek z vstopnicami na Outlyju; star backend (brez polj) = nic. Datuma okna /business/events danes ne vraca. */
+function prodajaLastniku(e) {
+  if (e.status !== "published" || e.ticket_price_cents == null || seJeKoncal(e) || (e._zacetek && e._zacetek <= new Date())) return "";
+  if (prodajaUstavljena(e)) return t("Sales paused");
+  return prodajaZaprta(e) ? t("Sales closed") : "";
 }
 
 /** Prihajajoci najprej (najblizji na vrhu), nato pretekli (najnovejsi na vrhu) - kot iOS. */
@@ -71,6 +81,7 @@ export function DogodkiKluba({ klub }) {
             <strong>${e.title}</strong>
             <span class="vdk-datum">${datumDogodka(e._zacetek)}</span>
             <span class="vdk-meta"><span class=${st.razred}>${st.napis}</span>
+              ${prodajaLastniku(e) ? html`<span class="oranzna" data-testid="prodaja-stanje">${prodajaLastniku(e)}</span>` : null}
               ${e.ticket_price_cents != null || e.ticket_url ? html`<span>${napisCene(e)}</span>` : null}
               ${e.recap_video_url ? html`<span class="modra"><${Ikona} ime="square-play" velikost=${12} /> ${t("Video")}</span>`
                 : e.recap_allowed ? html`<span><${Ikona} ime="upload" velikost=${12} /> ${t("Add video")}</span>` : null}</span>
@@ -184,6 +195,9 @@ export function ObrazecDogodka({ klub, dogodek }) {
     setNapaka("");
     const title = p.title.trim();
     if (!title) return setNapaka(t("Enter a title."));
+    // Najvec 200 znakov (backend, 23. 10. 2026): steje znake Unicode po trim() (emoji = 1), ne enot UTF-16 kot maxlength.
+    // Star daljsi naslov, ki ga uporabnik ni spremenil, streznik sprejme (primerja po trim()), zato ga ne zavrnemo.
+    if ([...title].length > NASLOV_NAJVEC && !(obstojeci && title === (obstojeci.title || "").trim())) return setNapaka(t("The title can have at most 200 characters."));
     const zacetek = new Date(p.start);
     if (!p.start || Number.isNaN(zacetek.getTime())) return setNapaka(t("Enter a valid start date."));
     const konec = p.imaKonec ? new Date(p.end) : null;
@@ -237,7 +251,7 @@ export function ObrazecDogodka({ klub, dogodek }) {
     <${GlavaNazaj} naslov=${naslov} rezerva=${baza + "/events"} />
     <div class="obrazec-dogodka">
       <fieldset><legend>${t("Event")}</legend>
-        <label class="polje-oznaceno">${t("Title")}<input value=${p.title} maxlength="120" onInput=${e => nastavi("title", e.target.value)} /></label>
+        <label class="polje-oznaceno">${t("Title")}<input value=${p.title} maxlength=${NASLOV_NAJVEC} onInput=${e => nastavi("title", e.target.value)} /></label>
         <label class="polje-oznaceno">${t("Description")}<textarea rows="4" maxlength="4000" value=${p.description} onInput=${e => nastavi("description", e.target.value)}></textarea></label>
       </fieldset>
       <fieldset><legend>${t("When")}</legend>
