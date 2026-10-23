@@ -11,6 +11,7 @@ import { MenijskaVrstica } from "./racun.js";
 import { LastnikProfil } from "./posel.js";
 import { useObraz } from "../posel.js";
 import { VrsticaNamestitve } from "./namestitev.js";
+import { oznakaPogojev } from "../pogoji.js";
 
 export function Profil() {
   const { prijavljen, me, email, meNapaka } = useSeja(s => s);
@@ -64,7 +65,7 @@ function PravneVrstice() {
   return html`<div class="seznam-kartica">
     <${MenijskaVrstica} href="/app/help" ikona="circle-question-mark" naslov=${t("Support")} />
     <${MenijskaVrstica} href="/app/about" ikona="info" naslov=${t("About")} />
-    <a class="menijska-vrstica" href="/terms" target="_blank" rel="noopener"><${Ikona} ime="link" /><span>${t("Terms of Service")}</span></a>
+    <a class="menijska-vrstica" href="/terms" target="_blank" rel="noopener"><${Ikona} ime="link" /><span>${oznakaPogojev()}</span></a>
     <a class="menijska-vrstica" href=${zasebnost} target="_blank" rel="noopener"><${Ikona} ime="lock" /><span>${t("Privacy Policy")}</span></a>
   </div>`;
 }

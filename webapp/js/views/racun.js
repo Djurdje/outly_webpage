@@ -15,6 +15,7 @@ import { Razpon } from "./filtri.js";
 import { DRZAVE_SEZNAM, najvecDatumRojstva } from "./onboarding.js";
 import { CLANKI } from "../pomoc-clanki.js";
 import { nastaviObraz } from "../posel.js";
+import { oznakaPogojev } from "../pogoji.js";
 
 const Vrstica = ({ href, ikona, naslov, znacka, onClick, rdeca }) => {
   const vsebina = html`<${Ikona} ime=${ikona} /><span>${naslov}</span>
@@ -432,7 +433,7 @@ export function OAplikaciji() {
     <img class="avt-logo" src="/assets/transperent-logo.png" alt="Outly" width="220" height="220" />
     <p class="besedilo-opis srednje">${t("Outly helps you find where to go tonight: clubs, events and tickets.")}</p>
     <div class="seznam-kartica">
-      <a class="menijska-vrstica" href="/terms" target="_blank" rel="noopener"><${Ikona} ime="link" /><span>${t("Terms of Service")}</span></a>
+      <a class="menijska-vrstica" href="/terms" target="_blank" rel="noopener"><${Ikona} ime="link" /><span>${oznakaPogojev()}</span></a>
       <a class="menijska-vrstica" href=${zasebnost} target="_blank" rel="noopener"><${Ikona} ime="lock" /><span>${t("Privacy Policy")}</span></a>
       <a class="menijska-vrstica" href="mailto:luka@outly.si"><${Ikona} ime="mail" /><span>${t("Contact us")}</span></a>
     </div>
