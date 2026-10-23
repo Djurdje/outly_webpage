@@ -227,6 +227,8 @@ const PREDNOSTNA = [
 function prevediApi(e) {
   // Najprej kode novih primerov (JSON { error, message }): njihovo besedilo ne sme zadeti splosnih pravil spodaj.
   switch (kodaNapake(e)) {
+    // PATCH /me complete_onboarding brez datuma rojstva (backend, 23. 10. 2026): 400 { error, message }. Datum rojstva ostane obvezen.
+    case "date_of_birth_required": if (e.status === 400) return t("Date of birth is required."); break;
     case "request_in_progress": return t("Your previous attempt is still being processed. Please try again in a moment.");
     case "idempotency_key_reused":
     case "invalid_idempotency_key": return t("Something changed, please try again.");
