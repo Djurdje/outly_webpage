@@ -7,7 +7,7 @@ import { sporocilo } from "../napake.js";
 import { naloziMe, useSeja, jeAdmin } from "../seja.js";
 import { navigiraj } from "../usmerjanje.js";
 import { normalizirajDogodek, seJeKoncal, danKratek, cena, jeDemo } from "../oblika.js";
-import { GlavaNazaj, Ikona, Avatar, Slika, Nalaganje, Napaka, List, NaslovSekcije, OznakaDemo } from "../ui.js";
+import { GlavaNazaj, Ikona, Avatar, Plakat, Nalaganje, Napaka, List, NaslovSekcije, OznakaDemo } from "../ui.js";
 
 /* ---------------- My friends ---------------- */
 export function MojiPrijatelji() {
@@ -201,7 +201,7 @@ export function NacrtiPrijateljev() {
       <strong>${t("No plans yet")}</strong><span>${t("When a friend gets a ticket, the event shows up here.")}</span></div>` : null}
     ${prikazani.map(p => html`<div class="kartica-nacrta" key=${p.id}>
       <a class="kn-vrh" href=${"/app/event/" + p.id}>
-        <span class="vd-slika"><${Slika} src=${p.poster_url} sirina=${150} alt="" /></span>
+        <span class="vd-slika"><${Plakat} src=${p.poster_url} sirina=${150} alt="" /></span>
         <span class="kv-besedilo"><strong>${p.title}</strong><span>${[p.club_name, danKratek(p._zacetek)].filter(Boolean).join(" · ")}</span></span>
         ${jeDemo(p) ? html`<${OznakaDemo} />` : null}
       </a>

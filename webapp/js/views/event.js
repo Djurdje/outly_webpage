@@ -13,7 +13,7 @@ import {
   denar, cena, jeMimo, jeRazprodan, jeMaloVstopnic, preostanek, seJeKoncal, danDolg, ura, mesecKratko, relativno, varenUrl,
   prizorisce, koordinata, jeDemo, prodajaZaprta, prodajaUstavljena, odprtjeProdaje, danInUra
 } from "../oblika.js";
-import { Ikona, Slika, Avatar, GlavaNazaj, Nalaganje, Napaka, List, OznakaDemo, DemoBesedilo } from "../ui.js";
+import { Ikona, Slika, Plakat, Avatar, GlavaNazaj, Nalaganje, Napaka, List, OznakaDemo, DemoBesedilo } from "../ui.js";
 import { NakupList } from "./nakup.js";
 import { GostNakupList } from "./nakup-gost.js";
 import { gostNakupVklopljen } from "../gost.js";
@@ -115,6 +115,7 @@ export function Dogodek({ id }) {
     <div class="dogodek-hero">
       ${posnetek
         ? html`<video class="hero-video" src=${posnetek} poster=${naslovnaSlika || null} controls playsinline preload="none"></video>`
+        : e.poster_url ? html`<${Plakat} src=${e.poster_url} sirina=${1000} alt=${e.title} nujna=${true} />`
         : html`<${Slika} src=${naslovnaSlika} sirina=${1000} alt=${e.title} nujna=${true} />`}
       <span class="hero-senca" aria-hidden="true"></span>
       <${GlavaNazaj} prosojna=${true} />

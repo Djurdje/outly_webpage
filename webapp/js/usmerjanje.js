@@ -55,7 +55,9 @@ const POTI = [
   ["/app/business/:klub/bar-prices", "biz-bar-prices"],
   ["/app/business/:klub/scan", "biz-scan"],
   ["/app/business/:klub/service", "biz-service"],   // Table service (natakar/manager/lastnik); ?dogodek=ID iz zvonca
-  ["/app/business/:klub/vip", "biz-vip"]
+  ["/app/business/:klub/vip", "biz-vip"],
+  ["/app/business/:klub/reservations", "biz-reservations"],   // Rezervacije miz (owner, manager): seznam dogodkov
+  ["/app/business/:klub/reservations/:dogodek", "biz-reservation-event"]
 ].map(([vzorec, ime]) => {
   const imena = [];
   const re = new RegExp("^" + vzorec.replace(/:(\w+)/g, (m, k) => { imena.push(k); return "([^/]+)"; }) + "/?$");

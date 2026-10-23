@@ -7,7 +7,7 @@ import { t, tn, kodaJezika } from "../i18n.js";
 import { send, pocistiPredpomnilnik, kljucNakupa, pozabiKljucNakupa, nerazresenNakup, oznaciIzidNakupa, zapomniCakajocePlacilo, obnoviCakajocePlacilo } from "../api.js";
 import { uidSeje, useSeja, jeAdmin } from "../seja.js";
 import {
-  sporocilo, ApiError, jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo,
+  sporocilo, ApiError, kodaNapake, jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo,
   jeNakupVObdelavi, NAKUP_V_OBDELAVI_S, izidNakupa, jeNarociloNeaktivno, nakupNapakaSporocilo, nakupBrezOdgovoraSporocilo, potekloPlacilo, placiloVObdelavi, placiloNepripravljeno, jeMejaBrezplacnih, jeProdajalecNepopoln, jeDemoKlub
 } from "../napake.js";
 import { navigiraj } from "../usmerjanje.js";
@@ -16,6 +16,7 @@ import { PogojiNakupa, BlokProdajalca, OpombaVracila, TERMS_VERSION } from "../p
 import { denar, danInUra, nacinPlacila, normalizirajProdajalca, ddvBesedilo, jeDemo } from "../oblika.js";
 import { List, Ikona, Nalaganje, Napaka, useZaklep, DemoBesedilo } from "../ui.js";
 import { VipRazdeli, mejaStarostiVip, zapomniCakajocVip } from "./vip-razdeli.js";
+import { rezervirajMizo, normalizirajRezervacijo, PodrobnostiRezervacije, OdpovedRezervacije } from "./vip-rezervacija.js";
 import {
   C, doOseb, normalizirajTloris, normalizirajMize, normalizirajPakete, useSirina,
   TlorisPlatno, ElementTlorisa, OblikaMize, LegendaMiz, VipVrstica
@@ -57,6 +58,9 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
   const [napaka, setNapaka] = useState("");
   const [nakup, setNakup] = useState(null);
   const [razdeljujem, setRazdeljujem] = useState(false);   // prenosi prijateljem tecejo: list se ne da zapreti
+  const [gost, setGost] = useState("");   // ime za rezervacijo (samo pri placilu na vratih; neobvezno)
+  const [rezervacija, setRezervacija] = useState(null);   // uspesna rezervacija (placilo na vratih)
+  const [preklicana, setPreklicana] = useState(false);
   const tece = useRef(false);   // zascita pred dvojnim klikom (stanje se posodobi prepozno)
   const [zaklenjeno, zakleni] = useZaklep();   // po 503 (semafor nakupov) je gumb nekaj sekund onemogocen
 
@@ -68,6 +72,8 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
       const d = {
         // Demo klub (backend #243, is_demo tudi v odgovoru VIP): nakup samo adminu.
         demo: (r && r.is_demo === true) || jeDemo(e),
+        // Placilo mize (backend 23. 10. 2026): "door" = samo rezervacija, gotovina na VIP vratih; manjkajoce polje (star backend) = "app".
+        placilo: ((r && r.vip_payment) || e.vip_payment) === "door" ? "door" : "app",
         enabled: !!(r && r.enabled), onSale: !!(r && r.on_sale), valuta: (r && r.currency) || e.currency || "EUR",
         // payment_mode (backend #149): na vrhu odgovora VIP; sicer iz dogodka; star backend = "stripe".
         nacin: nacinPlacila({ payment_mode: (r && r.payment_mode) || e.payment_mode }),
@@ -111,7 +117,7 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
   }, []);
   useEffect(() => {
     if (!odprt) return;
-    setNapaka(""); setNakup(null); setPosiljam(tece.current);
+    setNapaka(""); setNakup(null); setRezervacija(null); setPreklicana(false); setPosiljam(tece.current);
     // Cakajoce Stripe placilo, shranjeno ob preusmeritvi (stran se je medtem naložila znova), se vrne v zapis kljucev.
     const uid = uidSeje();
     if (uid) obnoviCakajocePlacilo("vip", uid, e.id);
@@ -129,7 +135,8 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
   const mejaPaketa = d ? Math.max(Number(e.min_age) > 0 ? Number(e.min_age) : 0, paket && Number(paket.package_min_age) > 0 ? Number(paket.package_min_age) : d.minPaket || 18) : 0;
   const demoZapora = !!d && d.demo && !admin;   // demo klub: namesto gumba besedilo (admin sme zaradi testiranja)
   // Demo: payment_mode je "unavailable" za vse (I17), admin pa kljub temu sme kupiti -> gumb aktiven.
-  const neprodaja = !!d && ((d.nacin === "unavailable" && !d.demo) || demoZapora);
+  const vrata = !!d && d.placilo === "door";   // rezervacija brez placila v aplikaciji: Stripa in »nacina placila« ni
+  const neprodaja = !!d && !vrata && ((d.nacin === "unavailable" && !d.demo) || demoZapora);
 
   async function rezerviraj() {
     if (!miza || tece.current || neprodaja) return;
@@ -197,8 +204,65 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
     tece.current = false;
     setPosiljam(false);
   }
+  /* Placilo na vratih: POST .../reservations (brez Stripa, brez idempotentnega kljuca; najvec ena rezervacija na uporabnika in dogodek). */
+  async function rezervirajNaVratih() {
+    if (!miza || tece.current || demoZapora) return;
+    if (!prijavljen) {
+      const nazajNa = `/app/event/${e.id}?vip=1&table=${miza.id}` + (paketId ? `&pkg=${paketId}` : "");
+      navigiraj(`/app/login?next=${encodeURIComponent(nazajNa)}`);
+      return;
+    }
+    if (imaPakete && !paket) return setNapaka(t("Choose your bottle"));
+    tece.current = true;
+    setPosiljam(true); setNapaka("");
+    try {
+      const telo = { expected_price_cents: miza.price_cents };
+      if (paket) telo.package_id = paket.id;
+      if (gost.trim()) telo.guest_name = gost.trim();
+      const r = await rezervirajMizo(e.id, miza.id, telo);
+      pocistiPredpomnilnik();
+      const rez = normalizirajRezervacijo(r && r.reservation) || normalizirajRezervacijo({
+        event_id: e.id, event_title: e.title, club_name: imeKluba, table_id: miza.id, table_label: miza.label, seats: miza.seats,
+        package_name: paket ? paket.name : "", price_cents: miza.price_cents, currency: d.valuta, guest_name: gost.trim()
+      });
+      if (ziv.current && odprtRef.current) { setRezervacija({ ...rez, event_title: rez.event_title || e.title, club_name: rez.club_name || imeKluba || "", _zacetek: rez._zacetek || e._zacetek }); setGost(""); }
+    } catch (err) {
+      const koda = kodaNapake(err);
+      // Nacin placila se je medtem spremenil (klub): osvezi list, kupec vidi novo stanje.
+      if (koda === "vip_pay_in_app" || koda === "vip_pay_at_door") nalozi(true);
+      else if (err && err.status === 409 && koda !== "reservation_limit" && !jeDemoKlub(err)) { nalozi(true); setMizaId(null); }   // zasedeno, cena spremenjena ali prodaja zaprta: osvezi tloris
+      if (jeNakup503(err)) zakleni(nakupPocakajS(err));
+      setNapaka(jeNakupZaseden(err) ? nakupZasedenoSporocilo() : sporocilo(err));
+    }
+    tece.current = false;
+    setPosiljam(false);
+  }
   // Med letecim nakupom lista ni mogoce zapreti (odgovor bi se izgubil, kupec bi rezerviral znova).
   const zapriVarno = () => { if (!tece.current) zapri(); };
+
+  /* ---- potrditev rezervacije (placilo na vratih) ---- */
+  if (rezervacija || preklicana) {
+    return html`<${List} odprt=${true} zapri=${zapriVarno} naslov=${t("VIP tables")}>
+      ${rezervacija ? html`
+        <div class="uspeh">
+          <span class="uspeh-krog"><${Ikona} ime="check" velikost=${28} debelina=${3} /></span>
+          <strong>${t("Your table is reserved")}</strong>
+          <span>${rezervacija.event_title}${rezervacija._zacetek ? " · " + danInUra(rezervacija._zacetek) : ""}</span>
+        </div>
+        <${PodrobnostiRezervacije} r=${rezervacija} />
+        <p class="opomba srednje">${t("Nothing was charged in the app. Pay at the VIP door when you arrive.")}</p>
+        <button type="button" class="gumb-glavni" onClick=${zapri}>${t("Done")}</button>
+        <a class="povezava-modra srednje" href="/app/tickets">${t("See it in Tickets")}</a>
+        <${OdpovedRezervacije} r=${rezervacija} odpovedano=${() => { setRezervacija(null); setPreklicana(true); }} />`
+      : html`
+        <div class="uspeh">
+          <span class="uspeh-krog"><${Ikona} ime="check" velikost=${28} debelina=${3} /></span>
+          <strong>${t("Reservation cancelled")}</strong>
+          <span class="utisano">${t("The table is available to others again.")}</span>
+        </div>
+        <button type="button" class="gumb-glavni" onClick=${zapri}>${t("Done")}</button>`}
+    <//>`;
+  }
 
   /* ---- potrditev ---- */
   if (nakup) {
@@ -265,7 +329,17 @@ export function VipList({ odprt, zapri, dogodek: e, imeKluba, klub, prijavljen, 
         </div>` : null}
       </div>` : html`<p class="opomba srednje">${t("Tap a free table to reserve it.")}</p>`}
       ${miza && demoZapora ? html`<div class="vip-pas-nakupa"><${DemoBesedilo} /></div>` : null}
-      ${miza && !demoZapora ? html`<div class="vip-pas-nakupa">
+      ${miza && !demoZapora && vrata ? html`<div class="vip-pas-nakupa">
+        <p class="rez-placilo-vrata" data-testid="vip-vrata"><${Ikona} ime="info" velikost=${16} /> ${t("Pay {price} in cash at the VIP door", { price: denar(miza.price_cents, d.valuta) })}</p>
+        <p class="opomba">${t("Nothing is charged in the app.")}</p>
+        <label class="polje-oznaceno"><span>${t("Name for the reservation (optional)")}</span>
+          <input type="text" name="guest_name" value=${gost} maxlength="60" autocomplete="off" disabled=${posiljam}
+            onInput=${x => setGost(x.target.value)} /></label>
+        ${imaPakete ? html`<p class="opomba" data-testid="vip-starost">${t("{n}+ · ID at the door", { n: mejaPaketa })}</p>` : null}
+        <button type="button" class="gumb-glavni" onClick=${rezervirajNaVratih} disabled=${posiljam || zaklenjeno || !d.onSale || (imaPakete && !paket)}>
+          ${posiljam ? t("Processing...") : t("Reserve table")}</button>
+      </div>` : null}
+      ${miza && !demoZapora && !vrata ? html`<div class="vip-pas-nakupa">
         <p class="opomba">${ddvBesedilo(d.prodajalec)}</p>
         <${BlokProdajalca} prodajalec=${d.prodajalec} />
         ${imaPakete ? html`<p class="opomba" data-testid="vip-starost">${t("{n}+ · ID at the door", { n: mejaPaketa })}</p>` : null}
