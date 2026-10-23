@@ -56,7 +56,7 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
     const prej = preberiGostNakup(e.id);
     if (prej) { setEmail(prej.e); setKolicina(Math.max(1, Math.min(prej.q, najvec))); }
     else setKolicina(k => Math.min(k, najvec));
-    setNapaka("");
+    setNapaka(""); setPromoNapaka("");   // list ostane namescen: stara napaka kode ob ponovnem odprtju ne sme ostati
   }, [odprt]);
   // Cena null = vstopnic ni na Outlyju; tak dogodek nima nakupa (in NI "Free").
   if (!odprt || e.ticket_price_cents == null) return null;
@@ -94,8 +94,8 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
     const kljuc = kljucNakupa("gost", m, e.id, vsebina, null);
     const telo = { email: m, quantity: kolicina, expected_price_cents: cenaEna, accept_terms: true, terms_version: TERMS_VERSION, locale: kodaJezika() };
     if (potrebujeStarost) telo.date_of_birth = dob;
-    const koda = promoKoda(promo);
-    if (koda) telo.promo_code = koda;   // prazno = polja ne posljemo; koda NI del kljuca nakupa (backend)
+    const promoVnos = promoKoda(promo);
+    if (promoVnos) telo.promo_code = promoVnos;   // prazno = polja ne posljemo; koda NI del kljuca nakupa (backend)
     try {
       const r = await send(`/guest/events/${e.id}/orders`, { method: "POST", body: telo, glave: { "Idempotency-Key": kljuc } });
       pocistiPredpomnilnik();   // zaloga (sold_count) na karticah naj bo sveza
@@ -129,6 +129,7 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
       shraniGostZeton(zeton);
       pozabiGostNakup({ dogodek: e.id });
       pozabiKljucNakupa("gost", m, e.id, kljuc);   // uspeh: naslednji nakup dobi nov kljuc
+      if (ziv.current) setPromo("");   // koda ne sme tiho v naslednji nakup
       if (ziv.current && odprtRef.current) { navigiraj("/app/guest/order"); return; }
       // List se je medtem odmontiral: zeton je shranjen, kupec ga najde na /app/guest/order (in v mailu).
     } catch (err) {
@@ -151,7 +152,7 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
     if (ziv.current) setPosiljam(false);
   }
   // Med letecim nakupom lista ni mogoce zapreti (odgovor bi se izgubil, uporabnik bi placal znova).
-  const zapriVarno = () => { if (!tece.current) zapri(); };
+  const zapriVarno = () => { if (!tece.current) { setPromoNapaka(""); zapri(); } };   // napaka kode ne sme ostati do naslednjega odprtja (brez utripa stare napake pred ucinkom)
 
   if (vRacunu) {
     return html`<${List} odprt=${true} zapri=${() => { setVRacunu(false); zapri(); }} naslov=${t("Your tickets")}>
@@ -194,7 +195,7 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
         </div>
       </div>
 
-      ${demo || neprodaja ? null : html`<${PromoPolje} vrednost=${promo} spremeni=${v => { setPromoNapaka(""); setPromo(v); }} napaka=${promoNapaka} onemogoceno=${posiljam} />`}
+      ${demo || neprodaja ? null : html`<${PromoPolje} vrednost=${promo} spremeni=${v => { setPromoNapaka(""); polje(setPromo)(v); }} napaka=${promoNapaka} onemogoceno=${posiljam} />`}
 
       <div class="nakup-skupaj">
         <span>${t("Total")}<small class="utisano"> · ${ddvBesedilo(e.seller)}</small></span>

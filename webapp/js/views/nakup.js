@@ -50,6 +50,7 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba, osvezi }) {
     // Kupec je ze prisel do Stripa: ni "morda je nastalo", ampak nedokoncano placilo - ponovitev vrne isti checkout_url.
     setCakaPlacilo(!!(prej && prej.cakaPlacilo));
     setNapaka(prej && !prej.cakaPlacilo ? nakupBrezOdgovoraSporocilo() : ""); setNakup(null);
+    setPromoNapaka("");   // list ostane namescen: stara napaka kode ob ponovnem odprtju ne sme ostati
   }, [odprt, sejaEmail]);
   // Cena null = vstopnic ni na Outlyju; tak dogodek nima nakupa (in NI "Free").
   if (!odprt || e.ticket_price_cents == null) return null;
@@ -77,8 +78,8 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba, osvezi }) {
     // timeoutu/503/409 in po zaprtju ter ponovnem odprtju lista: backend vrne isto narocilo (201).
     const kljuc = kljucNakupa("vstopnice", uid, e.id, String(kolicina), { dogodek: e.id, kolicina });
     const telo = { quantity: kolicina, expected_price_cents: cenaEna, locale: kodaJezika(), terms_version: TERMS_VERSION };
-    const koda = promoKoda(promo);
-    if (koda) telo.promo_code = koda;   // prazno = polja ne posljemo; koda NI del kljuca nakupa (backend)
+    const promoVnos = promoKoda(promo);
+    if (promoVnos) telo.promo_code = promoVnos;   // prazno = polja ne posljemo; koda NI del kljuca nakupa (backend)
     try {
       const r = await send(`/events/${e.id}/orders`, { method: "POST", body: telo, auth: true, glave: { "Idempotency-Key": kljuc } });
       pocistiPredpomnilnik();
@@ -97,7 +98,7 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba, osvezi }) {
       if (izidS === "obdelava") { oznaciIzidNakupa("vstopnice", uid, e.id, kljuc, "nerazresen"); zakleni(30); if (ziv.current) setNapaka(placiloVObdelavi()); }
       else if (izidS === "poteklo") { oznaciIzidNakupa("vstopnice", uid, e.id, kljuc, "dokoncen"); if (ziv.current) { setCakaPlacilo(false); setNapaka(potekloPlacilo()); } }
       else if (izidS === "nepripravljeno") { oznaciIzidNakupa("vstopnice", uid, e.id, kljuc, "nerazresen"); if (ziv.current) setNapaka(placiloNepripravljeno()); }
-      else if (ziv.current && odprtRef.current) { pozabiKljucNakupa("vstopnice", uid, e.id, kljuc); setNakup(r); }   // uspeh: naslednji nakup dobi nov kljuc
+      else if (ziv.current && odprtRef.current) { pozabiKljucNakupa("vstopnice", uid, e.id, kljuc); setNakup(r); setPromo(""); }   // uspeh: naslednji nakup dobi nov kljuc
       // Uspeh, ki ga uporabnik ni videl (list se je medtem odmontiral): kljuca NE pozabimo - ponovitev vrne isto narocilo (Idempotent-Replayed).
       else oznaciIzidNakupa("vstopnice", uid, e.id, kljuc, "nerazresen");
     } catch (err) {
@@ -121,7 +122,7 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba, osvezi }) {
     setPosiljam(false);
   }
   // Med letecim nakupom lista ni mogoce zapreti (odgovor bi se izgubil, uporabnik bi placal znova).
-  const zapriVarno = () => { if (!tece.current) zapri(); };
+  const zapriVarno = () => { if (!tece.current) { setPromoNapaka(""); zapri(); } };   // napaka kode ne sme ostati do naslednjega odprtja (brez utripa stare napake pred ucinkom)
 
   if (nakup) {
     const vst = (nakup.tickets || []).filter(v => v.qr);
