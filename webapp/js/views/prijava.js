@@ -24,7 +24,8 @@ let cakajoce = null;   // { email, geslo }
 const pozabiGeslo = () => { cakajoce = null; };
 const gesloZa = email => (cakajoce && cakajoce.email === email ? cakajoce.geslo : null);
 let tihaPrijavaTece = null;   // obljuba: vzporedni klici (vrnitev v zavihek + gumb) pocakajo isto prijavo
-// GoTrue je pravkar rekel email_not_confirmed: 10 s ne sprasujemo znova (Supabase omejuje prijave na IP, npr. Wi-Fi v klubu).
+// GoTrue je pravkar rekel email_not_confirmed: vrnitev v zavihek 10 s ne sprasuje znova (Supabase omejuje prijave na IP).
+// Koda in "Resend" vedno vprasata: otp_expired je lahko ravno znak, da je Gmail medtem porabil povezavo.
 let zadnjiNepotrjen = { email: "", cas: 0 };
 let vstopTece = false;   // tiha prijava in koda lahko uspeta hkrati: en vstop
 
@@ -208,13 +209,14 @@ export function Potrditev() {
     const ob = () => {
       if (document.visibilityState !== "visible" || Date.now() - zadnja < 10000) return;
       zadnja = Date.now();
-      tihaPrijava();
+      tihaPrijava(true);
     };
     document.addEventListener("visibilitychange", ob);
     return () => document.removeEventListener("visibilitychange", ob);
   }, [email, !!povezava]);
-  // Geslo ne sme ostati v pomnilniku, ko uporabnik zapusti potrditev (skupna naprava).
-  useEffect(() => pozabiGeslo, []);
+  // Geslo ne sme ostati v pomnilniku, ko uporabnik zapusti potrditev (skupna naprava). Menjava jezika zaslon znova
+  // montira (main.js key=jezik) na isti poti - takrat geslo ostane.
+  useEffect(() => () => { if (!/^\/app\/verify\/?$/.test(location.pathname)) pozabiGeslo(); }, []);
 
   async function vstopi() {
     if (vstopTece) return;
@@ -229,10 +231,10 @@ export function Potrditev() {
   /* Tiha prijava z geslom iz pomnilnika: uspe samo, ce je racun ze potrjen; nic ne pokaze. Vrne "prijavljen"
      (in preusmeri), "nepotrjen" (GoTrue: email_not_confirmed) ali "neznano" (brez gesla, napacno geslo,
      omejitev poskusov, omrezje) - takrat ne vemo, ali je racun ze potrjen. */
-  function tihaPrijava() {
+  function tihaPrijava(izVrnitve = false) {
     const geslo = gesloZa(email);
     if (!email || !geslo) return Promise.resolve("neznano");
-    if (zadnjiNepotrjen.email === email && Date.now() - zadnjiNepotrjen.cas < 10000) return Promise.resolve("nepotrjen");
+    if (izVrnitve && zadnjiNepotrjen.email === email && Date.now() - zadnjiNepotrjen.cas < 10000) return Promise.resolve("nepotrjen");
     if (!tihaPrijavaTece) {
       tihaPrijavaTece = (async () => {
         const { error } = await supabase.auth.signInWithPassword({ email, password: geslo });
