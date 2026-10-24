@@ -1,6 +1,8 @@
 /* Prijava, registracija, potrditev e-naslova s kodo, pozabljeno geslo (Auth/*.swift).
    Isti tok kot iOS: koda iz maila (6-10 stevk), ne povezava - zato spletna aplikacija ne rabi
-   dodatnih preusmeritvenih URL-jev v Supabase. Registracija: kljukica 18+ in pogoji (kot outly.si). */
+   dodatnih preusmeritvenih URL-jev v Supabase. Povezava v mailu lahko vodi na /app/verify oz. /app/forgot
+   s ?token_hash=...&type=... (predloga v Supabase): potrdi se sele ob kliku na gumb, ne ob odprtju strani.
+   Registracija: kljukica 18+ in pogoji (kot outly.si). */
 import { html, useEffect, useState } from "../lib.js";
 import { t } from "../i18n.js";
 import { supabase } from "../supabase.js";
@@ -13,6 +15,27 @@ import { JezikGumb } from "./jezik.js";
 import { TERMS_VERSION, EMAIL_RE } from "../pogoji.js";   // verzija pogojev kot auth.js na outly.si (terms.html)
 
 const USER_RE = /^[A-Za-z0-9_]{3,20}$/;   // enako kot backend PATCH /me
+
+/* Geslo iz registracije (ali prijave z nepotrjenim naslovom) ostane SAMO v pomnilniku zavihka, nikoli v localStorage
+   (XSS), dokler naslov ni potrjen - kot iOS CakajocaPotrditev. Zakaj: Gmail (Googlovi strezniki) sam odpre povezavo
+   v potrditvenem mailu in s tem porabi enkratno potrditev; racun je potrjen, koda pa vrne otp_expired in nov mail se
+   za potrjen racun ne poslje (Supabase dnevnik 23. 10. 2026). Tiha prijava s tem geslom uporabnika spusti naprej. */
+let cakajoce = null;   // { email, geslo }
+const pozabiGeslo = () => { cakajoce = null; };
+const gesloZa = email => (cakajoce && cakajoce.email === email ? cakajoce.geslo : null);
+let tihaPrijavaTece = null;   // obljuba: vzporedni klici (vrnitev v zavihek + gumb) pocakajo isto prijavo
+// GoTrue je pravkar rekel email_not_confirmed: vrnitev v zavihek 10 s ne sprasuje znova (Supabase omejuje prijave na IP).
+// Koda in "Resend" vedno vprasata: otp_expired je lahko ravno znak, da je Gmail medtem porabil povezavo.
+let zadnjiNepotrjen = { email: "", cas: 0 };
+let vstopTece = false;   // tiha prijava in koda lahko uspeta hkrati: en vstop
+
+/* Enkratni zeton iz povezave v mailu (?token_hash=...&type=...). Povezava naj vodi sem, ne na Supabase /verify:
+   stran samo pokaze gumb in potrdi sele ob kliku, zato je Googlov pregled povezave ne porabi. */
+function zetonPovezave(pot, tipi) {
+  const zeton = pot.iskanje.get("token_hash") || "";
+  const tip = pot.iskanje.get("type") || "";
+  return zeton && tipi.includes(tip) ? { token_hash: zeton, type: tip } : null;
+}
 
 /* Kam po prijavi: ?next=/app/... (samo poti znotraj aplikacije). */
 export function naslednja(pot) {
@@ -80,9 +103,13 @@ export function Prijava() {
     const { error } = await supabase.auth.signInWithPassword({ email: m, password: geslo });
     setTece(false);
     if (error) {
-      if (error.code === "email_not_confirmed") { lokalno.set(KLJUC_MAIL, m); navigiraj(zNaslednjo(pot, "/app/verify")); return; }
+      if (error.code === "email_not_confirmed") {
+        cakajoce = { email: m, geslo };   // geslo je pravilno (GoTrue ga preveri pred potrditvijo naslova)
+        lokalno.set(KLJUC_MAIL, m); navigiraj(zNaslednjo(pot, "/app/verify")); return;
+      }
       setNapaka(sporocilo(error)); return;
     }
+    pozabiGeslo();
     seja.set({ obvestilo: "" });
     pozabiCakajociMail();   // uspesna prijava: e-naslov iz toka ponastavitve/potrditve ni vec potreben
     await naloziMe();
@@ -137,6 +164,7 @@ export function Registracija() {
       return setNapaka(t("That email is already registered. Sign in instead."));
     }
     if (data && data.session) { pozabiCakajociMail(); await naloziMe(); navigiraj(naslednja(pot), { zamenjaj: true }); return; }
+    cakajoce = { email: m, geslo: p.geslo };
     lokalno.set(KLJUC_MAIL, m);
     navigiraj(zNaslednjo(pot, "/app/verify"), { zamenjaj: true });
   }
@@ -162,9 +190,11 @@ export function Registracija() {
 export function Potrditev() {
   const pot = usePot();
   const email = lokalno.get(KLJUC_MAIL, "") || "";
+  const povezava = zetonPovezave(pot, ["signup", "email"]);
   const [koda, setKoda] = useState("");
   const [napaka, setNapaka] = useState("");
   const [info, setInfo] = useState("");
+  const [namig, setNamig] = useState("");
   const [tece, setTece] = useState(false);
   const [odstevanje, setOdstevanje] = useState(0);
   useEffect(() => {
@@ -172,24 +202,103 @@ export function Potrditev() {
     const id = setTimeout(() => setOdstevanje(odstevanje - 1), 1000);
     return () => clearTimeout(id);
   }, [odstevanje]);
+  // Ob vrnitvi v zavihek (npr. po kliku na povezavo v mailu) tiho preveri, ali je racun ze potrjen; najvec na 10 s.
+  useEffect(() => {
+    if (povezava) return;
+    let zadnja = 0;
+    const ob = () => {
+      if (document.visibilityState !== "visible" || Date.now() - zadnja < 10000) return;
+      zadnja = Date.now();
+      tihaPrijava(true);
+    };
+    document.addEventListener("visibilitychange", ob);
+    return () => document.removeEventListener("visibilitychange", ob);
+  }, [email, !!povezava]);
+  // Geslo ne sme ostati v pomnilniku, ko uporabnik zapusti potrditev (skupna naprava). Menjava jezika zaslon znova
+  // montira (main.js key=jezik) na isti poti - takrat geslo ostane.
+  useEffect(() => () => { if (!/^\/app\/verify\/?$/.test(location.pathname)) pozabiGeslo(); }, []);
+
+  async function vstopi() {
+    if (vstopTece) return;
+    vstopTece = true;
+    try {
+      pozabiGeslo();
+      pozabiCakajociMail();
+      await naloziMe();
+      navigiraj(naslednja(pot), { zamenjaj: true });
+    } finally { vstopTece = false; }
+  }
+  /* Tiha prijava z geslom iz pomnilnika: uspe samo, ce je racun ze potrjen; nic ne pokaze. Vrne "prijavljen"
+     (in preusmeri), "nepotrjen" (GoTrue: email_not_confirmed) ali "neznano" (brez gesla, napacno geslo,
+     omejitev poskusov, omrezje) - takrat ne vemo, ali je racun ze potrjen. */
+  function tihaPrijava(izVrnitve = false) {
+    const geslo = gesloZa(email);
+    if (!email || !geslo) return Promise.resolve("neznano");
+    if (izVrnitve && zadnjiNepotrjen.email === email && Date.now() - zadnjiNepotrjen.cas < 10000) return Promise.resolve("nepotrjen");
+    if (!tihaPrijavaTece) {
+      tihaPrijavaTece = (async () => {
+        const { error } = await supabase.auth.signInWithPassword({ email, password: geslo });
+        if (error) {
+          if (error.code !== "email_not_confirmed") return "neznano";
+          zadnjiNepotrjen = { email, cas: Date.now() };
+          return "nepotrjen";
+        }
+        await vstopi();
+        return "prijavljen";
+      })().catch(() => "neznano").finally(() => { tihaPrijavaTece = null; });
+    }
+    return tihaPrijavaTece;
+  }
 
   async function poslji(ev) {
     ev.preventDefault();
     if (!email || koda.length < 6 || koda.length > 10) return setNapaka(t("Enter the code from the email."));
-    setTece(true); setNapaka("");
+    setTece(true); setNapaka(""); setInfo(""); setNamig("");
     const { error } = await supabase.auth.verifyOtp({ email, token: koda, type: "signup" });
+    if (error) {
+      const porabljena = error.code === "otp_expired" || error.code === "otp_disabled";
+      if (!porabljena) { setTece(false); return setNapaka(sporocilo(error)); }
+      // Povezava v mailu (ali Googlov pregled povezave) je potrditev ze porabila -> ce je racun potrjen, nas tiha prijava spusti naprej.
+      const izid = await tihaPrijava();
+      if (izid === "prijavljen") return;
+      setTece(false);
+      // "nepotrjen": koda je res napacna. Sicer ne vemo, ali je racun ze potrjen -> napotek na prijavo.
+      return setNapaka(izid === "nepotrjen" ? sporocilo(error)
+        : t("This code is wrong or no longer works. If you already confirmed your email with the link, tap “Already confirmed? Sign in” below."));
+    }
     setTece(false);
-    if (error) return setNapaka(sporocilo(error));
-    pozabiCakajociMail();
-    await naloziMe();
-    navigiraj(naslednja(pot), { zamenjaj: true });
+    await vstopi();
   }
   async function znova() {
-    setNapaka(""); setInfo("");
+    setNapaka(""); setInfo(""); setNamig("");
+    setTece(true);
+    // Za ze potrjen racun Supabase maila ne poslje (a vrne 200) -> najprej tiha prijava.
+    const izid = await tihaPrijava();
+    if (izid === "prijavljen") return;
     const { error } = await supabase.auth.resend({ type: "signup", email });
+    setTece(false);
     if (error) return setNapaka(sporocilo(error));
     setInfo(t("We sent you a new code.")); setOdstevanje(60);
+    if (izid !== "nepotrjen") setNamig(t("If your email is already confirmed, no new code is sent. Tap “Already confirmed? Sign in” below."));
   }
+  async function potrdiPovezavo(ev) {
+    ev.preventDefault();
+    setTece(true); setNapaka("");
+    const { error } = await supabase.auth.verifyOtp(povezava);
+    if (error) {
+      setTece(false);
+      return setNapaka(error.code === "otp_expired" ? t("This link is no longer valid. If you already confirmed your email, sign in.") : sporocilo(error));
+    }
+    await vstopi();
+  }
+
+  if (povezava) return html`<${Okvir} naslov=${t("Verify your email")} podnaslov=${t("Tap the button to confirm your email.")}>
+    <form class="obrazec" onSubmit=${potrdiPovezavo} novalidate>
+      <${Sporocilo} besedilo=${napaka} />
+      <button class="gumb-glavni" type="submit" disabled=${tece}>${tece ? t("Verifying...") : t("Confirm email")}</button>
+      <a class="povezava-gumb" href=${zNaslednjo(pot, "/app/login")}>${t("Already confirmed? Sign in")}</a>
+    </form>
+  <//>`;
 
   return html`<${Okvir} naslov=${t("Verify your email")} podnaslov=${t("We sent a verification code to:")}>
     <p class="avt-mail">${email || "—"}</p>
@@ -198,18 +307,22 @@ export function Potrditev() {
         samodejno="one-time-code" vec=${{ inputmode: "numeric", maxlength: 10, class: "koda" }} />
       <${Sporocilo} besedilo=${napaka} />
       <${Sporocilo} besedilo=${info} vrsta="info" />
+      <${Sporocilo} besedilo=${namig} vrsta="info" />
       <button class="gumb-glavni" type="submit" disabled=${tece || !email || koda.length < 6}>${tece ? t("Verifying...") : t("Verify")}</button>
-      <button class="povezava-gumb" type="button" onClick=${znova} disabled=${!email || odstevanje > 0}>
+      <button class="povezava-gumb" type="button" onClick=${znova} disabled=${tece || !email || odstevanje > 0}>
         ${odstevanje > 0 ? t("Resend code in {s} s", { s: odstevanje }) : t("Resend code")}</button>
-      <a class="povezava-gumb" href=${zNaslednjo(pot, "/app/login")}>${t("Already confirmed? Sign in")}</a>
-      <a class="povezava-gumb" href=${zNaslednjo(pot, "/app/register")}>${t("Change email")}</a>
+      <a class="povezava-gumb" href=${zNaslednjo(pot, "/app/login")} onClick=${pozabiGeslo}>${t("Already confirmed? Sign in")}</a>
+      <a class="povezava-gumb" href=${zNaslednjo(pot, "/app/register")} onClick=${pozabiGeslo}>${t("Change email")}</a>
     </form>
   <//>`;
 }
 
 /* ---------------- Pozabljeno geslo: mail -> koda -> novo geslo -> prijava ---------------- */
 export function PozabljenoGeslo() {
-  const [korak, setKorak] = useState("mail");
+  const pot = usePot();
+  const povezava = zetonPovezave(pot, ["recovery"]);
+  const [korak, setKorak] = useState(povezava ? "povezava" : "mail");
+  const [izPovezave, setIzPovezave] = useState(false);   // seja iz povezave v mailu: kode ne rabimo
   const [email, setEmail] = useState(lokalno.get(KLJUC_MAIL, "") || "");
   const [koda, setKoda] = useState("");
   const [geslo, setGeslo] = useState("");
@@ -227,14 +340,29 @@ export function PozabljenoGeslo() {
     if (error) return setNapaka(sporocilo(error));
     setEmail(m); setKorak("koda");
   }
+  /* Povezava v mailu (?token_hash=...&type=recovery): potrdi sele ob kliku (Googlov pregled povezave je ne porabi). */
+  async function potrdiPovezavo(ev) {
+    ev.preventDefault();
+    setTece(true); setNapaka("");
+    const { data, error } = await supabase.auth.verifyOtp(povezava);
+    setTece(false);
+    if (error) {
+      setKorak("mail");
+      return setNapaka(error.code === "otp_expired" ? t("This link is no longer valid. Request a new code below.") : sporocilo(error));
+    }
+    if (data && data.user && data.user.email) setEmail(data.user.email);
+    setIzPovezave(true); setKorak("koda");
+  }
   async function ponastavi(ev) {
     ev.preventDefault();
-    if (koda.length < 6) return setNapaka(t("Enter the code from the email."));
+    if (!izPovezave && koda.length < 6) return setNapaka(t("Enter the code from the email."));
     if (geslo.length < 8) return setNapaka(t("Password must be at least 8 characters."));
     if (geslo !== geslo2) return setNapaka(t("Passwords do not match."));
     setTece(true); setNapaka("");
-    const v = await supabase.auth.verifyOtp({ email, token: koda, type: "recovery" });
-    if (v.error) { setTece(false); return setNapaka(sporocilo(v.error)); }
+    if (!izPovezave) {
+      const v = await supabase.auth.verifyOtp({ email, token: koda, type: "recovery" });
+      if (v.error) { setTece(false); return setNapaka(sporocilo(v.error)); }
+    }
     const u = await supabase.auth.updateUser({ password: geslo });
     if (u.error) { setTece(false); return setNapaka(sporocilo(u.error)); }
     // Kot iOS: nova prijava povsod (stare seje na drugih napravah se odjavijo).
@@ -245,6 +373,13 @@ export function PozabljenoGeslo() {
     navigiraj("/app/login", { zamenjaj: true });
   }
 
+  if (korak === "povezava") return html`<${Okvir} naslov=${t("Reset password")} podnaslov=${t("Tap the button to set a new password.")}>
+    <form class="obrazec" onSubmit=${potrdiPovezavo} novalidate>
+      <${Sporocilo} besedilo=${napaka} />
+      <button class="gumb-glavni" type="submit" disabled=${tece}>${tece ? t("Continue...") : t("Continue")}</button>
+    </form>
+  <//>`;
+
   if (korak === "mail") return html`<${Okvir} naslov=${t("Forgot password?")} podnaslov=${t("Enter your email and we will send you a code.")}>
     <form class="obrazec" onSubmit=${zahtevaj} novalidate>
       <${Polje} tip="email" ime="email" oznaka="email@domain.com" vrednost=${email} ob=${setEmail} samodejno="email" vec=${{ inputmode: "email" }} />
@@ -253,16 +388,16 @@ export function PozabljenoGeslo() {
     </form>
   <//>`;
 
-  return html`<${Okvir} naslov=${t("Reset password")} podnaslov=${t("If that address has an account, we sent a code to:")}>
+  return html`<${Okvir} naslov=${t("Reset password")} podnaslov=${izPovezave ? t("Choose a new password for:") : t("If that address has an account, we sent a code to:")}>
     <p class="avt-mail">${email}</p>
     <form class="obrazec" onSubmit=${ponastavi} novalidate>
-      <${Polje} ime="code" oznaka=${t("code")} vrednost=${koda} ob=${v => setKoda(v.replace(/\D/g, "").slice(0, 10))}
-        samodejno="one-time-code" vec=${{ inputmode: "numeric", maxlength: 10, class: "koda" }} />
+      ${izPovezave ? null : html`<${Polje} ime="code" oznaka=${t("code")} vrednost=${koda} ob=${v => setKoda(v.replace(/\D/g, "").slice(0, 10))}
+        samodejno="one-time-code" vec=${{ inputmode: "numeric", maxlength: 10, class: "koda" }} />`}
       <${Polje} tip="password" ime="password" oznaka=${t("new password")} vrednost=${geslo} ob=${setGeslo} samodejno="new-password" />
       <${Polje} tip="password" ime="password2" oznaka=${t("confirm password")} vrednost=${geslo2} ob=${setGeslo2} samodejno="new-password" />
       <${Sporocilo} besedilo=${napaka} />
       <button class="gumb-glavni" type="submit" disabled=${tece}>${tece ? t("Saving...") : t("Save new password")}</button>
-      <button class="povezava-gumb" type="button" onClick=${() => zahtevaj()} disabled=${tece}>${t("Resend code")}</button>
+      ${izPovezave ? null : html`<button class="povezava-gumb" type="button" onClick=${() => zahtevaj()} disabled=${tece}>${t("Resend code")}</button>`}
     </form>
   <//>`;
 }
