@@ -19,7 +19,9 @@
   const cfg = window.OUTLY_SUPABASE;
   if (!(cfg && cfg.url && cfg.anonKey && window.supabase)) return;
 
+  // seja-fetch.js: neuspela osvezitev zetona, ki ni dokoncna zavrnitev seje, seje ne izbrise (glej datoteko).
   const client = window.supabase.createClient(cfg.url, cfg.anonKey, {
+    ...(window.outlySejaFetch ? { global: { fetch: window.outlySejaFetch } } : {}),
     realtime: { params: { eventsPerSecond: 5 } },
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
   });

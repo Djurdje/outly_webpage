@@ -2,7 +2,7 @@
    Vloge odloca streznik; tu samo beremo, kaj je rekel. */
 import { supabase, odjemalec, koNalozen } from "./supabase.js";
 import { nastaviObraz } from "./posel.js";
-import { send, nastaviObZavrnjeniSeji, pocistiPredpomnilnik, pozabiVseKljuceNakupa, imaShranjenoSejo } from "./api.js";
+import { send, nastaviObZavrnjeniSeji, pocistiPredpomnilnik, pozabiVseKljuceNakupa, imaShranjenoSejo, vzrokZavrnitve } from "./api.js";
 import { ApiError } from "./napake.js";
 import { ustvariTrgovino, useStore, lokalno } from "./store.js";
 import { nastavitve } from "./nastavitve.js";
@@ -36,7 +36,7 @@ let zadnjiUid = null;
 const CAKANJE_SEJE_MS = 3000;
 
 export async function zacniSejo() {
-  nastaviObZavrnjeniSeji(() => odjava("Your session has expired. Please log in again."));
+  nastaviObZavrnjeniSeji(() => odjava("Your session has expired. Please log in again.", "osvezitev zavrnjena"));
   if (!imaShranjenoSejo()) {
     // Gost: seje ni, aplikacija se izrise takoj; supabase-js se nalozi v ozadju, ko je stran nalozena (faza 5).
     posodobiIzSeje(null);
@@ -72,7 +72,12 @@ function poslusajSejo() {
   // Prek koNalozen: poslusalec se registrira, ko je odjemalec ustvarjen - tudi ce je prvo nalaganje padlo.
   koNalozen(c => c.auth.onAuthStateChange((dogodek, nova) => {
     const prej = zadnjiUid;
+    // SIGNED_OUT, ki ga nismo sprozili mi (odjava()) in po katerem je seja se v shrambi: supabase-js je dogodek poslal, shrambe
+    // pa ni pocistil (drug zavihek je ze shranil novo sejo, osvezitev zavrzena). Uporabnik ostane prijavljen - prava odjava
+    // (ta ali drug zavihek, dokoncna zavrnitev) seje iz shrambe izbrise. Vzrok javimo, da se vidi, ce se to kdaj zgodi.
+    if (dogodek === "SIGNED_OUT" && !izrecnaOdjava && imaShranjenoSejo()) { porociloSeje("nepricakovan SIGNED_OUT, seja v shrambi ostane"); return; }
     posodobiIzSeje(nova);
+    if (dogodek === "SIGNED_IN" && nova) zahtevajTrajnoShrambo();
     if (dogodek === "SIGNED_OUT") { seja.set({ me: null }); pocistiPredpomnilnik(); pozabiVseKljuceNakupa(); pocistiNaOdjavi().catch(() => {}); }
     else if (nova && nova.user && nova.user.id !== prej) {
       if (prej) pozabiVseKljuceNakupa();   // drug uporabnik: kljuci nakupov prejsnjega ne smejo ostati
@@ -132,13 +137,45 @@ async function pocistiNaOdjavi() {
   await pocistiSkener();
 }
 
-export async function odjava(obvestilo = "") {
+/* Odjava, ki jo je sprozil uporabnik ali nasa koda (ne supabase-js sam): SIGNED_OUT med njo je pricakovan. */
+let izrecnaOdjava = false;
+
+/* Brskalnik naj shrambe te strani (in s tem seje) ne izprazni ob pomanjkanju prostora. Tiho, enkrat na nalaganje strani, samo po
+   prijavi. Firefox ob persist() pokaze vprasanje uporabniku - tam ne kliccemo. Chrome odloci sam (priljubljenost, namestitev), Safari
+   vrne true/false brez vprasanja. Ne obljublja nic: ITP v Safariju 7-dnevne omejitve s tem ne izklopi (to dela samo namestitev na
+   zacetni zaslon). */
+let trajnoZahtevano = false;
+function zahtevajTrajnoShrambo() {
+  if (trajnoZahtevano) return;
+  trajnoZahtevano = true;
+  try {
+    if (/Firefox\//.test(navigator.userAgent)) return;
+    const sh = navigator.storage;
+    if (sh && sh.persist) Promise.resolve(sh.persisted ? sh.persisted() : false).then(ze => ze || sh.persist()).catch(() => {});
+  } catch { /* brez */ }
+}
+
+/* Sentry (webapp/porocilo.js): samo kategorija in koda napake - nobenih osebnih podatkov, zetonov ali e-naslovov. */
+function porociloSeje(besedilo) {
+  try {
+    const standalone = (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+    if (window.outlyPorociloNapake) window.outlyPorociloNapake(new Error(`Seja: ${besedilo}; standalone=${standalone}`));
+  } catch { /* brez */ }
+}
+
+export async function odjava(obvestilo = "", vzrok = "") {
+  if (obvestilo || vzrok) {   // prisilna odjava (ne klik "Log out"): zapisemo, zakaj
+    const z = vzrokZavrnitve();
+    porociloSeje(`prisilna odjava (${vzrok || "401 /me"})${z ? `, supabase ${z.status} ${z.koda}` : ""}`);
+  }
+  izrecnaOdjava = true;
   pozabiCakajociMail();   // e-naslov iz prijavnega toka ne sme ostati na skupni napravi
   await pocistiNaOdjavi();
   try { await supabase.auth.signOut({ scope: "local" }); } catch { /* lokalno vseeno pocistimo */ }
   pocistiPredpomnilnik();
   pozabiVseKljuceNakupa();   // Idempotency-Key nakupa je vezan na uporabnika: naslednji uporabnik ga ne sme podedovati
   seja.set({ prijavljen: false, me: null, meNapaka: null, obvestilo });
+  izrecnaOdjava = false;
 }
 
 export function nastaviMe(me) { seja.set({ me }); }

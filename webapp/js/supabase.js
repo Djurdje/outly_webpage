@@ -23,8 +23,12 @@ export function odjemalec() {
     obljuba = (async () => {
       if (!window.OUTLY_SUPABASE) await skripta("/supabase-config.js");
       if (!window.supabase) await skripta("/vendor/supabase-2.115.0.js");
+      // Zascita seje (seja-fetch.js): neuspela osvezitev zetona, ki ni dokoncna zavrnitev, seje ne izbrise. Brez nje
+      // (nalaganje pade) odjemalec dela kot doslej.
+      if (!window.outlySejaFetch) await skripta("/seja-fetch.js").catch(() => {});
       const cfg = window.OUTLY_SUPABASE;
       const c = window.supabase.createClient(cfg.url, cfg.anonKey, {
+        ...(window.outlySejaFetch ? { global: { fetch: window.outlySejaFetch } } : {}),
         auth: {
           persistSession: true,
           autoRefreshToken: true,

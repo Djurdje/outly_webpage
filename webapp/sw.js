@@ -6,7 +6,7 @@
      shranjeno samo ob izpadu - po objavi nikoli stara koda.
    - /vendor/*, pisave, ikone (razlicica v imenu / se ne spreminjajo): shranjeno najprej.
    - API (backend, Supabase, Cloudinary), vstopnice, ploscice zemljevida: NE prestrezamo (vedno sveze, kot iOS). */
-const RAZLICICA = "outly-app-12";   // ob dvigu uskladi tudi webapp/porocilo.js
+const RAZLICICA = "outly-app-13";   // ob dvigu uskladi tudi webapp/porocilo.js
 const LUPINA = "/app/";
 /* Staticni graf uvozov main.js (vsi moduli, ki jih aplikacija nalozi ob zagonu). Generira ga webapp/orodja/predhodno-nalaganje.mjs
    (isti izracun kot <link rel="modulepreload"> v app/index.html; `... --preveri` pade, ce se razideta). Brez tega bi po objavi
@@ -49,11 +49,12 @@ const GRAF = [
   "/webapp/js/views/club.js",
   "/webapp/js/views/zloraba-gumb.js",
   "/webapp/js/views/seznami.js",
-  "/webapp/js/pwa.js"
+  "/webapp/js/pwa.js",
+  "/webapp/js/vgrajen.js"
 ];
 /* graf:konec */
 const JEDRO = [...new Set([
-  LUPINA, "/webapp/app.css", "/webapp/zagon.js", "/webapp/porocilo.js", "/webapp/js/main.js", "/webapp/manifest.webmanifest",
+  LUPINA, "/webapp/app.css", "/webapp/apex.js", "/webapp/zagon.js", "/webapp/porocilo.js", "/webapp/js/main.js", "/webapp/manifest.webmanifest",
   "/vendor/preact-10.29.8.module.js", "/vendor/preact-hooks-10.29.8.module.js", "/vendor/htm-3.1.1.module.js",
   "/vendor/qrcode-generator-2.0.4.mjs",
   // Skener vstopnic mora delati tudi, ce se stran odpre brez povezave (issue outly-backend#86): njegova koda in knjiznici
@@ -62,7 +63,7 @@ const JEDRO = [...new Set([
   "/webapp/js/views/posel-skener.js", "/webapp/js/sken/motor.js", "/webapp/js/sken/okno.js", "/webapp/js/sken/podpis.js", "/webapp/js/sken/shramba.js", "/webapp/js/vip.js",
   "/vendor/jsqr-1.4.0.mjs", "/vendor/noble-ed25519-3.2.0.mjs", "/webapp/js/sken/jsqr-delavec.js",
   "/webapp/js/i18n-sl.js",   // slovenski prevodi (nalozijo se leno, a brez njih bi slovenski vratar brez povezave videl angleske napise)
-  "/vendor/supabase-2.115.0.js", "/supabase-config.js",
+  "/vendor/supabase-2.115.0.js", "/supabase-config.js", "/seja-fetch.js",
   "/assets/fonts/inter-latin-wght-normal.woff2", "/assets/fonts/inter-latin-ext-wght-normal.woff2",
   "/assets/icon-192.png", "/assets/icon-512.png",
   ...GRAF
@@ -92,7 +93,7 @@ self.addEventListener("activate", e => {
      Ce kaksen prenos pade (izpad mreze), ne zapisemo nicesar: ostane prejsnja, med seboj skladna kopija.
    - Ostalo (/vendor/*, pisave, ikone - razlicica v imenu): samo manjkajoce (samopopravilo, npr. po starem zagon.js,
      ki je ob "Osvezi" pobrisal ves predpomnilnik). */
-const jeNasaKoda = p => p.startsWith("/webapp/") || p === "/supabase-config.js" || p === LUPINA;
+const jeNasaKoda = p => p.startsWith("/webapp/") || p === "/supabase-config.js" || p === "/seja-fetch.js" || p === LUPINA;
 let osvezujem = null;   // vec sporocil hkrati (vec zavihkov) -> en sam krog
 self.addEventListener("message", e => {
   const d = e.data || {};
@@ -167,7 +168,7 @@ self.addEventListener("fetch", e => {
     return;
   }
   const p = url.pathname;
-  if (p.startsWith("/webapp/") || p === "/supabase-config.js") {
+  if (p.startsWith("/webapp/") || p === "/supabase-config.js" || p === "/seja-fetch.js") {
     // cache: "no-cache": vedno preveri pri strezniku (ETag -> 304). Cloudflare doda max-age=14400 in brez tega bi
     // brskalnik 4 ure po objavi dajal stare module poleg novih (29. 9. 2026: aplikacija obvisela na vrtavki).
     e.respondWith(fetch(new Request(r, { cache: "no-cache" })).then(odg => shraniOdgovor(e, p, odg)).catch(() => caches.match(p).then(z => z || Response.error())));

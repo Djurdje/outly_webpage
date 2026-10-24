@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <!-- www.outly.si -> outly.si, mora biti prvi skript (localStorage je po izvoru), glej webapp/apex.js -->
+  <script src="/webapp/apex.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Outly</title>
   <meta name="description" content="Outly - clubs, events and tickets. The web version of the Outly app." />
@@ -60,6 +62,7 @@
   <link rel="modulepreload" href="/webapp/js/views/zloraba-gumb.js" />
   <link rel="modulepreload" href="/webapp/js/views/seznami.js" />
   <link rel="modulepreload" href="/webapp/js/pwa.js" />
+  <link rel="modulepreload" href="/webapp/js/vgrajen.js" />
   <!-- modulepreload:konec -->
   <!-- Supabase Auth (isti projekt kot aplikacija in outly.si) - gostimo sami; nalozi ga webapp/js/supabase.js leno. -->
   <script type="module" src="/webapp/js/main.js"></script>
