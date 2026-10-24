@@ -49,9 +49,16 @@ export function odjemalec() {
    zato zasloni (prijava ...) napako pokazejo namesto da obvisijo. error.name je kot pri supabase-js, da ga
    api.js (zacasna napaka) in napake.js ("No internet connection") prepoznata; seja ostane (I10). */
 const napakaNalaganja = () => ({ data: { session: null, user: null }, error: { name: "AuthRetryableFetchError", status: 0, message: "Failed to load auth library" } });
+/* Klici, ki ustvarijo NOVO sejo: pred njimi pocakamo, da se konca morebitna odjava v teku (seja.js pocakajOdjavo). Sicer bi zaostali
+   signOut po prijavi izbrisal novo sejo in jo preklical na strezniku (tekma odjava 3 s : takojsnja prijava). */
+const NOVA_SEJA = new Set(["signInWithPassword", "signUp", "verifyOtp", "signInWithOtp", "setSession"]);
+let predNovoSejo = null;
+export function nastaviPredNovoSejo(fn) { predNovoSejo = fn; }
+
 export const supabase = {
   auth: new Proxy({}, {
     get: (_, ime) => (ime === "then" ? undefined
-      : (...argumenti) => odjemalec().then(c => c.auth[ime](...argumenti), () => napakaNalaganja()))
+      : (...argumenti) => (NOVA_SEJA.has(ime) && predNovoSejo ? Promise.resolve(predNovoSejo()).catch(() => {}) : Promise.resolve())
+        .then(() => odjemalec()).then(c => c.auth[ime](...argumenti), () => napakaNalaganja()))
   })
 };

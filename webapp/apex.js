@@ -3,6 +3,9 @@
    Safariju), vidi odjavljeno aplikacijo - v resnici je to drug izvor z drugo (prazno) shrambo. 24. 10. 2026 sta oba izvora
    vrnila 200 brez preusmeritve. Cloudflare Pages _redirects domen ne loči (dokumentacija: "domain-level redirects" niso
    podprti), zato je to varovalo v skriptu; prava rešitev je Bulk Redirect v Cloudflare (www -> apex, 301), glej STATE/poročilo.
+   OPOZORILO: Bulk Redirect preusmeri TUDI PWA, ki je bila na začetni zaslon dodana z www.outly.si (njen izvor je www): vsi taki
+   uporabniki bi izgubili sejo (shramba je po izvoru) in bi se morali prijaviti znova, nato pa aplikacijo na outly.si dodati na
+   začetni zaslon na novo. Skript v standalone načinu zato ne preusmerja; Bulk Redirect tega razlikovanja nima.
    MORA biti prvi skript na vsaki strani, ki bere shrambo (preden karkoli prebere localStorage). Zunanja datoteka zaradi CSP. */
 (function () {
   if (location.hostname !== "www.outly.si") return;

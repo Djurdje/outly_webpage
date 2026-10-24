@@ -1,6 +1,6 @@
 /* Seja uporabnika: prijava prek Supabase, profil iz GET /me (kot SessionStore na iOS).
    Vloge odloca streznik; tu samo beremo, kaj je rekel. */
-import { supabase, odjemalec, koNalozen } from "./supabase.js";
+import { supabase, odjemalec, koNalozen, nastaviPredNovoSejo } from "./supabase.js";
 import { nastaviObraz } from "./posel.js";
 import { send, nastaviObZavrnjeniSeji, pocistiPredpomnilnik, pozabiVseKljuceNakupa, imaShranjenoSejo, vzrokZavrnitve, KLJUC_SEJE } from "./api.js";
 import { ApiError } from "./napake.js";
@@ -92,14 +92,18 @@ function posodobiIzSeje(s) {
 }
 
 /** GET /me; ob 401 (tudi po osvezitvi) je seja mrtva -> odjava. 503 in omrezje: seja ostane. */
+let odjavaStevec = 0;   // poveca se ob vsaki odjavi: zaostal 401 klica, ki se je zacel PRED njo, ne sme odjaviti nove seje
 export async function naloziMe() {
+  const stevec = odjavaStevec;
   try {
     const me = await send("/me", { auth: true });
     seja.set({ me, meNapaka: null });
     return me;
   } catch (e) {
     if (e instanceof ApiError && e.status === 401) {
-      await odjava("Your session has expired. Please log in again.");
+      if (stevec !== odjavaStevec) return null;   // medtem se je zacela odjava (in morda nova prijava): ni vec nasa seja
+      // Seje v shrambi ni (npr. odjava v drugem zavihku): tiha odjava, brez "session expired" in brez porocila v Sentry.
+      await odjava(imaShranjenoSejo() ? "Your session has expired. Please log in again." : "");
       return null;
     }
     seja.set({ meNapaka: e });
@@ -164,8 +168,22 @@ function porociloSeje(besedilo) {
 }
 
 function izbrisiSejoIzShrambe() {
-  try { localStorage.removeItem(KLJUC_SEJE); localStorage.removeItem(KLJUC_SEJE + "-user"); } catch { /* brez */ }
+  let bila = false;
+  try { bila = !!localStorage.getItem(KLJUC_SEJE); localStorage.removeItem(KLJUC_SEJE); localStorage.removeItem(KLJUC_SEJE + "-user"); } catch { /* brez */ }
+  // Drugi zavihki: supabase-js jim ob signOut sporoci SIGNED_OUT prek BroadcastChannel (ime = storageKey). Ker smo shrambo
+  // izbrisali sami (signOut se ni koncal), isto sporocilo posljemo mi, da tudi oni preidejo v gosta.
+  if (bila) try { const k = new BroadcastChannel(KLJUC_SEJE); k.postMessage({ event: "SIGNED_OUT", session: null }); k.close(); } catch { /* brez */ }
 }
+
+/* signOut, ki ga je odjava() po 3 s opustila (caka na zaklep/osvezitev mrtve seje) tece naprej in na koncu izbrise sejo, ki je takrat
+   v shrambi - lahko NOVO prijavo. Zato prijavni tokovi (supabase.js NOVA_SEJA) najprej pocakajo (najvec 35 s; stanje "Signing in..."
+   kazejo zasloni sami, ker je klic v teku). */
+let odjavaVTeku = null;
+export function pocakajOdjavo(mejaMs = 35000) {
+  if (!odjavaVTeku) return Promise.resolve();
+  return Promise.race([odjavaVTeku, new Promise(ok => setTimeout(ok, mejaMs))]);
+}
+nastaviPredNovoSejo(() => pocakajOdjavo());
 
 export async function odjava(obvestilo = "", vzrok = "") {
   if (obvestilo || vzrok) {   // prisilna odjava (ne klik "Log out"): zapisemo, zakaj
@@ -173,13 +191,17 @@ export async function odjava(obvestilo = "", vzrok = "") {
     porociloSeje(`prisilna odjava (${vzrok || "401 /me"})${z ? `, supabase ${z.status} ${z.koda}` : ""}`);
   }
   izrecnaOdjava = true;
+  odjavaStevec++;
   try {
     pozabiCakajociMail();   // e-naslov iz prijavnega toka ne sme ostati na skupni napravi
     await pocistiNaOdjavi();
     // signOut pocaka na zaklep seje in na osvezitev potekle seje: pri mrtvi seji (nedokoncna napaka osvezitve) to traja ~30 s in
     // shrambe ne pocisti. Uporabnik se je izrecno odjavil -> po 3 s ali napaki sejo izbrisemo sami (zaostala osvezitev
     // nato svojih zetonov ne shrani: supabase-js ob izpraznjeni shrambi rotirane zetone zavrze).
-    try { await Promise.race([supabase.auth.signOut({ scope: "local" }), new Promise(ok => setTimeout(ok, 3000))]); } catch { /* lokalno vseeno pocistimo */ }
+    const klic = Promise.resolve(supabase.auth.signOut({ scope: "local" })).catch(() => {});
+    const sledi = klic.finally(() => { if (odjavaVTeku === sledi) odjavaVTeku = null; });
+    odjavaVTeku = sledi;
+    await Promise.race([klic, new Promise(ok => setTimeout(ok, 3000))]);
     izbrisiSejoIzShrambe();
     pocistiPredpomnilnik();
     pozabiVseKljuceNakupa();   // Idempotency-Key nakupa je vezan na uporabnika: naslednji uporabnik ga ne sme podedovati
