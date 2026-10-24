@@ -30,7 +30,10 @@ export { Vrstica as MenijskaVrstica };
 /* ---------------- My Account ---------------- */
 export function MojRacun() {
   const me = useSeja(s => s.me);
-  if (!me) return html`<div class="zaslon"><${GlavaNazaj} rezerva="/app/profile" /><${Nalaganje} /></div>`;
+  // Brez profila (nalaganje traja ali je trajno padlo) mora biti izhod: odjava, sicer bi mrtva seja uporabnika zaprla.
+  // Najprej na /app: ob odjavi na zaslonu "samo prijavljeni" bi varovalo odpeljalo na /app/login?next=...
+  if (!me) return html`<div class="zaslon"><${GlavaNazaj} rezerva="/app/profile" /><${Nalaganje} />
+    <button type="button" class="povezava-gumb rdeca" onClick=${async () => { navigiraj("/app", { zamenjaj: true }); await odjava(); }}>${t("Log out")}</button></div>`;
   return html`<div class="zaslon">
     <${GlavaNazaj} rezerva="/app/profile" />
     <div class="profil-glava">
@@ -46,7 +49,7 @@ export function MojRacun() {
         onClick=${() => { nastaviObraz("club"); navigiraj("/app/profile", { zamenjaj: true }); }} />` : null}
     </div>
     <div class="seznam-kartica">
-      <${Vrstica} ikona="log-out" naslov=${t("Log out")} onClick=${async () => { await odjava(); navigiraj("/app", { zamenjaj: true }); }} />
+      <${Vrstica} ikona="log-out" naslov=${t("Log out")} onClick=${async () => { navigiraj("/app", { zamenjaj: true }); await odjava(); }} />
       <${Vrstica} href="/app/account/delete" ikona="trash" naslov=${t("Delete account")} rdeca=${true} />
     </div>
   </div>`;

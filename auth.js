@@ -19,7 +19,9 @@
   const cfg = window.OUTLY_SUPABASE;
   if (!(cfg && cfg.url && cfg.anonKey && window.supabase)) return;
 
+  // seja-fetch.js: neuspela osvezitev zetona, ki ni dokoncna zavrnitev seje, seje ne izbrise (glej datoteko).
   const client = window.supabase.createClient(cfg.url, cfg.anonKey, {
+    ...(window.outlySejaFetch ? { global: { fetch: window.outlySejaFetch } } : {}),
     realtime: { params: { eventsPerSecond: 5 } },
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
   });
@@ -518,7 +520,9 @@
     }
 
     if (t.dataset.action === "logout") {
-      await client.auth.signOut();
+      // scope local: odjava na tej strani NE sme odjaviti vseh naprav (iOS, PWA, drugi brskalniki). Global je samo pri
+      // brisanju racuna (spodaj) - racun je takrat ze izbrisan in vse seje tako ali tako ne obstajajo vec.
+      await client.auth.signOut({ scope: "local" });
       close();
       return;
     }

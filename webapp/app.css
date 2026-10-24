@@ -87,6 +87,16 @@ h1,h2,h3,p{ margin:0; }
 .vrtavka{ width:26px; height:26px; border-radius:50%; border:2.5px solid var(--b14); border-top-color:var(--bela); animation:vrti .8s linear infinite; }
 @keyframes vrti{ to{ transform:rotate(360deg); } }
 
+/* ---------- trak za vgrajen brskalnik (Instagram ...): v toku strani, ne fixed; brez backdrop-filter ---------- */
+.trak-vgrajen{
+  display:flex; align-items:center; gap:10px; width:100%; max-width:var(--stolpec); margin:0 auto;
+  padding:calc(env(safe-area-inset-top) + 8px) var(--odmik) 8px; background:var(--kartica); border-bottom:1px solid var(--b10);
+  font-size:13px; line-height:1.35;
+}
+.trak-vgrajen-besedilo{ flex:1; display:flex; flex-direction:column; gap:2px; min-width:0; }
+.trak-vgrajen .gumb-siv{ width:auto; flex:none; white-space:nowrap; }
+.trak-vgrajen-zapri{ flex:none; width:32px; height:32px; display:grid; place-items:center; color:var(--utisano); border-radius:50%; }
+
 /* ---------- spodnja vrstica (plavajoca) ---------- */
 .spodnja-vrstica{
   position:fixed; z-index:30; left:50%; transform:translateX(-50%);

@@ -31,8 +31,20 @@ export function imaShranjenoSejo() {
   try { return !!localStorage.getItem(KLJUC_SEJE); } catch { return false; }
 }
 
-/* Napaka Supabase, ki ni zavrnitev seje: omrezje ali 5xx. Taka napaka NE sme odjaviti (I10). */
-const zacasna = err => !!err && (err.name === "AuthRetryableFetchError" || !err.status || err.status >= 500);
+/* Supabase je sejo DOKONCNO zavrnil: osvezilni zeton ne obstaja / je ze porabljen / seja preklicana ali potekla / uporabnik
+   izbrisan ali blokiran (npr. sprememba gesla, odjava drugje). Samo to je razlog za odjavo. Isti pogoj kot seja-fetch.js. */
+const DOKONCNO = /refresh.?token|session.?(?:not.?found|expired)|invalid.?grant|user.?(?:not.?found|banned)|banned/i;
+const STATUSI_ZAVRNITVE = [400, 401, 403, 404, 422];
+export const jeDokoncnaZavrnitev = err => !!err && (err.name === "AuthSessionMissingError"
+  || (STATUSI_ZAVRNITVE.includes(err.status) && DOKONCNO.test(`${err.code || ""} ${err.message || ""}`)));
+/* Vsaka druga napaka NE sme odjaviti (I10 + 24. 10. 2026): omrezje, 5xx, 429, 403 brez kode (proxy), 409 "shramba se je
+   spremenila med osvezitvijo" (AuthRefreshDiscardedError, drug zavihek je ze shranil sejo), neznan 4xx. Prej je veljalo
+   "vse razen omrezja in 5xx je zavrnitev seje" in en 429 ali HTML 403 je uporabnika odjavil. */
+const zacasna = err => !!err && !jeDokoncnaZavrnitev(err);
+/* Zadnja dokoncna zavrnitev (status + koda): seja.js jo kot vzrok prisilne odjave javi v Sentry (brez osebnih podatkov). */
+let zadnjaZavrnitev = null;
+export const vzrokZavrnitve = () => zadnjaZavrnitev;
+const zabeleziZavrnitev = err => { zadnjaZavrnitev = { status: err.status || 0, koda: String(err.code || err.name || "").slice(0, 40) }; };
 
 export async function trenutniZeton() {
   // getSession() v supabase-js sam osvezi potekel zeton (z refresh_token). Ce osvezitev pade zaradi
@@ -43,6 +55,7 @@ export async function trenutniZeton() {
   const { data, error } = rezultat;
   const zeton = (data && data.session && data.session.access_token) || "";
   if (!zeton && error && zacasna(error) && imaShranjenoSejo()) throw new ApiError(-1, "Could not refresh session.");
+  if (!zeton && error) zabeleziZavrnitev(error);
   return zeton;
 }
 
@@ -269,6 +282,7 @@ async function osveziSejo() {
       if (error) {
         // Omrezje ali 5xx -> null (seja ostane). Supabase je sejo zavrnil (4xx) -> odjava, "".
         if (zacasna(error)) return null;
+        zabeleziZavrnitev(error);
         obZavrnjeniSeji();
         return "";
       }
