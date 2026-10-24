@@ -34,10 +34,10 @@ async function kopiraj(besedilo) {
 
 const vgrajen = jeVgrajenBrskalnik();
 
-export function TrakVgrajen() {
+export function TrakVgrajen({ skrij = false }) {
   const [zaprt, setZaprt] = useState(() => !!lokalno.get(KLJUC_ZAPRT, false));
   const [izid, setIzid] = useState("");   // "" | "ok" | "ne"
-  if (!vgrajen || zaprt) return null;
+  if (!vgrajen || zaprt || skrij) return null;   // skrij: zaslon z zemljevidom je cez celo visino, trak bi bil prekrit
   const zapri = () => { lokalno.set(KLJUC_ZAPRT, true); setZaprt(true); };
   const klik = async () => setIzid((await kopiraj(location.href)) ? "ok" : "ne");
   return html`<aside class="trak-vgrajen" role="note">

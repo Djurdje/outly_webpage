@@ -31,9 +31,11 @@ export function Profil() {
     <${PravneVrstice} />
     <${VrsticaNamestitve} />
   </div>`;
-  // Streznik ali Supabase ne odgovarja (npr. 503): seja ostane, pokazemo napako in "Try again" (I10).
+  // Streznik ali Supabase ne odgovarja (npr. 503): seja ostane, pokazemo napako in "Try again" (I10). Gumb Log out je izhod
+  // za mrtvo sejo: trajna nedokoncna napaka osvezitve uporabnika ne sme zapreti v "Try again".
   if (!me && meNapaka) return html`<div class="zaslon"><h1 class="velik-naslov">${t("Profile")}</h1>
-    <${Napaka} besedilo=${sporocilo(meNapaka)} znova=${naloziMe} /></div>`;
+    <${Napaka} besedilo=${sporocilo(meNapaka)} znova=${naloziMe} />
+    <button type="button" class="povezava-gumb rdeca" onClick=${async () => { await odjava(); navigiraj("/app", { zamenjaj: true }); }}>${t("Log out")}</button></div>`;
   if (!me) return html`<div class="zaslon"><${Nalaganje} /></div>`;
   if (me.role === "business" && obraz === "club") return html`<${LastnikProfil} me=${me} />`;
 

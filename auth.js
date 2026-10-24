@@ -520,7 +520,9 @@
     }
 
     if (t.dataset.action === "logout") {
-      await client.auth.signOut();
+      // scope local: odjava na tej strani NE sme odjaviti vseh naprav (iOS, PWA, drugi brskalniki). Global je samo pri
+      // brisanju racuna (spodaj) - racun je takrat ze izbrisan in vse seje tako ali tako ne obstajajo vec.
+      await client.auth.signOut({ scope: "local" });
       close();
       return;
     }

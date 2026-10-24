@@ -240,7 +240,7 @@ function App() {
   if (!pripravljena || preusmeritev) return html`<main class="okvir"><${Nalaganje} /></main>`;
 
   return html`<div class="okvir-aplikacije" key=${koda}>
-    <${TrakVgrajen} />
+    <${TrakVgrajen} skrij=${pot.ime === "map"} />
     ${pot.ime === "home" ? html`<${OzadjeHome} />` : null}
     <main id="vsebina" class=${"okvir" + (brezVrstice ? "" : " z-vrstico") + (pot.ime === "biz-vip" || pot.ime === "biz-event-vip" ? " siroko" : "")} key=${pot.kljuc} data-smer=${pot.smer}>
       <${Zaslon} pot=${pot} />

@@ -2,7 +2,7 @@
    Vloge odloca streznik; tu samo beremo, kaj je rekel. */
 import { supabase, odjemalec, koNalozen } from "./supabase.js";
 import { nastaviObraz } from "./posel.js";
-import { send, nastaviObZavrnjeniSeji, pocistiPredpomnilnik, pozabiVseKljuceNakupa, imaShranjenoSejo, vzrokZavrnitve } from "./api.js";
+import { send, nastaviObZavrnjeniSeji, pocistiPredpomnilnik, pozabiVseKljuceNakupa, imaShranjenoSejo, vzrokZavrnitve, KLJUC_SEJE } from "./api.js";
 import { ApiError } from "./napake.js";
 import { ustvariTrgovino, useStore, lokalno } from "./store.js";
 import { nastavitve } from "./nastavitve.js";
@@ -163,19 +163,28 @@ function porociloSeje(besedilo) {
   } catch { /* brez */ }
 }
 
+function izbrisiSejoIzShrambe() {
+  try { localStorage.removeItem(KLJUC_SEJE); localStorage.removeItem(KLJUC_SEJE + "-user"); } catch { /* brez */ }
+}
+
 export async function odjava(obvestilo = "", vzrok = "") {
   if (obvestilo || vzrok) {   // prisilna odjava (ne klik "Log out"): zapisemo, zakaj
     const z = vzrokZavrnitve();
     porociloSeje(`prisilna odjava (${vzrok || "401 /me"})${z ? `, supabase ${z.status} ${z.koda}` : ""}`);
   }
   izrecnaOdjava = true;
-  pozabiCakajociMail();   // e-naslov iz prijavnega toka ne sme ostati na skupni napravi
-  await pocistiNaOdjavi();
-  try { await supabase.auth.signOut({ scope: "local" }); } catch { /* lokalno vseeno pocistimo */ }
-  pocistiPredpomnilnik();
-  pozabiVseKljuceNakupa();   // Idempotency-Key nakupa je vezan na uporabnika: naslednji uporabnik ga ne sme podedovati
-  seja.set({ prijavljen: false, me: null, meNapaka: null, obvestilo });
-  izrecnaOdjava = false;
+  try {
+    pozabiCakajociMail();   // e-naslov iz prijavnega toka ne sme ostati na skupni napravi
+    await pocistiNaOdjavi();
+    // signOut pocaka na zaklep seje in na osvezitev potekle seje: pri mrtvi seji (nedokoncna napaka osvezitve) to traja ~30 s in
+    // shrambe ne pocisti. Uporabnik se je izrecno odjavil -> po 3 s ali napaki sejo izbrisemo sami (zaostala osvezitev
+    // nato svojih zetonov ne shrani: supabase-js ob izpraznjeni shrambi rotirane zetone zavrze).
+    try { await Promise.race([supabase.auth.signOut({ scope: "local" }), new Promise(ok => setTimeout(ok, 3000))]); } catch { /* lokalno vseeno pocistimo */ }
+    izbrisiSejoIzShrambe();
+    pocistiPredpomnilnik();
+    pozabiVseKljuceNakupa();   // Idempotency-Key nakupa je vezan na uporabnika: naslednji uporabnik ga ne sme podedovati
+    seja.set({ prijavljen: false, me: null, meNapaka: null, obvestilo });
+  } finally { izrecnaOdjava = false; }   // tudi ob izjemi: sicer bi zastavica utisala poznejsi nepricakovan SIGNED_OUT
 }
 
 export function nastaviMe(me) { seja.set({ me }); }

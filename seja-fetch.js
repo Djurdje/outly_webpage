@@ -11,6 +11,9 @@
    prijavljen (invarianta I10: izpad ali zmeda Supabase ne odjavi uporabnikov).
    Dokončna zavrnitev = Supabase je sejo res ukinil (sprememba gesla, odjava drugje, preklic, izbrisan/blokiran uporabnik):
    400/401/403/404/422 z refresh_token_* / session_* / user_* / invalid_grant v telesu. To ostane odjava.
+   Znana meja: pri 429 in drugih nedokončnih odgovorih supabase-js ponavlja do ~30 s (200 ms * 2^n), nato vrne napako in
+   za isti žeton 60 s ne poskusi znova (lastRefreshFailure); do takrat poziv za žeton javi "ni odgovora", ne odjave.
+   Seja, ki jo strežnik zavrača z neprepoznano obliko napake, ostane z "Try again" in gumbom Log out (profil, My Account).
    Žetoni ostanejo v localStorage kot doslej; skripta ničesar ne shranjuje in ne pošilja drugam. */
 (function () {
   var OSVEZITEV = /\/auth\/v1\/token\?(?:[^#]*&)?grant_type=refresh_token(?:&|$)/;

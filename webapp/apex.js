@@ -6,6 +6,9 @@
    MORA biti prvi skript na vsaki strani, ki bere shrambo (preden karkoli prebere localStorage). Zunanja datoteka zaradi CSP. */
 (function () {
   if (location.hostname !== "www.outly.si") return;
+  // Namescena aplikacija (PWA, dodana z www) ima SVOJO shrambo na izvoru www.outly.si: preusmeritev bi jo ob vsakem zagonu
+  // odpeljala na outly.si z drugo (prazno) shrambo. Tu ostane; prijava je v tej shrambi.
+  try { if ((window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true) return; } catch (e) { /* brez */ }
   document.documentElement.hidden = true;   // stran naj ne blisne pred preusmeritvijo
   location.replace("https://outly.si" + location.pathname + location.search + location.hash);
 })();

@@ -30,7 +30,9 @@ export { Vrstica as MenijskaVrstica };
 /* ---------------- My Account ---------------- */
 export function MojRacun() {
   const me = useSeja(s => s.me);
-  if (!me) return html`<div class="zaslon"><${GlavaNazaj} rezerva="/app/profile" /><${Nalaganje} /></div>`;
+  // Brez profila (nalaganje traja ali je trajno padlo) mora biti izhod: odjava, sicer bi mrtva seja uporabnika zaprla.
+  if (!me) return html`<div class="zaslon"><${GlavaNazaj} rezerva="/app/profile" /><${Nalaganje} />
+    <button type="button" class="povezava-gumb rdeca" onClick=${async () => { await odjava(); navigiraj("/app", { zamenjaj: true }); }}>${t("Log out")}</button></div>`;
   return html`<div class="zaslon">
     <${GlavaNazaj} rezerva="/app/profile" />
     <div class="profil-glava">
