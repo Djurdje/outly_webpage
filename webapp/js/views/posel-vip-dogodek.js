@@ -25,7 +25,7 @@ const NAJVEC_IME = 60, NAJVEC_OPOMBA = 200;
 
 const celo = (v, d = 0) => { const n = Math.trunc(Number(v)); return Number.isFinite(n) ? n : d; };
 
-function normaliziraj(r) {
+export function normaliziraj(r) {
   const mize = normalizirajMize(r && r.tables).map(m => {
     const b = m.booking && typeof m.booking === "object" ? m.booking : null;
     // Rezervacija po telefonu; star backend polja nima -> null.
@@ -36,16 +36,25 @@ function normaliziraj(r) {
       disabled: m.disabled === true,
       archived: m.archived === true,   // arhivirana miza z rezervacijo na tem dogodku: samo v seznamu rezervacij
       default_price_cents: celo(m.default_price_cents, m.price_cents),
-      hold: h ? { guest_name: String(h.guest_name || ""), note: String(h.note || ""), created_at: h.created_at || null } : null,
+      // source (backend 23. 10. 2026): "app" = gost rezerviral v aplikaciji (placa na vratih), sicer telefon (tudi star backend brez polja).
+      hold: h ? {
+        guest_name: String(h.guest_name || ""), note: String(h.note || ""), created_at: h.created_at || null,
+        source: h.source === "app" ? "app" : "phone", username: String(h.username || ""),
+        package_name: String(h.package_name || ""), package_description: String(h.package_description || ""),
+        price_cents: h.price_cents == null ? null : celo(h.price_cents, 0)
+      } : null,
       booking: b ? { ...b, guests: celo(b.guests, 0), checked_in: celo(b.checked_in, 0), buyer_username: String(b.buyer_username || "") } : null
     };
   });
-  return { enabled: !!(r && r.enabled), valuta: (r && r.currency) || "EUR", plan: normalizirajTloris(r && r.plan), mize };
+  // payment (backend 23. 10. 2026): "app" | "door"; podporaPlacila = backend polje pozna (star backend: izbire ne kazemo, PUT bi ga prezrl).
+  const podporaPlacila = !!r && Object.prototype.hasOwnProperty.call(r, "payment");
+  return { enabled: !!(r && r.enabled), valuta: (r && r.currency) || "EUR", plan: normalizirajTloris(r && r.plan), mize,
+    placilo: r && r.payment === "door" ? "door" : "app", podporaPlacila };
 }
 
 /** ver = razlicica obrazca: poveca se ob nalaganju in po shranjevanju (obrazec se napolni iz odgovora), NE ob rezervaciji
     po telefonu (samoRez) - sicer bi odgovor streznika povozil se neshranjene cene in stikala. */
-function useVip(klub, dogodek) {
+export function useVip(klub, dogodek) {
   const [s, setS] = useState({ nalaga: true, napaka: null, d: null, ver: 0 });
   const nalozi = () => {
     setS(x => ({ ...x, nalaga: !x.d, napaka: null }));
@@ -59,6 +68,9 @@ function useVip(klub, dogodek) {
   const osvezi = () => poslovno(klub, `/business/events/${dogodek}/vip`).then(r => nastavi(r, true)).catch(() => {});
   return { ...s, nalozi, nastavi, osvezi };
 }
+
+/** Kako je miza rezervirana brez placila v aplikaciji: gost v aplikaciji (placa na vratih) ali klub po telefonu. */
+export const opisHold = h => (h && h.source === "app" ? t("Reserved in the app") : t("Reserved by phone"));
 
 /** Star backend (404) ali vloga brez pravice (403): razdelka ni - ne motimo. */
 const brezPodpore = e => !!e && (e.status === 404 || e.status === 403);
@@ -77,7 +89,7 @@ function SeznamRezervacij({ mize, sprosti = null }) {
     <span class="vip-rez-miza">${m.label}</span>
     <span class="vip-hold-tekst"><strong>${m.hold.guest_name || "-"}</strong>
       ${m.hold.note ? html`<span>${m.hold.note}</span>` : null}</span>
-    <span class="vip-rez-vstop vip-rez-tel"><${Ikona} ime="phone" velikost=${18} /><small>${t("Phone")}</small>
+    <span class="vip-rez-vstop vip-rez-tel"><${Ikona} ime=${m.hold.source === "app" ? "ticket" : "phone"} velikost=${18} /><small>${m.hold.source === "app" ? t("Pay at the door") : t("Phone")}</small>
       ${sprosti && m.archived ? html`<button type="button" class="vip-hold-gumb" onClick=${() => sprosti(m)}>${t("Release")}</button>` : null}</span>
   </div>`)}</div>`;
 }
@@ -114,16 +126,16 @@ function TlorisDogodka({ plan, mize }) {
       const okrogla = m.shape === "round";
       const ix = m.x * C + sir - ik - (okrogla ? sir * 0.14 : 2), iy = m.y * C + (okrogla ? vis * 0.14 : 2);
       return html`<g key=${m.id} class=${"tl-miza " + stanje} role="img"
-        aria-label=${`${t("Table")} ${m.label}, ${m.booking ? t("Booked") : m.hold ? t("Reserved by phone") : t("Available")}`}>
+        aria-label=${`${t("Table")} ${m.label}, ${m.booking ? t("Booked") : m.hold ? opisHold(m.hold) : t("Available")}`}>
         <${OblikaMize} m=${m} napis2=${m.booking ? t("Booked") : ""} />
-        ${m.hold ? html`<${IkonaTelefon} x=${ix} y=${iy} velikost=${ik} />` : null}
+        ${m.hold && m.hold.source !== "app" ? html`<${IkonaTelefon} x=${ix} y=${iy} velikost=${ik} />` : null}
       </g>`;
     })}
   <//></div>
   <div class="vip-legenda" aria-hidden="true">
     <span><i class="tl-pika prosta"></i>${t("Available")}</span>
     <span><i class="tl-pika prodana"></i>${t("Booked")}</span>
-    <span><i class="tl-pika telefon"></i>${t("Reserved by phone")}</span>
+    <span><i class="tl-pika telefon"></i>${t("Reserved")}</span>
   </div>`;
 }
 
@@ -131,6 +143,7 @@ function TlorisDogodka({ plan, mize }) {
 export function VipDogodka({ klub, dogodek, organizator = false }) {
   const v = useVip(klub, dogodek);
   const [vklop, setVklop] = useState(false);
+  const [placilo, setPlacilo] = useState("app");   // "app" | "door": placilo mize v aplikaciji ali z gotovino na VIP vratih
   const [cene, setCene] = useState({});
   const [izklopljene, setIzklopljene] = useState(new Set());
   const [shranjujem, setShranjujem] = useState(false);
@@ -150,6 +163,7 @@ export function VipDogodka({ klub, dogodek, organizator = false }) {
   useEffect(() => {
     if (!d) return;
     setVklop(d.enabled);
+    setPlacilo(d.placilo);
     setCene(Object.fromEntries(d.mize.map(m => [m.id, evriBesedilo(m.price_cents).replace(/\.00$/, "")])));
     setIzklopljene(new Set(d.mize.filter(m => m.disabled).map(m => m.id)));
   }, [v.ver]);
@@ -186,7 +200,7 @@ export function VipDogodka({ klub, dogodek, organizator = false }) {
     }
     setShranjujem(true);
     try {
-      v.nastavi(await poslovno(klub, `/business/events/${dogodek}/vip`, { method: "PUT", body: { enabled: vklop, tables } }));
+      v.nastavi(await poslovno(klub, `/business/events/${dogodek}/vip`, { method: "PUT", body: d.podporaPlacila ? { enabled: vklop, payment: placilo, tables } : { enabled: vklop, tables } }));
       setShranjeno(true);
     } catch (e) { setNapaka(sporociloVip(e)); }
     setShranjujem(false);
@@ -244,6 +258,17 @@ export function VipDogodka({ klub, dogodek, organizator = false }) {
     <label class="stikalo-vrstica"><span class="kv-besedilo"><strong>${t("Sell VIP tables for this event")}</strong>
       <span>${t("Guests book a table and choose a bottle package.")}</span></span>
       <input type="checkbox" role="switch" class="stikalo" checked=${vklop} onChange=${e => { setVklop(e.target.checked); setShranjeno(false); }} /></label>
+    ${vklop && d.podporaPlacila ? html`<div class="vip-placilo" role="radiogroup" aria-label=${t("How do guests pay for a table?")}>
+      <h3 class="nastavitev-naslov">${t("How do guests pay for a table?")}</h3>
+      ${[["app", t("Pay in the app"), t("Guests pay by card and get VIP tickets with a QR code.")],
+         ["door", t("Cash at the VIP door"), t("Guests reserve a table in the app and pay in cash at the VIP door. No payment in the app.")]].map(([vr, naslovP, opisP]) => html`
+        <label class=${"vip-paket" + (placilo === vr ? " izbran" : "")} key=${vr}>
+          <input type="radio" name="vip-placilo" value=${vr} checked=${placilo === vr} onChange=${() => { setPlacilo(vr); setShranjeno(false); }} />
+          <span class="vip-radio" aria-hidden="true"></span>
+          <span class="kv-besedilo"><strong>${naslovP}</strong><span>${opisP}</span></span>
+        </label>`)}
+      <span class="opomba">${t("Tables that are already paid or reserved stay as they are.")}</span>
+    </div>` : null}
     ${obvestilo ? html`<p class="napaka-besedilo" role="alert">${obvestilo}</p>` : null}
     ${kazi ? html`${d.plan ? html`<${TlorisDogodka} plan=${d.plan} mize=${d.mize} />` : null}
     <div class="vip-mize-seznam">${aktivne.map(m => {
@@ -252,7 +277,7 @@ export function VipDogodka({ klub, dogodek, organizator = false }) {
       return html`<div class="vip-miza-blok" key=${m.id}>
       <div class=${"vip-vrstica-mize" + (zasedena ? " zasedena" : "")}>
         <span class="kv-besedilo"><strong>${m.label}</strong>
-          <span>${m.booking ? t("Booked") : m.hold ? t("Reserved by phone") : doOseb(m.seats)}</span></span>
+          <span>${m.booking ? t("Booked") : m.hold ? opisHold(m.hold) : doOseb(m.seats)}</span></span>
         ${vklop ? html`<label class="polje vip-cena-polje"><span class="skrito">${t("Price") + " " + m.label}</span>
           <input inputmode="decimal" value=${cene[m.id] == null ? "" : cene[m.id]} disabled=${zasedena}
             placeholder=${evriBesedilo(m.default_price_cents).replace(/\.00$/, "")}
@@ -263,7 +288,7 @@ export function VipDogodka({ klub, dogodek, organizator = false }) {
             onChange=${() => { preklopi(m.id); setShranjeno(false); }} /></label>` : null}
       </div>
       ${m.hold ? html`<div class="vip-hold">
-        <${Ikona} ime="phone" velikost=${18} />
+        <${Ikona} ime=${m.hold.source === "app" ? "ticket" : "phone"} velikost=${18} />
         <span class="vip-hold-tekst"><strong>${m.hold.guest_name || "-"}</strong>${m.hold.note ? html`<span>${m.hold.note}</span>` : null}</span>
         <button type="button" class="vip-hold-gumb" data-fokus=${"release-" + m.id} onClick=${() => odpriSprosti(m)}>${t("Release")}</button>
       </div>` : m.podporaHold && !m.booking && !odprta ? html`<button type="button" class="vip-hold-gumb" data-fokus=${"mark-" + m.id} onClick=${() => odpriRez(m)}>

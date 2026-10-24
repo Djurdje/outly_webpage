@@ -76,6 +76,7 @@ export function LastnikProfil({ me }) {
         <${MenijskaVrstica} href=${baza + "/dashboard"} ikona="chart-column" naslov=${t("Dashboard")} />
         <${MenijskaVrstica} href=${baza + "/events"} ikona="calendar" naslov=${t("Events")} />
         <${MenijskaVrstica} href=${baza + "/vip"} ikona="crown" naslov=${t("VIP tables")} />
+        <${MenijskaVrstica} href=${baza + "/reservations"} ikona="ticket-check" naslov=${t("Reservations")} />
         <${MenijskaVrstica} href=${baza + "/scan"} ikona="scan-line" naslov=${t("Scan tickets")} />
         <${MenijskaVrstica} href=${baza + "/service"} ikona="wine" naslov=${t("Table service")} />
         <${MenijskaVrstica} href=${baza + "/team"} ikona="users" naslov=${t("My team")} />
@@ -287,6 +288,7 @@ export function SredisceKluba({ klub }) {
       <${MenijskaVrstica} href=${baza + "/events/new"} ikona="circle-plus" naslov=${t("Create event")} />
       <${MenijskaVrstica} href=${baza + "/events"} ikona="calendar" naslov=${t("View events")} />
       <${MenijskaVrstica} href=${baza + "/vip"} ikona="crown" naslov=${t("VIP tables")} />
+      <${MenijskaVrstica} href=${baza + "/reservations"} ikona="ticket-check" naslov=${t("Reservations")} />
       <${MenijskaVrstica} href=${baza + "/team"} ikona="users" naslov=${t("Team")} />
     </div>` : null}
     ${vloga ? html`<div class="seznam-kartica">

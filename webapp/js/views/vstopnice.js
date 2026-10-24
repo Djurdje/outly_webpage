@@ -5,11 +5,12 @@ import { t, tn } from "../i18n.js";
 import { send, pocistiPlacanoPlacilo } from "../api.js";
 import { sporocilo, kodaNapake } from "../napake.js";
 import { danInUra, statusNapis, vSporu } from "../oblika.js";
-import { GlavaNazaj, Nalaganje, Napaka, Ikona, Slika, Avatar, List } from "../ui.js";
+import { GlavaNazaj, Nalaganje, Napaka, Ikona, Plakat, Avatar, List, NaslovSekcije } from "../ui.js";
 import { KodaQR } from "../qr.js";
 import { VipVrstica, OznakaGuestList, doOseb } from "../vip.js";
 import { useSeja, uidSeje } from "../seja.js";
 import { GuestListSekcija } from "./guest-lists.js";
+import { normalizirajRezervacijo, KarticaRezervacije } from "./vip-rezervacija.js";
 import { VipRazdeli, mejaStarostiVip, vzemiCakajocVip } from "./vip-razdeli.js";
 
 /* VIP miza = en nakup z vec vstopnicami (Martin 4. 10. 2026): vstopnice z is_vip === true in istim order_id se v
@@ -34,12 +35,18 @@ export function Vstopnice() {
   const [razprte, setRazprte] = useState({});   // skupine VIP miz, privzeto zaprte; kljuc = razdelek + order_id
   const [prenos, setPrenos] = useState(null);
   const [razdeli, setRazdeli] = useState(null);   // vstopnice VIP mize, ki jih kupec razdeljuje prijateljem
+  const [rezervacije, setRezervacije] = useState([]);   // rezervacije miz za placilo na vratih (GET /me/table-reservations)
+  // Rezervacije so dodatek: star backend (404) ali napaka ne sme podreti vstopnic.
+  const naloziRezervacije = () => send("/me/table-reservations", { auth: true })
+    .then(r => setRezervacije((r && Array.isArray(r.items) ? r.items : []).map(normalizirajRezervacijo).filter(Boolean)))
+    .catch(() => {});
   const nalozi = async () => {
     setS(x => ({ ...x, nalaga: true, napaka: null }));
     try {
       const r = await send("/me/tickets", { auth: true });
       setS({ nalaga: false, napaka: null, vst: (Array.isArray(r) ? r : []).map(v => ({ ...v, _zacetek: v.start_at ? new Date(v.start_at) : null })) });
     } catch (e) { setS(x => ({ ...x, nalaga: false, napaka: sporocilo(e) })); }
+    naloziRezervacije();
   };
   // Povratek s Stripove placilne strani (backend #19): vstopnice nastanejo, ko Stripe potrdi placilo (webhook, nekaj sekund).
   const [placano] = useState(() => new URLSearchParams(location.search).get("placilo") === "uspeh");
@@ -85,7 +92,7 @@ export function Vstopnice() {
     <${GuestListSekcija} />
     ${s.nalaga ? html`<${Nalaganje} />` : null}
     <${Napaka} besedilo=${s.napaka} znova=${nalozi} />
-    ${!s.nalaga && !s.napaka && !s.vst.length ? html`<div class="prazno">
+    ${!s.nalaga && !s.napaka && !s.vst.length && !rezervacije.length ? html`<div class="prazno">
       <${Ikona} ime="ticket" velikost=${34} razred="modra" />
       <strong>${t("No tickets yet")}</strong><span>${t("Tickets you buy on Outly will show up here.")}</span>
       <a class="gumb-siv" href="/app/events">${t("See all events")}</a>
@@ -93,6 +100,10 @@ export function Vstopnice() {
     <div class="vstopnice-seznam">
       ${vsaka(postavkePrih, "p", false)}
     </div>
+    ${rezervacije.length ? html`<section class="rez-razdelek" aria-label=${t("Table reservations")}>
+      <${NaslovSekcije} naslov=${t("Table reservations")} />
+      <div class="vstopnice-seznam">${rezervacije.map(r => html`<${KarticaRezervacije} key=${r.id} r=${r} odpovedano=${() => setRezervacije(x => x.filter(y => y.id !== r.id))} />`)}</div>
+    </section>` : null}
     ${stare.length ? html`<button type="button" class="kartica-vrstica" onClick=${() => setPokaziStare(!pokaziStare)} aria-expanded=${pokaziStare}>
       <span class="kv-besedilo"><strong>${t("Past and used")}</strong><span>${stare.length}</span></span>
       <${Ikona} ime=${pokaziStare ? "chevron-down" : "chevron-right"} velikost=${16} razred="utisano" />
@@ -111,7 +122,7 @@ function Karta({ v, odprta, preklopi, stara, poslji }) {
   const vip = v.is_vip === true;
   return html`<div class=${"vstopnica" + (stara ? " stara" : "") + (vip ? " vip" : "") + (spor ? " spor" : "")}>
     <button type="button" class="vstopnica-glava-gumb" onClick=${preklopi} disabled=${stara} aria-expanded=${odprta}>
-      <span class="vd-slika"><${Slika} src=${v.poster_url} sirina=${150} alt="" /></span>
+      <span class="vd-slika"><${Plakat} src=${v.poster_url} sirina=${150} alt="" /></span>
       <span class="kv-besedilo"><span class="nadnapis">${(v.club_name || "").toUpperCase()}</span><strong>${v.event_title}</strong>
         <span>${danInUra(v._zacetek)}</span>
         ${vip ? html`<${VipVrstica} v=${v} />` : null}
@@ -160,7 +171,7 @@ function Skupina({ vst, stara, razprta, preklopi, odprta, preklopiVstopnico, pos
   const id = "skupina-" + v.order_id + (stara ? "-s" : "-p");
   return html`<div class=${"vstopnica vip skupina" + (stara ? " stara" : "")}>
     <button type="button" class="vstopnica-glava-gumb" onClick=${preklopi} aria-expanded=${razprta} aria-controls=${id}>
-      <span class="vd-slika"><${Slika} src=${v.poster_url} sirina=${150} alt="" /></span>
+      <span class="vd-slika"><${Plakat} src=${v.poster_url} sirina=${150} alt="" /></span>
       <span class="kv-besedilo"><span class="nadnapis">${(v.club_name || "").toUpperCase()}</span><strong>${v.event_title}</strong>
         <span>${danInUra(v._zacetek)}</span>
         <${VipVrstica} v=${v} /></span>

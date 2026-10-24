@@ -5,7 +5,7 @@ import { html, useEffect, useMemo, useRef, useState } from "../lib.js";
 import { t, tn, locale } from "../i18n.js";
 import { sporocilo } from "../napake.js";
 import { denar } from "../oblika.js";
-import { GlavaNazaj, Ikona, Slika, Avatar, Nalaganje, Napaka } from "../ui.js";
+import { GlavaNazaj, Ikona, Plakat, Avatar, Nalaganje, Napaka } from "../ui.js";
 import { idKluba, poslovno, imeVloge } from "../posel.js";
 import { useSeja } from "../seja.js";
 import { PoslovnaNapaka } from "./posel.js";
@@ -93,7 +93,7 @@ export function NadzornaPlosca({ klub }) {
       <div class="sekcija-glava"><h2>${t("Event performance")}</h2><a class="povezava-desno" href=${baza + "/events"}>${t("View all")}</a></div>
       ${!(s.events || []).length ? html`<p class="opomba">${t("No events yet. Add one under Events.")}</p>` : html`<div class="seznam">
         ${s.events.map(e => html`<a class="vrstica-uspesnosti" key=${e.id} href=${`${baza}/events/${e.id}/tickets`}>
-          <span class="vu-slika">${e.poster_url ? html`<${Slika} src=${e.poster_url} sirina=${160} alt="" />` : html`<${Ikona} ime="calendar" velikost=${20} razred="modra" />`}</span>
+          <span class="vu-slika">${e.poster_url ? html`<${Plakat} src=${e.poster_url} sirina=${160} alt="" />` : html`<${Ikona} ime="calendar" velikost=${20} razred="modra" />`}</span>
           <span class="kv-besedilo"><strong>${e.title}</strong>
             <span>${datumDogodka(e.start_at)}${e.status && e.status !== "published" ? " · " + (e.status === "cancelled" ? t("cancelled") : e.status === "draft" ? t("draft") : e.status) : ""}</span>
             <span class="vu-meta">${[e.capacity != null ? t("{sold}/{cap} sold", { sold: e.tickets_sold || 0, cap: e.capacity }) : t("{n} sold", { n: e.tickets_sold || 0 }),
@@ -250,7 +250,7 @@ export function SkeniranjaClana({ klub, clan }) {
     <${PoslovnaNapaka} napaka=${s.napaka} znova=${nalozi} rezerva=${rezerva} />
     ${!s.nalaga && !s.napaka && !s.dogodki.length ? html`<p class="opomba srednje">${t("No scans yet")}</p>` : null}
     <div class="seznam">${s.dogodki.map(e => html`<div class="vrstica-uspesnosti" key=${e.id}>
-      <span class="vu-slika">${e.poster_url ? html`<${Slika} src=${e.poster_url} sirina=${140} alt="" />` : html`<${Ikona} ime="calendar" velikost=${18} razred="modra" />`}</span>
+      <span class="vu-slika">${e.poster_url ? html`<${Plakat} src=${e.poster_url} sirina=${140} alt="" />` : html`<${Ikona} ime="calendar" velikost=${18} razred="modra" />`}</span>
       <span class="kv-besedilo"><strong>${e.title}</strong><span>${datumDogodka(e.start_at)}</span></span>
       <strong class="modra" aria-label=${tn("1 scan", "{n} scans", e.scans || 0)}>${stevilka(e.scans)}</strong>
     </div>`)}</div>

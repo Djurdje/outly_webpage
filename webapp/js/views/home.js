@@ -13,7 +13,7 @@ import {
   cena, znacka, zanrIme, steviloDogodkov, normalizirajDogodek, napisPrizorisca, prizorisce, jeDemo
 } from "../oblika.js";
 import {
-  Ikona, Slika, Avatar, NaslovSekcije, Skeleton, Napaka, VrstaDogodkov, KarticaPredloga,
+  Ikona, Slika, Plakat, Avatar, NaslovSekcije, Skeleton, Napaka, VrstaDogodkov, KarticaPredloga,
   KarticaLogo, KarticaDogodka, OznakaDemo
 } from "../ui.js";
 import { zahtevajLokacijo, useLokacija } from "../lokacija.js";
@@ -278,7 +278,7 @@ function KarticaHit({ dogodek: e, klub, napis }) {
         ${e.sold_count > 0 ? html`<span class="kh-gre">${t("{n} going", { n: e.sold_count })}</span>` : null}
       </div>
     </div>
-    <div class="kh-plakat"><${Slika} src=${e.poster_url} sirina=${300} alt="" />${jeDemo(e) ? html`<${OznakaDemo} kot=${true} />` : null}</div>
+    <div class="kh-plakat"><${Plakat} src=${e.poster_url} sirina=${300} alt="" />${jeDemo(e) ? html`<${OznakaDemo} kot=${true} />` : null}</div>
   </a>`;
 }
 
@@ -286,7 +286,7 @@ function KarticaVelika({ dogodek: e, klub, napis = t("BIG EVENT COMING UP") }) {
   const z = znacka(e);
   const napisGumba = jeRazprodan(e) ? t("Sold out") : cena(e) || (e.ticket_url ? t("Tickets") : t("Free"));
   return html`<a class="kartica-velika" href=${"/app/event/" + e.id}>
-    <${Slika} src=${e.poster_url} sirina=${900} alt="" />
+    <${Plakat} src=${e.poster_url} sirina=${900} alt="" />
     <span class="kv-senca" aria-hidden="true"></span>
     <div class="kv-vrh">
       <span class="kv-logo">${klub && klub.logo_url ? html`<${Slika} src=${klub.logo_url} sirina=${130} alt="" />` : html`<${Ikona} ime="building" velikost=${20} />`}</span>

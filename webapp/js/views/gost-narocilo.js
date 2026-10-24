@@ -7,7 +7,7 @@ import { t, tn } from "../i18n.js";
 import { send } from "../api.js";
 import { ApiError, sporocilo, kodaNapake, potekloPlacilo, placiloVObdelavi } from "../napake.js";
 import { danInUra, statusNapis, vSporu } from "../oblika.js";
-import { GlavaNazaj, Nalaganje, Napaka, Ikona, Slika } from "../ui.js";
+import { GlavaNazaj, Nalaganje, Napaka, Ikona, Plakat } from "../ui.js";
 import { odpriStripe } from "../stripe.js";
 import { useSeja } from "../seja.js";
 import { prevzemiZetonIzUrl, preberiGostZeton, pozabiGostZeton, pozabiGostNakup } from "../gost.js";
@@ -109,7 +109,7 @@ export function GostNarocilo() {
   const klub = (e.club_name || "").toUpperCase();
   const kraj = [e.address, e.city].map(x => (x || "").trim()).filter(Boolean).join(", ");
   const dogodek = html`${e.id != null ? html`<a class="kartica-vrstica" href=${"/app/event/" + e.id}>
-      ${e.poster_url ? html`<span class="vd-slika"><${Slika} src=${e.poster_url} sirina=${150} alt="" /></span>` : null}
+      ${e.poster_url ? html`<span class="vd-slika"><${Plakat} src=${e.poster_url} sirina=${150} alt="" /></span>` : null}
       <span class="kv-besedilo"><span class="nadnapis">${klub}</span><strong>${e.title}</strong><span>${danInUra(zacetek)}</span>${kraj ? html`<span>${kraj}</span>` : null}</span>
       <${Ikona} ime="chevron-right" velikost=${16} razred="utisano" />
     </a>` : null}`;

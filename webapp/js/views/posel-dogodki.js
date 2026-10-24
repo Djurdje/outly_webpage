@@ -10,7 +10,7 @@ import { sporocilo } from "../napake.js";
 import { navigiraj, nazaj } from "../usmerjanje.js";
 import * as P from "../podatki.js";
 import { zanrIme, napisCene, seJeKoncal, normalizirajDogodek, koordinata, vSporu, prodajaZaprta, prodajaUstavljena } from "../oblika.js";
-import { GlavaNazaj, Ikona, Slika, Nalaganje, List } from "../ui.js";
+import { GlavaNazaj, Ikona, Plakat, Nalaganje, List } from "../ui.js";
 import { idKluba, poslovno, useKlub, normalizirajDogodke, centiIz, evriBesedilo, NAJVEC_VIDEA } from "../posel.js";
 import { PoslovnaNapaka, IzbiraLokacije } from "./posel.js";
 import { skenirajVstopnico, naslovRezultata, opisRezultata } from "./posel-skener.js";
@@ -76,7 +76,7 @@ export function DogodkiKluba({ klub }) {
       ${s.dogodki.map(e => {
         const st = stanje(e);
         return html`<a class="vrstica-dogodka-kluba" key=${e.id} href=${`${baza}/events/${e.id}/edit`}>
-          <span class="vdk-slika">${e.poster_url ? html`<${Slika} src=${e.poster_url} sirina=${240} alt="" />` : html`<${Ikona} ime="image" velikost=${22} razred="utisano" />`}</span>
+          <span class="vdk-slika">${e.poster_url ? html`<${Plakat} src=${e.poster_url} sirina=${240} alt="" />` : html`<${Ikona} ime="image" velikost=${22} razred="utisano" />`}</span>
           <span class="kv-besedilo">
             <strong>${e.title}</strong>
             <span class="vdk-datum">${datumDogodka(e._zacetek)}</span>
@@ -279,7 +279,7 @@ export function ObrazecDogodka({ klub, dogodek }) {
       </fieldset>
       <fieldset><legend>${t("Poster")}</legend>
         <div class="vrsta-plakat">
-          ${p.poster ? html`<span class="vdk-slika"><${Slika} src=${p.poster} sirina=${240} alt=${t("Poster")} /></span>` : null}
+          ${p.poster ? html`<span class="vdk-slika"><${Plakat} src=${p.poster} sirina=${240} alt=${t("Poster")} /></span>` : null}
           <button type="button" class="gumb-siv majhen" disabled=${nalagaPlakat} onClick=${() => vnosPlakat.current && vnosPlakat.current.click()}>
             ${nalagaPlakat ? t("Uploading...") : p.poster ? t("Change poster") : t("Choose poster")}</button>
           <input ref=${vnosPlakat} type="file" accept="image/*" class="skrito" onChange=${izberiPlakat} tabindex="-1" aria-hidden="true" />

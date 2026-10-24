@@ -8,7 +8,7 @@ import { t } from "../i18n.js";
 import { send } from "../api.js";
 import { ApiError, sporocilo } from "../napake.js";
 import { danInUra, statusNapis, vSporu } from "../oblika.js";
-import { GlavaNazaj, Nalaganje, Napaka, Ikona, Slika } from "../ui.js";
+import { GlavaNazaj, Nalaganje, Napaka, Ikona, Plakat } from "../ui.js";
 import { useSeja } from "../seja.js";
 import { prevzemiZetonIzUrl, preberiVstopnicaZeton, pozabiVstopnicaZeton, shraniVstopnicaZeton } from "../gost.js";
 import { QrTelo } from "./vstopnice.js";
@@ -71,7 +71,7 @@ export function GostVstopnica() {
   const veljavna = (v.status === "valid" || v.status === "paid") && !!v.qr && !spor;
   const uporabljena = v.status === "used";
   const dogodek = e.id != null ? html`<a class="kartica-vrstica" href=${"/app/event/" + e.id}>
-      ${e.poster_url ? html`<span class="vd-slika"><${Slika} src=${e.poster_url} sirina=${150} alt="" /></span>` : null}
+      ${e.poster_url ? html`<span class="vd-slika"><${Plakat} src=${e.poster_url} sirina=${150} alt="" /></span>` : null}
       <span class="kv-besedilo"><span class="nadnapis">${klub}</span><strong>${naslov}</strong>${zacetek ? html`<span>${danInUra(zacetek)}</span>` : null}${kraj ? html`<span>${kraj}</span>` : null}</span>
       <${Ikona} ime="chevron-right" velikost=${16} razred="utisano" />
     </a>` : null;

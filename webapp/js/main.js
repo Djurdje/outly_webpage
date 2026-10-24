@@ -35,6 +35,7 @@ const NALAGALNIKI = {
   "./views/posel-skener.js": () => import("./views/posel-skener.js"),
   "./views/posel-strezba.js": () => import("./views/posel-strezba.js"),
   "./views/posel-vip.js": () => import("./views/posel-vip.js"),
+  "./views/posel-rezervacije.js": () => import("./views/posel-rezervacije.js"),
 };
 const Vstopnice = leno("./views/vstopnice.js", "Vstopnice");
 const GuestListDetajl = leno("./views/guest-lists.js", "GuestListDetajl");
@@ -78,11 +79,13 @@ const Ekipa = leno("./views/posel-ekipa.js", "Ekipa");
 const Skener = leno("./views/posel-skener.js", "Skener");
 const Strezba = leno("./views/posel-strezba.js", "Strezba");
 const UrejevalnikVip = leno("./views/posel-vip.js", "UrejevalnikVip");
+const RezervacijeDogodkov = leno("./views/posel-rezervacije.js", "RezervacijeDogodkov");
+const RezervacijeDogodka = leno("./views/posel-rezervacije.js", "RezervacijeDogodka");
 
 const AVT = new Set(["login", "register", "verify", "forgot"]);
 const SAMO_PRIJAVLJENI = new Set(["tickets", "guest-list", "interested", "onboarding", "account", "personal", "security", "preferences",
   "delete", "creator", "blocked", "friends", "friends-plans", "my-clubs", "invites", "biz", "biz-settings", "biz-dashboard", "biz-staff",
-  "biz-events", "biz-event-new", "biz-event-edit", "biz-event-tickets", "biz-event-vip", "biz-team", "biz-info", "biz-location", "biz-bar-prices", "biz-scan", "biz-service", "biz-vip"]);
+  "biz-events", "biz-event-new", "biz-event-edit", "biz-event-tickets", "biz-event-vip", "biz-team", "biz-info", "biz-location", "biz-bar-prices", "biz-scan", "biz-service", "biz-vip", "biz-reservations", "biz-reservation-event"]);
 const ZAVIHKI = [
   { ime: "home", href: "/app", ikona: "house", napis: "Home" },
   { ime: "search", href: "/app/search", ikona: "search", napis: "Search" },
@@ -187,6 +190,9 @@ function Zaslon({ pot }) {
     case "biz-bar-prices": return html`<${SamoUredniki} klub=${p.klub}><${UrejanjeCenika} key=${p.klub} klub=${p.klub} /><//>`;
     case "biz-event-vip": return html`<${SamoUredniki} klub=${p.klub}><${UrejevalnikVip} key=${p.klub + "/" + p.dogodek} klub=${p.klub} dogodek=${p.dogodek} /><//>`;
     case "biz-vip": return html`<${SamoUredniki} klub=${p.klub}><${UrejevalnikVip} key=${p.klub} klub=${p.klub} /><//>`;
+    // Rezervacije miz: owner in manager (SamoUredniki; strežnik uveljavi tudi sam).
+    case "biz-reservations": return html`<${SamoUredniki} klub=${p.klub}><${RezervacijeDogodkov} key=${p.klub} klub=${p.klub} /><//>`;
+    case "biz-reservation-event": return html`<${SamoUredniki} klub=${p.klub}><${RezervacijeDogodka} key=${p.klub + "/" + p.dogodek} klub=${p.klub} dogodek=${p.dogodek} /><//>`;
     default: return html`<div class="zaslon"><${GlavaNazaj} />
       <div class="prazno"><strong>${t("Page not found")}</strong><a class="gumb-siv" href="/app">${t("Go to Home")}</a></div></div>`;
   }
@@ -251,7 +257,7 @@ function naslovPoti(ime) {
     "my-clubs": "My clubs", invites: "Notifications", biz: "My clubs", "biz-settings": "Settings", "biz-dashboard": "Dashboard",
     "biz-staff": "Staff activity", "biz-events": "Events", "biz-event-new": "New event", "biz-event-edit": "Edit event",
     "biz-event-tickets": "Tickets", "biz-team": "Team", "biz-info": "Club info", "biz-location": "Location on the map",
-    "biz-bar-prices": "Bar prices", "biz-service": "Table service", "biz-vip": "VIP tables", "biz-event-vip": "VIP tables" })[ime] || "Outly";
+    "biz-bar-prices": "Bar prices", "biz-service": "Table service", "biz-vip": "VIP tables", "biz-event-vip": "VIP tables", "biz-reservations": "Reservations", "biz-reservation-event": "Reservations" })[ime] || "Outly";
 }
 
 zacniSejo();

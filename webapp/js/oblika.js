@@ -267,6 +267,16 @@ export function slika(url, sirina) {
   return url;
 }
 
+/* Zamegljeno ozadje plakata (komponenta Plakat): majhna Cloudinary razlicica z zameglitvijo na strezniku (brez CSS backdrop-filter).
+   Slika, ki ni na Cloudinaryju, ostane enaka; zameglitev tedaj naredi CSS filter: blur() na sliki (glej app.css .plakat-ozadje.css-zamegli). */
+export function slikaZamegljena(url) {
+  if (!url) return { url: "", cssZamegli: false };
+  if (url.includes("res.cloudinary.com/") && url.includes("/upload/")) {
+    return { url: url.replace("/upload/", "/upload/f_auto,q_auto,c_limit,w_64,e_blur:300/"), cssZamegli: false };
+  }
+  return { url, cssZamegli: true };
+}
+
 export const zanrIme = g => {
   const posebni = { hiphop: "Hip hop", rnb: "R&B", "70s": "70s", "80s": "80s", "90s": "90s", "2000s": "2000s" };
   if (posebni[g]) return posebni[g];

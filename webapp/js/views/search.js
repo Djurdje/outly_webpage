@@ -68,7 +68,7 @@ export function Iskanje() {
       ${rez.clubs.length ? html`<${NaslovSekcije} naslov=${t("Clubs")} />
         <div class="seznam">${rez.clubs.map(k => html`<${Vrstica} key=${"k" + k.id} href=${"/app/club/" + k.id} slikaUrl=${k.logo_url} ikona="building" naslov=${k.name} podnaslov=${k.city} demo=${jeDemo(k)} />`)}</div>` : null}
       ${rez.events.length ? html`<${NaslovSekcije} naslov=${t("Events")} />
-        <div class="seznam">${rez.events.map(e => html`<${Vrstica} key=${"e" + e.id} href=${"/app/event/" + e.id} slikaUrl=${e.poster_url} ikona="calendar"
+        <div class="seznam">${rez.events.map(e => html`<${Vrstica} key=${"e" + e.id} href=${"/app/event/" + e.id} slikaUrl=${e.poster_url} plakat=${true} ikona="calendar"
           naslov=${e.title} podnaslov=${[e.club_name, danInUra(e.start_at ? new Date(e.start_at) : null)].filter(Boolean).join(" · ")} demo=${jeDemo(e)} />`)}</div>` : null}
     ` : iskano.length === 1 ? html`<p class="utisano">${t("Type at least 2 characters.")}</p>` : html`
       ${brskanje.zanri.length ? html`<${NaslovSekcije} naslov=${t("Browse by genre")} />
