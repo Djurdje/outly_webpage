@@ -24,6 +24,9 @@ let cakajoce = null;   // { email, geslo }
 const pozabiGeslo = () => { cakajoce = null; };
 const gesloZa = email => (cakajoce && cakajoce.email === email ? cakajoce.geslo : null);
 let tihaPrijavaTece = null;   // obljuba: vzporedni klici (vrnitev v zavihek + gumb) pocakajo isto prijavo
+// GoTrue je pravkar rekel email_not_confirmed: 10 s ne sprasujemo znova (Supabase omejuje prijave na IP, npr. Wi-Fi v klubu).
+let zadnjiNepotrjen = { email: "", cas: 0 };
+let vstopTece = false;   // tiha prijava in koda lahko uspeta hkrati: en vstop
 
 /* Enkratni zeton iz povezave v mailu (?token_hash=...&type=...). Povezava naj vodi sem, ne na Supabase /verify:
    stran samo pokaze gumb in potrdi sele ob kliku, zato je Googlov pregled povezave ne porabi. */
@@ -210,25 +213,37 @@ export function Potrditev() {
     document.addEventListener("visibilitychange", ob);
     return () => document.removeEventListener("visibilitychange", ob);
   }, [email, !!povezava]);
+  // Geslo ne sme ostati v pomnilniku, ko uporabnik zapusti potrditev (skupna naprava).
+  useEffect(() => pozabiGeslo, []);
 
   async function vstopi() {
-    pozabiGeslo();
-    pozabiCakajociMail();
-    await naloziMe();
-    navigiraj(naslednja(pot), { zamenjaj: true });
+    if (vstopTece) return;
+    vstopTece = true;
+    try {
+      pozabiGeslo();
+      pozabiCakajociMail();
+      await naloziMe();
+      navigiraj(naslednja(pot), { zamenjaj: true });
+    } finally { vstopTece = false; }
   }
-  /* Tiha prijava z geslom iz pomnilnika: uspe samo, ce je racun ze potrjen. Brez gesla ali ob kakrsnikoli napaki
-     (tudi email_not_confirmed) ne naredi nic vidnega. Vrne true, ce je uporabnik prijavljen in preusmerjen. */
+  /* Tiha prijava z geslom iz pomnilnika: uspe samo, ce je racun ze potrjen; nic ne pokaze. Vrne "prijavljen"
+     (in preusmeri), "nepotrjen" (GoTrue: email_not_confirmed) ali "neznano" (brez gesla, napacno geslo,
+     omejitev poskusov, omrezje) - takrat ne vemo, ali je racun ze potrjen. */
   function tihaPrijava() {
     const geslo = gesloZa(email);
-    if (!email || !geslo) return Promise.resolve(false);
+    if (!email || !geslo) return Promise.resolve("neznano");
+    if (zadnjiNepotrjen.email === email && Date.now() - zadnjiNepotrjen.cas < 10000) return Promise.resolve("nepotrjen");
     if (!tihaPrijavaTece) {
       tihaPrijavaTece = (async () => {
         const { error } = await supabase.auth.signInWithPassword({ email, password: geslo });
-        if (error) return false;
+        if (error) {
+          if (error.code !== "email_not_confirmed") return "neznano";
+          zadnjiNepotrjen = { email, cas: Date.now() };
+          return "nepotrjen";
+        }
         await vstopi();
-        return true;
-      })().catch(() => false).finally(() => { tihaPrijavaTece = null; });
+        return "prijavljen";
+      })().catch(() => "neznano").finally(() => { tihaPrijavaTece = null; });
     }
     return tihaPrijavaTece;
   }
@@ -240,13 +255,14 @@ export function Potrditev() {
     const { error } = await supabase.auth.verifyOtp({ email, token: koda, type: "signup" });
     if (error) {
       const porabljena = error.code === "otp_expired" || error.code === "otp_disabled";
+      if (!porabljena) { setTece(false); return setNapaka(sporocilo(error)); }
       // Povezava v mailu (ali Googlov pregled povezave) je potrditev ze porabila -> ce je racun potrjen, nas tiha prijava spusti naprej.
-      if (porabljena && await tihaPrijava()) return;
+      const izid = await tihaPrijava();
+      if (izid === "prijavljen") return;
       setTece(false);
-      // Brez gesla v pomnilniku (stran je bila vmes osvezena) ne vemo, ali je racun ze potrjen.
-      return setNapaka(porabljena && !gesloZa(email)
-        ? t("This code is wrong or no longer works. If you already confirmed your email with the link, tap “Already confirmed? Sign in” below.")
-        : sporocilo(error));
+      // "nepotrjen": koda je res napacna. Sicer ne vemo, ali je racun ze potrjen -> napotek na prijavo.
+      return setNapaka(izid === "nepotrjen" ? sporocilo(error)
+        : t("This code is wrong or no longer works. If you already confirmed your email with the link, tap “Already confirmed? Sign in” below."));
     }
     setTece(false);
     await vstopi();
@@ -255,12 +271,13 @@ export function Potrditev() {
     setNapaka(""); setInfo(""); setNamig("");
     setTece(true);
     // Za ze potrjen racun Supabase maila ne poslje (a vrne 200) -> najprej tiha prijava.
-    if (await tihaPrijava()) return;
+    const izid = await tihaPrijava();
+    if (izid === "prijavljen") return;
     const { error } = await supabase.auth.resend({ type: "signup", email });
     setTece(false);
     if (error) return setNapaka(sporocilo(error));
     setInfo(t("We sent you a new code.")); setOdstevanje(60);
-    if (!gesloZa(email)) setNamig(t("If your email is already confirmed, no new code is sent. Tap “Already confirmed? Sign in” below."));
+    if (izid !== "nepotrjen") setNamig(t("If your email is already confirmed, no new code is sent. Tap “Already confirmed? Sign in” below."));
   }
   async function potrdiPovezavo(ev) {
     ev.preventDefault();
