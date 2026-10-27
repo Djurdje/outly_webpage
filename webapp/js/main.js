@@ -234,6 +234,11 @@ function App() {
   useEffect(() => {
     if (!["event", "club"].includes(pot.ime)) document.title = pot.ime === "home" ? "Outly" : `${t(naslovPoti(pot.ime))} · Outly`;
   }, [pot.ime, koda]);
+  // Dogodek in klub si naslov (ime) nastavita sama, ko se podatki nalozijo; do takrat (in ob napaki) naj ne ostane naslov prejsnjega
+  // zaslona. Layout efekt tece ob izrisu, pred nalaganjem podatkov v zaslonu, zato ga ne more povoziti.
+  useLayoutEffect(() => {
+    if (pot.ime === "event" || pot.ime === "club") document.title = `${t(naslovPoti(pot.ime))} · Outly`;
+  }, [pot.ime, pot.params.id, koda]);
 
   if (ZAVIHKI.some(z => z.ime === pot.ime)) zadnjiZavihek = pot.ime;
   const brezVrstice = AVT.has(pot.ime) || pot.ime === "onboarding";
@@ -250,7 +255,7 @@ function App() {
 }
 
 function naslovPoti(ime) {
-  return ({ search: "Search", map: "Map", profile: "Profile", events: "Events", interested: "Interested events",
+  return ({ search: "Search", map: "Map", event: "Event", club: "Club", notfound: "Page not found", profile: "Profile", events: "Events", interested: "Interested events",
     tickets: "Tickets", "guest-list": "Guest list", "guest-order": "Your tickets", "guest-ticket": "Your ticket", login: "Sign in", register: "Create an account", verify: "Verify your email",
     forgot: "Forgot password?", onboarding: "Complete your account", language: "Language", genre: "Events",
     account: "My Account", personal: "Personal info", security: "Password and security", preferences: "Preferences",
@@ -259,7 +264,7 @@ function naslovPoti(ime) {
     "my-clubs": "My clubs", invites: "Notifications", biz: "My clubs", "biz-settings": "Settings", "biz-dashboard": "Dashboard",
     "biz-staff": "Staff activity", "biz-events": "Events", "biz-event-new": "New event", "biz-event-edit": "Edit event",
     "biz-event-tickets": "Tickets", "biz-team": "Team", "biz-info": "Club info", "biz-location": "Location on the map",
-    "biz-bar-prices": "Bar prices", "biz-service": "Table service", "biz-vip": "VIP tables", "biz-event-vip": "VIP tables", "biz-reservations": "Reservations", "biz-reservation-event": "Reservations" })[ime] || "Outly";
+    "biz-bar-prices": "Bar prices", "biz-scan": "Scan tickets", "biz-service": "Table service", "biz-vip": "VIP tables", "biz-event-vip": "VIP tables", "biz-reservations": "Reservations", "biz-reservation-event": "Reservations" })[ime] || "Outly";
 }
 
 zacniSejo();
