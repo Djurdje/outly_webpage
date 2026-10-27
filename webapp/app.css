@@ -292,6 +292,7 @@ h1,h2,h3,p{ margin:0; }
 
 .iskalno-polje{ display:flex; align-items:center; gap:10px; padding:0 14px; height:50px; border-radius:12px; background:#1C1C1E; }
 .iskalno-polje input{ flex:1; min-width:0; background:none; border:0; color:#fff; font:inherit; font-size:16px; outline:none; }
+.iskalno-polje:has(input:focus-visible){ outline:2px solid var(--modra); outline-offset:2px; }   /* nadomestek za outline:none na polju */
 .iskalno-polje input::-webkit-search-cancel-button{ display:none; }
 .pocisti{ color:var(--utisano); display:grid; place-items:center; width:28px; height:28px; }
 .cipi{ gap:8px; }
@@ -407,6 +408,7 @@ h1,h2,h3,p{ margin:0; }
 .nastavitev-naslov{ font-size:13px; font-weight:700; color:var(--b70); text-transform:uppercase; letter-spacing:.06em; }
 .izbira{ position:relative; display:flex; align-items:center; gap:14px; height:56px; padding:0 16px; border-radius:16px; background:var(--b08); }
 .izbira select{ flex:1; min-width:0; appearance:none; -webkit-appearance:none; background:none; border:0; color:#fff; font:inherit; font-size:16px; font-weight:500; outline:none; cursor:pointer; }
+.izbira:has(select:focus-visible){ outline:2px solid var(--modra); outline-offset:2px; }   /* nadomestek za outline:none na select */
 .izbira select option{ background:#1c1c1c; color:#fff; }
 .mreza-cipov{ display:grid; grid-template-columns:repeat(auto-fill, minmax(96px, 1fr)); gap:10px; }
 .mreza-cipov.tri{ grid-template-columns:repeat(3, 1fr); gap:14px 12px; }
@@ -1019,3 +1021,12 @@ a.profil-ime{ white-space:normal; }
 .rez-nacin.app{ color:var(--zelena) !important; }
 .rez-nacin.vrata{ color:var(--oranzna) !important; }
 .rez-desno{ flex:none; display:flex; flex-direction:column; align-items:flex-end; }
+
+/* ---------- zmanjsano gibanje (na koncu, da prevlada nad pravili zgoraj) ----------
+   Neskoncne in daljse (> 200 ms) animacije; vrtavka le upocasnjena (ostane znak "nalagam"). Prehodov .okvir ne spreminjamo. */
+@media (prefers-reduced-motion: reduce){
+  .vrtavka{ animation-duration:2.4s; }
+  .skeleton::after{ animation:none; }
+  .list-ozadje, .list, .karta-kartica{ animation:none; }
+  .slika img, .dia-trak{ transition:none; }
+}

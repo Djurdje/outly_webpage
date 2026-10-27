@@ -182,7 +182,33 @@ export function Vrstica({ href, slikaUrl, ikona = "building", naslov, podnaslov,
   </a>`;
 }
 
-/** Spodnji list (sheet). Zapre ga Escape, klik na ozadje ali gumb. Fokus gre v list. */
+/** Koliko listov drzi element inert. Stevec namesto "ali je ze inert": ce se v istem izrisu en list zapre in drug odpre,
+    vrstni red ucinkov ne sme odlociti, ali ozadje ostane inert (inert se odstrani sele pri 0). */
+const inertStevec = new WeakMap();
+
+/** Ozadje modalnega lista: vse, kar ni list ali njegov prednik, dobi `inert` (Tab in bralnik zaslona ne uideta v ozadje).
+    Vrne funkcijo, ki obnovi samo to, kar je nastavila sama (element, ki je bil inert iz drugega razloga, ostane). */
+function zapriOzadje(predal) {
+  const nastavljeno = [];
+  for (let el = predal; el && el.parentElement && el !== document.body; el = el.parentElement) {
+    for (const brat of el.parentElement.children) {
+      if (brat === el || brat.tagName === "SCRIPT") continue;
+      const n = inertStevec.get(brat) || 0;
+      if (!n && brat.inert) continue;   // inert iz drugega razloga (npr. plosca prijave): ni nas, ne odstranimo
+      inertStevec.set(brat, n + 1);
+      brat.inert = true;
+      nastavljeno.push(brat);
+    }
+  }
+  return () => nastavljeno.forEach(b => {
+    const n = (inertStevec.get(b) || 1) - 1;
+    if (n > 0) { inertStevec.set(b, n); return; }
+    inertStevec.delete(b);
+    b.inert = false;
+  });
+}
+
+/** Spodnji list (sheet). Zapre ga Escape, klik na ozadje ali gumb. Fokus gre v list, ozadje je inert, ob zaprtju se fokus vrne. */
 /** brezZapiranja: med letecim nakupom lista ni mogoce zapreti (gumb, ozadje, Escape) - uporabnik bi izgubil odgovor. */
 export function List({ odprt, zapri, naslov, children, brezZapiranja = false }) {
   const ref = useRef(null);
@@ -196,10 +222,12 @@ export function List({ odprt, zapri, naslov, children, brezZapiranja = false }) 
     const tipka = e => { if (e.key === "Escape") zapriRef.current(); };
     document.addEventListener("keydown", tipka);
     document.body.classList.add("brez-drsenja");
+    const obnoviOzadje = ref.current ? zapriOzadje(ref.current) : () => {};
     ref.current && ref.current.focus();
     return () => {
       document.removeEventListener("keydown", tipka);
       document.body.classList.remove("brez-drsenja");
+      obnoviOzadje();   // pred vrnitvijo fokusa: sprozilni element je bil v inertnem ozadju
       prej && prej.focus && prej.focus();
     };
   }, [odprt]);

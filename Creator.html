@@ -18,7 +18,8 @@
 
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Outly">
-  <meta property="og:url" content="https://outly.si/Creator.html">
+  <meta property="og:url" content="https://outly.si/Creator">
+  <link rel="canonical" href="https://outly.si/Creator">
   <meta property="og:title" content="Become an Outly creator">
   <meta property="og:description" content="Publish your events, reach people who like your vibe, and sell tickets. Apply to become an Outly creator.">
   <meta property="og:image" content="https://outly.si/assets/og-image.png">
@@ -71,10 +72,15 @@
     <h2>Business information</h2>
     <p class="hint">The registration information can be changed within 3 months once approved</p>
 
+    <label class="creator-label" for="businessName">Legal business name</label>
     <input type="text" placeholder="Legal business name" id="businessName" autocomplete="organization">
+    <label class="creator-label" for="businessType">Business type</label>
     <input type="text" placeholder="Business type" id="businessType">
+    <label class="creator-label" for="businessAddress">Business address</label>
     <input type="text" placeholder="Business address" id="businessAddress" autocomplete="street-address">
+    <label class="creator-label" for="city">City</label>
     <input type="text" placeholder="City" id="city" autocomplete="address-level2">
+    <label class="creator-label" for="licenceId">Business licence ID</label>
     <input type="text" placeholder="Business licence ID" id="licenceId">
 
     <p class="formMsg step-msg" aria-live="polite"></p>
@@ -86,9 +92,13 @@
   <div class="step" data-step="2">
     <h2>Contact person</h2>
 
+    <label class="creator-label" for="contactName">Full name</label>
     <input type="text" placeholder="Full name" id="contactName" autocomplete="name">
+    <label class="creator-label" for="contactRole">Role / Position</label>
     <input type="text" placeholder="Role / Position" id="contactRole" autocomplete="organization-title">
+    <label class="creator-label" for="contactEmail">Email address</label>
     <input type="email" placeholder="Email address" id="contactEmail" autocomplete="email">
+    <label class="creator-label" for="contactPhone">Phone number</label>
     <input type="tel" placeholder="Phone number" id="contactPhone" autocomplete="tel">
 
     <p class="formMsg step-msg" aria-live="polite"></p>
