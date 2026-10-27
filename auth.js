@@ -716,7 +716,8 @@
     if (e.key === "Escape" && !drawer.hidden) close();
   });
 
-  if (avatarBtn) avatarBtn.addEventListener("click", () => (drawer.hidden ? open("profile") : close()));
+  // Klik med zapiranjem (~320 ms) plosco znova odpre (sicer bi se namen uporabnika izgubil; pregled #97, 2. krog).
+  if (avatarBtn) avatarBtn.addEventListener("click", () => (drawer.hidden || zapiralniCas !== null ? open("profile") : close()));
 
   /* ---------------------------------------------------------------
      Stanje seje
