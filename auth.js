@@ -321,10 +321,16 @@
      Odpiranje / zapiranje
   ---------------------------------------------------------------- */
   let lastFocus = null;
+  let zapiralniCas = null;   // casovnik iz close(): open() ga mora preklicati, sicer ponovno odprto plosco skrije (in ozadje ostane inert)
   let zaprtoOzadje = [];   // elementi strani, ki smo jim ob odprtju plošče nastavili inert (modalno okno: Tab ne uide v ozadje)
 
   function open(target) {
-    if (drawer.hidden) lastFocus = document.activeElement;   // ponoven open() ob že odprti plošči ne sme povoziti sprožilca
+    if (zapiralniCas !== null) {   // plosca se je ravnokar zapirala: preklici skrivanje in animacijo zapiranja
+      clearTimeout(zapiralniCas);
+      zapiralniCas = null;
+      drawer.classList.remove("is-closing");
+    }
+    if (drawer.hidden) lastFocus = document.activeElement;   // sprozilec ob prvem odprtju; ponoven open() (tudi med zapiranjem) ga ne sme povoziti (med zapiranjem je fokus ze v plosci ali na body)
     drawer.hidden = false;
     document.body.classList.add("drawer-open");
     if (avatarBtn) avatarBtn.setAttribute("aria-expanded", "true");
@@ -334,6 +340,7 @@
     }
     // dva okvirja, da animacija steče iz začetnega stanja
     requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (!document.body.classList.contains("drawer-open")) return;   // medtem zaprta: is-open ne sme ostati na skriti plosci
       drawer.classList.add("is-open");
       // Fokus v ploščo (ne na gumb Close: ta ima prehod, zato je prvih ~120 ms še visibility:hidden in fokus ne uspe).
       // Pogledi z vnosom ga nato premaknejo na prvo polje (view()).
@@ -343,14 +350,17 @@
   }
 
   function close() {
-    if (drawer.hidden) return;
+    if (drawer.hidden || zapiralniCas !== null) return;   // ze skrita ali ze v zapiranju
     zaprtoOzadje.forEach((el) => { el.inert = false; });   // pred vrnitvijo fokusa (lastFocus je bil v inertnem ozadju)
     zaprtoOzadje = [];
     drawer.classList.remove("is-open");
     drawer.classList.add("is-closing");
     document.body.classList.remove("drawer-open");
     if (avatarBtn) avatarBtn.setAttribute("aria-expanded", "false");
-    setTimeout(() => {
+    zapiralniCas = setTimeout(() => {
+      zapiralniCas = null;
+      // Dvojna varovalka: ce je bila plosca medtem znova odprta, je ne skrijemo (open() sicer preklice casovnik).
+      if (drawer.classList.contains("is-open") || document.body.classList.contains("drawer-open")) return;
       drawer.classList.remove("is-closing");
       drawer.hidden = true;
       if (lastFocus && lastFocus.focus) lastFocus.focus();
