@@ -146,12 +146,12 @@ function PlacilaKluba({ klub }) {
 
   const st = s.st;
   let stanje = null, gumb = null, dodatno = null;
-  if (st && !st.configured) { /* Stripe na backendu ni nastavljen: ni stanja za prikaz */ }
+  if (st && !st.configured) stanje = t("Payments aren't set up yet. Contact Outly.");   // Stripe na backendu ni nastavljen (brez gumba Connect)
   else if (st && st.charges_enabled) {
     stanje = t("Your club accepts card payments. Payouts go straight to your bank account.");
     gumb = html`<button type="button" class="gumb-siv" disabled=${posiljam} onClick=${() => odpri("/business/stripe/dashboard")}>${t("Open Stripe dashboard")}</button>`;
   } else if (st && st.connected && st.details_submitted && !(st.requirements_due || []).length) {
-    // Obrazec je oddan, nic ne manjka: Stripe preverja (v testnem nacinu obicajno nekaj minut). Ponovni onboarding ne pomaga.
+    // Obrazec je oddan, nic ne manjka: Stripe preverja. Ponovni onboarding ne pomaga.
     stanje = t("Stripe is reviewing your details. Card payments switch on automatically when the review is done.");
     gumb = html`<button type="button" class="gumb-siv" disabled=${s.nalaga} onClick=${nalozi}>${t("Check again")}</button>
       <button type="button" class="gumb-siv" disabled=${posiljam} onClick=${() => odpri("/business/stripe/dashboard")}>${t("Open Stripe dashboard")}</button>`;

@@ -633,7 +633,6 @@ export const SL = {
  "Your purchase may have gone through — tap the button again to check (you won't be charged twice).": "Nakup je morda uspel – ponovno pritisni gumb, da preveriš (dvakrat ti ne bomo zaračunali).",
  "The payment session expired. Please try again.": "Plačilna seja je potekla. Poskusi znova.",
  "Tickets aren't on sale in the app yet.": "Vstopnice v aplikaciji še niso v prodaji.",
- "This is a demo club. Tickets can't be bought.": "To je demo klub. Vstopnic ni mogoče kupiti.",
  "Your payment is being processed by your bank. We'll update your tickets when it's confirmed.": "Banka še obdeluje plačilo. Vstopnice posodobimo, ko bo potrjeno.",
  "The payment page isn't ready yet. Please try again.": "Plačilna stran še ni pripravljena. Poskusi znova.",
  "Promo code (optional)": "Promo koda (neobvezno)",
