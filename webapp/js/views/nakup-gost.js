@@ -11,8 +11,8 @@ import {
   jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo, jeNakupVObdelavi, NAKUP_V_OBDELAVI_S,
   ApiError, izidNakupa, jePromoKodaNeveljavna, nakupBrezOdgovoraSporocilo, gostSporocilo, jeCenaVstopniceSpremenjena, potekloPlacilo, placiloVObdelavi, placiloNepripravljeno
 } from "../napake.js";
-import { denar, jeRazprodan, preostanek, danInUra, nacinPlacila, ddvBesedilo, jeDemo } from "../oblika.js";
-import { List, useZaklep, DemoBesedilo, PromoPolje, promoKoda } from "../ui.js";
+import { denar, jeRazprodan, preostanek, danInUra, nacinPlacila, ddvBesedilo } from "../oblika.js";
+import { List, useZaklep, PromoPolje, promoKoda } from "../ui.js";
 import { navigiraj } from "../usmerjanje.js";
 import { odpriStripe, izidStripeNakupa } from "../stripe.js";
 import { TERMS_VERSION, EMAIL_RE, BlokProdajalca, OpombaVracila } from "../pogoji.js";
@@ -68,8 +68,7 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
   const skupaj = cenaEna * kolicina;
   const razprodano = jeRazprodan(e) || ostane === 0;
   const nacin = nacinPlacila(e);   // "test" | "stripe" | "unavailable" (backend #149)
-  const demo = jeDemo(e);   // demo klub (backend #243): gost nima vloge admin -> nakup je vedno zavrnjen; namesto gumba besedilo
-  const neprodaja = nacin === "unavailable" || demo;
+  const neprodaja = nacin === "unavailable";
   const potrebujeStarost = e.min_age > 0;
   const zasebnost = koda === "sl" ? "/privacy-app" : "/privacy";   // politika v jeziku obrazca (pravno 2.2: EN /privacy, SL /privacy-app)
 
@@ -195,7 +194,7 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
         </div>
       </div>
 
-      ${demo || neprodaja ? null : html`<${PromoPolje} vrednost=${promo} spremeni=${v => { setPromoNapaka(""); polje(setPromo)(v); }} napaka=${promoNapaka} onemogoceno=${posiljam} />`}
+      ${neprodaja ? null : html`<${PromoPolje} vrednost=${promo} spremeni=${v => { setPromoNapaka(""); polje(setPromo)(v); }} napaka=${promoNapaka} onemogoceno=${posiljam} />`}
 
       <div class="nakup-skupaj">
         <span>${t("Total")}<small class="utisano"> · ${ddvBesedilo(e.seller)}</small></span>
@@ -204,10 +203,8 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
 
       <${BlokProdajalca} prodajalec=${e.seller} />
 
-      ${demo ? html`<${DemoBesedilo} />`
-        : neprodaja ? html`<p class="opomba" role="status">${t("Tickets aren't on sale in the app yet.")}</p>`
+      ${neprodaja ? html`<p class="opomba" role="status">${t("Tickets aren't on sale in the app yet.")}</p>`
         : brezplacno ? null
-        : nacin === "test" ? html`<p class="opomba">${t("Test mode — nothing is charged")}</p>`
         : html`<p class="opomba">${t("You pay by card on the next page. Your tickets are sent by email right after payment.")}</p>`}
 
       <${OpombaVracila} prodajalec=${e.seller} />
@@ -220,11 +217,11 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
       ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}
       ${brezGosta ? html`<button type="button" class="gumb-siv" onClick=${prijava}>${t("Sign in to buy")}</button>` : null}
 
-      ${demo ? null : html`<button type="submit" class="gumb-glavni" disabled=${posiljam || razprodano || zaklenjeno || neprodaja}>
+      <button type="submit" class="gumb-glavni" disabled=${posiljam || razprodano || zaklenjeno || neprodaja}>
         ${razprodano ? t("Sold out") : posiljam ? t("Processing...")
           : brezplacno ? (kolicina === 1 ? t("Get ticket") : t("Get tickets"))
           : t("Pay {amount}", { amount: denar(skupaj, e.currency) })}
-      </button>`}
+      </button>
     </form>
     <button type="button" class="povezava-gumb" onClick=${prijava} disabled=${posiljam}>${t("Have an account? Sign in")}</button>
   <//>`;
