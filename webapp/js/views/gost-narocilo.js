@@ -166,7 +166,6 @@ export function GostNarocilo() {
       ${placano ? html`<span class="uspeh-krog"><${Ikona} ime="check" velikost=${28} debelina=${3} /></span><strong>${t("You're in!")}</strong>`
         : html`<strong>${t("Order status: {status}", { status: statusNapis(o.status) })}</strong>`}
       <span>${ref ? t("Order {ref}", { ref }) + " · " : ""}${tn("1 ticket", "{n} tickets", vstopnice.length || Number(o.quantity) || 0)}</span>
-      ${o.is_test && placano ? html`<span class="opomba">${t("Test purchase — nothing was charged")}</span>` : null}
     </div>
     ${dogodek}
     ${vstopnice.length ? html`<p class="opomba-okvir" role="note"><${Ikona} ime="camera" velikost=${18} />${t("Screenshot your QR code in case you have no signal at the door.")}</p>` : null}

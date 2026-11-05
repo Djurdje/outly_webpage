@@ -146,7 +146,7 @@ function PlacilaKluba({ klub }) {
 
   const st = s.st;
   let stanje = null, gumb = null, dodatno = null;
-  if (st && !st.configured) stanje = t("Online payments are not switched on yet. Ticket sales run in test mode.");
+  if (st && !st.configured) { /* Stripe na backendu ni nastavljen: ni stanja za prikaz */ }
   else if (st && st.charges_enabled) {
     stanje = t("Your club accepts card payments. Payouts go straight to your bank account.");
     gumb = html`<button type="button" class="gumb-siv" disabled=${posiljam} onClick=${() => odpri("/business/stripe/dashboard")}>${t("Open Stripe dashboard")}</button>`;
@@ -166,7 +166,7 @@ function PlacilaKluba({ klub }) {
   return html`<span class="podnaslov-sekcije">${t("Payments")}</span>
     ${s.nalaga ? html`<${Nalaganje} />` : null}
     <${Napaka} besedilo=${s.napaka ? sporocilo(s.napaka) : null} znova=${nalozi} />
-    ${stanje ? html`<p class="opomba">${stanje}${st && st.sandbox ? " " + t("(Stripe test mode)") : ""}</p>` : null}
+    ${stanje ? html`<p class="opomba">${stanje}</p>` : null}
     ${dodatno ? html`<p class="opomba">${dodatno}</p>` : null}
     ${gumb}
     ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}`;
