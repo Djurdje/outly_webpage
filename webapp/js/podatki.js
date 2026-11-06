@@ -4,7 +4,7 @@
    Zato objekt iz seznama NIKOLI ne gre naravnost na zaslon dogodka: ta vedno nalozi poln GET /events/:id
    (dogodek() spodaj). Star backend parametra ne pozna in vrne poln odgovor - brez razlike za odjemalca. */
 import { javno, send } from "./api.js";
-import { normalizirajDogodek, normalizirajKlub } from "./oblika.js";
+import { normalizirajDogodek, normalizirajKlub, normalizirajKmalu } from "./oblika.js";
 
 const memo = new WeakMap();   // obljuba iz javno() -> normaliziran rezultat
 function preslikaj(obljuba, fn) {
@@ -38,3 +38,14 @@ export const dogodek = id => send(`/events/${id}`, { auth: "optional" }).then(e 
   friends_going: Array.isArray(e.friends_going) ? e.friends_going : [],
   friends_interested: Array.isArray(e.friends_interested) ? e.friends_interested : []
 }));
+
+/* Klubi "Coming soon" (backend GET /coming-soon, javno). Napaka, 404 (star backend) ali prazno = prazen seznam: razdelek se tiho
+   skrije. Neuspeh se predpomni enako dolgo kot uspeh (5 min, kot Cache-Control strezniske poti), da Home ne ponavlja klica. */
+let kmaluVpis = null;
+export function kmalu(sveze = false) {
+  const zdaj = Date.now();
+  if (!sveze && kmaluVpis && zdaj - kmaluVpis.cas < 300e3) return kmaluVpis.obljuba;
+  const obljuba = send("/coming-soon").then(normalizirajKmalu).catch(() => []);
+  kmaluVpis = { cas: zdaj, obljuba };
+  return obljuba;
+}

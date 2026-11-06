@@ -271,6 +271,28 @@ export function slikaZamegljena(url) {
   return { url, cssZamegli: true };
 }
 
+/* Coming soon (backend GET /coming-soon): odgovor je podatek, ne zaupanja vreden - vsako polje se preveri.
+   Slike in splet samo https; slug samo a-z, 0-9, -; Instagram samo uporabnisko ime. Neveljaven vnos izpade. */
+export function normalizirajKmalu(r) {
+  const niz = v => (typeof v === "string" ? v.trim() : "");
+  const https = v => { const s = niz(v); return /^https:\/\//i.test(s) ? (varenUrl(s) || "") : ""; };
+  const videni = new Set();
+  const izhod = [];
+  for (const k of (r && Array.isArray(r.clubs) ? r.clubs : [])) {
+    if (!k || typeof k !== "object") continue;
+    const slug = niz(k.slug), ime = niz(k.name);
+    if (!/^[a-z0-9-]{1,60}$/.test(slug) || !ime || videni.has(slug)) continue;
+    videni.add(slug);
+    const ig = niz(k.instagram).replace(/^@/, "");
+    izhod.push({
+      slug, name: ime, city: niz(k.city), address: niz(k.address),
+      logo_url: https(k.logo_url), cover_url: https(k.cover_url), website: https(k.website),
+      instagram: /^[A-Za-z0-9._]{1,30}$/.test(ig) ? ig : ""
+    });
+  }
+  return izhod.slice(0, 20);
+}
+
 export const zanrIme = g => {
   const posebni = { hiphop: "Hip hop", rnb: "R&B", "70s": "70s", "80s": "80s", "90s": "90s", "2000s": "2000s" };
   if (posebni[g]) return posebni[g];

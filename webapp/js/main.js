@@ -18,6 +18,7 @@ import { NamigAplikacije } from "./namig-aplikacije.js";
 /* Zasloni, ki jih ni na zacetnem zaslonu, se nalozijo sele, ko so potrebni (faza 5: manj JS ob prvem obisku).
    Home, iskanje, dogodek, klub in zemljevid ostanejo takoj (deljene povezave vodijo nanje). */
 const NALAGALNIKI = {
+  "./views/kmalu-klub.js": () => import("./views/kmalu-klub.js"),
   "./views/vstopnice.js": () => import("./views/vstopnice.js"),
   "./views/guest-lists.js": () => import("./views/guest-lists.js"),
   "./views/gost-narocilo.js": () => import("./views/gost-narocilo.js"),
@@ -39,6 +40,7 @@ const NALAGALNIKI = {
   "./views/posel-vip.js": () => import("./views/posel-vip.js"),
   "./views/posel-rezervacije.js": () => import("./views/posel-rezervacije.js"),
 };
+const KmaluKlub = leno("./views/kmalu-klub.js", "KmaluKlub");
 const Vstopnice = leno("./views/vstopnice.js", "Vstopnice");
 const GuestListDetajl = leno("./views/guest-lists.js", "GuestListDetajl");
 const GostNarocilo = leno("./views/gost-narocilo.js", "GostNarocilo");
@@ -145,6 +147,7 @@ function Zaslon({ pot }) {
     case "profile": return html`<${Profil} />`;
     case "event": return html`<${Dogodek} key=${p.id} id=${p.id} />`;
     case "club": return html`<${Klub} key=${p.id} id=${p.id} />`;
+    case "soon": return html`<${KmaluKlub} key=${p.slug} slug=${p.slug} />`;
     case "events": return html`<${VsiDogodki} />`;
     case "genre": return html`<${Zanr} key=${p.genre} genre=${p.genre} />`;
     case "interested": return html`<${Zanimivi} />`;
@@ -233,13 +236,13 @@ function App() {
   useEffect(() => { if (preusmeritev) navigiraj(preusmeritev, { zamenjaj: true }); }, [preusmeritev]);
   useLayoutEffect(() => { obnoviDrsenje(pot); }, [pot.kljuc]);
   useEffect(() => {
-    if (!["event", "club"].includes(pot.ime)) document.title = pot.ime === "home" ? "Outly" : `${t(naslovPoti(pot.ime))} · Outly`;
+    if (!["event", "club", "soon"].includes(pot.ime)) document.title = pot.ime === "home" ? "Outly" : `${t(naslovPoti(pot.ime))} · Outly`;
   }, [pot.ime, koda]);
   // Dogodek in klub si naslov (ime) nastavita sama, ko se podatki nalozijo; do takrat (in ob napaki) naj ne ostane naslov prejsnjega
   // zaslona. Layout efekt tece ob izrisu, pred nalaganjem podatkov v zaslonu, zato ga ne more povoziti.
   useLayoutEffect(() => {
-    if (pot.ime === "event" || pot.ime === "club") document.title = `${t(naslovPoti(pot.ime))} · Outly`;
-  }, [pot.ime, pot.params.id, koda]);
+    if (pot.ime === "event" || pot.ime === "club" || pot.ime === "soon") document.title = `${t(naslovPoti(pot.ime))} · Outly`;
+  }, [pot.ime, pot.params.id, pot.params.slug, koda]);
 
   if (ZAVIHKI.some(z => z.ime === pot.ime)) zadnjiZavihek = pot.ime;
   const brezVrstice = AVT.has(pot.ime) || pot.ime === "onboarding";
@@ -257,7 +260,7 @@ function App() {
 }
 
 function naslovPoti(ime) {
-  return ({ search: "Search", map: "Map", event: "Event", club: "Club", notfound: "Page not found", profile: "Profile", events: "Events", interested: "Interested events",
+  return ({ search: "Search", map: "Map", event: "Event", club: "Club", soon: "Coming soon", notfound: "Page not found", profile: "Profile", events: "Events", interested: "Interested events",
     tickets: "Tickets", "guest-list": "Guest list", "guest-order": "Your tickets", "guest-ticket": "Your ticket", login: "Sign in", register: "Create an account", verify: "Verify your email",
     forgot: "Forgot password?", onboarding: "Complete your account", language: "Language", genre: "Events",
     account: "My Account", personal: "Personal info", security: "Password and security", preferences: "Preferences",
