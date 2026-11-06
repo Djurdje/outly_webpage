@@ -13,6 +13,7 @@ import { VsiDogodki, Zanr, Zanimivi } from "./views/seznami.js";
 import { Zemljevid } from "./views/zemljevid.js";
 import { registrirajSW } from "./pwa.js";
 import { TrakVgrajen } from "./vgrajen.js";
+import { NamigAplikacije } from "./namig-aplikacije.js";
 
 /* Zasloni, ki jih ni na zacetnem zaslonu, se nalozijo sele, ko so potrebni (faza 5: manj JS ob prvem obisku).
    Home, iskanje, dogodek, klub in zemljevid ostanejo takoj (deljene povezave vodijo nanje). */
@@ -246,6 +247,7 @@ function App() {
 
   return html`<div class="okvir-aplikacije" key=${koda}>
     <${TrakVgrajen} skrij=${pot.ime === "map"} />
+    <${NamigAplikacije} ime=${pot.ime} />
     ${pot.ime === "home" ? html`<${OzadjeHome} />` : null}
     <main id="vsebina" class=${"okvir" + (brezVrstice ? "" : " z-vrstico") + (pot.ime === "biz-vip" || pot.ime === "biz-event-vip" ? " siroko" : "")} key=${pot.kljuc} data-smer=${pot.smer}>
       <${Zaslon} pot=${pot} />
