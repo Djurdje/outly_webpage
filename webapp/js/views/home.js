@@ -41,18 +41,24 @@ export function Home() {
   async function nalozi(sveze = false) {
     setStanje(s => ({ ...s, nalaga: true, napaka: null }));
     try {
-      const [klubi, prihajajoci, pretekli, kmalu] = await Promise.all([
-        P.klubi(sveze), P.dogodki({ upcoming: true, sveze }), P.dogodki({ upcoming: false, sveze }), P.kmaluHitro(sveze)
+      const [klubi, prihajajoci, pretekli] = await Promise.all([
+        P.klubi(sveze), P.dogodki({ upcoming: true, sveze }), P.dogodki({ upcoming: false, sveze })
       ]);
       const zanri = await P.zanri().catch(() => []);
       if (!vrstniRedPredlogov) vrstniRedPredlogov = premesaj(klubi.map(k => k.id));
-      setStanje({ nalaga: false, napaka: null, klubi, prihajajoci, pretekli, zanri, kmalu });
+      setStanje(s => ({ ...s, nalaga: false, napaka: null, klubi, prihajajoci, pretekli, zanri }));
     } catch (e) {
       setStanje(s => ({ ...s, nalaga: false, napaka: sporocilo(e) }));
     }
   }
 
   useEffect(() => { nalozi(); }, []);
+  // Coming soon se nalozi LOCENO: Home se izrise brez cakanja, razdelek se pojavi, ko pride odgovor (napaka/404 = prazen seznam).
+  useEffect(() => {
+    let zivo = true;
+    P.kmalu().then(k => { if (zivo) setStanje(s => ({ ...s, kmalu: k })); });
+    return () => { zivo = false; };
+  }, []);
   useEffect(() => {
     if (!prijavljen) { setMoji([]); setNacrti([]); return; }
     naloziNacrte().then(setNacrti).catch(() => setNacrti([]));   // ni kriticno (kot iOS)

@@ -49,5 +49,3 @@ export function kmalu(sveze = false) {
   kmaluVpis = { cas: zdaj, obljuba };
   return obljuba;
 }
-/** Za Home: pocakamo najvec 2 s (sicer bi pocasen odgovor zadrzal cel zaslon); pozni odgovor se pokaze ob naslednjem obisku. */
-export const kmaluHitro = (sveze = false) => Promise.race([kmalu(sveze), new Promise(r => setTimeout(() => r([]), 2000))]);
