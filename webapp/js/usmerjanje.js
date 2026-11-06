@@ -13,6 +13,7 @@ const POTI = [
   ["/app/genre/:genre", "genre"],
   ["/app/event/:id", "event"],
   ["/app/club/:id", "club"],
+  ["/app/soon/:slug", "soon"],   // klub "Coming soon" (brez vrstice v clubs; podatki iz GET /coming-soon)
   ["/app/tickets", "tickets"],
   ["/app/guest-lists/:id", "guest-list"],   // guest lista (gostitelj): QR, povabljeni, povabi prijatelje
   ["/app/guest/order", "guest-order"],   // vstopnice, kupljene brez racuna (#t=<zeton> iz maila / Stripove vrnitve)

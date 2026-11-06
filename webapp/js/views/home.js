@@ -20,6 +20,7 @@ import { zahtevajLokacijo, useLokacija } from "../lokacija.js";
 import { SekcijaNacrtov, naloziNacrte } from "./prijatelji.js";
 import { Zvonec, MeniObvestil } from "./obvestila.js";
 import { useNastavitve, mejaRazdalje } from "../nastavitve.js";
+import { SekcijaKmalu } from "./kmalu.js";
 import { useFiltri, FiltriList, ustrezaDogodek, ustrezaKlub, filtriAktivni } from "./filtri.js";
 
 /* Vrstni red predlogov se premesa ENKRAT na sejo strani (ne ob vsakem izrisu - iOS past). */
@@ -28,7 +29,7 @@ let vrstniRedPredlogov = null;
 export function Home() {
   const me = useSeja(s => s.me);
   const prijavljen = useSeja(s => s.prijavljen);
-  const [stanje, setStanje] = useState({ nalaga: true, napaka: null, klubi: [], prihajajoci: [], pretekli: [], zanri: [] });
+  const [stanje, setStanje] = useState({ nalaga: true, napaka: null, klubi: [], prihajajoci: [], pretekli: [], zanri: [], kmalu: [] });
   const [moji, setMoji] = useState([]);
   const [nacrti, setNacrti] = useState([]);
   const [obvestila, setObvestila] = useState(false);
@@ -40,12 +41,12 @@ export function Home() {
   async function nalozi(sveze = false) {
     setStanje(s => ({ ...s, nalaga: true, napaka: null }));
     try {
-      const [klubi, prihajajoci, pretekli] = await Promise.all([
-        P.klubi(sveze), P.dogodki({ upcoming: true, sveze }), P.dogodki({ upcoming: false, sveze })
+      const [klubi, prihajajoci, pretekli, kmalu] = await Promise.all([
+        P.klubi(sveze), P.dogodki({ upcoming: true, sveze }), P.dogodki({ upcoming: false, sveze }), P.kmaluHitro(sveze)
       ]);
       const zanri = await P.zanri().catch(() => []);
       if (!vrstniRedPredlogov) vrstniRedPredlogov = premesaj(klubi.map(k => k.id));
-      setStanje({ nalaga: false, napaka: null, klubi, prihajajoci, pretekli, zanri });
+      setStanje({ nalaga: false, napaka: null, klubi, prihajajoci, pretekli, zanri, kmalu });
     } catch (e) {
       setStanje(s => ({ ...s, nalaga: false, napaka: sporocilo(e) }));
     }
@@ -99,11 +100,15 @@ export function Home() {
 function Sekcije({ i, lok, prijavljen, nacrti }) {
   const { klubiPoId } = i;
   return html`
+    ${i.kmaluMesto === "vrh" ? html`<${SekcijaKmalu} klubi=${i.kmalu} />` : null}
+
     ${i.uradni.length ? html`<section class="sekcija">
       <${NaslovSekcije} naslov="Organized by Outly" />
       <${KarticaVelika} dogodek=${i.uradni[0]} klub=${klubiPoId.get(i.uradni[0].club_id)} napis=${napisPrizorisca(i.uradni[0])} />
       ${i.uradni.length > 1 ? html`<div class="vrsta-drsna">${i.uradni.slice(1).map(e => html`<${KarticaDogodka} key=${e.id} dogodek=${e} klub=${klubiPoId.get(e.club_id)?.name} />`)}</div>` : null}
     </section>` : null}
+
+    ${i.kmaluMesto === "uradni" ? html`<${SekcijaKmalu} klubi=${i.kmalu} />` : null}
 
     ${i.predlogi.length ? html`<section class="sekcija">
       <${NaslovSekcije} naslov=${t("Suggestions")} />
@@ -115,6 +120,8 @@ function Sekcije({ i, lok, prijavljen, nacrti }) {
     </section>` : i.tedenl.length ? html`<section class="sekcija">
       <${NaslovSekcije} naslov=${t("This week")} /><${VrstaDogodkov} dogodki=${i.tedenl} kluby=${klubiPoId} />
     </section>` : null}
+
+    ${i.kmaluMesto === "nocoj" ? html`<${SekcijaKmalu} klubi=${i.kmalu} />` : null}
 
     ${i.zanimivi.length ? html`<section class="sekcija">
       <${NaslovSekcije} naslov=${t("Interested events")} desno=${html`<a class="vec" href="/app/interested">${t("See all")}</a>`} />
@@ -231,8 +238,11 @@ function izpelji(s, me, lok, f, moji, maxKm) {
   const mesta = [...new Set([...s.klubi.map(k => k.city), ...s.prihajajoci.map(e => e.venue_city)].map(m => (m || "").trim()).filter(Boolean))].sort();
 
   return {
+    kmalu: s.kmalu,
+    // Coming soon: takoj pod prvo sekcijo dogodkov (Organized by Outly, sicer Tonight/This week); brez dogodkov na vrh vsebine.
+    kmaluMesto: uradni.length ? "uradni" : (nocoj.length || tedenl.length) ? "nocoj" : "vrh",
     klubiPoId, predlogi, uradni, nocoj, tedenl, vikend, trending, velik, hit, obmocje, razdalje: blizu.length ? razdalje : new Map(),
-    zanri, zanimivi, mesta, imaKaj: s.prihajajoci.length > 0 || s.klubi.length > 0 || s.nalaga || !!s.napaka
+    zanri, zanimivi, mesta, imaKaj: s.prihajajoci.length > 0 || s.klubi.length > 0 || s.kmalu.length > 0 || s.nalaga || !!s.napaka
   };
 }
 

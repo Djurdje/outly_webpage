@@ -1012,6 +1012,20 @@ a.profil-ime{ white-space:normal; }
 .rez-nacin.vrata{ color:var(--oranzna) !important; }
 .rez-desno{ flex:none; display:flex; flex-direction:column; align-items:flex-end; }
 
+/* ---------- Coming soon (Home razdelek + stran /app/soon/:slug) ---------- */
+.kmalu-pod{ margin:-6px 0 0; font-size:13px; font-weight:500; color:var(--b70); }
+.kartica-kmalu{ position:relative; display:block; width:264px; aspect-ratio:16/10; border-radius:14px; overflow:hidden; border:1px solid var(--b10); background:var(--b08); }
+.kartica-kmalu > .slika{ position:absolute; inset:0; }
+.km-senca{ position:absolute; inset:0; z-index:1; background:linear-gradient(180deg, transparent 30%, rgba(0,0,0,.88)); }
+.km-dno{ position:absolute; z-index:2; left:10px; right:10px; bottom:10px; display:flex; align-items:center; gap:10px; }
+.okrogla-slika.km-logo{ width:40px; height:40px; border:1px solid var(--b14); }
+.km-besedilo{ flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
+.km-besedilo strong{ font-size:15px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.km-besedilo span{ font-size:12px; font-weight:500; color:var(--b70); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.kmalu-hero{ position:absolute; inset:0; }
+.kmalu-stran .znacka.staticna{ align-self:flex-start; }
+.kmalu-gumbi{ display:flex; flex-direction:column; gap:10px; }
+
 /* ---------- zmanjsano gibanje (na koncu, da prevlada nad pravili zgoraj) ----------
    Neskoncne in daljse (> 200 ms) animacije; vrtavka le upocasnjena (ostane znak "nalagam"). Prehodov .okvir ne spreminjamo. */
 @media (prefers-reduced-motion: reduce){

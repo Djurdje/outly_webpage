@@ -6,7 +6,7 @@
      shranjeno samo ob izpadu - po objavi nikoli stara koda.
    - /vendor/*, pisave, ikone (razlicica v imenu / se ne spreminjajo): shranjeno najprej.
    - API (backend, Supabase, Cloudinary), vstopnice, ploscice zemljevida: NE prestrezamo (vedno sveze, kot iOS). */
-const RAZLICICA = "outly-app-14";   // ob dvigu uskladi tudi webapp/porocilo.js
+const RAZLICICA = "outly-app-15";   // ob dvigu uskladi tudi webapp/porocilo.js
 const LUPINA = "/app/";
 /* Staticni graf uvozov main.js (vsi moduli, ki jih aplikacija nalozi ob zagonu). Generira ga webapp/orodja/predhodno-nalaganje.mjs
    (isti izracun kot <link rel="modulepreload"> v app/index.html; `... --preveri` pade, ce se razideta). Brez tega bi po objavi
@@ -35,6 +35,7 @@ const GRAF = [
   "/webapp/js/lokacija.js",
   "/webapp/js/views/prijatelji.js",
   "/webapp/js/views/obvestila.js",
+  "/webapp/js/views/kmalu.js",
   "/webapp/js/views/filtri.js",
   "/webapp/js/views/search.js",
   "/webapp/js/views/event.js",
