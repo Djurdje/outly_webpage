@@ -390,6 +390,7 @@ h1,h2,h3,p{ margin:0; }
 .list-glava{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
 .list-glava h2{ font-size:22px; font-weight:700; }
 .list-vsebina{ display:flex; flex-direction:column; gap:14px; }
+.namig-besedilo{ color:var(--b70); font-size:15px; line-height:1.45; }
 @media (min-width:700px){
   .list-ozadje{ align-items:center; }
   .list{ border-radius:22px; border-bottom:1px solid var(--b08); max-height:86vh; }
