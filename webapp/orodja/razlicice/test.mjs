@@ -71,27 +71,30 @@ await new Promise(ok => streznik.stdout.once("data", ok));
 const ctl = q => fetch(`${BASE}/__ctl?${q}`).then(r => r.json());
 const pocakaj = ms => new Promise(ok => setTimeout(ok, ms));
 
+// Vsak klic v stran ima mejo: zamrznjena stran (npr. navigacija, ki obvisi ob zamenjavi SW) ne sme zamrzniti testa.
+const zMejo = (obljuba, ms, sicer) => Promise.race([obljuba, pocakaj(ms).then(() => sicer)]);
 async function stanjeStrani(page) {
-  return page.evaluate(() => {
+  return zMejo(page.evaluate(() => {
     const k = document.getElementById("aplikacija");
     if (!k) return "brez-korena";
     if (k.querySelector('[role="alert"]') && /could not start|ni zagnal/i.test(k.textContent)) return "gumb-napaka";
     if (k.querySelector(".nalaganje-zacetno")) return "vrtavka";
     return "zagnano";
-  }).catch(() => "navigacija");
+  }).catch(() => "navigacija"), 5000, "zamrznjeno");
 }
 async function pocakajZagon(page, ms = 15000) {
   const konec = Date.now() + ms;
   while (Date.now() < konec) { if (await stanjeStrani(page) === "zagnano") return true; await pocakaj(200); }
   return false;
 }
-const verzija = page => page.evaluate(() => import("/webapp/js/oblika.js").then(m => ("testnaIzvozB" in m ? "B" : "A"))).catch(e => "? " + e.message);
+const verzija = page => zMejo(page.evaluate(() => import("/webapp/js/oblika.js").then(m => ("testnaIzvozB" in m ? "B" : "A"))).catch(e => "? " + e.message), 8000, "zamrznjeno");
 
-async function scenarij(ime, { sw = true, fail = [], nostoreA = [], offline = false, nato = false, izbrisi = "", znova = false, leni = false, hang = [], cakaj = 12000 }) {
+async function scenarij(ime, { sw = true, fail = [], nostoreA = [], offline = false, nato = false, izbrisi = "", znova = false, leni = false, hang = [], cakaj = 12000, odgovori = false }) {
   // Tuji strezniki (backend, Supabase) niso dosegljivi - test ne sme klicati produkcije.
   const brskalnik = await chromium.launch({ args: ["--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE localhost"] });
   const ctx = await brskalnik.newContext({ serviceWorkers: sw ? "allow" : "block", viewport: { width: 393, height: 852 } });
   const page = await ctx.newPage();
+  page.setDefaultNavigationTimeout(25000);
   try {
     // 1) Uporabnik je /app odprl pred objavo (A): SW namescen, predpomnilnik napolnjen.
     await ctl(`root=${encodeURIComponent(A)}&nostore=${nostoreA.join(",")}`);
@@ -139,7 +142,7 @@ async function scenarij(ime, { sw = true, fail = [], nostoreA = [], offline = fa
     }
     if (nato) {   // 3) omrezje spet dobro: drugi naslednji zagon mora dati B (prvi osvezi shrambo / namesti nov SW)
       if (offline) await ctx.setOffline(false);
-      await ctl(`root=${encodeURIComponent(B)}`);
+      await ctl(`root=${encodeURIComponent(B)}${odgovori ? "&odgovori=1" : ""}`);
       await page.goto(`${BASE}/app/`).catch(() => {});
       await pocakajZagon(page);
       await pocakaj(3000);
@@ -164,9 +167,12 @@ const SCENARIJI = {
   // Brez SW (zasebno okno, brskalnik v aplikaciji): leni zaslon iz nove objave ob starih modulih. Samodejna obnova iz leno()
   // mora iti skozi varovalo 3/5 min (pregled PR #104, 3. krog: sicer pri pocasnih napakah zanka) - 1 osvezitev, nato B.
   "brez-sw-leni": [{ sw: false, leni: true }, i => i.stanje === "zagnano" && i.verzija === "A" && i.leni === "zagnano" && i.leniOsvezitev === 1 && i.samodejnih === 1 && i.leniVerzija === "B"],
-  // outly-backend#396: povezava "visi" (signal je, podatki ne tecejo) - oblika.js ne odgovori nikoli. S SW: po meji SW vrne
-  // kopijo iz shrambe -> zagon iz shrambe (A); ko omrezje spet dela, B. Prej: vecna vrtavka.
-  "visi": [{ hang: ["/webapp/js/oblika.js"], cakaj: 25000, nato: true }, i => i.stanje === "zagnano" && i.verzija === "A" && i.nato === "B"],
+  // outly-backend#396: povezava "visi" (signal je, podatki ne tecejo) - oblika.js ne odgovori nikoli. S SW: po 30 s brez izrisa
+  // zagon.js zazene stran iz shrambe (A); ko omrezje spet dela, B (vkljucno z zamenjavo SW - ta je s casovno mejo v SW obvisela).
+  // Prej: vecna vrtavka.
+  "visi": [{ hang: ["/webapp/js/oblika.js"], cakaj: 45000, nato: true }, i => i.stanje === "zagnano" && i.verzija === "A" && i.nalaganj <= 2 && i.nato === "B"],
+  // Isto, a ko se omrezje vrne, viseci odgovori le zamujeno pridejo (namesto prekinjene povezave).
+  "visi-zamuda": [{ hang: ["/webapp/js/oblika.js"], cakaj: 45000, nato: true, odgovori: true }, i => i.stanje === "zagnano" && i.verzija === "A" && i.nalaganj <= 2 && i.nato === "B"],
   // Brez SW (ni shrambe): po najvec ~30 s gumb "Reload" namesto vecne vrtavke (oblika.js ni v HTTP predpomnilniku).
   "visi-brez-sw": [{ sw: false, nostoreA: ["/webapp/js/oblika.js"], hang: ["/webapp/js/oblika.js"], cakaj: 38000 }, i => i.stanje === "gumb-napaka"],
   // Shramba nima vse kode za zagon (+ omrezje je ne da): zagon iz shrambe ni mogoc -> gumb, brez zanke osvezitev.

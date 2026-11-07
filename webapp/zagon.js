@@ -149,7 +149,10 @@
     zOmejitvijo(Promise.all(Object.keys(poti).map(function (p) {
       return fetch(p, { cache: "reload", credentials: "same-origin" }).then(function (o) {
         if (!o.ok) throw new Error(String(o.status));
-        return o.headers.get("X-Outly-Shramba") === "1";
+        // Telo preberemo do konca: brez SW brskalnik datoteko zapise v HTTP predpomnilnik sele prebrano (sicer osvezitev
+        // lahko spet dobi staro kopijo).
+        var izShrambe = o.headers.get("X-Outly-Shramba") === "1";
+        return o.arrayBuffer().then(function () { return izShrambe; });
       });
     })), 10000).then(function (izShrambe) {
       if (izShrambe.indexOf(true) === -1) location.reload(); else zagonIzShrambe();
@@ -180,8 +183,15 @@
   // Ce se aplikacija 20 s po nalozitvi strani ne izrise (in ni bilo napake), pokazemo gumb - brez samodejne osvezitve
   // (pocasno omrezje ni napaka).
   window.addEventListener("load", function () { setTimeout(function () { if (!jeZagnano() && !obnavljam) pokaziNapako(); }, 20000); });
-  // Viseca povezava (outly-backend#396): modul, ki ne pride nikoli, zadrzi "load" za vedno - zato se varovalo od zagona
-  // tega skripta: po 30 s brez izrisa gumb (samo gumb, brez samodejne osvezitve). Ce se aplikacija kasneje vseeno izrise,
-  // jo Preact izrise cez sporocilo (render zamenja vsebino #aplikacija).
-  setTimeout(function () { if (!jeZagnano() && !obnavljam) pokaziNapako(); }, 30000);
+  // Viseca povezava (outly-backend#396: signal je, podatki ne tecejo): modul, ki ne pride nikoli, zadrzi "load" za vedno.
+  // Zato varovalo tudi od zagona tega skripta: po 30 s brez izrisa (in brez napake) - s SW zagon IZ SHRAMBE (skladna
+  // prejsnja razlicica, brez omrezja; steje varovalo 3/5 min), brez SW gumb. Ce se aplikacija vmes vseeno izrise, jo Preact
+  // izrise cez sporocilo (render zamenja vsebino #aplikacija). SW tu namenoma NI spremenjen (casovna meja v SW je v testu
+  // zadrzala aktivacijo novega SW in navigacija je obvisela - glej PR).
+  setTimeout(function () {
+    if (jeZagnano() || obnavljam) return;
+    var sw = navigator.serviceWorker && navigator.serviceWorker.controller;
+    if (sw && navigator.onLine && Date.now() - beri(KLJUC_SHRAMBA) >= 30000 && samodejnoDovoljeno()) { obnavljam = true; zagonIzShrambe(); }
+    else pokaziNapako();
+  }, 30000);
 })();

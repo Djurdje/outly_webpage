@@ -16,7 +16,7 @@ const TIPI = { ".js": "text/javascript", ".mjs": "text/javascript", ".css": "tex
   ".woff2": "font/woff2", ".svg": "image/svg+xml", ".jpg": "image/jpeg" };
 const CSP = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https: data: blob:; media-src 'self' https: blob:; font-src 'self'; connect-src 'self' https://outly-backend-roy3.onrender.com https://api.cloudinary.com https://zbewqcxnvrwebxonvebx.supabase.co wss://zbewqcxnvrwebxonvebx.supabase.co https://o4512176179773440.ingest.de.sentry.io; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
 
-http.createServer((req, res) => {
+const obdelaj = (req, res) => {
   const url = new URL(req.url, "http://localhost");
   const p = decodeURIComponent(url.pathname);
   if (p === "/__ctl") {
@@ -25,13 +25,15 @@ http.createServer((req, res) => {
     stanje.fail = new Set(g("fail"));
     stanje.nostore = new Set(g("nostore"));
     stanje.hang = new Set(g("hang"));
-    for (const r of visece.splice(0)) r.destroy();   // prejsnje visece zahteve ne smejo obviseti za vedno
+    // Prejsnje visece zahteve: odgovori=1 -> zdaj jih postrezemo (odgovor je samo zamujal), sicer prekinemo povezavo.
+    const odgovori = url.searchParams.get("odgovori") === "1";
+    for (const v of visece.splice(0)) { if (odgovori) setImmediate(() => obdelaj(v.req, v.res)); else v.req.socket.destroy(); }
     dnevnik.length = 0;
     res.writeHead(200, { "content-type": "application/json" });
     return res.end(JSON.stringify({ root: stanje.root, fail: [...stanje.fail], nostore: [...stanje.nostore] }));
   }
   if (p === "/__log") { res.writeHead(200, { "content-type": "application/json" }); return res.end(JSON.stringify(dnevnik)); }
-  if (stanje.hang.has(p)) { dnevnik.push(p + " VISI"); visece.push(req.socket); return; }
+  if (stanje.hang.has(p)) { dnevnik.push(p + " VISI"); visece.push({ req, res }); return; }
   if (stanje.fail.has(p) || stanje.fail.has("*")) { dnevnik.push(p + " PREKINJENO"); req.socket.destroy(); return; }
 
   let datoteka = path.join(stanje.root, p);
@@ -52,4 +54,5 @@ http.createServer((req, res) => {
   dnevnik.push(p + " 200");
   res.writeHead(200, glave);
   res.end(vsebina);
-}).listen(PORT, "127.0.0.1", () => console.log("streznik " + PORT));
+};
+http.createServer(obdelaj).listen(PORT, "127.0.0.1", () => console.log("streznik " + PORT));
