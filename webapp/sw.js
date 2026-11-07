@@ -3,10 +3,11 @@
    - Navigacija pod /app/: vedno lupina /app/ (omrezje najprej, ob izpadu shranjena). Tako globoka povezava
      (/app/event/12) ne gre cez korensko index.html in vstop.js.
    - /webapp/* (koda brez razlicice v imenu): omrezje najprej MIMO predpomnilnika brskalnika (cache: "no-cache"),
-     shranjeno samo ob izpadu - po objavi nikoli stara koda.
+     shranjeno samo ob izpadu - po objavi nikoli stara koda. Izjema: zagon iz shrambe (zagon.js, ko je stran pomesana zaradi
+     slabega signala) - takrat vsa nasa koda te strani iz shrambe.
    - /vendor/*, pisave, ikone (razlicica v imenu / se ne spreminjajo): shranjeno najprej.
    - API (backend, Supabase, Cloudinary), vstopnice, ploscice zemljevida: NE prestrezamo (vedno sveze, kot iOS). */
-const RAZLICICA = "outly-app-15";   // ob dvigu uskladi tudi webapp/porocilo.js
+const RAZLICICA = "outly-app-16";   // ob dvigu uskladi tudi webapp/porocilo.js
 const LUPINA = "/app/";
 /* Staticni graf uvozov main.js (vsi moduli, ki jih aplikacija nalozi ob zagonu). Generira ga webapp/orodja/predhodno-nalaganje.mjs
    (isti izracun kot <link rel="modulepreload"> v app/index.html; `... --preveri` pade, ce se razideta). Brez tega bi po objavi
@@ -96,10 +97,41 @@ self.addEventListener("activate", e => {
    - Ostalo (/vendor/*, pisave, ikone - razlicica v imenu): samo manjkajoce (samopopravilo, npr. po starem zagon.js,
      ki je ob "Osvezi" pobrisal ves predpomnilnik). */
 const jeNasaKoda = p => p.startsWith("/webapp/") || p === "/supabase-config.js" || p === "/seja-fetch.js" || p === LUPINA;
+
+/* Zagon iz shrambe (Sentry OUTLY-WEBAPP-A, 6. 11. 2026; OUTLY-WEBAPP-7, 26. 10.): pri slabem signalu del nase kode pride z
+   omrezja (nova objava), del pa iz shrambe (omrezje ga ni dalo - stara razlicica) -> "does not provide an export named" in
+   aplikacija se ne zazene; osvezitev strani da isto mesanico (zagon.js je to 3x zapored ponovil na istem telefonu).
+   Shramba je med seboj skladna (namestitev in osveziShrambo: vse ali nic). Zato zagon.js v tem primeru prosi za zagon IZ
+   SHRAMBE: naslednja navigacija pod /app/ (v 15 s) in vsa nasa koda, ki jo ta stran nalozi, gre najprej iz shrambe.
+   Aplikacija se zazene v prejsnji razlicici; novo nalozi prvi naslednji zagon z delujocim omrezjem. */
+const IZ_SHRAMBE_MS = 15000;
+let izShrambeDo = 0;
+const straniIzShrambe = new Set();   // clientId strani, ki tecejo iz shrambe (samo v pomnilniku SW - po ugasnitvi SW navaden nacin)
+async function pripraviZagonIzShrambe(e) {
+  let ok = false;
+  try {
+    // Samo ce je v shrambi VSA nasa koda za zagon - sicer bi stran spet dobila mesanico (manjkajoce z omrezja).
+    const c = await caches.open(RAZLICICA);
+    ok = (await Promise.all(JEDRO.filter(jeNasaKoda).map(p => c.match(p)))).every(Boolean);
+  } catch { ok = false; }
+  if (ok) izShrambeDo = Date.now() + IZ_SHRAMBE_MS;
+  if (e.ports && e.ports[0]) e.ports[0].postMessage({ ok });
+}
+/* Odgovor iz shrambe, ker ga omrezje ni dalo: z oznako, da zagon.js ve, da navadna osvezitev ne bo pomagala. */
+const oznaciIzShrambe = odg => {
+  const glave = new Headers(odg.headers);
+  glave.set("X-Outly-Shramba", "1");
+  return new Response(odg.body, { status: odg.status, statusText: odg.statusText, headers: glave });
+};
+
 let osvezujem = null;   // vec sporocil hkrati (vec zavihkov) -> en sam krog
 self.addEventListener("message", e => {
   const d = e.data || {};
+  if (d.tip === "iz-shrambe") { e.waitUntil(pripraviZagonIzShrambe(e)); return; }
   if (d.tip !== "shrani" || !Array.isArray(d.poti)) return;
+  // Stran, ki tece iz shrambe, je ne osvezuje: njeni leno nalozeni zasloni bi sicer prisli iz nove razlicice ob starih modulih.
+  // Shrambo osvezi naslednji navaden zagon.
+  if (e.source && straniIzShrambe.has(e.source.id)) return;
   const odStrani = d.poti.filter(p => typeof p === "string" && /^\/(webapp|vendor)\/[\w./-]+$/.test(p) && !p.includes(".."));
   if (!osvezujem) osvezujem = osveziShrambo(odStrani).catch(() => {}).then(() => { osvezujem = null; });   // tudi ob preteku
   e.waitUntil(osvezujem);
@@ -163,6 +195,15 @@ self.addEventListener("fetch", e => {
 
   if (r.mode === "navigate") {
     if (!url.pathname.startsWith("/app/")) return;
+    if (izShrambeDo > Date.now()) {   // zagon iz shrambe (zgoraj): lupina in vsa nasa koda te strani iz shrambe
+      izShrambeDo = 0;
+      if (e.resultingClientId) {
+        straniIzShrambe.add(e.resultingClientId);
+        if (straniIzShrambe.size > 20) straniIzShrambe.delete(straniIzShrambe.values().next().value);
+      }
+      e.respondWith(caches.match(LUPINA).then(z => z || fetch(LUPINA, { cache: "no-cache", credentials: "same-origin" })));
+      return;
+    }
     const omrezje = fetch(LUPINA, { cache: "no-cache", credentials: "same-origin" });
     e.respondWith(caches.match(LUPINA).then(shranjena => zOmejitvijo(omrezje, shranjena ? 4000 : 60000)
       .then(odg => (odg.ok ? shraniOdgovor(e, LUPINA, odg) : shranjena || odg))
@@ -173,7 +214,12 @@ self.addEventListener("fetch", e => {
   if (p.startsWith("/webapp/") || p === "/supabase-config.js" || p === "/seja-fetch.js") {
     // cache: "no-cache": vedno preveri pri strezniku (ETag -> 304). Cloudflare doda max-age=14400 in brez tega bi
     // brskalnik 4 ure po objavi dajal stare module poleg novih (29. 9. 2026: aplikacija obvisela na vrtavki).
-    e.respondWith(fetch(new Request(r, { cache: "no-cache" })).then(odg => shraniOdgovor(e, p, odg)).catch(() => caches.match(p).then(z => z || Response.error())));
+    if (straniIzShrambe.has(e.clientId)) {
+      e.respondWith(caches.match(p).then(z => z || fetch(new Request(r, { cache: "no-cache" }))));
+      return;
+    }
+    e.respondWith(fetch(new Request(r, { cache: "no-cache" })).then(odg => shraniOdgovor(e, p, odg))
+      .catch(() => caches.match(p).then(z => (z ? oznaciIzShrambe(z) : Response.error()))));
     return;
   }
   if (p.startsWith("/vendor/") || p.startsWith("/assets/fonts/") || /^\/assets\/icon-\d+\.png$/.test(p)) {
