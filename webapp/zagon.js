@@ -197,9 +197,9 @@
   // Viseca povezava (outly-backend#396: signal je, podatki ne tecejo): modul, ki ne pride nikoli, zadrzi "load" za vedno.
   // Zato varovalo tudi od zagona tega skripta: po 30 s brez izrisa (in brez napake) - s SW zagon IZ SHRAMBE (skladna
   // prejsnja razlicica, brez omrezja; steje varovalo 3/5 min), brez SW gumb. Ce se aplikacija vmes vseeno izrise, jo Preact
-  // izrise cez sporocilo (render zamenja vsebino #aplikacija). SW tu namenoma NI spremenjen (casovna meja v SW je v testu
-  // zadrzala aktivacijo novega SW). Znano (outly_webpage PR za #396): ko se omrezje vrne, lahko prva polna osvezitev ze odprte
-  // strani obvisi (predaja starega SW novemu v Chromiumu); zapri + odpri aplikacijo dela.
+  // izrise cez sporocilo (render zamenja vsebino #aplikacija). Visecih datotek z omrezja se znebi SW (meja 6 s, ce je kopija).
+  // Znano (outly-backend#398): ko se omrezje vrne, lahko prva polna osvezitev ze odprte strani obvisi (predaja starega SW
+  // novemu v Chromiumu); zapri + odpri aplikacijo dela.
   setTimeout(function () {
     if (jeZagnano() || obnavljam || prikazana) return;
     // Ta stran se je ze zagnala iz shrambe in se vedno ni izrisana: samo gumb (pregled #396 N-1: brez novih osvezitev).

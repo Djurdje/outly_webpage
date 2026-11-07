@@ -3,7 +3,9 @@
    - Navigacija pod /app/: vedno lupina /app/ (omrezje najprej, ob izpadu shranjena). Tako globoka povezava
      (/app/event/12) ne gre cez korensko index.html in vstop.js.
    - /webapp/* (koda brez razlicice v imenu): omrezje najprej MIMO predpomnilnika brskalnika (cache: "no-cache"),
-     shranjeno samo ob izpadu ali ce omrezje ne odgovori v 6 s (viseca povezava) - po objavi nikoli stara koda. Izjema: zagon iz shrambe (zagon.js, ko je stran pomesana zaradi
+     shranjeno samo ob izpadu ali ce omrezje ne odgovori v 6 s (viseca povezava). Cena meje (pregled #396 S-5): na pocasni
+     povezavi takoj po objavi lahko del kode te seje pride iz shrambe (prejsnja razlicica); ce to podre povezovanje modulov,
+     zagon.js zazene stran iz shrambe, sicer tece mesano do naslednjega zagona (krog "shrani" shrambo uskladi). Izjema: zagon iz shrambe (zagon.js, ko je stran pomesana zaradi
      slabega signala) - takrat vsa nasa koda te strani iz shrambe.
    - /vendor/*, pisave, ikone (razlicica v imenu / se ne spreminjajo): shranjeno najprej.
    - API (backend, Supabase, Cloudinary), vstopnice, ploscice zemljevida: NE prestrezamo (vedno sveze, kot iOS). */
