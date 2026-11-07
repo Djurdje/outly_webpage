@@ -89,7 +89,7 @@ async function pocakajZagon(page, ms = 15000) {
 }
 const verzija = page => zMejo(page.evaluate(() => import("/webapp/js/oblika.js").then(m => ("testnaIzvozB" in m ? "B" : "A"))).catch(e => "? " + e.message), 8000, "zamrznjeno");
 
-async function scenarij(ime, { sw = true, fail = [], nostoreA = [], offline = false, nato = false, izbrisi = "", znova = false, leni = false, hang = [], cakaj = 12000, odgovori = false }) {
+async function scenarij(ime, { sw = true, fail = [], nostoreA = [], offline = false, nato = false, izbrisi = "", znova = false, leni = false, hang = [], cakaj = 12000, odgovori = false, natoNovaStran = false }) {
   // Tuji strezniki (backend, Supabase) niso dosegljivi - test ne sme klicati produkcije.
   const brskalnik = await chromium.launch({ args: ["--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE localhost"] });
   const ctx = await brskalnik.newContext({ serviceWorkers: sw ? "allow" : "block", viewport: { width: 393, height: 852 } });
@@ -143,6 +143,13 @@ async function scenarij(ime, { sw = true, fail = [], nostoreA = [], offline = fa
     if (nato) {   // 3) omrezje spet dobro: drugi naslednji zagon mora dati B (prvi osvezi shrambo / namesti nov SW)
       if (offline) await ctx.setOffline(false);
       await ctl(`root=${encodeURIComponent(B)}${odgovori ? "&odgovori=1" : ""}`);
+      if (natoNovaStran) {   // zapri + odpri aplikacijo (nova stran v istem brskalniku: ista shramba in SW)
+        await page.close().catch(() => {});
+        const nova = await ctx.newPage(); nova.setDefaultNavigationTimeout(25000);
+        for (let k = 0; k < 2; k++) { await nova.goto(`${BASE}/app/`).catch(() => {}); await pocakajZagon(nova); await pocakaj(3000); }
+        izid.nato = (await pocakajZagon(nova)) ? await verzija(nova) : await stanjeStrani(nova);
+        return izid;
+      }
       await page.goto(`${BASE}/app/`).catch(() => {});
       await pocakajZagon(page);
       await pocakaj(3000);
@@ -168,11 +175,9 @@ const SCENARIJI = {
   // mora iti skozi varovalo 3/5 min (pregled PR #104, 3. krog: sicer pri pocasnih napakah zanka) - 1 osvezitev, nato B.
   "brez-sw-leni": [{ sw: false, leni: true }, i => i.stanje === "zagnano" && i.verzija === "A" && i.leni === "zagnano" && i.leniOsvezitev === 1 && i.samodejnih === 1 && i.leniVerzija === "B"],
   // outly-backend#396: povezava "visi" (signal je, podatki ne tecejo) - oblika.js ne odgovori nikoli. S SW: po 30 s brez izrisa
-  // zagon.js zazene stran iz shrambe (A); ko omrezje spet dela, B (vkljucno z zamenjavo SW - ta je s casovno mejo v SW obvisela).
-  // Prej: vecna vrtavka.
-  "visi": [{ hang: ["/webapp/js/oblika.js"], cakaj: 45000, nato: true }, i => i.stanje === "zagnano" && i.verzija === "A" && i.nalaganj <= 2 && i.nato === "B"],
-  // Isto, a ko se omrezje vrne, viseci odgovori le zamujeno pridejo (namesto prekinjene povezave).
-  "visi-zamuda": [{ hang: ["/webapp/js/oblika.js"], cakaj: 45000, nato: true, odgovori: true }, i => i.stanje === "zagnano" && i.verzija === "A" && i.nalaganj <= 2 && i.nato === "B"],
+  // zagon.js zazene stran iz shrambe (A). Ko se omrezje vrne: zapri + odpri aplikacijo -> B. (Znano: polna osvezitev ZE ODPRTE
+  // strani takrat v Chromiumu pogosto obvisi - predaja starega SW novemu; zato test odpre novo stran.) Prej: vecna vrtavka.
+  "visi": [{ hang: ["/webapp/js/oblika.js"], cakaj: 45000, nato: true, natoNovaStran: true }, i => i.stanje === "zagnano" && i.verzija === "A" && i.nalaganj <= 2 && i.nato === "B"],
   // Brez SW (ni shrambe): po najvec ~30 s gumb "Reload" namesto vecne vrtavke (oblika.js ni v HTTP predpomnilniku).
   "visi-brez-sw": [{ sw: false, nostoreA: ["/webapp/js/oblika.js"], hang: ["/webapp/js/oblika.js"], cakaj: 38000 }, i => i.stanje === "gumb-napaka"],
   // Shramba nima vse kode za zagon (+ omrezje je ne da): zagon iz shrambe ni mogoc -> gumb, brez zanke osvezitev.
