@@ -8,6 +8,8 @@
    pride z omrezja (nova) - osvezitev da isto mesanico. Ce je SW kaksno datoteko vrnil iz shrambe (glava X-Outly-Shramba) ali
    osvezitev v 30 s ni pomagala, stran zazenemo IZ SHRAMBE SW (vsa nasa koda iz shrambe = skladna prejsnja razlicica).
    Ce tudi to ne pomaga (ali SW tega ne zna / shramba ni popolna), pokaze sporocilo z gumbom - nikoli zanka osvezitev.
+   Viseca povezava (outly-backend#396): SW po 6 s vrne kopijo iz shrambe; ce se aplikacija 30 s po zagonu tega skripta se
+   ni izrisala (in sporocila se ni), s SW zagon iz shrambe, brez SW sporocilo "nalaganje traja dlje".
    Brez innerHTML (CSP, XSS). */
 (function () {
   var KLJUC = "outly_obnova";
@@ -15,6 +17,7 @@
   var KLJUC_V_SHRAMBI = "outly_v_shrambi";   // ena sama navigacija: ta stran se je zagnala iz shrambe (stopnja 2)
   var zagnano = false;
   var obnavljam = false;
+  var prikazana = false;   // sporocilo z gumbom je ze na zaslonu (casovnik 30 s ga ne povozi - pregled #396 N-2)
   var rocnoZagnano = false;   // obnovi(true) na ze zagnani aplikaciji, ki ga je sprozil uporabnik (gumb "Try again")
   var KLJUC_SAMODEJNO = "outly_obnova_samodejno";   // casi samodejnih obnov (najvec 3 v 5 min)
   var vShrambi = false;
@@ -51,21 +54,29 @@
     return !!koren && !koren.querySelector(".nalaganje-zacetno");
   }
 
-  function pokaziNapako() {
+  /* pocasi: aplikacija se se nalaga (brez SW, viseca ali pocasna povezava) - ne trdimo, da je izsla nova razlicica
+     (pregled #396 S-4); ko se nalaganje konca, Preact aplikacijo izrise cez sporocilo. */
+  function pokaziNapako(pocasi) {
     if (jeZagnano()) return;
     var koren = document.getElementById("aplikacija");
     if (!koren) return;
+    prikazana = true;
     var sl = jeSl();
     var okvir = document.createElement("div");
     okvir.className = "prazno nalaganje-zacetno";   // razred ostane: stran se se ni zagnala
     okvir.setAttribute("role", "alert");
+    okvir.setAttribute("lang", sl ? "sl" : "en");   // <html lang="en">; slovensko besedilo mora biti oznaceno (WCAG 3.1.2)
     var naslov = document.createElement("strong");
-    naslov.textContent = sl ? "Outly se ni zagnal." : "Outly could not start.";
+    naslov.textContent = pocasi
+      ? (sl ? "Nalaganje traja dlje kot običajno." : "Outly is taking longer than usual to load.")
+      : (sl ? "Outly se ni zagnal." : "Outly could not start.");
     var opis = document.createElement("p");
     opis.className = "opomba";
     opis.textContent = !navigator.onLine
       ? (sl ? "Ni internetne povezave. Preveri omrežje in osveži." : "No internet connection. Check your network and reload.")
-      : (sl ? "Verjetno je izšla nova različica. Osveži, da jo naložiš." : "A new version was probably just released. Reload to get it.");
+      : pocasi
+        ? (sl ? "Povezava je počasna. Aplikacija se odpre sama, ko se naloži." : "Your connection is slow. The app will open by itself once it has loaded.")
+        : (sl ? "Verjetno je izšla nova različica. Osveži, da jo naložiš." : "A new version was probably just released. Reload to get it.");
     var gumb = document.createElement("button");
     gumb.type = "button";
     gumb.className = "gumb-siv";
@@ -190,9 +201,11 @@
   // zadrzala aktivacijo novega SW). Znano (outly_webpage PR za #396): ko se omrezje vrne, lahko prva polna osvezitev ze odprte
   // strani obvisi (predaja starega SW novemu v Chromiumu); zapri + odpri aplikacijo dela.
   setTimeout(function () {
-    if (jeZagnano() || obnavljam) return;
+    if (jeZagnano() || obnavljam || prikazana) return;
+    // Ta stran se je ze zagnala iz shrambe in se vedno ni izrisana: samo gumb (pregled #396 N-1: brez novih osvezitev).
+    if (vShrambi) { pokaziNapako(); return; }
     var sw = navigator.serviceWorker && navigator.serviceWorker.controller;
     if (sw && navigator.onLine && Date.now() - beri(KLJUC_SHRAMBA) >= 30000 && samodejnoDovoljeno()) { obnavljam = true; zagonIzShrambe(); }
-    else pokaziNapako();
+    else pokaziNapako(!sw && navigator.onLine);
   }, 30000);
 })();
