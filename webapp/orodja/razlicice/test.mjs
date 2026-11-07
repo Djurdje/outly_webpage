@@ -77,7 +77,7 @@ async function pocakajZagon(page, ms = 15000) {
 }
 const verzija = page => page.evaluate(() => import("/webapp/js/oblika.js").then(m => ("testnaIzvozB" in m ? "B" : "A"))).catch(e => "? " + e.message);
 
-async function scenarij(ime, { sw = true, fail = [], nostoreA = [], offline = false, nato = false, izbrisi = "" }) {
+async function scenarij(ime, { sw = true, fail = [], nostoreA = [], offline = false, nato = false, izbrisi = "", znova = false }) {
   // Tuji strezniki (backend, Supabase) niso dosegljivi - test ne sme klicati produkcije.
   const brskalnik = await chromium.launch({ args: ["--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE localhost"] });
   const ctx = await brskalnik.newContext({ serviceWorkers: sw ? "allow" : "block", viewport: { width: 393, height: 852 } });
@@ -97,7 +97,8 @@ async function scenarij(ime, { sw = true, fail = [], nostoreA = [], offline = fa
     }
     if (izbrisi) await page.evaluate(async p => { for (const k of await caches.keys()) await (await caches.open(k)).delete(p); }, izbrisi);
     // 2) Objava B; omrezje: nekatere datoteke ne pridejo (prekinjena povezava).
-    await ctl(`root=${encodeURIComponent(B)}&fail=${fail.join(",")}`);
+    // Brez povezave: navigator.onLine=false (setOffline) IN streznik prekine vse - setOffline v Chromiumu ne zajame vseh zahtev SW.
+    await ctl(`root=${encodeURIComponent(B)}&fail=${offline ? "*" : fail.join(",")}`);
     if (offline) await ctx.setOffline(true);
     const napake = new Set();
     let nalaganj = 0;
@@ -107,6 +108,12 @@ async function scenarij(ime, { sw = true, fail = [], nostoreA = [], offline = fa
     await pocakaj(12000);
     const stanje = await stanjeStrani(page);
     const izid = { ime, stanje, verzija: stanje === "zagnano" ? await verzija(page) : "-", nalaganj, napake: [...napake] };
+    if (znova && stanje === "zagnano") {   // 3) brez povezave "Try again" / "Reload" (outlyObnovi(true)) mora stran res osveziti
+      const prej = nalaganj;
+      await page.evaluate(() => window.outlyObnovi(true));
+      await pocakaj(4000);
+      izid.znova = nalaganj > prej && (await pocakajZagon(page)) ? await verzija(page) : "ni osvezitve";
+    }
     if (nato) {   // 3) omrezje spet dobro: drugi naslednji zagon mora dati B (prvi osvezi shrambo / namesti nov SW)
       if (offline) await ctx.setOffline(false);
       await ctl(`root=${encodeURIComponent(B)}`);
@@ -135,7 +142,9 @@ const SCENARIJI = {
   // Navadna objava, dobro omrezje: B brez napak in brez dodatne osvezitve.
   "objava": [{}, i => i.stanje === "zagnano" && i.verzija === "B" && i.nalaganj === 1 && i.napake.length === 0],
   // Brez povezave: A iz shrambe SW (delovanje brez povezave, tudi skener).
-  "brez-povezave": [{ offline: true }, i => i.stanje === "zagnano" && i.verzija === "A" && i.napake.length === 0],
+  // Brez povezave "Try again" na leno nalozenem zaslonu (npr. skener po zamenjavi shrambe) mora stran osveziti iz shrambe
+  // (do 11/2026 gumb ni naredil nic - skener je ostal mrtev do ponovnega odprtja aplikacije).
+  "brez-povezave": [{ offline: true, znova: true }, i => i.stanje === "zagnano" && i.verzija === "A" && i.napake.length === 0 && i.znova === "A"],
 };
 
 let padlo = 0;

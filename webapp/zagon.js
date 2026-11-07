@@ -86,8 +86,10 @@
 
   function obnovi(rocno) {
     if (obnavljam) return;
-    // Brez povezave obnova ne more uspeti - in ne smemo pobrisati shranjene lupine (delovanje brez povezave).
-    if (!navigator.onLine) { pokaziNapako(); return; }
+    // Brez povezave prenos ne more uspeti - in ne smemo pobrisati shranjene lupine (delovanje brez povezave).
+    // Gumb ("Reload", "Try again" na leno nalozenem zaslonu, npr. skener): stran osvezimo, SW jo da iz shrambe (skladna
+    // razlicica; shrambe ne brisemo). Do 11/2026 tu gumb ni naredil nic. Samodejno (ne rocno) ne: brez zanke osvezitev.
+    if (!navigator.onLine) { if (rocno) location.reload(); else pokaziNapako(); return; }
     var zdaj = Date.now();
     // Zagon iz shrambe smo ze poskusili (pred manj kot 30 s) in se vedno ne gre: gumb (nikoli zanka osvezitev).
     if (!rocno && zdaj - beri(KLJUC_SHRAMBA) < 30000) { pokaziNapako(); return; }

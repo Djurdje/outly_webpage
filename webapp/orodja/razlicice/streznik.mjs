@@ -1,6 +1,6 @@
 // Lokalni streznik za webapp/orodja/razlicice/test.mjs: posnema Cloudflare Pages za /app, VKLJUCNO s pastjo (/webapp/* dobi
 // max-age=14400, ker nastavitev racuna "Browser Cache TTL" povozi no-cache iz _headers). Samo za lokalni test, ne za produkcijo.
-// Upravljanje: GET /__ctl?root=<mapa>&fail=/pot1,/pot2&nostore=/pot3  (fail = prekinjena povezava, kot slab signal)
+// Upravljanje: GET /__ctl?root=<mapa>&fail=/pot1,/pot2&nostore=/pot3  (fail = prekinjena povezava, kot slab signal; fail=* = vse)
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
@@ -27,7 +27,7 @@ http.createServer((req, res) => {
     return res.end(JSON.stringify({ root: stanje.root, fail: [...stanje.fail], nostore: [...stanje.nostore] }));
   }
   if (p === "/__log") { res.writeHead(200, { "content-type": "application/json" }); return res.end(JSON.stringify(dnevnik)); }
-  if (stanje.fail.has(p)) { dnevnik.push(p + " PREKINJENO"); req.socket.destroy(); return; }
+  if (stanje.fail.has(p) || stanje.fail.has("*")) { dnevnik.push(p + " PREKINJENO"); req.socket.destroy(); return; }
 
   let datoteka = path.join(stanje.root, p);
   const jeLupina = p === "/app" || (p.startsWith("/app/") && !path.extname(p));
