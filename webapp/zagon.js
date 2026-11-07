@@ -180,4 +180,8 @@
   // Ce se aplikacija 20 s po nalozitvi strani ne izrise (in ni bilo napake), pokazemo gumb - brez samodejne osvezitve
   // (pocasno omrezje ni napaka).
   window.addEventListener("load", function () { setTimeout(function () { if (!jeZagnano() && !obnavljam) pokaziNapako(); }, 20000); });
+  // Viseca povezava (outly-backend#396): modul, ki ne pride nikoli, zadrzi "load" za vedno - zato se varovalo od zagona
+  // tega skripta: po 30 s brez izrisa gumb (samo gumb, brez samodejne osvezitve). Ce se aplikacija kasneje vseeno izrise,
+  // jo Preact izrise cez sporocilo (render zamenja vsebino #aplikacija).
+  setTimeout(function () { if (!jeZagnano() && !obnavljam) pokaziNapako(); }, 30000);
 })();

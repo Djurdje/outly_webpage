@@ -1,13 +1,15 @@
 // Lokalni streznik za webapp/orodja/razlicice/test.mjs: posnema Cloudflare Pages za /app, VKLJUCNO s pastjo (/webapp/* dobi
 // max-age=14400, ker nastavitev racuna "Browser Cache TTL" povozi no-cache iz _headers). Samo za lokalni test, ne za produkcijo.
-// Upravljanje: GET /__ctl?root=<mapa>&fail=/pot1,/pot2&nostore=/pot3  (fail = prekinjena povezava, kot slab signal; fail=* = vse)
+// Upravljanje: GET /__ctl?root=<mapa>&fail=/pot1,/pot2&nostore=/pot3&hang=/pot4  (fail = prekinjena povezava, kot slab signal;
+// fail=* = vse; hang = zahtevo sprejme in nanjo ne odgovori - "viseca" povezava, outly-backend#396)
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 
 const PORT = Number(process.argv[2] || 8790);
-let stanje = { root: "", fail: new Set(), nostore: new Set() };
+let stanje = { root: "", fail: new Set(), nostore: new Set(), hang: new Set() };
+const visece = [];
 const dnevnik = [];
 const TIPI = { ".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css", ".html": "text/html; charset=utf-8",
   ".json": "application/json", ".webmanifest": "application/manifest+json", ".png": "image/png", ".ico": "image/x-icon",
@@ -22,11 +24,14 @@ http.createServer((req, res) => {
     if (url.searchParams.has("root")) stanje.root = url.searchParams.get("root");
     stanje.fail = new Set(g("fail"));
     stanje.nostore = new Set(g("nostore"));
+    stanje.hang = new Set(g("hang"));
+    for (const r of visece.splice(0)) r.destroy();   // prejsnje visece zahteve ne smejo obviseti za vedno
     dnevnik.length = 0;
     res.writeHead(200, { "content-type": "application/json" });
     return res.end(JSON.stringify({ root: stanje.root, fail: [...stanje.fail], nostore: [...stanje.nostore] }));
   }
   if (p === "/__log") { res.writeHead(200, { "content-type": "application/json" }); return res.end(JSON.stringify(dnevnik)); }
+  if (stanje.hang.has(p)) { dnevnik.push(p + " VISI"); visece.push(req.socket); return; }
   if (stanje.fail.has(p) || stanje.fail.has("*")) { dnevnik.push(p + " PREKINJENO"); req.socket.destroy(); return; }
 
   let datoteka = path.join(stanje.root, p);

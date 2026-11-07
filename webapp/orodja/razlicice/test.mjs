@@ -87,7 +87,7 @@ async function pocakajZagon(page, ms = 15000) {
 }
 const verzija = page => page.evaluate(() => import("/webapp/js/oblika.js").then(m => ("testnaIzvozB" in m ? "B" : "A"))).catch(e => "? " + e.message);
 
-async function scenarij(ime, { sw = true, fail = [], nostoreA = [], offline = false, nato = false, izbrisi = "", znova = false, leni = false }) {
+async function scenarij(ime, { sw = true, fail = [], nostoreA = [], offline = false, nato = false, izbrisi = "", znova = false, leni = false, hang = [], cakaj = 12000 }) {
   // Tuji strezniki (backend, Supabase) niso dosegljivi - test ne sme klicati produkcije.
   const brskalnik = await chromium.launch({ args: ["--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE localhost"] });
   const ctx = await brskalnik.newContext({ serviceWorkers: sw ? "allow" : "block", viewport: { width: 393, height: 852 } });
@@ -108,15 +108,15 @@ async function scenarij(ime, { sw = true, fail = [], nostoreA = [], offline = fa
     if (izbrisi) await page.evaluate(async p => { for (const k of await caches.keys()) await (await caches.open(k)).delete(p); }, izbrisi);
     // 2) Objava B; omrezje: nekatere datoteke ne pridejo (prekinjena povezava).
     // Brez povezave: navigator.onLine=false (setOffline) IN streznik prekine vse - setOffline v Chromiumu ne zajame vseh zahtev SW.
-    await ctl(`root=${encodeURIComponent(B)}&fail=${offline ? "*" : fail.join(",")}`);
+    await ctl(`root=${encodeURIComponent(B)}&fail=${offline ? "*" : fail.join(",")}&hang=${hang.join(",")}`);
     if (offline) await ctx.setOffline(true);
     const napake = new Set();
     let nalaganj = 0, polnih = 0;   // nalaganj steje tudi pushState; polnih samo prava nalaganja dokumenta
     page.on("domcontentloaded", () => polnih++);
     page.on("pageerror", e => napake.add(String(e.message).slice(0, 140)));
     page.on("framenavigated", f => { if (f === page.mainFrame()) nalaganj++; });
-    await page.goto(`${BASE}/app/`).catch(() => {});
-    await pocakaj(12000);
+    await page.goto(`${BASE}/app/`, { waitUntil: "commit" }).catch(() => {});   // "commit": pri viseci zahtevi load ne pride
+    await pocakaj(cakaj);
     const stanje = await stanjeStrani(page);
     const izid = { ime, stanje, verzija: stanje === "zagnano" ? await verzija(page) : "-", nalaganj, napake: [...napake] };
     if (leni && stanje === "zagnano") {   // 3) iz shrambe zagnana stran odpre zaslon, ki ga ni v shrambi (pride z omrezja, B)
@@ -164,6 +164,11 @@ const SCENARIJI = {
   // Brez SW (zasebno okno, brskalnik v aplikaciji): leni zaslon iz nove objave ob starih modulih. Samodejna obnova iz leno()
   // mora iti skozi varovalo 3/5 min (pregled PR #104, 3. krog: sicer pri pocasnih napakah zanka) - 1 osvezitev, nato B.
   "brez-sw-leni": [{ sw: false, leni: true }, i => i.stanje === "zagnano" && i.verzija === "A" && i.leni === "zagnano" && i.leniOsvezitev === 1 && i.samodejnih === 1 && i.leniVerzija === "B"],
+  // outly-backend#396: povezava "visi" (signal je, podatki ne tecejo) - oblika.js ne odgovori nikoli. S SW: po meji SW vrne
+  // kopijo iz shrambe -> zagon iz shrambe (A); ko omrezje spet dela, B. Prej: vecna vrtavka.
+  "visi": [{ hang: ["/webapp/js/oblika.js"], cakaj: 25000, nato: true }, i => i.stanje === "zagnano" && i.verzija === "A" && i.nato === "B"],
+  // Brez SW (ni shrambe): po najvec ~30 s gumb "Reload" namesto vecne vrtavke (oblika.js ni v HTTP predpomnilniku).
+  "visi-brez-sw": [{ sw: false, nostoreA: ["/webapp/js/oblika.js"], hang: ["/webapp/js/oblika.js"], cakaj: 38000 }, i => i.stanje === "gumb-napaka"],
   // Shramba nima vse kode za zagon (+ omrezje je ne da): zagon iz shrambe ni mogoc -> gumb, brez zanke osvezitev.
   "nepopolna-shramba": [{ fail: SLAB_SIGNAL, izbrisi: "/webapp/js/oblika.js" }, i => i.stanje === "gumb-napaka" && i.nalaganj <= 2],
   // Brez SW: HTTP predpomnilnik (max-age=14400) ima star oblika.js, podatki.js ni bil shranjen -> mesanica; zagon.js popravi (B).

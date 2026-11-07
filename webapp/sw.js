@@ -3,11 +3,11 @@
    - Navigacija pod /app/: vedno lupina /app/ (omrezje najprej, ob izpadu shranjena). Tako globoka povezava
      (/app/event/12) ne gre cez korensko index.html in vstop.js.
    - /webapp/* (koda brez razlicice v imenu): omrezje najprej MIMO predpomnilnika brskalnika (cache: "no-cache"),
-     shranjeno samo ob izpadu - po objavi nikoli stara koda. Izjema: zagon iz shrambe (zagon.js, ko je stran pomesana zaradi
+     shranjeno samo ob izpadu ali ce omrezje ne odgovori v 6 s (viseca povezava) - po objavi nikoli stara koda. Izjema: zagon iz shrambe (zagon.js, ko je stran pomesana zaradi
      slabega signala) - takrat vsa nasa koda te strani iz shrambe.
    - /vendor/*, pisave, ikone (razlicica v imenu / se ne spreminjajo): shranjeno najprej.
    - API (backend, Supabase, Cloudinary), vstopnice, ploscice zemljevida: NE prestrezamo (vedno sveze, kot iOS). */
-const RAZLICICA = "outly-app-16";   // ob dvigu uskladi tudi webapp/porocilo.js
+const RAZLICICA = "outly-app-17";   // ob dvigu uskladi tudi webapp/porocilo.js
 const LUPINA = "/app/";
 /* Staticni graf uvozov main.js (vsi moduli, ki jih aplikacija nalozi ob zagonu). Generira ga webapp/orodja/predhodno-nalaganje.mjs
    (isti izracun kot <link rel="modulepreload"> v app/index.html; `... --preveri` pade, ce se razideta). Brez tega bi po objavi
@@ -105,6 +105,9 @@ const jeNasaKoda = p => p.startsWith("/webapp/") || p === "/supabase-config.js" 
    SHRAMBE: naslednja navigacija pod /app/ (v 15 s) in vsa nasa koda, ki jo ta stran nalozi, gre najprej iz shrambe.
    Aplikacija se zazene v prejsnji razlicici; novo nalozi prvi naslednji zagon z delujocim omrezjem. */
 const IZ_SHRAMBE_MS = 15000;
+/* Najdaljse cakanje na omrezje za naso kodo, ce je kopija v shrambi (viseca povezava, outly-backend#396). Lupina ima 4 s;
+   koda vec, ker je modulov ~40 in pri pocasnem, a delujocem omrezju ne zelimo po nepotrebnem v prejsnjo razlicico. */
+const MEJA_KODE_MS = 6000;
 let izShrambeDo = 0;
 const straniIzShrambe = new Set();   // clientId strani, ki tecejo iz shrambe (samo v pomnilniku SW - po ugasnitvi SW navaden nacin)
 async function pripraviZagonIzShrambe(e) {
@@ -218,8 +221,13 @@ self.addEventListener("fetch", e => {
       e.respondWith(caches.match(p).then(z => z || fetch(new Request(r, { cache: "no-cache" }))));
       return;
     }
-    e.respondWith(fetch(new Request(r, { cache: "no-cache" })).then(odg => shraniOdgovor(e, p, odg))
-      .catch(() => caches.match(p).then(z => (z ? oznaciIzShrambe(z) : Response.error()))));
+    // Viseca povezava (outly-backend#396: signal je, podatki ne tecejo): ce imamo kopijo, po MEJA_KODE_MS raje ta (z oznako
+    // X-Outly-Shramba -> zagon.js zazene stran iz shrambe, ce je nastala mesanica). Brez kopije cakamo omrezje (ni druge moznosti).
+    e.respondWith(caches.match(p).then(shranjena => {
+      const omrezje = fetch(new Request(r, { cache: "no-cache" })).then(odg => shraniOdgovor(e, p, odg));
+      if (!shranjena) return omrezje.catch(() => Response.error());
+      return zOmejitvijo(omrezje, MEJA_KODE_MS).catch(() => oznaciIzShrambe(shranjena));
+    }));
     return;
   }
   if (p.startsWith("/vendor/") || p.startsWith("/assets/fonts/") || /^\/assets\/icon-\d+\.png$/.test(p)) {
