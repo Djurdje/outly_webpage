@@ -128,6 +128,8 @@ async function scenarij(ime, { sw = true, fail = [], nostoreA = [], offline = fa
       izid.leni = await stanjeStrani(page);
       izid.leniOsvezitev = polnih - prej;
       izid.leniTryAgain = await page.evaluate(() => /could not be loaded|ni bilo mogo/.test(document.body.textContent));
+      izid.samodejnih = await page.evaluate(() => { try { return JSON.parse(sessionStorage.getItem("outly_obnova_samodejno") || "[]").length; } catch { return -1; } });
+      if (izid.leni === "zagnano" && !izid.leniTryAgain) izid.leniVerzija = await verzija(page);
     }
     if (znova && stanje === "zagnano") {   // 3) brez povezave "Try again" / "Reload" (outlyObnovi(true)) mora stran res osveziti
       const prej = nalaganj;
@@ -159,6 +161,9 @@ const SCENARIJI = {
   // Stran iz shrambe odpre leno nalozen zaslon, ki ga v shrambi ni (pregled PR #104, S-2): ne sme koncati s
   // celozaslonskim "Outly could not start" - aplikacija ostane zagnana (zaslon lahko pokaze "Try again").
   "slab-signal-leni": [{ fail: SLAB_SIGNAL, leni: true, nato: true }, i => i.stanje === "zagnano" && i.verzija === "A" && i.leni === "zagnano" && i.leniOsvezitev === 0 && i.leniTryAgain && i.nato === "B"],
+  // Brez SW (zasebno okno, brskalnik v aplikaciji): leni zaslon iz nove objave ob starih modulih. Samodejna obnova iz leno()
+  // mora iti skozi varovalo 3/5 min (pregled PR #104, 3. krog: sicer pri pocasnih napakah zanka) - 1 osvezitev, nato B.
+  "brez-sw-leni": [{ sw: false, leni: true }, i => i.stanje === "zagnano" && i.verzija === "A" && i.leni === "zagnano" && i.leniOsvezitev === 1 && i.samodejnih === 1 && i.leniVerzija === "B"],
   // Shramba nima vse kode za zagon (+ omrezje je ne da): zagon iz shrambe ni mogoc -> gumb, brez zanke osvezitev.
   "nepopolna-shramba": [{ fail: SLAB_SIGNAL, izbrisi: "/webapp/js/oblika.js" }, i => i.stanje === "gumb-napaka" && i.nalaganj <= 2],
   // Brez SW: HTTP predpomnilnik (max-age=14400) ima star oblika.js, podatki.js ni bil shranjen -> mesanica; zagon.js popravi (B).

@@ -15,7 +15,7 @@
   var KLJUC_V_SHRAMBI = "outly_v_shrambi";   // ena sama navigacija: ta stran se je zagnala iz shrambe (stopnja 2)
   var zagnano = false;
   var obnavljam = false;
-  var rocnoZagnano = false;   // obnovi(true) na ze zagnani aplikaciji (leno() v main.js, "Try again")
+  var rocnoZagnano = false;   // obnovi(true) na ze zagnani aplikaciji, ki ga je sprozil uporabnik (gumb "Try again")
   var KLJUC_SAMODEJNO = "outly_obnova_samodejno";   // casi samodejnih obnov (najvec 3 v 5 min)
   var vShrambi = false;
   try { vShrambi = sessionStorage.getItem(KLJUC_V_SHRAMBI) === "1"; sessionStorage.removeItem(KLJUC_V_SHRAMBI); } catch (e) { /* brez */ }
@@ -23,14 +23,19 @@
      napakah omrezja, ki pridejo sele po >60 s, je bila to samodejna zanka osvezitev z vrtavko (leno je omejen na 1x/60 s). */
   window.outlyIzShrambe = vShrambi;
 
-  /* Varovalo proti vsaki samodejni zanki (ne glede na pot in na case 30/60 s): najvec 3 samodejne obnove v 5 minutah. */
+  /* Varovalo proti vsaki samodejni zanki (napaka pred zagonom IN samodejna obnova lenega zaslona v main.js; neodvisno od
+     casov 30/60 s): najvec 3 samodejne obnove v 5 minutah. Ce sessionStorage ne dela (stevca ne moremo voditi): nobene. */
   function samodejnoDovoljeno() {
-    var zdaj = Date.now(), casi = [];
-    try { casi = JSON.parse(sessionStorage.getItem(KLJUC_SAMODEJNO) || "[]").filter(function (c) { return typeof c === "number" && zdaj - c < 300000; }); } catch (e) { casi = []; }
-    if (casi.length >= 3) return false;
-    casi.push(zdaj);
-    try { sessionStorage.setItem(KLJUC_SAMODEJNO, JSON.stringify(casi)); } catch (e) { /* brez */ }
-    return true;
+    var zdaj = Date.now(), casi;
+    try {
+      casi = JSON.parse(sessionStorage.getItem(KLJUC_SAMODEJNO) || "[]");
+      if (!Array.isArray(casi)) casi = [];
+      casi = casi.filter(function (c) { return typeof c === "number" && zdaj - c < 300000; });
+      if (casi.length >= 3) return false;
+      casi.push(zdaj);
+      sessionStorage.setItem(KLJUC_SAMODEJNO, JSON.stringify(casi));
+      return true;
+    } catch (e) { return false; }
   }
 
   function jeSl() {
@@ -104,15 +109,18 @@
     try { sw.postMessage({ tip: "iz-shrambe" }, [kanal.port2]); } catch (e) { koncano = true; clearTimeout(t); neuspeh(); }
   }
 
-  function obnovi(rocno) {
+  /* rocno: gumb (ali samodejna obnova lenega zaslona, ki ima enako pot); samodejno: klic iz leno() v main.js brez dotika
+     uporabnika - gre skozi varovalo 3/5 min in ob neuspehu strani NE osvezi (zaslon ze kaze "Try again"). */
+  function obnovi(rocno, samodejno) {
     if (obnavljam) return;
     // Brez povezave prenos ne more uspeti - in ne smemo pobrisati shranjene lupine (delovanje brez povezave).
     // Gumb ("Reload", "Try again" na leno nalozenem zaslonu, npr. skener): stran osvezimo, SW jo da iz shrambe (skladna
     // razlicica; shrambe ne brisemo). Do 11/2026 tu gumb ni naredil nic. Samodejno (ne rocno) ne: brez zanke osvezitev.
     // Brez SW bi osvezitev brez povezave pokazala brskalnikovo stran z napako (in izgubila ze nalozene zaslone): tam nic.
     var sw = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
-    if (!navigator.onLine) { if (rocno && sw) location.reload(); else pokaziNapako(); return; }
-    rocnoZagnano = !!rocno && jeZagnano();
+    if (!navigator.onLine) { if (rocno && !samodejno && sw) location.reload(); else pokaziNapako(); return; }
+    if (samodejno && !samodejnoDovoljeno()) return;
+    rocnoZagnano = !!rocno && !samodejno && jeZagnano();
     // Aplikacija tece iz shrambe (stopnja 2), zaslon, ki ga v shrambi ni, pa je prisel z omrezja (nova razlicica) in se ni
     // povezal (pregled PR #104, S-1/S-2): navadna osvezitev s polnim krogom stopenj. Dobro omrezje -> nova razlicica;
     // se vedno slabo -> spet iz shrambe, zaslon pa pokaze "Try again" (leno najvec 1x na minuto) - nikoli celozaslonska napaka.
