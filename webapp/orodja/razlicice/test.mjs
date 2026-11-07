@@ -71,27 +71,31 @@ await new Promise(ok => streznik.stdout.once("data", ok));
 const ctl = q => fetch(`${BASE}/__ctl?${q}`).then(r => r.json());
 const pocakaj = ms => new Promise(ok => setTimeout(ok, ms));
 
+// Vsak klic v stran ima mejo: zamrznjena stran (npr. navigacija, ki obvisi ob zamenjavi SW) ne sme zamrzniti testa.
+const zMejo = (obljuba, ms, sicer) => Promise.race([obljuba, pocakaj(ms).then(() => sicer)]);
 async function stanjeStrani(page) {
-  return page.evaluate(() => {
+  return zMejo(page.evaluate(() => {
     const k = document.getElementById("aplikacija");
     if (!k) return "brez-korena";
     if (k.querySelector('[role="alert"]') && /could not start|ni zagnal/i.test(k.textContent)) return "gumb-napaka";
+    if (k.querySelector('[role="alert"]') && /longer than usual|dlje kot/i.test(k.textContent)) return "pocasi";
     if (k.querySelector(".nalaganje-zacetno")) return "vrtavka";
     return "zagnano";
-  }).catch(() => "navigacija");
+  }).catch(() => "navigacija"), 5000, "zamrznjeno");
 }
 async function pocakajZagon(page, ms = 15000) {
   const konec = Date.now() + ms;
   while (Date.now() < konec) { if (await stanjeStrani(page) === "zagnano") return true; await pocakaj(200); }
   return false;
 }
-const verzija = page => page.evaluate(() => import("/webapp/js/oblika.js").then(m => ("testnaIzvozB" in m ? "B" : "A"))).catch(e => "? " + e.message);
+const verzija = page => zMejo(page.evaluate(() => import("/webapp/js/oblika.js").then(m => ("testnaIzvozB" in m ? "B" : "A"))).catch(e => "? " + e.message), 8000, "zamrznjeno");
 
-async function scenarij(ime, { sw = true, fail = [], nostoreA = [], offline = false, nato = false, izbrisi = "", znova = false, leni = false }) {
+async function scenarij(ime, { sw = true, fail = [], nostoreA = [], offline = false, nato = false, izbrisi = "", znova = false, leni = false, hang = [], cakaj = 12000, odgovori = false, natoNovaStran = false, uvozi = "", ocisti = false }) {
   // Tuji strezniki (backend, Supabase) niso dosegljivi - test ne sme klicati produkcije.
   const brskalnik = await chromium.launch({ args: ["--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE localhost"] });
   const ctx = await brskalnik.newContext({ serviceWorkers: sw ? "allow" : "block", viewport: { width: 393, height: 852 } });
   const page = await ctx.newPage();
+  page.setDefaultNavigationTimeout(25000);
   try {
     // 1) Uporabnik je /app odprl pred objavo (A): SW namescen, predpomnilnik napolnjen.
     await ctl(`root=${encodeURIComponent(A)}&nostore=${nostoreA.join(",")}`);
@@ -108,17 +112,24 @@ async function scenarij(ime, { sw = true, fail = [], nostoreA = [], offline = fa
     if (izbrisi) await page.evaluate(async p => { for (const k of await caches.keys()) await (await caches.open(k)).delete(p); }, izbrisi);
     // 2) Objava B; omrezje: nekatere datoteke ne pridejo (prekinjena povezava).
     // Brez povezave: navigator.onLine=false (setOffline) IN streznik prekine vse - setOffline v Chromiumu ne zajame vseh zahtev SW.
-    await ctl(`root=${encodeURIComponent(B)}&fail=${offline ? "*" : fail.join(",")}`);
+    await ctl(`root=${encodeURIComponent(B)}&fail=${offline ? "*" : fail.join(",")}&hang=${hang.join(",")}`);
     if (offline) await ctx.setOffline(true);
+    // Hladen predpomnilnik brskalnika (spominski + HTTP; shramba SW ostane) - kot ponovno odprta aplikacija po dolgem casu.
+    if (ocisti) { const cdp = await ctx.newCDPSession(page); await cdp.send("Network.clearBrowserCache"); await cdp.detach(); }
     const napake = new Set();
     let nalaganj = 0, polnih = 0;   // nalaganj steje tudi pushState; polnih samo prava nalaganja dokumenta
     page.on("domcontentloaded", () => polnih++);
     page.on("pageerror", e => napake.add(String(e.message).slice(0, 140)));
     page.on("framenavigated", f => { if (f === page.mainFrame()) nalaganj++; });
-    await page.goto(`${BASE}/app/`).catch(() => {});
-    await pocakaj(12000);
+    await page.goto(`${BASE}/app/`, { waitUntil: "commit" }).catch(() => {});   // "commit": pri viseci zahtevi load ne pride
+    await pocakaj(cakaj);
     const stanje = await stanjeStrani(page);
     const izid = { ime, stanje, verzija: stanje === "zagnano" ? await verzija(page) : "-", nalaganj, napake: [...napake] };
+    if (uvozi && stanje === "zagnano") {   // 3) leno nalozen modul (npr. skener) v ze odprti aplikaciji, njegova datoteka visi
+      const t0 = Date.now();
+      izid.uvoz = await zMejo(page.evaluate(p => import(p).then(() => "ok", e => "napaka " + e.message), uvozi), 25000, "visi");
+      izid.uvozS = Math.round((Date.now() - t0) / 1000);
+    }
     if (leni && stanje === "zagnano") {   // 3) iz shrambe zagnana stran odpre zaslon, ki ga ni v shrambi (pride z omrezja, B)
       // Pricakovano (pregled PR #104, 2. krog): zaslon pokaze "Try again", stran se SAMA NE osvezi (sicer pri pocasnih
       // napakah omrezja samodejna zanka osvezitev z vrtavko - leno() je omejen na 1x/60 s, krog pa lahko traja dlje).
@@ -139,7 +150,14 @@ async function scenarij(ime, { sw = true, fail = [], nostoreA = [], offline = fa
     }
     if (nato) {   // 3) omrezje spet dobro: drugi naslednji zagon mora dati B (prvi osvezi shrambo / namesti nov SW)
       if (offline) await ctx.setOffline(false);
-      await ctl(`root=${encodeURIComponent(B)}`);
+      await ctl(`root=${encodeURIComponent(B)}${odgovori ? "&odgovori=1" : ""}`);
+      if (natoNovaStran) {   // zapri + odpri aplikacijo (nova stran v istem brskalniku: ista shramba in SW)
+        await page.close().catch(() => {});
+        const nova = await ctx.newPage(); nova.setDefaultNavigationTimeout(25000);
+        await nova.goto(`${BASE}/app/`).catch(() => {});   // eno odprtje (druga navigacija v isti strani = znana zamrznitev)
+        izid.nato = (await pocakajZagon(nova)) ? await verzija(nova) : await stanjeStrani(nova);
+        return izid;
+      }
       await page.goto(`${BASE}/app/`).catch(() => {});
       await pocakajZagon(page);
       await pocakaj(3000);
@@ -164,6 +182,16 @@ const SCENARIJI = {
   // Brez SW (zasebno okno, brskalnik v aplikaciji): leni zaslon iz nove objave ob starih modulih. Samodejna obnova iz leno()
   // mora iti skozi varovalo 3/5 min (pregled PR #104, 3. krog: sicer pri pocasnih napakah zanka) - 1 osvezitev, nato B.
   "brez-sw-leni": [{ sw: false, leni: true }, i => i.stanje === "zagnano" && i.verzija === "A" && i.leni === "zagnano" && i.leniOsvezitev === 1 && i.samodejnih === 1 && i.leniVerzija === "B"],
+  // outly-backend#396: povezava "visi" (signal je, podatki ne tecejo) - oblika.js ne odgovori nikoli. S SW: po 30 s brez izrisa
+  // zagon.js zazene stran iz shrambe (A). Ko se omrezje vrne: zapri + odpri aplikacijo -> B. (Znano: polna osvezitev ZE ODPRTE
+  // strani takrat v Chromiumu pogosto obvisi - predaja starega SW novemu; zato test odpre novo stran.) Prej: vecna vrtavka.
+  "visi": [{ hang: ["/webapp/js/oblika.js"], cakaj: 45000, nato: true, natoNovaStran: true }, i => i.stanje === "zagnano" && i.verzija === "A" && i.nalaganj <= 2 && i.nato === "B"],
+  // Visi glava strani (zagon.js, app.css): SW po 6 s vrne kopijo - aplikacija se zazene (prej prazna stran za vedno, pregled S-1).
+  "visi-glava": [{ hang: ["/webapp/zagon.js", "/webapp/app.css"], cakaj: 30000, ocisti: true }, i => i.stanje === "zagnano"],
+  // Skener v ze odprti aplikaciji, njegova datoteka visi: SW po 6 s vrne kopijo iz shrambe (JEDRO) - prej vrtavka (pregled S-2).
+  "visi-skener": [{ hang: ["/webapp/js/views/posel-skener.js"], uvozi: "/webapp/js/views/posel-skener.js" }, i => i.stanje === "zagnano" && i.uvoz === "ok" && i.uvozS <= 12],
+  // Brez SW (ni shrambe): po najvec ~30 s gumb "Reload" namesto vecne vrtavke (oblika.js ni v HTTP predpomnilniku).
+  "visi-brez-sw": [{ sw: false, nostoreA: ["/webapp/js/oblika.js"], hang: ["/webapp/js/oblika.js"], cakaj: 38000 }, i => i.stanje === "pocasi"],
   // Shramba nima vse kode za zagon (+ omrezje je ne da): zagon iz shrambe ni mogoc -> gumb, brez zanke osvezitev.
   "nepopolna-shramba": [{ fail: SLAB_SIGNAL, izbrisi: "/webapp/js/oblika.js" }, i => i.stanje === "gumb-napaka" && i.nalaganj <= 2],
   // Brez SW: HTTP predpomnilnik (max-age=14400) ima star oblika.js, podatki.js ni bil shranjen -> mesanica; zagon.js popravi (B).
