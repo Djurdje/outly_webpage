@@ -31,6 +31,7 @@ const { chromium } = nalozi("playwright");
 const argumenti = process.argv.slice(2);
 const iRef = argumenti.indexOf("--ref");
 const ref = iRef >= 0 ? argumenti.splice(iRef, 2)[1] : "HEAD";
+if (!ref || ref.startsWith("--")) { console.error("--ref rabi commit ali vejo (npr. --ref main)"); process.exit(2); }
 const iDelovno = argumenti.indexOf("--delovno");
 const delovno = iDelovno >= 0 && argumenti.splice(iDelovno, 1).length > 0;
 const izbrani = argumenti;
@@ -110,7 +111,8 @@ async function scenarij(ime, { sw = true, fail = [], nostoreA = [], offline = fa
     await ctl(`root=${encodeURIComponent(B)}&fail=${offline ? "*" : fail.join(",")}`);
     if (offline) await ctx.setOffline(true);
     const napake = new Set();
-    let nalaganj = 0;
+    let nalaganj = 0, polnih = 0;   // nalaganj steje tudi pushState; polnih samo prava nalaganja dokumenta
+    page.on("domcontentloaded", () => polnih++);
     page.on("pageerror", e => napake.add(String(e.message).slice(0, 140)));
     page.on("framenavigated", f => { if (f === page.mainFrame()) nalaganj++; });
     await page.goto(`${BASE}/app/`).catch(() => {});
@@ -118,9 +120,14 @@ async function scenarij(ime, { sw = true, fail = [], nostoreA = [], offline = fa
     const stanje = await stanjeStrani(page);
     const izid = { ime, stanje, verzija: stanje === "zagnano" ? await verzija(page) : "-", nalaganj, napake: [...napake] };
     if (leni && stanje === "zagnano") {   // 3) iz shrambe zagnana stran odpre zaslon, ki ga ni v shrambi (pride z omrezja, B)
+      // Pricakovano (pregled PR #104, 2. krog): zaslon pokaze "Try again", stran se SAMA NE osvezi (sicer pri pocasnih
+      // napakah omrezja samodejna zanka osvezitev z vrtavko - leno() je omejen na 1x/60 s, krog pa lahko traja dlje).
+      const prej = polnih;
       await page.evaluate(() => import("/webapp/js/usmerjanje.js").then(m => m.navigiraj("/app/soon/test")));
-      await pocakaj(15000);
+      await pocakaj(20000);
       izid.leni = await stanjeStrani(page);
+      izid.leniOsvezitev = polnih - prej;
+      izid.leniTryAgain = await page.evaluate(() => /could not be loaded|ni bilo mogo/.test(document.body.textContent));
     }
     if (znova && stanje === "zagnano") {   // 3) brez povezave "Try again" / "Reload" (outlyObnovi(true)) mora stran res osveziti
       const prej = nalaganj;
@@ -151,7 +158,7 @@ const SCENARIJI = {
   "slab-signal": [{ fail: SLAB_SIGNAL, nato: true }, i => i.stanje === "zagnano" && i.verzija === "A" && i.nalaganj <= 2 && i.nato === "B"],
   // Stran iz shrambe odpre leno nalozen zaslon, ki ga v shrambi ni (pregled PR #104, S-2): ne sme koncati s
   // celozaslonskim "Outly could not start" - aplikacija ostane zagnana (zaslon lahko pokaze "Try again").
-  "slab-signal-leni": [{ fail: SLAB_SIGNAL, leni: true, nato: true }, i => i.stanje === "zagnano" && i.verzija === "A" && i.leni === "zagnano" && i.nato === "B"],
+  "slab-signal-leni": [{ fail: SLAB_SIGNAL, leni: true, nato: true }, i => i.stanje === "zagnano" && i.verzija === "A" && i.leni === "zagnano" && i.leniOsvezitev === 0 && i.leniTryAgain && i.nato === "B"],
   // Shramba nima vse kode za zagon (+ omrezje je ne da): zagon iz shrambe ni mogoc -> gumb, brez zanke osvezitev.
   "nepopolna-shramba": [{ fail: SLAB_SIGNAL, izbrisi: "/webapp/js/oblika.js" }, i => i.stanje === "gumb-napaka" && i.nalaganj <= 2],
   // Brez SW: HTTP predpomnilnik (max-age=14400) ima star oblika.js, podatki.js ni bil shranjen -> mesanica; zagon.js popravi (B).

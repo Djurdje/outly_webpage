@@ -16,8 +16,22 @@
   var zagnano = false;
   var obnavljam = false;
   var rocnoZagnano = false;   // obnovi(true) na ze zagnani aplikaciji (leno() v main.js, "Try again")
+  var KLJUC_SAMODEJNO = "outly_obnova_samodejno";   // casi samodejnih obnov (najvec 3 v 5 min)
   var vShrambi = false;
   try { vShrambi = sessionStorage.getItem(KLJUC_V_SHRAMBI) === "1"; sessionStorage.removeItem(KLJUC_V_SHRAMBI); } catch (e) { /* brez */ }
+  /* main.js leno(): stran iz shrambe se nikoli SAMA ne osvezi (zaslon pokaze "Try again"). Pregled PR #104, 2. krog: pri
+     napakah omrezja, ki pridejo sele po >60 s, je bila to samodejna zanka osvezitev z vrtavko (leno je omejen na 1x/60 s). */
+  window.outlyIzShrambe = vShrambi;
+
+  /* Varovalo proti vsaki samodejni zanki (ne glede na pot in na case 30/60 s): najvec 3 samodejne obnove v 5 minutah. */
+  function samodejnoDovoljeno() {
+    var zdaj = Date.now(), casi = [];
+    try { casi = JSON.parse(sessionStorage.getItem(KLJUC_SAMODEJNO) || "[]").filter(function (c) { return typeof c === "number" && zdaj - c < 300000; }); } catch (e) { casi = []; }
+    if (casi.length >= 3) return false;
+    casi.push(zdaj);
+    try { sessionStorage.setItem(KLJUC_SAMODEJNO, JSON.stringify(casi)); } catch (e) { /* brez */ }
+    return true;
+  }
 
   function jeSl() {
     try { var j = JSON.parse(localStorage.getItem("outly_jezik")); if (j === "sl" || j === "en") return j === "sl"; } catch (e) { /* brez */ }
@@ -95,7 +109,9 @@
     // Brez povezave prenos ne more uspeti - in ne smemo pobrisati shranjene lupine (delovanje brez povezave).
     // Gumb ("Reload", "Try again" na leno nalozenem zaslonu, npr. skener): stran osvezimo, SW jo da iz shrambe (skladna
     // razlicica; shrambe ne brisemo). Do 11/2026 tu gumb ni naredil nic. Samodejno (ne rocno) ne: brez zanke osvezitev.
-    if (!navigator.onLine) { if (rocno) location.reload(); else pokaziNapako(); return; }
+    // Brez SW bi osvezitev brez povezave pokazala brskalnikovo stran z napako (in izgubila ze nalozene zaslone): tam nic.
+    var sw = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
+    if (!navigator.onLine) { if (rocno && sw) location.reload(); else pokaziNapako(); return; }
     rocnoZagnano = !!rocno && jeZagnano();
     // Aplikacija tece iz shrambe (stopnja 2), zaslon, ki ga v shrambi ni, pa je prisel z omrezja (nova razlicica) in se ni
     // povezal (pregled PR #104, S-1/S-2): navadna osvezitev s polnim krogom stopenj. Dobro omrezje -> nova razlicica;
@@ -104,6 +120,7 @@
     var zdaj = Date.now();
     // Zagon iz shrambe smo ze poskusili (pred manj kot 30 s) in se vedno ne gre: gumb (nikoli zanka osvezitev).
     if (!rocno && zdaj - beri(KLJUC_SHRAMBA) < 30000) { pokaziNapako(); return; }
+    if (!rocno && !samodejnoDovoljeno()) { pokaziNapako(); return; }
     obnavljam = true;
     // Osvezitev smo ze poskusili (pred manj kot 30 s), stran pa je se vedno pomesana: omrezje ne da vsega -> iz shrambe.
     if (!rocno && zdaj - beri(KLJUC) < 30000) { zagonIzShrambe(); return; }
