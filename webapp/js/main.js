@@ -113,13 +113,15 @@ function leno(pot, ime) {
         // osvezitev (najvec na minuto) nalozi novo razlicico; sicer pokazemo napako s "Try again".
         let prej = 0;
         try { prej = Number(sessionStorage.getItem("outly_leno_osvezitev")) || 0; } catch { /* brez */ }
-        if (navigator.onLine && Date.now() - prej > 60000) {
+        // "Try again" vedno takoj (ce samodejna obnova strani ne osvezi - varovalo, neuspeh - zaslon ne ostane na vrtavki).
+        if (zivo) setNapaka(true);
+        // Stran, zagnana iz shrambe (zagon.js, slab signal po objavi), se sama ne osvezi: brez zanke, zaslon pokaze "Try again".
+        if (navigator.onLine && Date.now() - prej > 60000 && !window.outlyIzShrambe) {
           try { sessionStorage.setItem("outly_leno_osvezitev", String(Date.now())); } catch { /* brez */ }
           // Ne navadna osvezitev: brskalnik bi (Cloudflare max-age=14400) znova vzel stare module - zagon.js jih prenese na novo.
-          if (window.outlyObnovi) window.outlyObnovi(true); else location.reload();
-          return;
+          // Drugi argument: samodejno (varovalo 3/5 min v zagon.js, ob neuspehu brez osvezitve - pregled PR #104, 3. krog).
+          if (window.outlyObnovi) window.outlyObnovi(true, true); else location.reload();
         }
-        if (zivo) setNapaka(true);
       });
       return () => { zivo = false; };
     }, []);
