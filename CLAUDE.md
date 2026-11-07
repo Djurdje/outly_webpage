@@ -92,6 +92,12 @@ webapp/orodja/predhodno-nalaganje.mjs       generira <link rel="modulepreload"> 
   `webapp/zagon.js` (navaden skript PRED moduli) ob napaki nase kode pred zagonom module prenese mimo predpomnilnika
   in stran enkrat osvezi (sicer gumb "Reload"). `zagon.js` mora ostati v `app/index.html` pred `<script type=module>`;
   `main.js` po izrisu poklice `window.outlyZagnano()`. Test brez `page.route` (ta izklopi HTTP predpomnilnik).
+  **Slab signal (Sentry OUTLY-WEBAPP-A, 6. 11. 2026, PR #104):** SW del modulov dobi z omrezja, del vrne iz shrambe ->
+  enaka mesanica. Zato stopnja 2: zagon IZ SHRAMBE SW (glava `X-Outly-Shramba`, sporocilo `iz-shrambe`); stran iz shrambe
+  se nikoli sama ne osvezi; **vsaka samodejna osvezitev gre skozi stevec** (`samodejnoDovoljeno`, najvec 3 v 5 min) in se
+  loci od rocne (`outlyObnovi(true, true)` = samodejno) - casovna okna 30/60 s zanke NE ustavijo (pregled #104 jo je
+  nasel dvakrat). **Ob vsaki spremembi `zagon.js`, `sw.js` ali `leno()` v `main.js` pozeni
+  `node webapp/orodja/razlicice/test.mjs`** (~4 min; na `--ref` stare kode mora pasti tisto, kar popravljas).
 - Service worker (`webapp/sw.js`): navigacija pod /app/ vedno dobi lupino /app/, koda /webapp/* omrezje najprej,
   vendor/pisave iz predpomnilnika. **API odgovorov, vstopnic in ploscic NE predpomni.** Ob spremembi seznama JEDRO
   ali strategije dvigni `RAZLICICA`.
