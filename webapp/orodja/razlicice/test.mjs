@@ -146,7 +146,7 @@ async function scenarij(ime, { sw = true, fail = [], nostoreA = [], offline = fa
       if (natoNovaStran) {   // zapri + odpri aplikacijo (nova stran v istem brskalniku: ista shramba in SW)
         await page.close().catch(() => {});
         const nova = await ctx.newPage(); nova.setDefaultNavigationTimeout(25000);
-        for (let k = 0; k < 2; k++) { await nova.goto(`${BASE}/app/`).catch(() => {}); await pocakajZagon(nova); await pocakaj(3000); }
+        await nova.goto(`${BASE}/app/`).catch(() => {});   // eno odprtje (druga navigacija v isti strani = znana zamrznitev)
         izid.nato = (await pocakajZagon(nova)) ? await verzija(nova) : await stanjeStrani(nova);
         return izid;
       }
