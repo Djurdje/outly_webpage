@@ -2,8 +2,9 @@
 // ("does not provide an export named ...", incident 29. 9. 2026 in Sentry OUTLY-WEBAPP-7 / OUTLY-WEBAPP-A, 26. 10. in 6. 11. 2026).
 //
 // Uporaba (iz korena repozitorija, Playwright + Chromium):
-//   node webapp/orodja/razlicice/test.mjs              # A = trenutne datoteke (git ls-files), B = A + umetna sprememba
+//   node webapp/orodja/razlicice/test.mjs              # A = HEAD (commit), B = A + umetna sprememba
 //   node webapp/orodja/razlicice/test.mjs --ref main   # A = koda s commita (na kodi pred 11/2026 "slab-signal" PADE)
+//   node webapp/orodja/razlicice/test.mjs --delovno    # A = delovno drevo (necommitane spremembe; samo med razvojem)
 //   node webapp/orodja/razlicice/test.mjs slab-signal  # samo izbrani scenariji
 //
 // A = razlicica pred objavo, B = po objavi: B v oblika.js doda izvoz, ki ga podatki.js uvozi (kot #103 normalizirajKmalu).
@@ -29,7 +30,9 @@ const { chromium } = nalozi("playwright");
 
 const argumenti = process.argv.slice(2);
 const iRef = argumenti.indexOf("--ref");
-const ref = iRef >= 0 ? argumenti.splice(iRef, 2)[1] : "";
+const ref = iRef >= 0 ? argumenti.splice(iRef, 2)[1] : "HEAD";
+const iDelovno = argumenti.indexOf("--delovno");
+const delovno = iDelovno >= 0 && argumenti.splice(iDelovno, 1).length > 0;
 const izbrani = argumenti;
 
 // --- razlicici A in B v zacasni mapi ---
@@ -38,9 +41,13 @@ const DATOTEKE = ["app", "webapp", "vendor", "assets/fonts", "assets/icon-192.pn
 const ZAC = fs.mkdtempSync(path.join(os.tmpdir(), "outly-razlicice-"));
 const A = path.join(ZAC, "A"), B = path.join(ZAC, "B");
 fs.mkdirSync(A);
-if (ref) {
-  execFileSync("sh", ["-c", `git archive ${JSON.stringify(ref)} ${DATOTEKE.join(" ")} | tar -x -C ${JSON.stringify(A)}`], { cwd: KOREN });
+if (!delovno) {
+  const tar = path.join(ZAC, "a.tar");
+  execFileSync("git", ["archive", "-o", tar, ref, "--", ...DATOTEKE], { cwd: KOREN });
+  execFileSync("tar", ["-xf", tar, "-C", A]);
+  console.log("A = " + execFileSync("git", ["rev-parse", "--short", ref], { cwd: KOREN }).toString().trim());
 } else {
+  console.log("A = delovno drevo (necommitane spremembe)");
   const seznam = execFileSync("git", ["ls-files", "-z", ...DATOTEKE], { cwd: KOREN }).toString().split("\0").filter(Boolean);
   for (const f of seznam) { fs.mkdirSync(path.dirname(path.join(A, f)), { recursive: true }); fs.copyFileSync(path.join(KOREN, f), path.join(A, f)); }
 }
@@ -48,6 +55,8 @@ fs.cpSync(A, B, { recursive: true });
 fs.appendFileSync(path.join(B, "webapp/js/oblika.js"), "\nexport const testnaIzvozB = 1;\n");
 const podatki = path.join(B, "webapp/js/podatki.js");
 fs.writeFileSync(podatki, 'import { testnaIzvozB } from "./oblika.js";\nvoid testnaIzvozB;\n' + fs.readFileSync(podatki, "utf8"));
+const leni = path.join(B, "webapp/js/views/kmalu-klub.js");   // leno nalozen zaslon, ki ga ni v JEDRU (/app/soon/:slug)
+fs.writeFileSync(leni, 'import { testnaIzvozB } from "../oblika.js";\nvoid testnaIzvozB;\n' + fs.readFileSync(leni, "utf8"));
 for (const [f, re] of [["webapp/sw.js", /(const RAZLICICA = "[^"]+)"/], ["webapp/porocilo.js", /(var RAZLICICA = "[^"]+)"/]]) {
   const p = path.join(B, f);
   fs.writeFileSync(p, fs.readFileSync(p, "utf8").replace(re, '$1-B"'));   // nova razlicica SW (kot ob pravi objavi)
@@ -77,7 +86,7 @@ async function pocakajZagon(page, ms = 15000) {
 }
 const verzija = page => page.evaluate(() => import("/webapp/js/oblika.js").then(m => ("testnaIzvozB" in m ? "B" : "A"))).catch(e => "? " + e.message);
 
-async function scenarij(ime, { sw = true, fail = [], nostoreA = [], offline = false, nato = false, izbrisi = "", znova = false }) {
+async function scenarij(ime, { sw = true, fail = [], nostoreA = [], offline = false, nato = false, izbrisi = "", znova = false, leni = false }) {
   // Tuji strezniki (backend, Supabase) niso dosegljivi - test ne sme klicati produkcije.
   const brskalnik = await chromium.launch({ args: ["--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE localhost"] });
   const ctx = await brskalnik.newContext({ serviceWorkers: sw ? "allow" : "block", viewport: { width: 393, height: 852 } });
@@ -108,6 +117,11 @@ async function scenarij(ime, { sw = true, fail = [], nostoreA = [], offline = fa
     await pocakaj(12000);
     const stanje = await stanjeStrani(page);
     const izid = { ime, stanje, verzija: stanje === "zagnano" ? await verzija(page) : "-", nalaganj, napake: [...napake] };
+    if (leni && stanje === "zagnano") {   // 3) iz shrambe zagnana stran odpre zaslon, ki ga ni v shrambi (pride z omrezja, B)
+      await page.evaluate(() => import("/webapp/js/usmerjanje.js").then(m => m.navigiraj("/app/soon/test")));
+      await pocakaj(15000);
+      izid.leni = await stanjeStrani(page);
+    }
     if (znova && stanje === "zagnano") {   // 3) brez povezave "Try again" / "Reload" (outlyObnovi(true)) mora stran res osveziti
       const prej = nalaganj;
       await page.evaluate(() => window.outlyObnovi(true));
@@ -135,6 +149,9 @@ const SCENARIJI = {
   // Sentry OUTLY-WEBAPP-A: SW nadzoruje stran, objava B, slab signal -> oblika.js (in porocilo.js) ne prideta z omrezja,
   // SW ju vrne iz shrambe (A), ostalo pride z omrezja (B). Pricakovano: zagon iz shrambe (A), najvec 2 nalaganji.
   "slab-signal": [{ fail: SLAB_SIGNAL, nato: true }, i => i.stanje === "zagnano" && i.verzija === "A" && i.nalaganj <= 2 && i.nato === "B"],
+  // Stran iz shrambe odpre leno nalozen zaslon, ki ga v shrambi ni (pregled PR #104, S-2): ne sme koncati s
+  // celozaslonskim "Outly could not start" - aplikacija ostane zagnana (zaslon lahko pokaze "Try again").
+  "slab-signal-leni": [{ fail: SLAB_SIGNAL, leni: true, nato: true }, i => i.stanje === "zagnano" && i.verzija === "A" && i.leni === "zagnano" && i.nato === "B"],
   // Shramba nima vse kode za zagon (+ omrezje je ne da): zagon iz shrambe ni mogoc -> gumb, brez zanke osvezitev.
   "nepopolna-shramba": [{ fail: SLAB_SIGNAL, izbrisi: "/webapp/js/oblika.js" }, i => i.stanje === "gumb-napaka" && i.nalaganj <= 2],
   // Brez SW: HTTP predpomnilnik (max-age=14400) ima star oblika.js, podatki.js ni bil shranjen -> mesanica; zagon.js popravi (B).

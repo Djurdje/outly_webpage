@@ -12,8 +12,12 @@
 (function () {
   var KLJUC = "outly_obnova";
   var KLJUC_SHRAMBA = "outly_obnova_shramba";
+  var KLJUC_V_SHRAMBI = "outly_v_shrambi";   // ena sama navigacija: ta stran se je zagnala iz shrambe (stopnja 2)
   var zagnano = false;
   var obnavljam = false;
+  var rocnoZagnano = false;   // obnovi(true) na ze zagnani aplikaciji (leno() v main.js, "Try again")
+  var vShrambi = false;
+  try { vShrambi = sessionStorage.getItem(KLJUC_V_SHRAMBI) === "1"; sessionStorage.removeItem(KLJUC_V_SHRAMBI); } catch (e) { /* brez */ }
 
   function jeSl() {
     try { var j = JSON.parse(localStorage.getItem("outly_jezik")); if (j === "sl" || j === "en") return j === "sl"; } catch (e) { /* brez */ }
@@ -66,7 +70,9 @@
   function pisi(kljuc, vrednost) {
     try { sessionStorage.setItem(kljuc, String(vrednost)); } catch (e) { /* brez */ }
   }
-  function neuspeh() { obnavljam = false; pokaziNapako(); }
+  /* Pri ze zagnani aplikaciji pokaziNapako() nic ne naredi (zaslon bi ostal na vrtavki, pregled PR #104 N-4): tam navadna
+     osvezitev. Samo rocno (leno() najvec 1x na minuto ali uporabnik) - brez zanke. */
+  function neuspeh() { obnavljam = false; if (rocnoZagnano) location.reload(); else pokaziNapako(); }
 
   /* Stopnja 2: SW prosimo, naj naslednjo navigacijo in vso naso kodo te strani streze iz shrambe (webapp/sw.js, "iz-shrambe").
      SW odgovori ok samo, ce ima v shrambi vso kodo za zagon. Star SW tega sporocila ne pozna (ni odgovora) -> po 2 s gumb. */
@@ -79,7 +85,7 @@
       if (koncano) return;
       koncano = true;
       clearTimeout(t);
-      if (e.data && e.data.ok) { pisi(KLJUC_SHRAMBA, Date.now()); location.reload(); } else neuspeh();
+      if (e.data && e.data.ok) { pisi(KLJUC_SHRAMBA, Date.now()); pisi(KLJUC_V_SHRAMBI, 1); location.reload(); } else neuspeh();
     };
     try { sw.postMessage({ tip: "iz-shrambe" }, [kanal.port2]); } catch (e) { koncano = true; clearTimeout(t); neuspeh(); }
   }
@@ -90,6 +96,11 @@
     // Gumb ("Reload", "Try again" na leno nalozenem zaslonu, npr. skener): stran osvezimo, SW jo da iz shrambe (skladna
     // razlicica; shrambe ne brisemo). Do 11/2026 tu gumb ni naredil nic. Samodejno (ne rocno) ne: brez zanke osvezitev.
     if (!navigator.onLine) { if (rocno) location.reload(); else pokaziNapako(); return; }
+    rocnoZagnano = !!rocno && jeZagnano();
+    // Aplikacija tece iz shrambe (stopnja 2), zaslon, ki ga v shrambi ni, pa je prisel z omrezja (nova razlicica) in se ni
+    // povezal (pregled PR #104, S-1/S-2): navadna osvezitev s polnim krogom stopenj. Dobro omrezje -> nova razlicica;
+    // se vedno slabo -> spet iz shrambe, zaslon pa pokaze "Try again" (leno najvec 1x na minuto) - nikoli celozaslonska napaka.
+    if (rocnoZagnano && vShrambi) { pisi(KLJUC, 0); pisi(KLJUC_SHRAMBA, 0); location.reload(); return; }
     var zdaj = Date.now();
     // Zagon iz shrambe smo ze poskusili (pred manj kot 30 s) in se vedno ne gre: gumb (nikoli zanka osvezitev).
     if (!rocno && zdaj - beri(KLJUC_SHRAMBA) < 30000) { pokaziNapako(); return; }
