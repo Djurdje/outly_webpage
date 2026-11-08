@@ -672,6 +672,21 @@ export function ustvariMotor({ klub }) {
     tik();
   }
 
+  /** Priprava BREZ zaslona (sken/vnaprej.js): isto, kar skener prenese ob odprtju (dogodki, kljuc, seznami aktivnih dogodkov),
+      v isto shrambo; brez casovnikov, poslusalcev in posiljanja vrste. Shranjeno se zamenja samo z uspesno prenesenim (osveziDogodke,
+      naloziKljuc in osveziSeznam pred zapisom preverijo odgovor). Vrne true, ce so se dogodki prenesli. Nikoli ne vrze. */
+  async function pripravi() {
+    if (zivo) return false;
+    zivo = true;
+    try {
+      shramba = await odpriShrambo();
+      const ok = await osveziDogodke(15000);
+      if (ok) await osvezi();   // kljuc + seznam vsakega aktivnega dogodka (preracunaj() jih je vpisal v `seznami`)
+      return ok === true;
+    } catch { return false; }
+    finally { zivo = false; }
+  }
+
   function ustavi() {
     clearInterval(casovnik); clearTimeout(odloziPosiljanje);
     // Vratar zapusti zaslon: skeni v vrsti dobijo se en poskus posiljanja (sicer cakajo do naslednjega odprtja skenerja).
@@ -695,5 +710,5 @@ export function ustvariMotor({ klub }) {
   }
   const takojPoslji = () => { naslednjiPoslji = 0; napakPoslji = 0; naslednjiOsvezi = Math.min(naslednjiOsvezi, Date.now()); tik(); };
 
-  return { stanje, zacni, ustavi, sken, potrdiKonflikt, takojPoslji, znovuNaloziDogodke };
+  return { stanje, zacni, pripravi, ustavi, sken, potrdiKonflikt, takojPoslji, znovuNaloziDogodke };
 }
