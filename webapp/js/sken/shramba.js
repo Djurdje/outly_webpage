@@ -190,6 +190,14 @@ export async function pocistiPodatkeKluba() {
   try { await (await odpriShrambo()).kvPocisti(PREDPONE_SEZNAMOV); } catch { /* najboljsi trud */ }
 }
 
+/** Priprava vnaprej (vnaprej.js): pobrise samo podatke NAVEDENIH klubov (seznam vstopnic, seznam dogodkov). Najboljsi trud. */
+export async function pocistiPodatkeKlubov(klubi) {
+  try {
+    const s = await odpriShrambo();
+    for (const k of klubi) { await s.kvDel("dogodki:" + k); await s.kvPocisti([`seznam:${k}:`]); }
+  } catch { /* najboljsi trud */ }
+}
+
 /* Hramba v brskalniku osebja: najvec 3 dni (politika zasebnosti, razdelka 2 in 4). Poslani skeni ("poslan") 3 dni od skena, seznami
    vstopnic 3 dni od prenosa (`cas`); NE krajse: vrata brez povezave med dolgim dogodkom ne smejo izgubiti seznama ob
    ponovnem zagonu. Neposlani skeni ("caka") ostanejo, dokler se ne posljejo. Isti pogoj uporablja skener ob odprtju kluba (motor.js)
