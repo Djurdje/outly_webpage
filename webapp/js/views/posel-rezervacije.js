@@ -5,7 +5,7 @@
 import { html, useEffect, useState } from "../lib.js";
 import { t, tn } from "../i18n.js";
 import { sporocilo, ApiError } from "../napake.js";
-import { danInUra, denar, normalizirajDogodek, seJeKoncal } from "../oblika.js";
+import { danInUra, denar, normalizirajDogodek, seJeKoncal, plakatKartice } from "../oblika.js";
 import { GlavaNazaj, Ikona, List, Nalaganje, Plakat } from "../ui.js";
 import { idKluba, poslovno, normalizirajDogodke } from "../posel.js";
 import { PoslovnaNapaka } from "./posel.js";
@@ -49,7 +49,7 @@ export function RezervacijeDogodkov({ klub }) {
       ${s.dogodki.map(e => {
         const n = steviloRez(e);
         return html`<a class="vrstica-dogodka-kluba" key=${e.id} href=${`${baza}/reservations/${e.id}`}>
-          <span class="vdk-slika">${e.poster_url ? html`<${Plakat} src=${e.poster_url} sirina=${240} alt="" />` : html`<${Ikona} ime="image" velikost=${22} razred="utisano" />`}</span>
+          <span class="vdk-slika">${plakatKartice(e) ? html`<${Plakat} src=${plakatKartice(e)} sirina=${240} alt="" />` : html`<${Ikona} ime="image" velikost=${22} razred="utisano" />`}</span>
           <span class="kv-besedilo">
             <strong>${e.title}</strong>
             <span class="vdk-datum">${danInUra(e._zacetek)}</span>
@@ -110,7 +110,7 @@ export function RezervacijeDogodka({ klub, dogodek }) {
     if (!id || !idDogodka) return;
     poslovno(id, "/business/events").then(r => {
       const e = (Array.isArray(r) ? r : []).find(x => x.id === idDogodka);
-      if (e) { const n = normalizirajDogodek(e); setNaslov({ title: n.title, _zacetek: n._zacetek, poster_url: n.poster_url }); }
+      if (e) { const n = normalizirajDogodek(e); setNaslov({ title: n.title, _zacetek: n._zacetek, poster_url: n.poster_url, poster_card_url: n.poster_card_url }); }
     }).catch(() => {});
   }, [id, idDogodka]);
 

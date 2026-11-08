@@ -10,7 +10,7 @@ import { sporocilo } from "../napake.js";
 import * as P from "../podatki.js";
 import {
   jeDanes, jeTaVikend, jeRazprodan, razdaljaKm, napisRazdalje, pozdrav, danInUra,
-  cena, znacka, zanrIme, steviloDogodkov, normalizirajDogodek, napisPrizorisca, prizorisce
+  cena, znacka, zanrIme, steviloDogodkov, normalizirajDogodek, napisPrizorisca, prizorisce, plakatKartice
 } from "../oblika.js";
 import {
   Ikona, Slika, Plakat, Avatar, NaslovSekcije, Skeleton, Napaka, VrstaDogodkov, KarticaPredloga,
@@ -236,7 +236,7 @@ function izpelji(s, me, lok, f, moji, maxKm) {
     return ma !== mb ? (ma ? -1 : 1) : a.localeCompare(b);
   }).map(z => {
     const evs = razvrsceni.filter(e => e.genres.some(g => g.toLowerCase() === z.toLowerCase()));
-    return { zanr: z, plakat: evs[0] ? evs[0].poster_url : "", stevilo: evs.length };
+    return { zanr: z, plakat: evs[0] ? plakatKartice(evs[0]) : "", stevilo: evs.length };
   });
 
   const zanimivi = moji.filter(e => e.my_plan === "interested" && casZ(e) >= zdaj - 6 * 3600e3).sort((a, b) => casZ(a) - casZ(b));
@@ -294,7 +294,7 @@ function KarticaHit({ dogodek: e, klub, napis }) {
         ${e.sold_count > 0 ? html`<span class="kh-gre">${t("{n} going", { n: e.sold_count })}</span>` : null}
       </div>
     </div>
-    <div class="kh-plakat"><${Plakat} src=${e.poster_url} sirina=${300} alt="" /></div>
+    <div class="kh-plakat"><${Plakat} src=${plakatKartice(e)} sirina=${300} alt="" /></div>
   </a>`;
 }
 

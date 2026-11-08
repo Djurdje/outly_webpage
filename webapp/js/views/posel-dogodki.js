@@ -9,7 +9,7 @@ import { naloziNaCloudinary, pomanjsajSliko } from "../api.js";
 import { sporocilo } from "../napake.js";
 import { navigiraj, nazaj } from "../usmerjanje.js";
 import * as P from "../podatki.js";
-import { zanrIme, napisCene, seJeKoncal, normalizirajDogodek, koordinata, vSporu, prodajaZaprta, prodajaUstavljena } from "../oblika.js";
+import { zanrIme, napisCene, seJeKoncal, normalizirajDogodek, koordinata, vSporu, prodajaZaprta, prodajaUstavljena, plakatKartice } from "../oblika.js";
 import { GlavaNazaj, Ikona, Plakat, Nalaganje, List } from "../ui.js";
 import { idKluba, poslovno, useKlub, normalizirajDogodke, centiIz, evriBesedilo, NAJVEC_VIDEA } from "../posel.js";
 import { PoslovnaNapaka, IzbiraLokacije } from "./posel.js";
@@ -76,7 +76,7 @@ export function DogodkiKluba({ klub }) {
       ${s.dogodki.map(e => {
         const st = stanje(e);
         return html`<a class="vrstica-dogodka-kluba" key=${e.id} href=${`${baza}/events/${e.id}/edit`}>
-          <span class="vdk-slika">${e.poster_url ? html`<${Plakat} src=${e.poster_url} sirina=${240} alt="" />` : html`<${Ikona} ime="image" velikost=${22} razred="utisano" />`}</span>
+          <span class="vdk-slika">${plakatKartice(e) ? html`<${Plakat} src=${plakatKartice(e)} sirina=${240} alt="" />` : html`<${Ikona} ime="image" velikost=${22} razred="utisano" />`}</span>
           <span class="kv-besedilo">
             <strong>${e.title}</strong>
             <span class="vdk-datum">${datumDogodka(e._zacetek)}</span>
