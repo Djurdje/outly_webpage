@@ -5,12 +5,14 @@
    (main.js) in samo za clane klubov. */
 import { seja, uidSeje } from "../seja.js";
 import { obraz, idKluba } from "../posel.js";
-import { ustvariMotor } from "./motor.js";
-import { pocistiPodatkeKluba } from "./shramba.js";
+import { ustvariMotor, skenerOdprt } from "./motor.js";
+import { pocistiPodatkeKlubov } from "./shramba.js";
 
 const MEJA_MS = 10 * 60000;          // najvec 1 priprava na klub na 10 min
 const zadnjaPriprava = new Map();    // uid:klub -> cas zadnjega poskusa
 const vTeku = new Set();
+
+const VLOGE_SKENERJA = ["owner", "manager", "doorman"];   // bartender ne skenira (posel.js: brez vrstice "Scan ticket"); scan-key bi dal 403
 
 /** Klub, ki ga je vredno pripraviti za to pot, ali null. Skener sam (biz-scan) pripravlja sam. */
 export function klubZaPripravo(pot, me) {
@@ -19,10 +21,10 @@ export function klubZaPripravo(pot, me) {
   if (pot.ime === "biz-scan") return null;
   if (pot.ime && pot.ime.startsWith("biz")) {
     const id = idKluba(pot.params && pot.params.klub);
-    return id !== null && klubi.some(k => Number(k.club_id) === id) ? id : null;
+    return id !== null && klubi.some(k => Number(k.club_id) === id && VLOGE_SKENERJA.includes(k.role)) ? id : null;
   }
   if (pot.ime === "profile" && me.role === "business" && obraz.get().vrednost === "club") {
-    const lastnistvo = klubi.find(k => k.role === "owner");
+    const lastnistvo = klubi.find(k => k.role === "owner");   // lastnik sme skenirati
     return lastnistvo ? idKluba(lastnistvo.club_id) : null;
   }
   return null;
@@ -39,10 +41,14 @@ export async function pripraviSkener(klub) {
     if (zdaj - (zadnjaPriprava.get(kljuc) || 0) < MEJA_MS) return false;
     zadnjaPriprava.set(kljuc, zdaj);
     vTeku.add(klub);
+    // Oznaka za ciscenje ob zagonu (seja.js pocistiStareSkeneOdZagona): seznami z imeni imetnikov potecejo po 3 dneh tudi, ce skenerja nikoli ne odprejo.
+    try { localStorage.setItem("outly_sken_priprava", "1"); } catch { /* brez */ }
     try { await ustvariMotor({ klub }).pripravi(); }
     finally { vTeku.delete(klub); }
     // Odjava (ali zamenjava racuna) med prenosom: zapisani seznami ne smejo ostati (odjava jih je pobrisala, mi smo jih zapisali znova).
-    if (!seja.get().prijavljen || uidSeje() !== uid) { zadnjaPriprava.delete(kljuc); await pocistiPodatkeKluba(); }
+    // Samo nas klub (pocistiPodatkeKluba bi pobrisal tudi pravkar pripravljene sezname drugih klubov / novega uporabnika). uid "" ob zacetku
+    // (seja se ni bila nastavljena) in kasneje nastavljen ni zamenjava racuna.
+    if (!seja.get().prijavljen || (uid && uidSeje() !== uid)) { zadnjaPriprava.delete(kljuc); await pocistiPodatkeKlubov([klub]); }
     return true;
   } catch { return false; }
 }

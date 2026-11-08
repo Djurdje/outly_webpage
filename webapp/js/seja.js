@@ -122,7 +122,8 @@ async function pocistiSkener() {
    sicer ne nalagamo modula in ne ustvarjamo baze IndexedDB obiskovalcem, ki skenerja nikoli niso videli. */
 export function pocistiStareSkeneOdZagona() {
   let uporabljen = false;
-  try { uporabljen = !!localStorage.getItem("outly_sken_naprava"); } catch { /* brez */ }
+  // outly_sken_naprava: skener je bil odprt; outly_sken_priprava: seznami so se pripravili vnaprej (sken/vnaprej.js) - tudi ti potecejo po 3 dneh.
+  try { uporabljen = !!(localStorage.getItem("outly_sken_naprava") || localStorage.getItem("outly_sken_priprava")); } catch { /* brez */ }
   if (!uporabljen) return;
   const zazeni = () => import("./sken/shramba.js").then(m => m.pocistiStareSkene()).catch(() => {});
   if (window.requestIdleCallback) requestIdleCallback(zazeni, { timeout: 5000 }); else setTimeout(zazeni, 3000);
