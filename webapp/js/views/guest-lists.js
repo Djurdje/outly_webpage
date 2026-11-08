@@ -51,7 +51,7 @@ export function GuestListSekcija() {
   return html`<section class="blok-besedila gl-sekcija" aria-label=${t("Guest lists")}>
     <h2 class="podnaslov">${t("Guest lists")}</h2>
     ${liste.map(g => html`<a class="kartica-vrstica gl-kartica" href=${"/app/guest-lists/" + g.id} key=${g.id}>
-      <span class="vd-slika"><${Plakat} src=${plakatKartice(g.event)} sirina=${150} alt="" /></span>
+      <span class="vd-slika"><${Plakat} src=${plakatKartice(g.event)} rezerva=${g.event.poster_url} sirina=${150} alt="" /></span>
       <span class="kv-besedilo"><span class="nadnapis">${g.event.club_name.toUpperCase()}</span><strong>${g.event.title}</strong>
         <span>${danInUra(g.event.start)}</span>
         <span class="gl-mesta">${prostaMesta(g)}</span></span>
@@ -90,7 +90,7 @@ export function GuestListDetajl({ id }) {
       <a class="gumb-siv" href="/app/tickets">${t("Open my tickets")}</a></div>` : null}
     ${g ? html`
       <a class="kartica-vrstica gl-dogodek" href=${"/app/event/" + g.event.id}>
-        <span class="vd-slika"><${Plakat} src=${plakatKartice(g.event)} sirina=${150} alt="" /></span>
+        <span class="vd-slika"><${Plakat} src=${plakatKartice(g.event)} rezerva=${g.event.poster_url} sirina=${150} alt="" /></span>
         <span class="kv-besedilo"><span class="nadnapis">${g.event.club_name.toUpperCase()}</span><strong>${g.event.title}</strong>
           <span>${danInUra(g.event.start)}</span></span>
         <${Ikona} ime="chevron-right" velikost=${16} razred="utisano" />

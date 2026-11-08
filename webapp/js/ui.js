@@ -38,15 +38,16 @@ export function Ikona({ ime, velikost = 20, debelina = 2, razred = "" }) {
 }
 
 /** Slika v okvirju (kot Color.clear.overlay(...).clipped() na iOS): object-fit cover, lena. */
-export function Slika({ src, sirina = 600, alt = "", razred = "", nujna = false }) {
+export function Slika({ src, sirina = 600, alt = "", razred = "", nujna = false, rezerva = "" }) {
   const [nalozena, setNalozena] = useState(false);
   const [napaka, setNapaka] = useState(false);
-  const url = slika(src, sirina);
+  const [padla, setPadla] = useState(false);   // src se ni nalozil: poskusimo rezervo (npr. poster_url namesto poster_card_url), enkrat
+  const url = slika(padla ? rezerva : src, sirina);
   if (!url || napaka) return html`<div class=${"slika slika-prazna " + razred} role=${alt ? "img" : null} aria-label=${alt || null}></div>`;
   return html`<div class=${"slika " + razred + (nalozena ? " nalozena" : "")}>
     <img src=${url} alt=${alt} loading=${nujna ? "eager" : "lazy"} decoding="async"
       fetchpriority=${nujna ? "high" : null}
-      onLoad=${() => setNalozena(true)} onError=${() => setNapaka(true)} />
+      onLoad=${() => setNalozena(true)} onError=${() => { if (!padla && rezerva && rezerva !== src) setPadla(true); else setNapaka(true); }} />
   </div>`;
 }
 
@@ -102,7 +103,7 @@ export function KarticaDogodka({ dogodek: e, klub, sirina = 150 }) {
   const z = znacka(e);
   return html`<a class="kartica-dogodka" href=${"/app/event/" + e.id} style=${{ width: sirina + "px" }}>
     <div class="kd-plakat">
-      ${plakatKartice(e) ? html`<${Plakat} src=${plakatKartice(e)} sirina=${sirina * 2} alt="" />`
+      ${plakatKartice(e) ? html`<${Plakat} src=${plakatKartice(e)} rezerva=${e.poster_url} sirina=${sirina * 2} alt="" />`
                      : html`<div class="plakat-prazen"><${Ikona} ime="music" velikost=${32} /></div>`}
       ${z ? html`<span class=${"znacka" + (jeRazprodan(e) ? " rdeca" : "")}>${z}</span>` : null}
       <div class="kd-pas">
@@ -147,9 +148,9 @@ export function KarticaLogo({ klub, razdalja }) {
 }
 
 /** Vrstica s sliko (iskanje, seznami). */
-export function Vrstica({ href, slikaUrl, ikona = "building", naslov, podnaslov, desno, plakat = false }) {
+export function Vrstica({ href, slikaUrl, ikona = "building", naslov, podnaslov, desno, plakat = false, slikaRezerva = "" }) {
   return html`<a class="vrstica" href=${href}>
-    <span class="vrstica-slika">${slikaUrl ? html`<${plakat ? Plakat : Slika} src=${slikaUrl} sirina=${120} alt="" />` : html`<${Ikona} ime=${ikona} velikost=${20} />`}</span>
+    <span class="vrstica-slika">${slikaUrl ? html`<${plakat ? Plakat : Slika} src=${slikaUrl} rezerva=${slikaRezerva} sirina=${120} alt="" />` : html`<${Ikona} ime=${ikona} velikost=${20} />`}</span>
     <span class="vrstica-besedilo"><strong>${naslov}</strong>${podnaslov ? html`<span>${podnaslov}</span>` : null}</span>
     ${desno || html`<${Ikona} ime="chevron-right" velikost=${16} razred="utisano" />`}
   </a>`;
@@ -220,7 +221,7 @@ export function List({ odprt, zapri, naslov, children, brezZapiranja = false }) 
 /** Vrstica dogodka (EventCardAPI .clubRow): majhen plakat, naslov, zanri, datum, cena desno. */
 export function VrsticaDogodka({ dogodek: e, klub, desno }) {
   return html`<a class="vrstica-dogodka" href=${"/app/event/" + e.id}>
-    <span class="vd-slika"><${Plakat} src=${plakatKartice(e)} sirina=${150} alt="" /></span>
+    <span class="vd-slika"><${Plakat} src=${plakatKartice(e)} rezerva=${e.poster_url} sirina=${150} alt="" /></span>
     <span class="kv-besedilo"><strong>${e.title}</strong>
       ${klub ? html`<span>${klub}</span>` : e.genres.length ? html`<span>${e.genres.map(zanrIme).join(" • ")}</span>` : null}
       <span>${danKratek(e._zacetek)}</span></span>

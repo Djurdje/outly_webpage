@@ -122,7 +122,7 @@ function Karta({ v, odprta, preklopi, stara, poslji }) {
   const vip = v.is_vip === true;
   return html`<div class=${"vstopnica" + (stara ? " stara" : "") + (vip ? " vip" : "") + (spor ? " spor" : "")}>
     <button type="button" class="vstopnica-glava-gumb" onClick=${preklopi} disabled=${stara} aria-expanded=${odprta}>
-      <span class="vd-slika"><${Plakat} src=${plakatKartice(v)} sirina=${150} alt="" /></span>
+      <span class="vd-slika"><${Plakat} src=${plakatKartice(v)} rezerva=${v.poster_url} sirina=${150} alt="" /></span>
       <span class="kv-besedilo"><span class="nadnapis">${(v.club_name || "").toUpperCase()}</span><strong>${v.event_title}</strong>
         <span>${danInUra(v._zacetek)}</span>
         ${vip ? html`<${VipVrstica} v=${v} />` : null}
@@ -171,7 +171,7 @@ function Skupina({ vst, stara, razprta, preklopi, odprta, preklopiVstopnico, pos
   const id = "skupina-" + v.order_id + (stara ? "-s" : "-p");
   return html`<div class=${"vstopnica vip skupina" + (stara ? " stara" : "")}>
     <button type="button" class="vstopnica-glava-gumb" onClick=${preklopi} aria-expanded=${razprta} aria-controls=${id}>
-      <span class="vd-slika"><${Plakat} src=${plakatKartice(v)} sirina=${150} alt="" /></span>
+      <span class="vd-slika"><${Plakat} src=${plakatKartice(v)} rezerva=${v.poster_url} sirina=${150} alt="" /></span>
       <span class="kv-besedilo"><span class="nadnapis">${(v.club_name || "").toUpperCase()}</span><strong>${v.event_title}</strong>
         <span>${danInUra(v._zacetek)}</span>
         <${VipVrstica} v=${v} /></span>

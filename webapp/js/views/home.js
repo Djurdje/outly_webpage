@@ -236,7 +236,7 @@ function izpelji(s, me, lok, f, moji, maxKm) {
     return ma !== mb ? (ma ? -1 : 1) : a.localeCompare(b);
   }).map(z => {
     const evs = razvrsceni.filter(e => e.genres.some(g => g.toLowerCase() === z.toLowerCase()));
-    return { zanr: z, plakat: evs[0] ? plakatKartice(evs[0]) : "", stevilo: evs.length };
+    return { zanr: z, plakat: evs[0] ? plakatKartice(evs[0]) : "", rezerva: evs[0] ? evs[0].poster_url : "", stevilo: evs.length };
   });
 
   const zanimivi = moji.filter(e => e.my_plan === "interested" && casZ(e) >= zdaj - 6 * 3600e3).sort((a, b) => casZ(a) - casZ(b));
@@ -294,7 +294,7 @@ function KarticaHit({ dogodek: e, klub, napis }) {
         ${e.sold_count > 0 ? html`<span class="kh-gre">${t("{n} going", { n: e.sold_count })}</span>` : null}
       </div>
     </div>
-    <div class="kh-plakat"><${Plakat} src=${plakatKartice(e)} sirina=${300} alt="" /></div>
+    <div class="kh-plakat"><${Plakat} src=${plakatKartice(e)} rezerva=${e.poster_url} sirina=${300} alt="" /></div>
   </a>`;
 }
 
@@ -319,9 +319,9 @@ function KarticaVelika({ dogodek: e, klub, napis = t("BIG EVENT COMING UP") }) {
   </a>`;
 }
 
-function VrsticaZanra({ zanr, plakat, stevilo }) {
+function VrsticaZanra({ zanr, plakat, rezerva, stevilo }) {
   return html`<a class="vrstica-zanra" href=${"/app/genre/" + encodeURIComponent(zanr)}>
-    ${plakat ? html`<${Slika} src=${plakat} sirina=${500} alt="" razred="vz-slika" />` : html`<span class="vz-barva" style=${{ background: barvaZanra(zanr) }}></span>`}
+    ${plakat ? html`<${Slika} src=${plakat} rezerva=${rezerva} sirina=${500} alt="" razred="vz-slika" />` : html`<span class="vz-barva" style=${{ background: barvaZanra(zanr) }}></span>`}
     <span class="vz-senca" aria-hidden="true"></span>
     <strong>${zanrIme(zanr).toUpperCase()}</strong>
     ${stevilo > 0 ? html`<span class="vz-stevilo">${steviloDogodkov(stevilo)}</span>` : null}

@@ -200,7 +200,7 @@ export function NacrtiPrijateljev() {
       <strong>${t("No plans yet")}</strong><span>${t("When a friend gets a ticket, the event shows up here.")}</span></div>` : null}
     ${prikazani.map(p => html`<div class="kartica-nacrta" key=${p.id}>
       <a class="kn-vrh" href=${"/app/event/" + p.id}>
-        <span class="vd-slika"><${Plakat} src=${plakatKartice(p)} sirina=${150} alt="" /></span>
+        <span class="vd-slika"><${Plakat} src=${plakatKartice(p)} rezerva=${p.poster_url} sirina=${150} alt="" /></span>
         <span class="kv-besedilo"><strong>${p.title}</strong><span>${[p.club_name, danKratek(p._zacetek)].filter(Boolean).join(" · ")}</span></span>
       </a>
       <div class="prijatelji-vrsta">

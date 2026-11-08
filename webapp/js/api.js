@@ -380,7 +380,8 @@ export async function izrezSlike(bitmap, rect, razmerje, najvecSirina = 1080) {
   const c = document.createElement("canvas");
   c.width = w; c.height = h;
   const g = c.getContext("2d");
-  g.fillStyle = "#ffffff"; g.fillRect(0, 0, w, h);   // prosojen PNG -> JPEG brez crnega ozadja
+  g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "high";
+  g.fillStyle = "#ffffff"; g.fillRect(0, 0, w, h);   // prosojen PNG -> JPEG brez crnega ozadja (enako ozadje kot predogled)
   g.drawImage(bitmap, rect.sx, rect.sy, rect.sw, rect.sh, 0, 0, w, h);
   const blob = await new Promise(res => { try { c.toBlob(res, "image/jpeg", 0.88); } catch { res(null); } });
   if (!blob) throw new NapakaDatoteke(t("This image could not be prepared for upload. Please choose a JPEG or PNG photo."));

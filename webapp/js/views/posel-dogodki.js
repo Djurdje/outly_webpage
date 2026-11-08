@@ -77,7 +77,7 @@ export function DogodkiKluba({ klub }) {
       ${s.dogodki.map(e => {
         const st = stanje(e);
         return html`<a class="vrstica-dogodka-kluba" key=${e.id} href=${`${baza}/events/${e.id}/edit`}>
-          <span class="vdk-slika">${plakatKartice(e) ? html`<${Plakat} src=${plakatKartice(e)} sirina=${240} alt="" />` : html`<${Ikona} ime="image" velikost=${22} razred="utisano" />`}</span>
+          <span class="vdk-slika">${plakatKartice(e) ? html`<${Plakat} src=${plakatKartice(e)} rezerva=${e.poster_url} sirina=${240} alt="" />` : html`<${Ikona} ime="image" velikost=${22} razred="utisano" />`}</span>
           <span class="kv-besedilo">
             <strong>${e.title}</strong>
             <span class="vdk-datum">${datumDogodka(e._zacetek)}</span>
@@ -128,6 +128,7 @@ export function ObrazecDogodka({ klub, dogodek }) {
   const [napaka, setNapaka] = useState("");
   const [brisem, setBrisem] = useState(false);
   const vnosPlakat = useRef(null), vnosKartica = useRef(null), vnosVideo = useRef(null);
+  const [izrezDelam, setIzrezDelam] = useState(false);   // "Use" je pritisnjen: izrez/nalaganje tece, list se ne sme zapreti
   const [izrez, setIzrez] = useState(null);   // { datoteka, vrsta: "velik" | "majhen" } - izbrana slika caka na izrez, ni se nalozena
   const izhodisce = useRef(null);   // vsebina obrazca ob nalaganju/shranjevanju (urejanje); null = se ni nalozeno
   const nastavi = (k, v) => setP(x => ({ ...x, [k]: v }));
@@ -181,7 +182,7 @@ export function ObrazecDogodka({ klub, dogodek }) {
     const vrsta = izrez.vrsta;
     setNalagaPlakat(true); setNapaka("");
     try { nastavi(vrsta === "velik" ? "poster" : "posterCard", await naloziNaCloudinary(blob)); setIzrez(null); }
-    finally { setNalagaPlakat(false); }
+    finally { setNalagaPlakat(false); setIzrezDelam(false); }
   }
   // Posnetek se shrani TAKOJ (loceno od Save): streznik ga sprejme samo na koncanem dogodku med prvimi tremi.
   async function shraniPosnetek(url) {
@@ -339,9 +340,9 @@ export function ObrazecDogodka({ klub, dogodek }) {
       <button type="button" class="gumb-glavni" onClick=${shrani} disabled=${shranjujem || nalagaPlakat || k.nalaga || !!k.napaka || !p.title.trim()}>${shranjujem ? t("Saving...") : t("Save")}</button>
       ${urejam ? html`<button type="button" class="gumb-rdec" disabled=${shranjujem} onClick=${() => setBrisem(true)}>${t("Cancel or delete event")}</button>` : null}
     </div>
-    <${List} odprt=${!!izrez} zapri=${() => { if (!nalagaPlakat) setIzrez(null); }} brezZapiranja=${nalagaPlakat}
+    <${List} odprt=${!!izrez} zapri=${() => { if (!nalagaPlakat && !izrezDelam) setIzrez(null); }} brezZapiranja=${nalagaPlakat || izrezDelam}
       naslov=${izrez && izrez.vrsta === "majhen" ? t("Crop card banner") : t("Crop main banner")}>
-      ${izrez ? html`<${UrejevalnikIzreza} datoteka=${izrez.datoteka} vrsta=${izrez.vrsta} obUporabi=${nalozi} obPreklic=${() => setIzrez(null)} />` : null}
+      ${izrez ? html`<${UrejevalnikIzreza} datoteka=${izrez.datoteka} vrsta=${izrez.vrsta} obUporabi=${nalozi} obPreklic=${() => setIzrez(null)} obDelam=${setIzrezDelam} />` : null}
     <//>
     <${List} odprt=${brisem} zapri=${() => setBrisem(false)} naslov=${t("Remove this event?")}>
       <p class="besedilo-opis">${t("If tickets were already sold, the event will be cancelled instead of deleted so buyers keep proof of purchase.")}</p>

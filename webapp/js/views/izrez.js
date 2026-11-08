@@ -21,13 +21,13 @@ export function pravokotnik(sirina, visina, razmerje, zoom, cx, cy) {
 function narisi(platno, bitmap, r) {
   if (!platno || !bitmap) return;
   const g = platno.getContext("2d");
-  g.imageSmoothingQuality = "high";
-  g.fillStyle = "#000"; g.fillRect(0, 0, platno.width, platno.height);
+  g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "high";
+  g.fillStyle = "#fff"; g.fillRect(0, 0, platno.width, platno.height);
   g.drawImage(bitmap, r.sx, r.sy, r.sw, r.sh, 0, 0, platno.width, platno.height);
 }
 
 /** Vsebina lista: <List> je v klicatelju (Escape, fokus, inert). `ob Uporabi(blob)` dobi izrezan JPEG. */
-export function UrejevalnikIzreza({ datoteka, vrsta, obUporabi, obPreklic }) {
+export function UrejevalnikIzreza({ datoteka, vrsta, obUporabi, obPreklic, obDelam = () => {} }) {
   const razmerje = RAZMERJE[vrsta];
   const [W, H] = [480, Math.round(480 * razmerje[1] / razmerje[0])];
   const [bitmap, setBitmap] = useState(null);
@@ -95,9 +95,9 @@ export function UrejevalnikIzreza({ datoteka, vrsta, obUporabi, obPreklic }) {
 
   async function uporabi() {
     if (!r || delam) return;
-    setDelam(true); setNapaka("");
+    setDelam(true); obDelam(true); setNapaka("");   // list se med izrezom in nalaganjem ne da zapreti
     try { await obUporabi(await izrezSlike(bitmap, r, razmerje, 1080)); }
-    catch (e) { setNapaka(sporocilo(e)); setDelam(false); }
+    catch (e) { setNapaka(sporocilo(e)); setDelam(false); obDelam(false); }
   }
 
   const veliki = vrsta === "velik";

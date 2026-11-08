@@ -49,7 +49,7 @@ export function RezervacijeDogodkov({ klub }) {
       ${s.dogodki.map(e => {
         const n = steviloRez(e);
         return html`<a class="vrstica-dogodka-kluba" key=${e.id} href=${`${baza}/reservations/${e.id}`}>
-          <span class="vdk-slika">${plakatKartice(e) ? html`<${Plakat} src=${plakatKartice(e)} sirina=${240} alt="" />` : html`<${Ikona} ime="image" velikost=${22} razred="utisano" />`}</span>
+          <span class="vdk-slika">${plakatKartice(e) ? html`<${Plakat} src=${plakatKartice(e)} rezerva=${e.poster_url} sirina=${240} alt="" />` : html`<${Ikona} ime="image" velikost=${22} razred="utisano" />`}</span>
           <span class="kv-besedilo">
             <strong>${e.title}</strong>
             <span class="vdk-datum">${danInUra(e._zacetek)}</span>
