@@ -369,3 +369,21 @@ export async function pomanjsajSliko(datoteka, najvec = 1200) {
   pomanjsaneSlike.add(blob);
   return blob;
 }
+
+/* Izrez slike za banner dogodka (urejevalnik izreza, views/izrez.js): kopira pravokotnik `rect` {sx, sy, sw, sh} iz bitmapa v canvas
+   z razmerjem sirina:visina, sirina izhoda najvec `najvecSirina` (manjsih slik NE povecuje). JPEG brez EXIF/GPS (canvas) in
+   zabelezen kot pomanjsana slika, zato ga naloziNaCloudinary sprejme. */
+export async function izrezSlike(bitmap, rect, razmerje, najvecSirina = 1080) {
+  const [rs, rv] = razmerje;
+  const w = Math.max(1, Math.min(najvecSirina, Math.round(rect.sw)));
+  const h = Math.max(1, Math.round(w * rv / rs));
+  const c = document.createElement("canvas");
+  c.width = w; c.height = h;
+  const g = c.getContext("2d");
+  g.fillStyle = "#ffffff"; g.fillRect(0, 0, w, h);   // prosojen PNG -> JPEG brez crnega ozadja
+  g.drawImage(bitmap, rect.sx, rect.sy, rect.sw, rect.sh, 0, 0, w, h);
+  const blob = await new Promise(res => { try { c.toBlob(res, "image/jpeg", 0.88); } catch { res(null); } });
+  if (!blob) throw new NapakaDatoteke(t("This image could not be prepared for upload. Please choose a JPEG or PNG photo."));
+  pomanjsaneSlike.add(blob);
+  return blob;
+}
