@@ -237,6 +237,16 @@ function App() {
   }
   useEffect(() => { if (preusmeritev) navigiraj(preusmeritev, { zamenjaj: true }); }, [preusmeritev]);
   useLayoutEffect(() => { obnoviDrsenje(pot); }, [pot.kljuc]);
+  // Skener vnaprej (outly-backend#406): clan kluba na poslovni strani ali v klubskem Profilu - kljuc, dogodki in seznam vstopnic se v ozadju
+  // pripravijo za vrata brez signala; ob vrnitvi na zavihek znova (najvec 1x na 10 min na klub, sken/vnaprej.js). Modul se nalozi sele zdaj.
+  useEffect(() => {
+    if (!prijavljen || !me || !(pot.ime === "profile" || pot.ime.startsWith("biz")) || !Array.isArray(me.clubs) || !me.clubs.length) return;
+    const zazeni = () => import("./sken/vnaprej.js").then(m => { const k = m.klubZaPripravo(pot, me); if (k) return m.pripraviSkener(k); }).catch(() => {});
+    const naVidnosti = () => { if (document.visibilityState === "visible") zazeni(); };
+    zazeni();
+    document.addEventListener("visibilitychange", naVidnosti);
+    return () => document.removeEventListener("visibilitychange", naVidnosti);
+  }, [prijavljen, me, pot.kljuc]);
   useEffect(() => {
     if (!["event", "club", "soon"].includes(pot.ime)) document.title = pot.ime === "home" ? "Outly" : `${t(naslovPoti(pot.ime))} · Outly`;
   }, [pot.ime, koda]);

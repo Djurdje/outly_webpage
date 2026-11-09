@@ -35,6 +35,11 @@ const BRANJE_VSE_MS = 1000;            // ... in pred posiljanjem vrste; potem n
 const ZAKAJ_SHRANI_MS = 1500;           // sken potrdimo, ko je trajno zapisan - a nikoli cakamo dlje
 const CAKANJE_STREZNIKA_MS = 8000;      // sken s kodo v1: vratar ne sme cakati 30 s na mrtvo omrezje
 
+/* Skenerji, odprti v TEJ strani (klub -> stevilo), in pot skenerja: priprava vnaprej (pripravi) zanje ne sme klicati scan-lista -
+   backend dovoli samo 2 hkratna na vso platformo (outly-backend#411), skener ga prenese sam. Pot zajame tudi skener, ki se sele nalaga. */
+const odprtiSkenerji = new Map();
+export const skenerOdprt = klub => (odprtiSkenerji.get(klub) || 0) > 0 || location.pathname.replace(/\/+$/, "") === `/app/business/${klub}/scan`;
+
 export const jeOnline = () => (typeof navigator === "undefined" || navigator.onLine !== false);
 
 /** Odgovor skenerja (ScanResult). Streznik ga vrne tudi s 400/403/404/409 (iOS scanTicket enako). */
@@ -122,7 +127,7 @@ export function ustvariMotor({ klub }) {
   const skeni = new Map();                                        // client_scan_id -> zapis (vsi skeni kluba na tej napravi)
   const poSerialu = new Map();                                    // serial -> zapis (prvi sken te vstopnice)
   let omrezje = jeOnline();
-  let posiljam = false, osvezujem = false, zivo = false, nalagamDogodke = false;
+  let posiljam = false, osvezujem = false, zivo = false, nalagamDogodke = false, priprava = false;   // priprava: tece pripravi() (brez zaslona)
   let casovnik = 0, odloziPosiljanje = 0, aktivniKljuc = "", zadnjeOsvezitevNeDanes = 0, dogodkiCas = 0;
   const zadnjiGen = new Map();   // id dogodka -> zadnji generated_at (predpomnjeno telo ob 304 ne sme biti merilo ure)
   const uraPrejsnja = new Map(); // id dogodka -> predznak prejsnje sveze meritve ure TEGA dogodka (0 = v mejah)
@@ -250,9 +255,10 @@ export function ustvariMotor({ klub }) {
     stanje.set({ osvezujem: true });
     let izpad = false, napaka = "";
     try {
-      if (!kljuc) await naloziKljuc();
+      if (!kljuc && !(priprava && skenerOdprt(klub))) await naloziKljuc();
       for (const id of [...seznami.keys()]) {
         if (!zivo) break;
+        if (priprava && skenerOdprt(klub)) break;   // skener se je medtem odprl: seznam prenese sam
         const vnos = seznami.get(id);
         if (vnos && vnos.od > Date.now()) continue;   // dogodek, ki je pravkar vstopil v okno: prenos se ni na vrsti (jitter)
         try { await osveziSeznam(id); omrezjeJe(true); objavi(); }
@@ -633,6 +639,7 @@ export function ustvariMotor({ klub }) {
 
   async function zacni() {
     zivo = true;
+    odprtiSkenerji.set(klub, (odprtiSkenerji.get(klub) || 0) + 1);
     shramba = await odpriShrambo();
     zahtevajTrajno();
     deviceId = await pridobiNapravo();
@@ -672,7 +679,23 @@ export function ustvariMotor({ klub }) {
     tik();
   }
 
+  /** Priprava BREZ zaslona (sken/vnaprej.js): isto, kar skener prenese ob odprtju (dogodki, kljuc, seznami aktivnih dogodkov),
+      v isto shrambo; brez casovnikov, poslusalcev in posiljanja vrste. Shranjeno se zamenja samo z uspesno prenesenim (osveziDogodke,
+      naloziKljuc in osveziSeznam pred zapisom preverijo odgovor). Vrne true, ce so se dogodki prenesli. Nikoli ne vrze. */
+  async function pripravi() {
+    if (zivo || skenerOdprt(klub)) return false;
+    zivo = true; priprava = true;
+    try {
+      shramba = await odpriShrambo();
+      const ok = await osveziDogodke(15000);
+      if (ok) await osvezi();   // kljuc + seznam vsakega aktivnega dogodka (preracunaj() jih je vpisal v `seznami`)
+      return ok === true;
+    } catch { return false; }
+    finally { zivo = false; priprava = false; }
+  }
+
   function ustavi() {
+    if (zivo && priprava === false && odprtiSkenerji.get(klub)) { const n = odprtiSkenerji.get(klub) - 1; if (n > 0) odprtiSkenerji.set(klub, n); else odprtiSkenerji.delete(klub); }
     clearInterval(casovnik); clearTimeout(odloziPosiljanje);
     // Vratar zapusti zaslon: skeni v vrsti dobijo se en poskus posiljanja (sicer cakajo do naslednjega odprtja skenerja).
     const koncnoPoslji = zivo && stanje.get().caka > 0 && jeOnline();
@@ -695,5 +718,5 @@ export function ustvariMotor({ klub }) {
   }
   const takojPoslji = () => { naslednjiPoslji = 0; napakPoslji = 0; naslednjiOsvezi = Math.min(naslednjiOsvezi, Date.now()); tik(); };
 
-  return { stanje, zacni, ustavi, sken, potrdiKonflikt, takojPoslji, znovuNaloziDogodke };
+  return { stanje, zacni, pripravi, ustavi, sken, potrdiKonflikt, takojPoslji, znovuNaloziDogodke };
 }
