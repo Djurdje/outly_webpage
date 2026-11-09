@@ -108,7 +108,7 @@ export const SL = {
  "Clubs and events will show up here.": "Klubi in dogodki bodo prikazani tukaj.",
  "Coming Soon": "Kmalu na sporedu",
  "Coming soon": "Kmalu na Outly",
- "COMING SOON": "KMALU",
+ "Coming soon (badge)": "Kmalu",
  "Coming up": "Prihaja",
  "Complete": "Dokončaj",
  "Complete your account": "Dokončaj svoj račun",

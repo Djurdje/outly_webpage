@@ -1044,10 +1044,13 @@ a.profil-ime{ white-space:normal; }
 .km-besedilo strong{ font-size:15px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .km-besedilo span{ font-size:12px; font-weight:500; color:var(--b70); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .kmalu-hero{ position:absolute; inset:0; }
-/* Znacka "Coming soon" (Martin 9. 11. 2026, enako kot iOS): ozadje #171717, rob = preliv od leve (rumena #E0B65E, debelejsi)
-   proti desni (skoraj prozoren), rumenkasto besedilo. Kontrast #EBD08F na #171717 = 11,9 : 1; rob #E0B65E 9,4 : 1. */
-.znacka.kmalu-znacka{ color:#EBD08F; border:1px solid transparent; border-left-width:3px;
-  background:linear-gradient(#171717,#171717) padding-box, linear-gradient(90deg, #E0B65E, rgba(224,182,94,.06)) border-box; }
+/* Znacka "Coming soon" (Martin 9. 11. 2026: dizajn 2, barva "pol-pol", velikost S6; enako kot iOS): ozadje #171717, rob = preliv od leve
+   (#ECD67F) proti desni (skoraj prozoren) + 3 px polna crta znotraj levega roba, besedilo #F4E8AE, male crke 14/600.
+   Preglasi osnovno .znacka (10/800, velike crke, razmik). Kontrast #F4E8AE na #171717 = 14,2 : 1; crta/rob #ECD67F 11,6 : 1. */
+.znacka.kmalu-znacka{ color:#F4E8AE; font-size:14px; font-weight:600; letter-spacing:0; text-transform:none;
+  padding:7px 14px 7px 16px; border-radius:9px; border:1px solid transparent;
+  background:linear-gradient(#171717,#171717) padding-box, linear-gradient(90deg,#ECD67F,rgba(236,214,127,.06)) border-box;
+  box-shadow:inset 3px 0 0 #ECD67F; }
 .kmalu-stran .znacka.staticna{ align-self:flex-start; }
 .kmalu-gumbi{ display:flex; flex-direction:column; gap:10px; }
 

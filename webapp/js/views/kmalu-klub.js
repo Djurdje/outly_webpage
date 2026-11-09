@@ -3,6 +3,7 @@
 import { html, useEffect, useState } from "../lib.js";
 import { t } from "../i18n.js";
 import * as P from "../podatki.js";
+import { besediloZnacke } from "./kmalu.js";
 import { Ikona, Slika, GlavaNazaj, Nalaganje } from "../ui.js";
 
 export function KmaluKlub({ slug }) {
@@ -30,7 +31,7 @@ export function KmaluKlub({ slug }) {
       <span class="okrogla-slika velika">${k.logo_url ? html`<${Slika} src=${k.logo_url} sirina=${190} alt="" />` : html`<${Ikona} ime="building" velikost=${24} />`}</span>
       <div class="klub-meta">
         ${k.address || k.city ? html`<span>${k.address || k.city}</span>` : null}
-        <span class="znacka staticna kmalu-znacka">${t("COMING SOON")}</span>
+        <span class="znacka staticna kmalu-znacka">${besediloZnacke()}</span>
       </div>
     </div>
     <p class="besedilo-opis">${t("{name} is coming to Outly soon. Events and tickets will be available here.", { name: k.name })}</p>
