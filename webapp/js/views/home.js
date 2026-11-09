@@ -10,7 +10,7 @@ import { sporocilo } from "../napake.js";
 import * as P from "../podatki.js";
 import {
   jeDanes, jeTaVikend, jeRazprodan, razdaljaKm, napisRazdalje, pozdrav, danInUra,
-  cena, znacka, zanrIme, steviloDogodkov, normalizirajDogodek, napisPrizorisca, prizorisce
+  cena, znacka, zanrIme, steviloDogodkov, normalizirajDogodek, napisPrizorisca, prizorisce, plakatKartice
 } from "../oblika.js";
 import {
   Ikona, Slika, Plakat, Avatar, NaslovSekcije, Skeleton, Napaka, VrstaDogodkov, KarticaPredloga,
@@ -219,11 +219,13 @@ function izpelji(s, me, lok, f, moji, maxKm) {
     if (a[0] > b[0] || (a[0] === b[0] && (a[1] > b[1] || (a[1] === b[1] && a[2] > b[2])))) velik = e;
   }
 
+  // "Last week's biggest hits": samo dogodek, ki se je ze zacel (zacetek <= zdaj), v zadnjih 7 dneh, s prodajo.
+  // Prihodnjega dogodka tu NIKOLI ni (Martin 9. 11. 2026) - brez zadetka se razdelek ne pokaze. Izrecen filter, ker
+  // s.pretekli ne jamci, da ne vsebuje prihodnjih.
   const teden = zdaj - 7 * 86400e3;
-  const hitPretekli = s.pretekli.filter(e => e.sold_count > 0 && e._zacetek && e._zacetek.getTime() >= teden)
+  const hitPretekli = s.pretekli.filter(e => e.sold_count > 0 && e._zacetek && e._zacetek.getTime() <= zdaj && e._zacetek.getTime() >= teden)
     .sort((a, b) => b.sold_count - a.sold_count)[0];
-  const hit = hitPretekli ? { dogodek: hitPretekli, napis: t("Last week's biggest hit") }
-    : trending[0] ? { dogodek: trending[0], napis: t("Trending right now") } : null;
+  const hit = hitPretekli ? { dogodek: hitPretekli, napis: t("Last week's biggest hit") } : null;
 
   // Organizator nima naslova ne pina - v "In your area" ni.
   const prizorisca = s.klubi.filter(k => !k.is_organizer);
@@ -236,7 +238,7 @@ function izpelji(s, me, lok, f, moji, maxKm) {
     return ma !== mb ? (ma ? -1 : 1) : a.localeCompare(b);
   }).map(z => {
     const evs = razvrsceni.filter(e => e.genres.some(g => g.toLowerCase() === z.toLowerCase()));
-    return { zanr: z, plakat: evs[0] ? evs[0].poster_url : "", stevilo: evs.length };
+    return { zanr: z, plakat: evs[0] ? plakatKartice(evs[0]) : "", rezerva: evs[0] ? evs[0].poster_url : "", stevilo: evs.length };
   });
 
   const zanimivi = moji.filter(e => e.my_plan === "interested" && casZ(e) >= zdaj - 6 * 3600e3).sort((a, b) => casZ(a) - casZ(b));
@@ -294,7 +296,7 @@ function KarticaHit({ dogodek: e, klub, napis }) {
         ${e.sold_count > 0 ? html`<span class="kh-gre">${t("{n} going", { n: e.sold_count })}</span>` : null}
       </div>
     </div>
-    <div class="kh-plakat"><${Plakat} src=${e.poster_url} sirina=${300} alt="" /></div>
+    <div class="kh-plakat"><${Plakat} src=${plakatKartice(e)} rezerva=${e.poster_url} sirina=${300} alt="" /></div>
   </a>`;
 }
 
@@ -319,9 +321,9 @@ function KarticaVelika({ dogodek: e, klub, napis = t("BIG EVENT COMING UP") }) {
   </a>`;
 }
 
-function VrsticaZanra({ zanr, plakat, stevilo }) {
+function VrsticaZanra({ zanr, plakat, rezerva, stevilo }) {
   return html`<a class="vrstica-zanra" href=${"/app/genre/" + encodeURIComponent(zanr)}>
-    ${plakat ? html`<${Slika} src=${plakat} sirina=${500} alt="" razred="vz-slika" />` : html`<span class="vz-barva" style=${{ background: barvaZanra(zanr) }}></span>`}
+    ${plakat ? html`<${Slika} src=${plakat} rezerva=${rezerva} sirina=${500} alt="" razred="vz-slika" />` : html`<span class="vz-barva" style=${{ background: barvaZanra(zanr) }}></span>`}
     <span class="vz-senca" aria-hidden="true"></span>
     <strong>${zanrIme(zanr).toUpperCase()}</strong>
     ${stevilo > 0 ? html`<span class="vz-stevilo">${steviloDogodkov(stevilo)}</span>` : null}

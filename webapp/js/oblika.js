@@ -30,6 +30,7 @@ export function normalizirajDogodek(e) {
     title: e.title || "",
     description: e.description || "",
     poster_url: e.poster_url || "",
+    poster_card_url: e.poster_card_url || "",
     genres: Array.isArray(e.genres) ? e.genres : [],
     min_age: e.min_age ?? 18,
     sold_count: e.sold_count ?? 0,
@@ -261,14 +262,9 @@ export function slika(url, sirina) {
   return url;
 }
 
-/* Zamegljeno ozadje plakata (komponenta Plakat): majhna Cloudinary razlicica z zameglitvijo na strezniku (brez CSS backdrop-filter).
-   Slika, ki ni na Cloudinaryju, ostane enaka; zameglitev tedaj naredi CSS filter: blur() na sliki (glej app.css .plakat-ozadje.css-zamegli). */
-export function slikaZamegljena(url) {
-  if (!url) return { url: "", cssZamegli: false };
-  if (url.includes("res.cloudinary.com/") && url.includes("/upload/")) {
-    return { url: url.replace("/upload/", "/upload/f_auto,q_auto,c_limit,w_64,e_blur:300/"), cssZamegli: false };
-  }
-  return { url, cssZamegli: true };
+/* Majhen banner dogodka (kartice, sličice): poster_card_url (3:4), sicer veliki poster_url (4:5); slika vedno zapolni okvir (cover). */
+export function plakatKartice(o) {
+  return (o && (o.poster_card_url || o.poster_url)) || "";
 }
 
 /* Coming soon (backend GET /coming-soon): odgovor je podatek, ne zaupanja vreden - vsako polje se preveri.

@@ -24,7 +24,7 @@ export function normalizirajRezervacijo(r) {
     club_id: r.club_id == null ? null : celo(r.club_id), club_name: niz(r.club_name),
     table_id: celo(r.table_id), table_label: niz(r.table_label), seats: celo(r.seats, 0),
     package_id: r.package_id == null ? null : celo(r.package_id), package_name: niz(r.package_name), package_description: niz(r.package_description),
-    price_cents: celo(r.price_cents, 0), currency: niz(r.currency) || "EUR", guest_name: niz(r.guest_name), poster_url: niz(r.poster_url)
+    price_cents: celo(r.price_cents, 0), currency: niz(r.currency) || "EUR", guest_name: niz(r.guest_name), poster_url: niz(r.poster_url), poster_card_url: niz(r.poster_card_url)
   };
 }
 

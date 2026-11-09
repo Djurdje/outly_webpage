@@ -5,17 +5,18 @@
    (Martin, 29. 9. 2026). */
 import { html, useEffect, useRef, useState } from "../lib.js";
 import { t, locale } from "../i18n.js";
-import { naloziNaCloudinary, pomanjsajSliko } from "../api.js";
+import { naloziNaCloudinary } from "../api.js";
 import { sporocilo } from "../napake.js";
 import { navigiraj, nazaj } from "../usmerjanje.js";
 import * as P from "../podatki.js";
-import { zanrIme, napisCene, seJeKoncal, normalizirajDogodek, koordinata, vSporu, prodajaZaprta, prodajaUstavljena } from "../oblika.js";
+import { zanrIme, napisCene, seJeKoncal, normalizirajDogodek, koordinata, vSporu, prodajaZaprta, prodajaUstavljena, plakatKartice } from "../oblika.js";
 import { GlavaNazaj, Ikona, Plakat, Nalaganje, List } from "../ui.js";
 import { idKluba, poslovno, useKlub, normalizirajDogodke, centiIz, evriBesedilo, NAJVEC_VIDEA } from "../posel.js";
 import { PoslovnaNapaka, IzbiraLokacije } from "./posel.js";
 import { skenirajVstopnico, naslovRezultata, opisRezultata } from "./posel-skener.js";
 import { jeAktiven } from "../sken/okno.js";
 import { VipVrstica, OznakaGuestList } from "../vip.js";
+import { UrejevalnikIzreza } from "./izrez.js";
 import { VipDogodka, RezervacijeVip, RazporedDogodka } from "./posel-vip-dogodek.js";
 
 const NASLOV_NAJVEC = 200;   // backend NASLOV_NAJVEC (ARCHITECTURE »Naslov dogodka«)
@@ -76,7 +77,7 @@ export function DogodkiKluba({ klub }) {
       ${s.dogodki.map(e => {
         const st = stanje(e);
         return html`<a class="vrstica-dogodka-kluba" key=${e.id} href=${`${baza}/events/${e.id}/edit`}>
-          <span class="vdk-slika">${e.poster_url ? html`<${Plakat} src=${e.poster_url} sirina=${240} alt="" />` : html`<${Ikona} ime="image" velikost=${22} razred="utisano" />`}</span>
+          <span class="vdk-slika">${plakatKartice(e) ? html`<${Plakat} src=${plakatKartice(e)} rezerva=${e.poster_url} sirina=${240} alt="" />` : html`<${Ikona} ime="image" velikost=${22} razred="utisano" />`}</span>
           <span class="kv-besedilo">
             <strong>${e.title}</strong>
             <span class="vdk-datum">${datumDogodka(e._zacetek)}</span>
@@ -114,7 +115,7 @@ export function ObrazecDogodka({ klub, dogodek }) {
   const [p, setP] = useState({
     title: "", description: "", start: vLokalno(privzetZacetek), imaKonec: false,
     end: vLokalno(new Date(privzetZacetek.getTime() + 5 * 3600e3)), minAge: "18", genres: new Set(),
-    price: "", capacity: "", ticketUrl: "", poster: "", objavljen: true,
+    price: "", capacity: "", ticketUrl: "", poster: "", posterCard: "", objavljen: true,
     // Prizorisce (obvezno za organizatorje): nacin "klub" (klub z Outlyja) ali "rocno" (ime, naslov, mesto, tocka na zemljevidu).
     nacin: "klub", gostitelj: null, vName: "", vAddress: "", vCity: "", vTocka: null
   });
@@ -126,7 +127,9 @@ export function ObrazecDogodka({ klub, dogodek }) {
   const [shranjujem, setShranjujem] = useState(false);
   const [napaka, setNapaka] = useState("");
   const [brisem, setBrisem] = useState(false);
-  const vnosPlakat = useRef(null), vnosVideo = useRef(null);
+  const vnosPlakat = useRef(null), vnosKartica = useRef(null), vnosVideo = useRef(null);
+  const [izrezDelam, setIzrezDelam] = useState(false);   // "Use" je pritisnjen: izrez/nalaganje tece, list se ne sme zapreti
+  const [izrez, setIzrez] = useState(null);   // { datoteka, vrsta: "velik" | "majhen" } - izbrana slika caka na izrez, ni se nalozena
   const izhodisce = useRef(null);   // vsebina obrazca ob nalaganju/shranjevanju (urejanje); null = se ni nalozeno
   const nastavi = (k, v) => setP(x => ({ ...x, [k]: v }));
 
@@ -146,7 +149,7 @@ export function ObrazecDogodka({ klub, dogodek }) {
         minAge: String(e.min_age), genres: new Set(e.genres),
         price: e.ticket_price_cents != null ? evriBesedilo(e.ticket_price_cents) : "",
         capacity: e.capacity != null ? String(e.capacity) : "", ticketUrl: e.ticket_url || "",
-        poster: e.poster_url, objavljen: e.status === "published",
+        poster: e.poster_url, posterCard: e.poster_card_url || "", objavljen: e.status === "published",
         nacin: e.venue_club_id == null && (e.venue_name || e.venue_city) ? "rocno" : "klub",
         gostitelj: e.venue_club_id != null ? { id: e.venue_club_id, name: e.venue_club_name || "", city: "" } : null,
         vName: e.venue_name, vAddress: e.venue_address, vCity: e.venue_city,
@@ -165,14 +168,21 @@ export function ObrazecDogodka({ klub, dogodek }) {
   if (napakaNalaganja) return html`<div class="zaslon"><${GlavaNazaj} naslov=${naslov} rezerva=${baza + "/events"} />
     <${PoslovnaNapaka} napaka=${napakaNalaganja} znova=${naloziDogodek} rezerva=${baza + "/events"} /></div>`;
 
-  async function izberiPlakat(ev) {
-    const d = ev.target.files && ev.target.files[0]; ev.target.value = "";
-    if (!d) return;
-    if (!/^image\//.test(d.type)) return setNapaka(t("Choose an image file."));
+  // Izbira slike ne naloži ničesar: odpre se urejevalnik izreza (4:5 ali 3:4); naloži se šele izrezan JPEG ("Use").
+  function izberiPlakat(vrsta) {
+    return ev => {
+      const d = ev.target.files && ev.target.files[0]; ev.target.value = "";
+      if (!d) return;
+      if (!/^image\//.test(d.type)) return setNapaka(t("Choose an image file."));
+      setNapaka(""); setIzrez({ datoteka: d, vrsta });
+    };
+  }
+  // Napaka nalaganja se vrne urejevalniku (ostane odprt, "Use" je spet na voljo); uspeh zapre list.
+  async function nalozi(blob) {
+    const vrsta = izrez.vrsta;
     setNalagaPlakat(true); setNapaka("");
-    try { nastavi("poster", await naloziNaCloudinary(await pomanjsajSliko(d, 1600))); }
-    catch (e) { setNapaka(sporocilo(e)); }
-    setNalagaPlakat(false);
+    try { nastavi(vrsta === "velik" ? "poster" : "posterCard", await naloziNaCloudinary(blob)); setIzrez(null); }
+    finally { setNalagaPlakat(false); setIzrezDelam(false); }
   }
   // Posnetek se shrani TAKOJ (loceno od Save): streznik ga sprejme samo na koncanem dogodku med prvimi tremi.
   async function shraniPosnetek(url) {
@@ -231,7 +241,7 @@ export function ObrazecDogodka({ klub, dogodek }) {
       // Brez nalozenega seznama zanrov obdrzimo izbrane (sicer bi PATCH zanre izbrisal).
       minAge: starost, genres: vsiZanri ? vsiZanri.filter(g => p.genres.has(g)) : [...p.genres],
       status: obstojeci && obstojeci.status === "cancelled" ? "cancelled" : (p.objavljen ? "published" : "draft"),
-      currency: "EUR", ticketUrl: url, posterUrl: p.poster, ticketPriceCents: centi, capacity: kapaciteta
+      currency: "EUR", ticketUrl: url, posterUrl: p.poster, posterCardUrl: p.posterCard, ticketPriceCents: centi, capacity: kapaciteta
     };
     setShranjujem(true);
     try {
@@ -277,12 +287,32 @@ export function ObrazecDogodka({ klub, dogodek }) {
         <span class="opomba">${t("Number of tickets available. Shows “N left” and “Sold out” to guests.")}</span>
         <label class="polje-oznaceno">${t("External ticket link (optional)")}<input type="url" inputmode="url" placeholder="https://" value=${p.ticketUrl} onInput=${e => nastavi("ticketUrl", e.target.value)} /></label>
       </fieldset>
-      <fieldset><legend>${t("Poster")}</legend>
-        <div class="vrsta-plakat">
-          ${p.poster ? html`<span class="vdk-slika"><${Plakat} src=${p.poster} sirina=${240} alt=${t("Poster")} /></span>` : null}
-          <button type="button" class="gumb-siv majhen" disabled=${nalagaPlakat} onClick=${() => vnosPlakat.current && vnosPlakat.current.click()}>
-            ${nalagaPlakat ? t("Uploading...") : p.poster ? t("Change poster") : t("Choose poster")}</button>
-          <input ref=${vnosPlakat} type="file" accept="image/*" class="skrito" onChange=${izberiPlakat} tabindex="-1" aria-hidden="true" />
+      <fieldset><legend>${t("Banners")}</legend>
+        <div class="banner-polje">
+          <div class="banner-glava"><strong id="banner-velik-ime">${t("Main banner")}</strong>
+            <span class="opomba">${t("Recommended 1080 × 1350 px (4:5)")}</span></div>
+          <div class="vrsta-plakat">
+            <span class="banner-slika velik">${p.poster ? html`<${Plakat} src=${p.poster} sirina=${240} alt=${t("Main banner")} />` : html`<${Ikona} ime="image" velikost=${22} />`}</span>
+            <div class="banner-akcije">
+            <button type="button" class="gumb-siv majhen" disabled=${nalagaPlakat} aria-describedby="banner-velik-ime" onClick=${() => vnosPlakat.current && vnosPlakat.current.click()}>
+              ${p.poster ? t("Change main banner") : t("Choose main banner")}</button>
+            </div>
+            <input ref=${vnosPlakat} type="file" accept="image/*" class="skrito" onChange=${izberiPlakat("velik")} tabindex="-1" aria-hidden="true" />
+          </div>
+        </div>
+        <div class="banner-polje">
+          <div class="banner-glava"><strong id="banner-kartica-ime">${t("Card banner (optional)")}</strong>
+            <span class="opomba">${t("Recommended 1080 × 1440 px (3:4)")}</span></div>
+          <div class="vrsta-plakat">
+            <span class="banner-slika majhen">${p.posterCard || p.poster ? html`<${Plakat} src=${p.posterCard || p.poster} sirina=${240} alt=${t("Card banner (optional)")} />` : html`<${Ikona} ime="image" velikost=${22} />`}</span>
+            <div class="banner-akcije">
+            <button type="button" class="gumb-siv majhen" disabled=${nalagaPlakat} aria-describedby="banner-kartica-ime" onClick=${() => vnosKartica.current && vnosKartica.current.click()}>
+              ${p.posterCard ? t("Change card banner") : t("Choose card banner")}</button>
+            ${p.posterCard ? html`<button type="button" class="povezava-gumb rdeca" disabled=${nalagaPlakat} onClick=${() => nastavi("posterCard", "")}>${t("Remove card banner")}</button>` : null}
+            </div>
+            <input ref=${vnosKartica} type="file" accept="image/*" class="skrito" onChange=${izberiPlakat("majhen")} tabindex="-1" aria-hidden="true" />
+          </div>
+          ${!p.posterCard && p.poster ? html`<span class="opomba">${t("Without a card banner, the centre of the main banner is shown on cards.")}</span>` : null}
         </div>
       </fieldset>
       ${koncan ? html`<fieldset><legend>${t("Event video")}</legend>
@@ -310,6 +340,10 @@ export function ObrazecDogodka({ klub, dogodek }) {
       <button type="button" class="gumb-glavni" onClick=${shrani} disabled=${shranjujem || nalagaPlakat || k.nalaga || !!k.napaka || !p.title.trim()}>${shranjujem ? t("Saving...") : t("Save")}</button>
       ${urejam ? html`<button type="button" class="gumb-rdec" disabled=${shranjujem} onClick=${() => setBrisem(true)}>${t("Cancel or delete event")}</button>` : null}
     </div>
+    <${List} odprt=${!!izrez} zapri=${() => { if (!nalagaPlakat && !izrezDelam) setIzrez(null); }} brezZapiranja=${nalagaPlakat || izrezDelam}
+      naslov=${izrez && izrez.vrsta === "majhen" ? t("Crop card banner") : t("Crop main banner")}>
+      ${izrez ? html`<${UrejevalnikIzreza} datoteka=${izrez.datoteka} vrsta=${izrez.vrsta} obUporabi=${nalozi} obPreklic=${() => setIzrez(null)} obDelam=${setIzrezDelam} />` : null}
+    <//>
     <${List} odprt=${brisem} zapri=${() => setBrisem(false)} naslov=${t("Remove this event?")}>
       <p class="besedilo-opis">${t("If tickets were already sold, the event will be cancelled instead of deleted so buyers keep proof of purchase.")}</p>
       <button type="button" class="gumb-rdec" onClick=${izbrisi}>${t("Delete event")}</button>
