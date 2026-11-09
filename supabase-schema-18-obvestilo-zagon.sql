@@ -39,7 +39,8 @@
 -- ---------------------------------------------------------------------
 --  NAVODILA ZA MARTINA (po vrstnem redu)
 -- ---------------------------------------------------------------------
---  PRED VSEM: outly.si mora biti že spletna aplikacija (gumb »Open Outly« vodi na https://outly.si).
+--  PRED VSEM: outly.si mora biti že spletna aplikacija (gumb »Open in browser« vodi na https://outly.si), iOS aplikacija pa v App Storu
+--  (gumb »Download the app« vodi na https://apps.apple.com/si/app/outly-nightlife/id6812742331).
 --
 --  (a) Požene to datoteko (Run). Je idempotentna, lahko jo pogoniš še enkrat.
 --
