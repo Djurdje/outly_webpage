@@ -10,6 +10,7 @@
 --  (outly.si). Ta datoteka pošlje ENEGA maila SAMO potrjenim prijavam (confirmed = true), angleško, prek RESEND
 --  (plačljiv paket, domena outly.si potrjena, sledenje odpiranju in klikom izklopljeno). Ne Brevo.
 --  Mail je potrdil Martin 23. 10. 2026 (seja Claude Code), besedilo je spodaj dobesedno.
+--  Nova različica z App Storom: Martin 9. 11. 2026 (seja https://claude.ai/code/session_01HirCpWL7czaE5ckbfgcQZo), besedilo spodaj dobesedno.
 --
 --  KAJ DODA:
 --    - stolpce waitlist_signups.launch_sent_at, launch_request_id in launch_status (sled: kdo je že dobil mail,
@@ -38,7 +39,8 @@
 -- ---------------------------------------------------------------------
 --  NAVODILA ZA MARTINA (po vrstnem redu)
 -- ---------------------------------------------------------------------
---  PRED VSEM: outly.si mora biti že spletna aplikacija (gumb »Open Outly« vodi na https://outly.si).
+--  PRED VSEM: outly.si mora biti že spletna aplikacija (gumb »Open in browser« vodi na https://outly.si), iOS aplikacija pa v App Storu
+--  (gumb »Download the app« vodi na https://apps.apple.com/si/app/outly-nightlife/id6812742331).
 --
 --  (a) Požene to datoteko (Run). Je idempotentna, lahko jo pogoniš še enkrat.
 --
@@ -132,11 +134,19 @@ begin
           <p style="margin:0 0 22px;font:800 12px/1 Inter,Helvetica,Arial,sans-serif;letter-spacing:.14em;color:#8f8f8f;">OUTLY&nbsp;&nbsp;&middot;&nbsp;&nbsp;LAUNCH</p>
           <h1 style="margin:0 0 14px;font:800 27px/1.2 Inter,Helvetica,Arial,sans-serif;color:#ededed;letter-spacing:-.02em;">Outly is live.</h1>
           <p style="margin:0 0 26px;font:400 15px/1.6 Inter,Helvetica,Arial,sans-serif;color:#b4b4b4;">
-            You joined the <strong style="color:#ededed;">Outly</strong> waitlist &mdash; and the wait is over. Outly now works right in your browser: discover events and clubs near you, see what&rsquo;s on tonight and get your tickets in a few taps.
+            You joined the <strong style="color:#ededed;">Outly</strong> waitlist &mdash; and the wait is over. Outly is now on the App Store for iPhone, and it also works right in your browser: discover events and clubs near you, see what&rsquo;s on tonight and get your tickets in a few taps.
           </p>
         </td></tr>
         <tr><td align="center" style="padding:0 28px 8px;">
-          <a href="https://outly.si" style="display:inline-block;background:#4C76FF;color:#ffffff;text-decoration:none;font:700 15px/1 Inter,Helvetica,Arial,sans-serif;padding:16px 30px;border-radius:14px;">Open Outly</a>
+          <a href="https://apps.apple.com/si/app/outly-nightlife/id6812742331" style="display:inline-block;background:#4C76FF;color:#ffffff;text-decoration:none;font:700 15px/1 Inter,Helvetica,Arial,sans-serif;padding:16px 30px;border-radius:14px;">Download the app</a>
+        </td></tr>
+        <tr><td align="center" style="padding:10px 28px 8px;">
+          <a href="https://outly.si" style="display:inline-block;color:#b4b4b4;text-decoration:underline;font:600 14px/1 Inter,Helvetica,Arial,sans-serif;padding:10px 12px;">Open in browser</a>
+        </td></tr>
+        <tr><td style="padding:14px 28px 0;">
+          <p style="margin:0;font:400 15px/1.6 Inter,Helvetica,Arial,sans-serif;color:#b4b4b4;">
+            On Android or outside Slovenia? Use Outly in your browser at <a href="https://outly.si" style="color:#b4b4b4;text-decoration:underline;">outly.si</a>.
+          </p>
         </td></tr>
         <tr><td style="padding:22px 28px 8px;">
           <p style="margin:0;font:400 15px/1.6 Inter,Helvetica,Arial,sans-serif;color:#b4b4b4;">
@@ -159,8 +169,10 @@ $wm$;
 
   v_text :=
     'Outly is live.' || E'\n\n' ||
-    'You joined the Outly waitlist - and the wait is over. Outly now works right in your browser: discover events and clubs near you, see what''s on tonight and get your tickets in a few taps.' || E'\n\n' ||
-    'Open Outly: https://outly.si' || E'\n\n' ||
+    'You joined the Outly waitlist - and the wait is over. Outly is now on the App Store for iPhone, and it also works right in your browser: discover events and clubs near you, see what''s on tonight and get your tickets in a few taps.' || E'\n\n' ||
+    'Download the app: https://apps.apple.com/si/app/outly-nightlife/id6812742331' || E'\n' ||
+    'Open in browser: https://outly.si' || E'\n\n' ||
+    'On Android or outside Slovenia? Use Outly in your browser at outly.si (https://outly.si).' || E'\n\n' ||
     'New here? Create your account with the email you used for the waitlist. Already have one? Just sign in.' || E'\n\n' ||
     '--' || E'\n' ||
     'You received this because you confirmed your spot on the Outly waitlist - this is the launch email we promised. Don''t want emails from us? Reply to this email or write to luka@outly.si.' || E'\n' ||
