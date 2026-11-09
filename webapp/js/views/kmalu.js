@@ -17,7 +17,7 @@ function KarticaKmalu({ klub: k }) {
   return html`<a class="kartica-kmalu" href=${"/app/soon/" + k.slug}>
     <${Slika} src=${k.cover_url} sirina=${600} alt="" />
     <span class="km-senca" aria-hidden="true"></span>
-    <span class="znacka">${t("COMING SOON")}</span>
+    <span class="znacka kmalu-znacka">${t("COMING SOON")}</span>
     <span class="km-dno">
       <span class="okrogla-slika km-logo">${k.logo_url ? html`<${Slika} src=${k.logo_url} sirina=${120} alt="" />` : html`<${Ikona} ime="building" velikost=${18} />`}</span>
       <span class="km-besedilo"><strong>${k.name}</strong>${k.city ? html`<span>${k.city}</span>` : null}</span>
