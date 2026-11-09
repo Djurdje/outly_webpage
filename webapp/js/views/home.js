@@ -219,11 +219,13 @@ function izpelji(s, me, lok, f, moji, maxKm) {
     if (a[0] > b[0] || (a[0] === b[0] && (a[1] > b[1] || (a[1] === b[1] && a[2] > b[2])))) velik = e;
   }
 
+  // "Last week's biggest hits": samo dogodek, ki se je ze zacel (zacetek <= zdaj), v zadnjih 7 dneh, s prodajo.
+  // Prihodnjega dogodka tu NIKOLI ni (Martin 9. 11. 2026) - brez zadetka se razdelek ne pokaze. Izrecen filter, ker
+  // s.pretekli ne jamci, da ne vsebuje prihodnjih.
   const teden = zdaj - 7 * 86400e3;
-  const hitPretekli = s.pretekli.filter(e => e.sold_count > 0 && e._zacetek && e._zacetek.getTime() >= teden)
+  const hitPretekli = s.pretekli.filter(e => e.sold_count > 0 && e._zacetek && e._zacetek.getTime() <= zdaj && e._zacetek.getTime() >= teden)
     .sort((a, b) => b.sold_count - a.sold_count)[0];
-  const hit = hitPretekli ? { dogodek: hitPretekli, napis: t("Last week's biggest hit") }
-    : trending[0] ? { dogodek: trending[0], napis: t("Trending right now") } : null;
+  const hit = hitPretekli ? { dogodek: hitPretekli, napis: t("Last week's biggest hit") } : null;
 
   // Organizator nima naslova ne pina - v "In your area" ni.
   const prizorisca = s.klubi.filter(k => !k.is_organizer);
