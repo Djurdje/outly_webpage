@@ -11,6 +11,7 @@ export const seja = ustvariTrgovino({
   pripravljena: false,   // prvo branje seje iz localStorage je koncano
   prijavljen: false,
   email: "",
+  ponudnik: "",          // app_metadata.provider seje: "email" | "google" | "apple" (onboarding racuna iz Googla/Appla)
   me: null,              // odgovor GET /me
   meNapaka: null,        // napaka zadnjega nalaganja /me (ne 401)
   obvestilo: ""          // npr. "seja je potekla" - pokaze prijava
@@ -85,7 +86,8 @@ function poslusajSejo() {
 
 function posodobiIzSeje(s) {
   zadnjiUid = s && s.user ? s.user.id : null;
-  seja.set({ prijavljen: !!s || imaShranjenoSejo(), email: (s && s.user && s.user.email) || "" });
+  seja.set({ prijavljen: !!s || imaShranjenoSejo(), email: (s && s.user && s.user.email) || "",
+    ponudnik: (s && s.user && s.user.app_metadata && s.user.app_metadata.provider) || "" });
 }
 
 /** GET /me; ob 401 (tudi po osvezitvi) je seja mrtva -> odjava. 503 in omrezje: seja ostane. */

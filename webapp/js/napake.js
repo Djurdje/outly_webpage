@@ -336,6 +336,12 @@ function prevediAuth(e) {
     case "bad_jwt": return t("Your session has expired. Please log in again.");
     case "user_not_found": return t("No account with this email.");
     case "validation_failed": return t("Please check what you entered and try again.");
+    // Prijava z Googlom/Applom (PKCE): koda poteka (10 min), je ze porabljena ali preverjevalnika ni v tem brskalniku.
+    case "flow_state_expired":
+    case "flow_state_not_found":
+    case "bad_code_verifier":
+    case "provider_disabled": return t("Sign-in could not be completed. Please try again.");
+    case "user_banned": return t("You do not have permission to do that.");
   }
   const m = (e.message || "").toLowerCase();
   if (e.status >= 500) return t("The server is having trouble. Please try again later.");
@@ -345,11 +351,20 @@ function prevediAuth(e) {
   return t("Something went wrong. Please try again.");
 }
 
+/** Napaka, s katero nas Supabase vrne s Googla/Appla (?error=...&error_code=...&error_description=... v URL-ju): uporabnik
+    prekine prijavo (access_denied) ali ponudnik/streznik odpove. Surovega besedila (error_description) ne kazemo. */
+export function sporociloOAuthPovratka(koda) {
+  if (koda === "access_denied") return t("Sign-in was cancelled.");
+  if (koda === "server_error" || koda === "temporarily_unavailable") return t("The server is having trouble. Please try again later.");
+  return t("Sign-in could not be completed. Please try again.");
+}
+
 /** Sporocilo za uporabnika iz katerekoli napake. */
 export function sporocilo(e) {
   if (e instanceof NapakaDatoteke) return e.message;
   if (e instanceof ApiError) return prevediApi(e);
   if (e instanceof AuthError) return prevediAuth(e);
+  if (e && e.name === "AuthPKCECodeVerifierMissingError") return t("Sign-in could not be completed. Please try again.");
   if (e && e.name === "AuthApiError") return prevediAuth(new AuthError(e.status, e.code, e.message));
   if (e && (e.name === "TypeError" || e.name === "AbortError" || e.name === "AuthRetryableFetchError")) return t("No internet connection. Check your network and try again.");
   return t("Something went wrong. Please try again.");

@@ -120,6 +120,15 @@ h1,h2,h3,p{ margin:0; }
 .gumb-bel{ display:flex; align-items:center; justify-content:center; width:100%; height:48px; border-radius:14px; background:#fff; color:#000; font-weight:600; font-size:16px; }
 .gumb-siv{ display:flex; align-items:center; justify-content:center; gap:8px; width:100%; min-height:46px; padding:0 16px; border-radius:14px; background:var(--b08); font-weight:600; }
 .gumb-obrobljen{ display:flex; align-items:center; justify-content:center; height:52px; border-radius:14px; background:var(--b04); border:1px solid rgba(255,255,255,.18); color:var(--b70); font-weight:600; }
+/* Prijava z Googlom/Applom (smernice ponudnikov: Googlova temna tema gumba, Applov beli gumb na temnem ozadju). Modra ostane samo glavnemu gumbu. */
+.oauth{ display:flex; flex-direction:column; gap:12px; }
+.oauth-ali{ display:flex; align-items:center; gap:12px; color:var(--utisano); font-size:13px; text-align:center; }
+.oauth-ali::before, .oauth-ali::after{ content:""; flex:1; height:1px; background:var(--b14); }
+.gumb-oauth{ display:flex; align-items:center; justify-content:center; gap:10px; width:100%; height:48px; border-radius:14px; font-weight:600; font-size:16px; }
+.gumb-oauth img{ flex:none; display:block; }
+.gumb-oauth.google{ background:#131314; color:#E3E3E3; border:1px solid #8E918F; }
+.gumb-oauth.apple{ background:#fff; color:#000; border:1px solid #fff; }
+.gumb-oauth:disabled{ opacity:.6; }
 .povezava-gumb{ color:var(--b70); font-weight:600; font-size:14px; padding:8px; text-align:center; display:block; width:100%; }
 .povezava-desno{ align-self:flex-end; color:var(--b70); font-size:13px; font-weight:600; }
 .krog-gumb{ width:38px; height:38px; border-radius:50%; display:grid; place-items:center; background:rgba(0,0,0,.45); border:1px solid var(--b14); color:#fff; flex:none; }

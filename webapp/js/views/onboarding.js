@@ -9,7 +9,7 @@ import { useSeja, nastaviMe, zdruzi, odjava, potrebujeOnboarding } from "../seja
 import { navigiraj, usePot } from "../usmerjanje.js";
 import * as P from "../podatki.js";
 import { zanrIme } from "../oblika.js";
-import { naslednja } from "./prijava.js";
+import { naslednja, napakaUporabniskegaImena } from "./prijava.js";
 
 const DRZAVE = ("AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ " +
   "CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD " +
@@ -66,6 +66,11 @@ function Racun({ naprej }) {
   const [dob, setDob] = useState((me && me.date_of_birth ? String(me.date_of_birth).slice(0, 10) : ""));
   const [drzava, setDrzava] = useState((me && me.country) || "SI");
   const [tel, setTel] = useState((me && me.phone) || "");
+  // Racun iz Googla/Appla nastane brez obrazca za registracijo: uporabnisko ime (backend ga ob prvem GET /me izpelje iz e-naslova,
+  // pri Applovem skritem naslovu je nakljucno) uporabnik potrdi ali spremeni tukaj. Racuni z e-naslovom/geslom ga izbrali ze ob registraciji.
+  const ponudnik = useSeja(s => s.ponudnik);
+  const izbiraImena = !!ponudnik && ponudnik !== "email";
+  const [ime, setIme] = useState((me && me.username) || "");
   const [napaka, setNapaka] = useState("");
   const [tece, setTece] = useState(false);
   const najvec = najvecDatumRojstva();
@@ -73,8 +78,10 @@ function Racun({ naprej }) {
   const shranjen = me && me.date_of_birth ? String(me.date_of_birth).slice(0, 10) : "";
   const nespremenjen = !!shranjen && dob === shranjen;
 
-  /** Preverba datuma rojstva (18+), skupna za "Continue" in "Skip for later": sporocilo napake ali "". */
+  /** Preverba datuma rojstva (18+) in (racun iz Googla/Appla) uporabniskega imena, skupna za "Continue" in "Skip for later": sporocilo napake ali "". */
   function preveriDatum() {
+    const i = izbiraImena ? napakaUporabniskegaImena(ime.trim()) : "";
+    if (i) return i;
     const l = dob ? starost(dob) : null;
     if (l == null) return t("Enter a valid date of birth.");
     if (!nespremenjen && l < 18) return t("You must be at least 18 years old to use Outly.");
@@ -82,14 +89,17 @@ function Racun({ naprej }) {
     return "";
   }
 
+  const spremenjenoIme = () => izbiraImena && ime.trim() !== ((me && me.username) || "");
+  const imeTelo = () => (spremenjenoIme() ? { username: ime.trim() } : {});
+
   /** "Skip for later": samo datum rojstva (brez drzave in telefona), nato zanri. */
   async function preskoci() {
     const n = preveriDatum();
     if (n) return setNapaka(n);
-    if (nespremenjen) return naprej();   // streznik datum ze ima
+    if (nespremenjen && !spremenjenoIme()) return naprej();   // streznik datum ze ima
     setTece(true); setNapaka("");
     try {
-      const novi = await shrani({ dateOfBirth: dob });
+      const novi = await shrani({ ...(nespremenjen ? {} : { dateOfBirth: dob }), ...imeTelo() });
       if (novi) { nastaviMe(zdruzi(novi)); naprej(); }
     } catch (e) { setNapaka(sporocilo(e)); }
     setTece(false);
@@ -103,7 +113,7 @@ function Racun({ naprej }) {
     if (telefon && !/^\+[1-9]\d{7,14}$/.test(telefon)) return setNapaka(t("Enter the phone number with country code, e.g. +386 41 123 456."));
     setTece(true); setNapaka("");
     try {
-      const body = nespremenjen ? { country: drzava } : { dateOfBirth: dob, country: drzava };
+      const body = { ...(nespremenjen ? { country: drzava } : { dateOfBirth: dob, country: drzava }), ...imeTelo() };
       if (telefon) body.phone = telefon;
       const novi = await shrani(body);
       if (novi) { nastaviMe(zdruzi(novi)); naprej(); }
@@ -115,6 +125,9 @@ function Racun({ naprej }) {
     <form class="kartica-obrazec" onSubmit=${poslji} novalidate>
       <h1 class="avt-naslov levo">${t("Complete your account")}</h1>
       <p class="utisano">${t("We need a few details to show you the right events.")}</p>
+      ${izbiraImena ? html`<label class="polje-oznaceno"><span>${t("Username")}</span>
+        <input type="text" value=${ime} onInput=${e => setIme(e.target.value)} maxlength="20" autocomplete="username" autocapitalize="off" spellcheck="false" />
+      </label>` : null}
       <label class="polje-oznaceno"><span>${t("Date of birth")}</span>
         <input type="date" value=${dob} max=${najvec} min="1900-01-01" onInput=${e => setDob(e.target.value)} required autocomplete="bday" />
       </label>

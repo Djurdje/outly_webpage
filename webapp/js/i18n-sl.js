@@ -1278,4 +1278,12 @@ export const SL = {
  "Zoom": "Povečava",
  "Use": "Uporabi",
  "Drag to move, pinch or use the slider to zoom. Arrow keys move, + and − zoom.": "Povleci za premik, približaj prsta ali uporabi drsnik za povečavo. Puščice premikajo, + in − povečujeta.",
+ "or": "ali",
+ "Continue with Google": "Nadaljuj z Googlom",
+ "Sign in with Apple": "Prijava z Applom",
+ "Signing you in...": "Prijavljamo te ...",
+ "Signing in": "Prijava",
+ "Back to sign in": "Nazaj na prijavo",
+ "Sign-in was cancelled.": "Prijava je bila preklicana.",
+ "Sign-in could not be completed. Please try again.": "Prijave ni bilo mogoče dokončati. Poskusi znova.",
 };

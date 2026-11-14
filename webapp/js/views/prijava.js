@@ -13,8 +13,18 @@ import { lokalno } from "../store.js";
 import { GlavaNazaj, Ikona } from "../ui.js";
 import { JezikGumb } from "./jezik.js";
 import { TERMS_VERSION, EMAIL_RE } from "../pogoji.js";   // verzija pogojev kot auth.js na outly.si (terms.html)
+import { vklopljeniPonudniki, zacniOAuth, dokoncajOAuth } from "../oauth.js";
+import { sporociloOAuthPovratka } from "../napake.js";
 
 const USER_RE = /^[A-Za-z0-9_]{3,20}$/;   // enako kot backend PATCH /me
+
+/** Sporocilo, ce uporabnisko ime ni veljavno (3-20 znakov, crke/stevilke/podcrtaj), sicer "". Skupno z onboardingom racuna iz Googla/Appla. */
+export function napakaUporabniskegaImena(ime) {
+  if (ime.length < 3) return t("Username must be at least 3 characters.");
+  if (ime.length > 20) return t("Username can have at most 20 characters.");
+  if (!USER_RE.test(ime)) return t("Username can contain only letters, numbers and underscore.");
+  return "";
+}
 
 /* Geslo iz registracije (ali prijave z nepotrjenim naslovom) ostane SAMO v pomnilniku zavihka, nikoli v localStorage
    (XSS), dokler naslov ni potrjen - kot iOS CakajocaPotrditev. Zakaj: Gmail (Googlovi strezniki) sam odpre povezavo
@@ -85,6 +95,58 @@ function Sporocilo({ besedilo, vrsta = "napaka" }) {
   return html`<p class=${vrsta === "napaka" ? "napaka-besedilo" : "uspeh-besedilo"} role=${vrsta === "napaka" ? "alert" : "status"}>${besedilo}</p>`;
 }
 
+/* Gumba »Continue with Google« / »Sign in with Apple« (oauth.js). Brez vklopljenih ponudnikov se ne izrise nic. `preveri` (neobvezno)
+   vrne sporocilo napake, ce prijava se ni dovoljena (registracija: kljukica 18+ in pogoji) - klik takrat napako pokaze in ne gre naprej. */
+function OAuthGumbi({ naprej, preveri, naNapako }) {
+  const ponudniki = vklopljeniPonudniki();
+  const [tece, setTece] = useState("");
+  // Nazaj iz Googla/Appla (bfcache): gumba morata spet delovati.
+  useEffect(() => {
+    const ob = e => { if (e.persisted) setTece(""); };
+    window.addEventListener("pageshow", ob);
+    return () => window.removeEventListener("pageshow", ob);
+  }, []);
+  if (!ponudniki.length) return null;
+  async function klik(p) {
+    const n = preveri ? preveri() : "";
+    if (n) { naNapako(n); return; }
+    naNapako(""); setTece(p);
+    try { await zacniOAuth(p, naprej); }   // uspeh = navigacija stran; ta zaslon ostane do takrat
+    catch (e) { setTece(""); naNapako(sporocilo(e)); }
+  }
+  return html`<div class="oauth">
+    <p class="oauth-ali" aria-hidden="true"><span>${t("or")}</span></p>
+    ${ponudniki.includes("google") ? html`<button type="button" class="gumb-oauth google" onClick=${() => klik("google")} disabled=${!!tece} aria-busy=${tece === "google"}>
+      <img src="/assets/google-g.svg" alt="" width="20" height="20" /><span>${t("Continue with Google")}</span></button>` : null}
+    ${ponudniki.includes("apple") ? html`<button type="button" class="gumb-oauth apple" onClick=${() => klik("apple")} disabled=${!!tece} aria-busy=${tece === "apple"}>
+      <img src="/assets/apple-logo.svg" alt="" width="20" height="20" /><span>${t("Sign in with Apple")}</span></button>` : null}
+  </div>`;
+}
+
+/* ---------------- Povratek s Googla/Appla (/app/auth-callback) ---------------- */
+export function OAuthPovratek() {
+  const [napaka, setNapaka] = useState(null);
+  useEffect(() => {
+    let zivo = true;
+    dokoncajOAuth().then(async r => {
+      if (r.naprej) {
+        seja.set({ obvestilo: "" });
+        pozabiCakajociMail();
+        await naloziMe();   // enak tok kot po kodi iz maila: guard v main.js nato po potrebi pelje na onboarding
+        navigiraj(r.naprej, { zamenjaj: true });
+      } else if (zivo) setNapaka(r.napaka);
+    });
+    return () => { zivo = false; };
+  }, []);
+  if (!napaka) return html`<${Okvir} naslov=${t("Sign in")}>
+    <p class="avt-podnaslov" role="status">${t("Signing you in...")}</p>
+  <//>`;
+  return html`<${Okvir} naslov=${t("Sign in")}>
+    <p class="napaka-besedilo" role="alert">${napaka.e ? sporocilo(napaka.e) : sporociloOAuthPovratka(napaka.koda)}</p>
+    <a class="gumb-bel" href="/app/login">${t("Back to sign in")}</a>
+  <//>`;
+}
+
 /* ---------------- Prijava ---------------- */
 export function Prijava() {
   const pot = usePot();
@@ -124,6 +186,7 @@ export function Prijava() {
       <a class="povezava-desno" href=${"/app/forgot"}>${t("Forgot password?")}</a>
       <${Sporocilo} besedilo=${napaka} />
       <button class="gumb-glavni" type="submit" disabled=${tece}>${tece ? t("Continue...") : t("Continue")}</button>
+      <${OAuthGumbi} naprej=${naslednja(pot)} naNapako=${setNapaka} />
       <a class="gumb-bel" href=${zNaslednjo(pot, "/app/register")}>${t("Create an account")}</a>
       <${Pogoji} />
     </form>
@@ -169,6 +232,14 @@ export function Registracija() {
     navigiraj(zNaslednjo(pot, "/app/verify"), { zamenjaj: true });
   }
 
+  // Google/Apple ustvarita racun brez tega obrazca: privolitev (18+, pogoji) je ista kljukica kot pri registraciji z e-naslovom.
+  function preveriSoglasje() {
+    if (p.soglasje) return "";
+    const k = document.getElementById("soglasje-registracija");
+    if (k) k.focus();
+    return t("Please confirm you are at least 18 and accept the Terms of Use.");
+  }
+
   return html`<${Okvir} naslov=${t("Create an account")}>
     <form class="obrazec" onSubmit=${poslji} novalidate>
       <${Polje} ime="username" oznaka=${t("username")} vrednost=${p.username} ob=${nastavi("username")} samodejno="username" vec=${{ autocapitalize: "off", spellcheck: "false", maxlength: 20 }} />
@@ -176,11 +247,12 @@ export function Registracija() {
       <${Polje} tip="password" ime="password" oznaka=${t("password")} vrednost=${p.geslo} ob=${nastavi("geslo")} samodejno="new-password" />
       <${Polje} tip="password" ime="password2" oznaka=${t("confirm password")} vrednost=${p.geslo2} ob=${nastavi("geslo2")} samodejno="new-password" />
       <label class="soglasje">
-        <input type="checkbox" checked=${p.soglasje} onChange=${e => nastavi("soglasje")(e.target.checked)} />
+        <input type="checkbox" id="soglasje-registracija" checked=${p.soglasje} onChange=${e => nastavi("soglasje")(e.target.checked)} />
         <span>${t("I am at least 18 and accept the")} <a href="/terms" target="_blank" rel="noopener">${t("Terms of Use")}</a> ${t("and")} <a href="/privacy-app" target="_blank" rel="noopener">${t("Privacy Policy")}</a>.</span>
       </label>
       <${Sporocilo} besedilo=${napaka} />
       <button class="gumb-glavni" type="submit" disabled=${tece}>${tece ? t("Signing up...") : t("Sign up")}</button>
+      <${OAuthGumbi} naprej=${naslednja(pot)} naNapako=${setNapaka} preveri=${preveriSoglasje} />
       <a class="gumb-bel" href=${zNaslednjo(pot, "/app/login")}>${t("Sign in")}</a>
     </form>
   <//>`;
