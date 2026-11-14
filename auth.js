@@ -272,6 +272,82 @@
   const avatarBtn = document.getElementById("profileBtn");
 
   /* ---------------------------------------------------------------
+     Prijava z Googlom / Applom
+     Gumbi so v plosci SAMO za ponudnike, ki so vklopljeni (OAUTH_PONUDNIKI, privzeto prazno: ponudnikov v Supabase se ni).
+     Prijavo opravi spletna aplikacija: ta stran sproži PKCE tok in vrne na /app/auth-callback, kjer webapp/js/oauth.js
+     zamenja kodo za sejo, zapise terms_version in pelje v aplikacijo. Isti kljuci (KLJUC_OAUTH, KLJUC_TOKA) kot tam.
+  ---------------------------------------------------------------- */
+  const OAUTH_PONUDNIKI = [];                       // npr. ["google", "apple"], ko ju Martin vklopi v Supabase
+  const OAUTH_ZNANI = ["google", "apple"];
+  const KLJUC_STIKALA = "outly_oauth";              // ekipni preklop ?oauth=1 (enako kot v /app)
+  const KLJUC_OAUTH = "sb-outly-oauth";
+  const KLJUC_TOKA = "outly_oauth_tok";
+
+  function oauthPonudniki() {
+    try {
+      const q = new URLSearchParams(location.search).get("oauth");
+      if (q !== null) {
+        if (q === "0") localStorage.removeItem(KLJUC_STIKALA);
+        else localStorage.setItem(KLJUC_STIKALA, q === "1" ? OAUTH_ZNANI.join(",") : q.split(",").filter((p) => OAUTH_ZNANI.includes(p)).join(","));
+      }
+    } catch (_) { /* brez */ }
+    let ekipa = [];
+    try { ekipa = (localStorage.getItem(KLJUC_STIKALA) || "").split(","); } catch (_) { /* brez */ }
+    return OAUTH_ZNANI.filter((p) => OAUTH_PONUDNIKI.includes(p) || ekipa.includes(p));
+  }
+
+  async function oauthZacni(ponudnik) {
+    try { sessionStorage.setItem(KLJUC_TOKA, JSON.stringify({ next: "/app", soglasje: new Date().toISOString() })); } catch (_) { /* brez */ }
+    // Locen odjemalec s PKCE: glavni odjemalec (implicitni tok) ostane nespremenjen; seja gre prek /app/auth-callback.
+    const c = window.supabase.createClient(cfg.url, cfg.anonKey, {
+      auth: { flowType: "pkce", storageKey: KLJUC_OAUTH, persistSession: true, autoRefreshToken: false, detectSessionInUrl: false }
+    });
+    const { data, error } = await c.auth.signInWithOAuth({
+      provider: ponudnik,
+      options: { redirectTo: location.origin + "/app/auth-callback", skipBrowserRedirect: true,
+        ...(ponudnik === "google" ? { queryParams: { prompt: "select_account" } } : {}) }
+    });
+    if (error) throw error;
+    const u = new URL(data.url);   // beli seznam: samo Supabasov /authorize
+    if (u.origin !== new URL(cfg.url).origin || u.pathname !== "/auth/v1/authorize") throw new Error("unexpected url");
+    location.assign(u.href);
+  }
+
+  (function () {
+    const ponudniki = oauthPonudniki();
+    if (!ponudniki.length) return;
+    const gumbi = {
+      google: '<button class="oauthBtn oauthBtn--google" type="button" data-oauth="google"><img src="assets/google-g.svg" alt="" width="20" height="20"><span>Continue with Google</span></button>',
+      apple: '<button class="oauthBtn oauthBtn--apple" type="button" data-oauth="apple"><img src="assets/apple-logo.svg" alt="" width="20" height="20"><span>Sign in with Apple</span></button>'
+    };
+    const stavek = '<p class="drawer__fine">By continuing you agree to the <a href="terms.html" target="_blank" rel="noopener">Terms of Use</a> and acknowledge the <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</p>';
+    ["login", "register"].forEach((ime) => {
+      const v = drawer.querySelector('.drawer__view[data-view="' + ime + '"]');
+      const sw = v && v.querySelector(".drawer__switch");
+      if (!sw) return;
+      // Prijava: stavek o pogojih PRED gumboma; registracija: kljukica v obrazcu (preveri se ob kliku).
+      sw.insertAdjacentHTML("beforebegin", '<div class="oauth" data-oauth-for="' + ime + '"><p class="oauth__or" aria-hidden="true"><span>or</span></p>' +
+        (ime === "login" ? stavek : "") + ponudniki.map((p) => gumbi[p]).join("") + "</div>");
+    });
+    drawer.addEventListener("click", async (e) => {
+      const b = e.target.closest("[data-oauth]");
+      if (!b || b.disabled) return;
+      const blok = b.closest("[data-oauth-for]");
+      const form = blok.closest(".drawer__view").querySelector("form");
+      if (blok.dataset.oauthFor === "register" && form.elements.terms && !form.elements.terms.checked) {
+        setMsg(form, "Please confirm you are at least 18 and accept the Terms of Use.", "error"); form.elements.terms.focus(); return;
+      }
+      setMsg(form, "");
+      const vsi = Array.from(drawer.querySelectorAll("[data-oauth]"));
+      vsi.forEach((x) => { x.disabled = true; });
+      try { await oauthZacni(b.dataset.oauth); }
+      catch (_) { vsi.forEach((x) => { x.disabled = false; }); setMsg(form, "Something went wrong. Please try again in a moment.", "error"); }
+    });
+    // Nazaj iz Googla/Appla (bfcache): gumbi spet delujejo.
+    window.addEventListener("pageshow", (e) => { if (e.persisted) drawer.querySelectorAll("[data-oauth]").forEach((x) => { x.disabled = false; }); });
+  })();
+
+  /* ---------------------------------------------------------------
      Pomozno
   ---------------------------------------------------------------- */
   const $ = (sel, root) => (root || drawer).querySelector(sel);
