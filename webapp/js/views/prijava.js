@@ -141,7 +141,7 @@ export function OAuthPovratek() {
         }
         if (r.naprej.startsWith("/app")) navigiraj(r.naprej, { zamenjaj: true });
         else location.replace(r.naprej);   // prijava z landinga: nazaj na /about (tam loadProfile zapise tocko povabitelju)
-      } else if (zivo) setNapaka(r.napaka || { koda: "" });
+      } else if (zivo) setNapaka({ ...(r.napaka || { koda: "" }), nazaj: r.nazaj });
     });
     return () => { zivo = false; };
   }, []);
@@ -150,7 +150,7 @@ export function OAuthPovratek() {
   <//>`;
   return html`<${Okvir} naslov=${t("Sign in")}>
     <p class="napaka-besedilo" role="alert">${napaka.e ? sporocilo(napaka.e) : sporociloOAuthPovratka(napaka.koda)}</p>
-    <a class="gumb-bel" href="/app/login">${t("Back to sign in")}</a>
+    <a class="gumb-bel" href=${napaka.nazaj || "/app/login"}>${napaka.nazaj ? t("Back") : t("Back to sign in")}</a>
   <//>`;
 }
 

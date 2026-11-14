@@ -75,6 +75,8 @@ function poslusajSejo() {
     // (ta ali drug zavihek, dokoncna zavrnitev) seje iz shrambe izbrise. Vzrok javimo, da se vidi, ce se to kdaj zgodi.
     if (dogodek === "SIGNED_OUT" && !izrecnaOdjava && imaShranjenoSejo()) { porociloSeje("nepricakovan SIGNED_OUT, seja v shrambi ostane"); return; }
     posodobiIzSeje(nova);
+    // Znamenje ponovne prijave za izbris racuna (oauth.js KLJUC_IZBRIS) velja samo za isto sejo: nov uporabnik ali odjava ga zavrze.
+    if (dogodek === "SIGNED_OUT" || (dogodek === "SIGNED_IN" && nova && nova.user && nova.user.id !== prej)) { try { sessionStorage.removeItem("outly_oauth_izbris"); } catch { /* brez */ } }
     if (dogodek === "SIGNED_IN" && nova) zahtevajTrajnoShrambo();
     if (dogodek === "SIGNED_OUT") { seja.set({ me: null }); pocistiPredpomnilnik(); pozabiVseKljuceNakupa(); pocistiNaOdjavi().catch(() => {}); }
     else if (nova && nova.user && nova.user.id !== prej) {
@@ -135,7 +137,7 @@ export function pocistiStareSkeneOdZagona() {
    odjemalec Supabase v tem ali v DRUGEM zavihku (dogodek SIGNED_OUT), ne samo ob kliku "Log out" v tem zavihku. */
 async function pocistiNaOdjavi() {
   // Lokalne nastavitve niso vezane na racun - na skupni napravi jih ob odjavi pocistimo (zasebnost).
-  try { localStorage.removeItem("outly_nastavitve"); } catch { /* brez */ }
+  try { localStorage.removeItem("outly_nastavitve"); sessionStorage.removeItem("outly_oauth_izbris"); } catch { /* brez */ }
   nastavitve.set({ genres: [], maxKm: 20, ageMin: 18, ageMax: 30, priceMin: 0, priceMax: 3000, shranjeno: false });
   nastaviObraz("club");   // obraz lastnika (klubski/osebni) je vezan na prijavljeno osebo
   await pocistiSkener();

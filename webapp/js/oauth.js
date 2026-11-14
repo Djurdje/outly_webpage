@@ -48,7 +48,7 @@ export function vklopljeniPonudniki() {
 /** Samo poti znotraj aplikacije (ali domaca stran /about za prijavo z landinga); povratna pot sama ne sme biti cilj (zanka). */
 export function varnaPot(n) {
   if (n === "/about") return n;
-  return typeof n === "string" && n.startsWith("/app") && !n.startsWith("//") && !/^\/app\/auth-callback(\/|\?|$)/.test(n) ? n : "/app";
+  return typeof n === "string" && n.startsWith("/app") && !n.startsWith("//") && !/^\/app\/auth-callback(\/|\?|#|$)/.test(n) ? n : "/app";
 }
 
 const nakljucno = () => [...crypto.getRandomValues(new Uint8Array(32))].map(x => x.toString(16).padStart(2, "0")).join("");
@@ -72,7 +72,18 @@ function pocistiPomozni() {
 export async function zacniOAuth(ponudnik, naprej, { izbris = false } = {}) {
   if (!ZNANI.includes(ponudnik)) throw new Error("Neznan ponudnik");
   if (ponudnik === "google" && !GOOGLE_CLIENT_ID) throw new Error("Google ni nastavljen");
-  try { sessionStorage.setItem(KLJUC_TOKA, JSON.stringify({ next: varnaPot(naprej), soglasje: new Date().toISOString(), izbris })); } catch { /* brez: cilj je /app */ }
+  // Ponovna prijava za izbris: izbran mora biti ISTI racun (uid in Googlov sub trenutne seje). Brez tega bi pri Googlovi izbiri racuna
+  // (prompt=select_account) izbris zadel drug racun ali ga ustvaril.
+  let pricakovan = null, email = "";
+  if (izbris) {
+    const { data } = await supabase.auth.getSession();
+    const u = data && data.session && data.session.user;
+    if (!u) throw new Error("Ni seje");
+    const ident = (u.identities || []).find(i => i.provider === ponudnik);
+    pricakovan = { uid: u.id, sub: (ident && ident.identity_data && ident.identity_data.sub) || "" };
+    email = u.email || "";
+  }
+  try { sessionStorage.setItem(KLJUC_TOKA, JSON.stringify({ next: varnaPot(naprej), soglasje: new Date().toISOString(), izbris, pricakovan })); } catch { /* brez: cilj je /app */ }
   if (ponudnik === "google") {
     const nonce = nakljucno(), state = nakljucno();
     try { sessionStorage.setItem(KLJUC_GOOGLE, JSON.stringify({ nonce, state })); } catch { throw new Error("Brez sessionStorage"); }
@@ -80,7 +91,8 @@ export async function zacniOAuth(ponudnik, naprej, { izbris = false } = {}) {
     u.search = new URLSearchParams({
       client_id: GOOGLE_CLIENT_ID, redirect_uri: location.origin + POVRATNA_POT, response_type: "id_token",
       scope: "openid email",   // BREZ `profile`: ime in slika iz Googla se ne shranjujeta
-      nonce: await sha256hex(nonce), state, prompt: "select_account"
+      nonce: await sha256hex(nonce), state, prompt: "select_account",
+      ...(email ? { login_hint: email } : {})   // samo pomoc (predizbran racun), ne varovalo
     }).toString();
     location.assign(u.href);
     return;
@@ -127,6 +139,16 @@ async function izvedi() {
     if (r.idToken) {   // Google
       // Preverba state PRED klicem Supabase; surov nonce samo od tod (nikoli iz URL-ja). Neujemanje = tuj povratek.
       if (!google || !google.state || !google.nonce || r.state !== google.state) { pocistiPomozni(); return { napaka: { koda: "" } }; }
+      if (tok.izbris) {
+        // Izbris: izbran Google racun mora biti isti kot v seji. sub iz id_token (brez preverbe podpisa: samo za ZAVRNITEV, Supabase ga
+        // preveri sam) - ob neujemanju Supabase sploh ne kliccemo (drug racun ne nastane, seja ostane).
+        const pr = tok.pricakovan || {};
+        if (!pr.uid || (pr.sub && subIzZetona(r.idToken) !== pr.sub)) { pocistiPomozni(); return { napaka: { koda: "drug_racun" }, nazaj: naprej }; }
+        const c = await oauthOdjemalec();   // merodajno: pomozni odjemalec, glavna seja se ne dotakne, dokler uid ne ujema
+        const { data, error } = await c.auth.signInWithIdToken({ provider: "google", token: r.idToken, nonce: google.nonce });
+        if (error) return { napaka: { e: error } };
+        return await prevzemiPriIzbrisu(c, data && data.session, pr, tok, naprej);
+      }
       const { data, error } = await supabase.auth.signInWithIdToken({ provider: "google", token: r.idToken, nonce: google.nonce });
       if (error) return { napaka: { e: error } };
       return await koncajVstop((data && data.user) || (data && data.session && data.session.user), tok, naprej);
@@ -137,6 +159,7 @@ async function izvedi() {
       const { data, error } = await c.auth.exchangeCodeForSession(r.code);
       if (error) return { napaka: { e: error } };
       const s = data.session;
+      if (tok.izbris) return await prevzemiPriIzbrisu(c, s, tok.pricakovan || {}, tok, naprej);
       // Sejo prevzame glavni odjemalec (isti kljuc in tok kot ostale prijave); pomozni odjemalec je opravil.
       const v = await supabase.auth.setSession({ access_token: s.access_token, refresh_token: s.refresh_token });
       if (v.error) return { napaka: { e: v.error } };
@@ -150,19 +173,40 @@ async function izvedi() {
   } finally { pocistiPomozni(); }
 }
 
+/** Dekodiran `sub` iz id_token (BREZ preverbe podpisa; samo za zavrnitev napacnega racuna pred klicem Supabase). */
+function subIzZetona(t) {
+  try { const b = t.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"); return String(JSON.parse(atob(b + "=".repeat((4 - b.length % 4) % 4))).sub || ""); } catch { return ""; }
+}
+
+/** Izbris: pomozni odjemalec je opravil prijavo. Samo ce je uporabnik ISTI kot v glavni seji, jo prevzame glavni odjemalec; sicer se
+    pomozna seja odjavi (lokalno) in pocisti, glavna seja ostane nedotaknjena. */
+async function prevzemiPriIzbrisu(c, s, pr, tok, naprej) {
+  if (!s || !pr.uid || !s.user || s.user.id !== pr.uid) {
+    try { await c.auth.signOut({ scope: "local" }); } catch { /* brez */ }
+    pocistiPomozni();
+    return { napaka: { koda: "drug_racun" }, nazaj: naprej };
+  }
+  const v = await supabase.auth.setSession({ access_token: s.access_token, refresh_token: s.refresh_token });
+  if (v.error) return { napaka: { e: v.error } };
+  return await koncajVstop((v.data && v.data.user) || s.user, tok, naprej);
+}
+
 async function koncajVstop(uporabnik, tok, naprej) {
   // Prvi vstop: dokaz privolitve kot pri registraciji. Napaka sejo NE odjavi (zapis se ponovi ob naslednjem vstopu).
   if (uporabnik && !(uporabnik.user_metadata && uporabnik.user_metadata.terms_version)) {
     try { await supabase.auth.updateUser({ data: { terms_version: TERMS_VERSION, terms_accepted_at: tok.soglasje || new Date().toISOString() } }); } catch { /* brez */ }
   }
-  if (tok.izbris) { try { sessionStorage.setItem(KLJUC_IZBRIS, "pripravljen:" + Date.now()); } catch { /* brez */ } }
+  // Znamenje je vezano na uid: porabi ga samo ista seja (porabiZnamenjeIzbrisa).
+  if (tok.izbris && uporabnik) { try { sessionStorage.setItem(KLJUC_IZBRIS, "pripravljen:" + Date.now() + ":" + uporabnik.id); } catch { /* brez */ } }
   return { naprej };
 }
 
-/** Zaslon izbrisa: ali je uporabnik pravkar opravil ponovno prijavo za izbris (znamenje se vedno porabi). */
-export function porabiZnamenjeIzbrisa() {
+/** Zaslon izbrisa: ali je uporabnik pravkar opravil ponovno prijavo ZA ISTI RACUN (znamenje se vedno porabi; uid mora ujemati sejo). */
+export async function porabiZnamenjeIzbrisa() {
   let v = "";
   try { v = sessionStorage.getItem(KLJUC_IZBRIS) || ""; sessionStorage.removeItem(KLJUC_IZBRIS); } catch { /* brez */ }
-  const m = /^pripravljen:(\d+)$/.exec(v);
-  return !!m && Date.now() - Number(m[1]) < OKNO_IZBRISA_MS;
+  const m = /^pripravljen:(\d+):([0-9a-f-]{36})$/i.exec(v);
+  if (!m || Date.now() - Number(m[1]) >= OKNO_IZBRISA_MS) return false;
+  const { data } = await supabase.auth.getSession();
+  return !!(data && data.session && data.session.user && data.session.user.id === m[2]);
 }

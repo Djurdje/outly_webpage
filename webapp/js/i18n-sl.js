@@ -1291,4 +1291,5 @@ export const SL = {
  "Please confirm with {provider} again to delete your account.": "Za izbris računa se znova potrdi z {provider}.",
  "To confirm, sign in with {provider} again.": "Za potrditev se znova prijavi z {provider}.",
  "Confirm with {provider}": "Potrdi z {provider}",
+ "This is a different account than the one you are signed in with.": "To je drug račun kot tisti, s katerim si prijavljen.",
 };

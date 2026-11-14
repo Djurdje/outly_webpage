@@ -252,6 +252,7 @@
       <p class="kicker">DELETE ACCOUNT</p>
       <h2>Are you sure?</h2>
       <p class="drawer__lead">This removes your account, your spot on the waitlist and your points. Friends you invited keep theirs. Tickets you already bought stay valid, but are no longer linked to you. There is no undo.</p>
+      <p class="drawer__lead" data-delete-oauth hidden>You sign in with Google or Apple, so there is no password to confirm. To delete this account, confirm it with a fresh sign-in in the Outly web app: <a href="/app/account/delete">Delete account in the Outly app</a>.</p>
       <form data-form="delete" novalidate>
         <label class="field"><span>Password</span><input type="password" name="password" autocomplete="current-password" placeholder="Enter your password to confirm" required></label>
         <p class="formMsg" data-msg aria-live="polite"></p>
@@ -376,6 +377,12 @@
 
   function view(name) {
     if (name !== "delete") { const df = drawer.querySelector('form[data-form="delete"]'); if (df) { df.reset(); setMsg(df, ""); } }
+    if (name === "delete") {   // racun iz Googla/Appla gesla nima: namesto polja za geslo povezava na izbris v /app (ponovna prijava pri ponudniku)
+      const oa = !!(user && user.app_metadata && user.app_metadata.provider && user.app_metadata.provider !== "email");
+      const dv = drawer.querySelector('.drawer__view[data-view="delete"]');
+      dv.querySelector("[data-delete-oauth]").hidden = !oa;
+      dv.querySelector('form[data-form="delete"]').hidden = oa;
+    }
     views.forEach((v) => v.classList.toggle("is-active", v.dataset.view === name));
     const first = $('.drawer__view.is-active input:not([readonly])');
     if (first && !("ontouchstart" in window)) setTimeout(() => first.focus(), 60);
@@ -827,6 +834,8 @@
   let pendingRecovery = /type=recovery/.test(START_HASH);
 
   client.auth.onAuthStateChange(async (event, session) => {
+    // Znamenje ponovne prijave za izbris racuna (webapp/js/oauth.js) ne preživi odjave ali nove prijave.
+    if (event === "SIGNED_OUT" || event === "SIGNED_IN") { try { sessionStorage.removeItem("outly_oauth_izbris"); } catch (_) { /* brez */ } }
     const before = user && user.id;
     user = session ? session.user : null;
 

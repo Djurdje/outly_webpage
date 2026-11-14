@@ -356,6 +356,7 @@ function prevediAuth(e) {
     prekine prijavo (access_denied) ali ponudnik/streznik odpove. Surovega besedila (error_description) ne kazemo. */
 export function sporociloOAuthPovratka(koda) {
   if (koda === "access_denied") return t("Sign-in was cancelled.");
+  if (koda === "drug_racun") return t("This is a different account than the one you are signed in with.");
   if (koda === "server_error" || koda === "temporarily_unavailable") return t("The server is having trouble. Please try again later.");
   return t("Sign-in could not be completed. Please try again.");
 }

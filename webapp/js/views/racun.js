@@ -317,9 +317,10 @@ export function IzbrisRacuna() {
   // Po ponovni prijavi pri ponudniku (znamenje samo, ce je prijava pravkar uspela; »Back« ga ne pusti) se izbris izvede z novim zetonom.
   useEffect(() => {
     if (!brezGesla) return;
-    const pripravljen = porabiZnamenjeIzbrisa();
-    pocistiOAuthStanje();
-    if (pripravljen) poslji({ reauth: "provider" });
+    porabiZnamenjeIzbrisa().then(pripravljen => {
+      pocistiOAuthStanje();
+      if (pripravljen) poslji({ reauth: "provider" });
+    }).catch(() => pocistiOAuthStanje());
   }, [brezGesla]);
   async function potrdiPriPonudniku() {
     setTece(true); setNapaka("");
