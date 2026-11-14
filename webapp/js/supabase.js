@@ -50,6 +50,8 @@ export function odjemalec() {
    spremenil tudi mail tokove (signUp/resetPasswordForEmail pocnejo code_challenge). Po izmenjavi kode oauth.js sejo preda glavnemu
    odjemalcu prek setSession in pocisti ta kljuc. */
 export const KLJUC_OAUTH = "sb-outly-oauth";
+/* Znamenje ponovne prijave za izbris racuna (oauth.js); tu, ker ga seja.js brise ob odjavi, oauth.js pa ni del zagonskega grafa. */
+export const KLJUC_IZBRIS = "outly_oauth_izbris";
 let oauthObljuba = null;
 export function oauthOdjemalec() {
   if (!oauthObljuba) {

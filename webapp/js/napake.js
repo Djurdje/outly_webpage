@@ -366,6 +366,7 @@ export function sporocilo(e) {
   if (e instanceof NapakaDatoteke) return e.message;
   if (e instanceof ApiError) return prevediApi(e);
   if (e instanceof AuthError) return prevediAuth(e);
+  if (e && e.name === "BrezSeje") return t("Your session has expired. Please log in again.");   // oauth.js: izbris brez seje
   if (e && e.name === "AuthPKCECodeVerifierMissingError") return t("Sign-in could not be completed. Please try again.");
   if (e && e.name === "AuthApiError") return prevediAuth(new AuthError(e.status, e.code, e.message));
   if (e && (e.name === "TypeError" || e.name === "AbortError" || e.name === "AuthRetryableFetchError")) return t("No internet connection. Check your network and try again.");

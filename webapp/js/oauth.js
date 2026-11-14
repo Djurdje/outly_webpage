@@ -5,7 +5,7 @@
    APPLE: signInWithOAuth (PKCE, locen odjemalec) -> Supabase -> /app/auth-callback?code=... -> exchangeCodeForSession -> setSession.
    Seja nikoli ne nastopa v URL-ju (Google: id_token v fragmentu, ki ga takoj pobrisemo; Apple: enkratna koda). Pogodba: backend
    docs/ARCHITECTURE.md »Prijava z Googlom in Applom« (tocki 1 in 8). Isti kljuci in postopek tece iz landinga (auth.js). */
-import { supabase, oauthOdjemalec, KLJUC_OAUTH } from "./supabase.js";
+import { supabase, oauthOdjemalec, KLJUC_OAUTH, KLJUC_IZBRIS } from "./supabase.js";
 import { TERMS_VERSION } from "./pogoji.js";
 
 /* STIKALO: ponudniki, ki so vklopljeni (Supabase Authentication > Providers). PRAZNO, dokler jih Martin ne vklopi:
@@ -20,7 +20,6 @@ export const IME_PONUDNIKA = { google: "Google", apple: "Apple" };
 const KLJUC_STIKALA = "outly_oauth";           // sessionStorage: ekipni preklop za ta zavihek
 const KLJUC_TOKA = "outly_oauth_tok";          // { next, soglasje, izbris }
 const KLJUC_GOOGLE = "outly_oauth_google";     // { nonce, state } (surov nonce ostane samo tu)
-export const KLJUC_IZBRIS = "outly_oauth_izbris";   // "pripravljen:<cas>" po uspesni ponovni prijavi za izbris racuna
 const OKNO_IZBRISA_MS = 10 * 60 * 1000;
 
 /** Racun iz Googla/Appla (app_metadata.provider): brez gesla. */
@@ -78,7 +77,7 @@ export async function zacniOAuth(ponudnik, naprej, { izbris = false } = {}) {
   if (izbris) {
     const { data } = await supabase.auth.getSession();
     const u = data && data.session && data.session.user;
-    if (!u) throw new Error("Ni seje");
+    if (!u) { const e = new Error("Ni seje"); e.name = "BrezSeje"; throw e; }
     const ident = (u.identities || []).find(i => i.provider === ponudnik);
     pricakovan = { uid: u.id, sub: (ident && ident.identity_data && ident.identity_data.sub) || "" };
     email = u.email || "";

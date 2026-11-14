@@ -835,7 +835,7 @@
 
   client.auth.onAuthStateChange(async (event, session) => {
     // Znamenje ponovne prijave za izbris racuna (webapp/js/oauth.js) ne preživi odjave ali nove prijave.
-    if (event === "SIGNED_OUT" || event === "SIGNED_IN") { try { sessionStorage.removeItem("outly_oauth_izbris"); } catch (_) { /* brez */ } }
+    if (event === "SIGNED_OUT" || event === "SIGNED_IN") { try { sessionStorage.removeItem("outly_oauth_izbris" /* enako kot KLJUC_IZBRIS v webapp/js/supabase.js (klasicen skript ne more uvoziti) */); } catch (_) { /* brez */ } }
     const before = user && user.id;
     user = session ? session.user : null;
 
