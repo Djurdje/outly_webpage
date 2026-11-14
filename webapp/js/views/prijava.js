@@ -13,8 +13,8 @@ import { navigiraj, usePot } from "../usmerjanje.js";
 import { lokalno } from "../store.js";
 import { GlavaNazaj, Ikona } from "../ui.js";
 import { JezikGumb } from "./jezik.js";
-import { TERMS_VERSION, EMAIL_RE, PogojiNakupa } from "../pogoji.js";   // verzija pogojev kot auth.js na outly.si (terms.html)
-import { vklopljeniPonudniki, zacniOAuth, dokoncajOAuth } from "../oauth.js";
+import { TERMS_VERSION, EMAIL_RE, PogojiPrijaveOAuth } from "../pogoji.js";   // verzija pogojev kot auth.js na outly.si (terms.html)
+import { vklopljeniPonudniki, zacniOAuth, dokoncajOAuth, pocistiOAuthStanje } from "../oauth.js";
 import { sporociloOAuthPovratka } from "../napake.js";
 
 const USER_RE = /^[A-Za-z0-9_]{3,20}$/;   // enako kot backend PATCH /me
@@ -101,9 +101,10 @@ function Sporocilo({ besedilo, vrsta = "napaka" }) {
 function OAuthGumbi({ naprej, preveri, naNapako, pogoji = false }) {
   const ponudniki = vklopljeniPonudniki();
   const [tece, setTece] = useState("");
-  // Nazaj iz Googla/Appla (bfcache): gumba morata spet delovati.
+  // »Back« z Googla/Appla (nov zagon strani ali bfcache): ostanek nonce/state/preverjevalnika se pobrise, gumba spet delujeta.
   useEffect(() => {
-    const ob = e => { if (e.persisted) setTece(""); };
+    pocistiOAuthStanje();
+    const ob = e => { if (e.persisted) { pocistiOAuthStanje(); setTece(""); } };
     window.addEventListener("pageshow", ob);
     return () => window.removeEventListener("pageshow", ob);
   }, []);
@@ -117,7 +118,7 @@ function OAuthGumbi({ naprej, preveri, naNapako, pogoji = false }) {
   }
   return html`<div class="oauth">
     <p class="oauth-ali" aria-hidden="true"><span>${t("or")}</span></p>
-    ${pogoji ? html`<${PogojiNakupa} />` : null}
+    ${pogoji ? html`<${PogojiPrijaveOAuth} />` : null}
     ${ponudniki.includes("google") ? html`<button type="button" class="gumb-oauth google" onClick=${() => klik("google")} disabled=${!!tece} aria-busy=${tece === "google"}>
       <img src="/assets/google-g.svg" alt="" width="20" height="20" /><span>${t("Continue with Google")}</span></button>` : null}
     ${ponudniki.includes("apple") ? html`<button type="button" class="gumb-oauth apple" onClick=${() => klik("apple")} disabled=${!!tece} aria-busy=${tece === "apple"}>
@@ -131,12 +132,16 @@ export function OAuthPovratek() {
   useEffect(() => {
     let zivo = true;
     dokoncajOAuth().then(async r => {
-      if (r.naprej) {
-        seja.set({ obvestilo: "" });
-        pozabiCakajociMail();
-        await naloziMe();   // enak tok kot po kodi iz maila: guard v main.js nato po potrebi pelje na onboarding
-        navigiraj(r.naprej, { zamenjaj: true });
-      } else if (zivo) setNapaka(r.napaka);
+      // Brez veljavnega povratka (osvezitev, rocen vnos poti): ze prijavljen uporabnik gre naprej, sicer napaka.
+      if (r.naprej && (!r.prazno || seja.get().prijavljen)) {
+        if (!r.prazno) {
+          seja.set({ obvestilo: "" });
+          pozabiCakajociMail();
+          await naloziMe();   // enak tok kot po kodi iz maila: guard v main.js nato po potrebi pelje na onboarding
+        }
+        if (r.naprej.startsWith("/app")) navigiraj(r.naprej, { zamenjaj: true });
+        else location.replace(r.naprej);   // prijava z landinga: nazaj na /about (tam loadProfile zapise tocko povabitelju)
+      } else if (zivo) setNapaka(r.napaka || { koda: "" });
     });
     return () => { zivo = false; };
   }, []);
@@ -190,7 +195,7 @@ export function Prijava() {
       <button class="gumb-glavni" type="submit" disabled=${tece}>${tece ? t("Continue...") : t("Continue")}</button>
       <${OAuthGumbi} naprej=${naslednja(pot)} naNapako=${setNapaka} pogoji=${true} />
       <a class="gumb-bel" href=${zNaslednjo(pot, "/app/register")}>${t("Create an account")}</a>
-      ${vklopljeniPonudniki().length ? null : html`<${Pogoji} />`}
+      <${Pogoji} />
     </form>
   <//>`;
 }

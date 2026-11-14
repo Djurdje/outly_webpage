@@ -14,13 +14,16 @@ export const oznakaPogojev = () => kodaJezika() === "sl" ? t("Terms of Service")
 /* Opomba ob gumbu za placilo prijavljenega kupca (vstopnice, VIP miza): gost ima kljukico, prijavljen je pogoje sprejel ob
    registraciji. Prevod doloci sklon: povezavi sta v [oglatih oklepajih], prva = pogoji, druga = politika zasebnosti
    (EN /privacy, SL /privacy-app kot nakup-gost.js). Samo htm predloga, brez innerHTML. */
-export function PogojiNakupa() {
+function PogojiBesedilo({ niz }) {
   const zasebnost = useJezik() === "sl" ? "/privacy-app" : "/privacy";
   const povezave = ["/terms", zasebnost];
-  const deli = t("By continuing you agree to the [Terms of Use] and acknowledge the [Privacy Policy].").split(/\[([^\]]+)\]/);
+  const deli = t(niz).split(/\[([^\]]+)\]/);
   return html`<p class="avt-pravno">${deli.map((del, i) => i % 2 === 0 ? del
     : html`<a key=${i} href=${povezave[(i - 1) / 2] || "/terms"} target="_blank" rel="noopener">${del}</a>`)}</p>`;
 }
+export const PogojiNakupa = () => html`<${PogojiBesedilo} niz="By continuing you agree to the [Terms of Use] and acknowledge the [Privacy Policy]." />`;
+/* Prijava z Googlom/Applom: stavek NAD gumboma (prijava lahko ustvari nov racun; pogodba backend ARCHITECTURE »Prijava z Googlom in Applom«, tocka 5). */
+export const PogojiPrijaveOAuth = () => html`<${PogojiBesedilo} niz="By continuing, you confirm you are 18 or older, agree to the [Terms of Use] and acknowledge the [Privacy Policy]." />`;
 
 /* Podatki prodajalca nad gumbom za placilo (backend #94, ZVPot-1 18/1-2, 130/1-1): kupec pred nakupom izve, kdo mu prodaja.
    Prodajalec je klub, Outly je posrednik - razen pri lastnih dogodkih Outly (seller.is_platform, backend #302): tam prodaja

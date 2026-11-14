@@ -10,6 +10,7 @@ import { navigiraj, usePot } from "../usmerjanje.js";
 import * as P from "../podatki.js";
 import { zanrIme } from "../oblika.js";
 import { naslednja, napakaUporabniskegaImena } from "./prijava.js";
+import { jeOAuthRacun } from "../oauth.js";
 
 const DRZAVE = ("AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ " +
   "CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD " +
@@ -69,7 +70,7 @@ function Racun({ naprej }) {
   // Racun iz Googla/Appla nastane brez obrazca za registracijo: uporabnisko ime (backend ga ob prvem GET /me izpelje iz e-naslova,
   // pri Applovem skritem naslovu je nakljucno) uporabnik potrdi ali spremeni tukaj. Racuni z e-naslovom/geslom ga izbrali ze ob registraciji.
   const ponudnik = useSeja(s => s.ponudnik);
-  const izbiraImena = !!ponudnik && ponudnik !== "email";
+  const izbiraImena = jeOAuthRacun(ponudnik);
   // Backend pri Applovem skritem naslovu (in prepovedanem imenu) vrne »user« / »user_NNNN«: to ni izbira, zato polje ostane prazno.
   const [ime, setIme] = useState(me && me.username && !/^user(_\d+)?$/.test(me.username) ? me.username : "");
   const [napaka, setNapaka] = useState("");

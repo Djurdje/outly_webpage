@@ -70,7 +70,7 @@ export function oauthOdjemalec() {
 const napakaNalaganja = () => ({ data: { session: null, user: null }, error: { name: "AuthRetryableFetchError", status: 0, message: "Failed to load auth library" } });
 /* Klici, ki ustvarijo NOVO sejo: pred njimi pocakamo, da se konca morebitna odjava v teku (seja.js pocakajOdjavo). Sicer bi zaostali
    signOut po prijavi izbrisal novo sejo in jo preklical na strezniku (tekma odjava 3 s : takojsnja prijava). */
-const NOVA_SEJA = new Set(["signInWithPassword", "signUp", "verifyOtp", "signInWithOtp", "setSession"]);
+const NOVA_SEJA = new Set(["signInWithPassword", "signUp", "verifyOtp", "signInWithOtp", "signInWithIdToken", "setSession"]);
 let predNovoSejo = null;
 export function nastaviPredNovoSejo(fn) { predNovoSejo = fn; }
 

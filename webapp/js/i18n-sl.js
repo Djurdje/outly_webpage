@@ -1286,4 +1286,9 @@ export const SL = {
  "Back to sign in": "Nazaj na prijavo",
  "Sign-in was cancelled.": "Prijava je bila preklicana.",
  "Sign-in could not be completed. Please try again.": "Prijave ni bilo mogoče dokončati. Poskusi znova.",
+ "By continuing, you confirm you are 18 or older, agree to the [Terms of Use] and acknowledge the [Privacy Policy].": "Z nadaljevanjem potrjuješ, da si star vsaj 18 let, se strinjaš s [Pogoji uporabe] in potrjuješ, da si prebral [Politiko zasebnosti].",
+ "You sign in with {provider}, so this account has no password to change.": "Prijavljaš se z {provider}, zato ta račun nima gesla, ki bi ga lahko zamenjal.",
+ "Please confirm with {provider} again to delete your account.": "Za izbris računa se znova potrdi z {provider}.",
+ "To confirm, sign in with {provider} again.": "Za potrditev se znova prijavi z {provider}.",
+ "Confirm with {provider}": "Potrdi z {provider}",
 };

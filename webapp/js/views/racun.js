@@ -4,7 +4,8 @@ import { html, useEffect, useRef, useState } from "../lib.js";
 import { t, useJezik, locale } from "../i18n.js";
 import { send, naloziNaCloudinary, pomanjsajSliko } from "../api.js";
 import { supabase } from "../supabase.js";
-import { sporocilo, ApiError } from "../napake.js";
+import { sporocilo, ApiError, kodaNapake } from "../napake.js";
+import { jeOAuthRacun, IME_PONUDNIKA, zacniOAuth, porabiZnamenjeIzbrisa, pocistiOAuthStanje } from "../oauth.js";
 import { useSeja, nastaviMe, zdruzi, naloziMe, odjava } from "../seja.js";
 import { navigiraj, usePot } from "../usmerjanje.js";
 import * as P from "../podatki.js";
@@ -169,6 +170,8 @@ export function OsebniPodatki() {
 /* ---------------- Password and security ---------------- */
 export function GesloVarnost() {
   const me = useSeja(s => s.me);
+  const ponudnik = useSeja(s => s.ponudnik);
+  const brezGesla = jeOAuthRacun(ponudnik);   // racun iz Googla/Appla gesla nima: menjava gesla se ne pokaze
   const [p, setP] = useState({ trenutno: "", novo: "", potrdi: "" });
   const [sporocilo_, setSporocilo] = useState({ besedilo: "", ok: false });
   const [tece, setTece] = useState(false);
@@ -207,7 +210,7 @@ export function GesloVarnost() {
 
   return html`<div class="zaslon">
     <${GlavaNazaj} naslov=${t("Password and security")} rezerva="/app/account" />
-    <form class="obrazec" onSubmit=${spremeni} novalidate>
+    ${brezGesla ? html`<p class="besedilo-opis">${t("You sign in with {provider}, so this account has no password to change.", { provider: IME_PONUDNIKA[ponudnik] || ponudnik })}</p>` : html`<form class="obrazec" onSubmit=${spremeni} novalidate>
       <h2 class="podnaslov">${t("Change password")}</h2>
       <input type="email" class="skrito" autocomplete="username" value=${me ? me.email : ""} readonly tabindex="-1" aria-hidden="true" />
       <label class="polje"><span class="skrito">${t("Current password")}</span><input type="password" placeholder=${t("Current password")} value=${p.trenutno} onInput=${nastavi("trenutno")} autocomplete="current-password" /></label>
@@ -215,7 +218,7 @@ export function GesloVarnost() {
       <label class="polje"><span class="skrito">${t("confirm password")}</span><input type="password" placeholder=${t("confirm password")} value=${p.potrdi} onInput=${nastavi("potrdi")} autocomplete="new-password" /></label>
       ${sporocilo_.besedilo ? html`<p class=${sporocilo_.ok ? "uspeh-besedilo" : "napaka-besedilo"} role="status">${sporocilo_.besedilo}</p>` : null}
       <button type="submit" class="gumb-glavni" disabled=${tece || !p.trenutno || p.novo.length < 8 || !p.potrdi}>${tece ? t("Saving...") : t("Change password")}</button>
-    </form>
+    </form>`}
     <div class="seznam-kartica">
       <${Vrstica} ikona="log-out" naslov=${t("Sign out everywhere")} onClick=${() => setPotrdiOdjavo(true)} rdeca=${true} />
     </div>
@@ -283,36 +286,58 @@ export function MojeNastavitve() {
 
 /* ---------------- Delete account ---------------- */
 export function IzbrisRacuna() {
+  const ponudnik = useSeja(s => s.ponudnik);
+  const brezGesla = jeOAuthRacun(ponudnik);   // racun iz Googla/Appla: izbris s ponovno prijavo pri ponudniku (backend ARCHITECTURE tocka 8)
+  const ime = IME_PONUDNIKA[ponudnik] || ponudnik;
   const [geslo, setGeslo] = useState("");
   const [napaka, setNapaka] = useState("");
   const [tece, setTece] = useState(false);
   const [potrdi, setPotrdi] = useState(false);
-  async function izbrisi() {
-    setPotrdi(false);
-    if (!geslo) return setNapaka(t("Enter your password to continue."));
+
+  async function poslji(body) {
     setTece(true); setNapaka("");
     try {
-      await send("/me", { method: "DELETE", body: { password: geslo }, auth: true });
+      await send("/me", { method: "DELETE", body, auth: true });
       await odjava();
       navigiraj("/app", { zamenjaj: true });
     } catch (e) {
-      // 401 tu pomeni napacno geslo (streznik: "Invalid credentials."), ne potekle seje.
-      setNapaka(e instanceof ApiError && e.status === 401 && /credentials/i.test(e.raw) ? t("Wrong password.")
+      // 401 reauth_required: ponovna prijava ni dovolj sveza - NE odjava, ponovno potrdi pri ponudniku. Drugi 401 z geslom = napacno geslo.
+      if (e instanceof ApiError && e.status === 401 && kodaNapake(e) === "reauth_required") { setNapaka(t("Please confirm with {provider} again to delete your account.", { provider: ime })); setPotrdi(true); }
+      else setNapaka(e instanceof ApiError && e.status === 401 && /credentials/i.test(e.raw) ? t("Wrong password.")
         : e instanceof ApiError && e.status === -1 ? t("No response from the server. Log in again to check whether the account still exists.")
         : sporocilo(e));
     }
     setTece(false);
   }
+  async function izbrisi() {
+    setPotrdi(false);
+    if (!geslo) return setNapaka(t("Enter your password to continue."));
+    await poslji({ password: geslo });
+  }
+  // Po ponovni prijavi pri ponudniku (znamenje samo, ce je prijava pravkar uspela; »Back« ga ne pusti) se izbris izvede z novim zetonom.
+  useEffect(() => {
+    if (!brezGesla) return;
+    const pripravljen = porabiZnamenjeIzbrisa();
+    pocistiOAuthStanje();
+    if (pripravljen) poslji({ reauth: "provider" });
+  }, [brezGesla]);
+  async function potrdiPriPonudniku() {
+    setTece(true); setNapaka("");
+    try { await zacniOAuth(ponudnik, "/app/account/delete", { izbris: true }); }   // uspeh = navigacija stran
+    catch (e) { setTece(false); setNapaka(sporocilo(e)); }
+  }
   return html`<div class="zaslon">
     <${GlavaNazaj} naslov=${t("Delete account")} rezerva="/app/account" />
     <p class="besedilo-opis">${t("This action is permanent. It will remove your account, liked events and personal data. Tickets you have already bought stay valid, but they will no longer be linked to you and cannot be recovered in the app.")}</p>
-    <label class="polje"><span class="skrito">${t("password")}</span>
-      <input type="password" placeholder=${t("Enter your password to confirm.")} value=${geslo} onInput=${e => setGeslo(e.target.value)} autocomplete="current-password" /></label>
+    ${brezGesla ? null : html`<label class="polje"><span class="skrito">${t("password")}</span>
+      <input type="password" placeholder=${t("Enter your password to confirm.")} value=${geslo} onInput=${e => setGeslo(e.target.value)} autocomplete="current-password" /></label>`}
     ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}
-    <button type="button" class="gumb-rdec" onClick=${() => setPotrdi(true)} disabled=${tece || !geslo}>${tece ? t("Deleting...") : t("Delete account")}</button>
+    <button type="button" class="gumb-rdec" onClick=${() => setPotrdi(true)} disabled=${tece || (!brezGesla && !geslo)}>${tece ? t("Deleting...") : t("Delete account")}</button>
     <${List} odprt=${potrdi} zapri=${() => setPotrdi(false)} naslov=${t("Delete account")}>
       <p class="besedilo-opis">${t("We're sorry to see you go! This is permanent: your account and personal data will be removed, and tickets you bought will no longer be linked to you.")}</p>
-      <button type="button" class="gumb-rdec" onClick=${izbrisi}>${t("Delete Account")}</button>
+      ${brezGesla ? html`<p class="besedilo-opis">${t("To confirm, sign in with {provider} again.", { provider: ime })}</p>
+        <button type="button" class="gumb-rdec" onClick=${potrdiPriPonudniku} disabled=${tece}>${t("Confirm with {provider}", { provider: ime })}</button>`
+        : html`<button type="button" class="gumb-rdec" onClick=${izbrisi}>${t("Delete Account")}</button>`}
       <button type="button" class="gumb-siv" onClick=${() => setPotrdi(false)}>${t("Cancel")}</button>
     <//>
   </div>`;

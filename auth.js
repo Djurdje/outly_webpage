@@ -274,38 +274,60 @@
   /* ---------------------------------------------------------------
      Prijava z Googlom / Applom
      Gumbi so v plosci SAMO za ponudnike, ki so vklopljeni (OAUTH_PONUDNIKI, privzeto prazno: ponudnikov v Supabase se ni).
-     Prijavo opravi spletna aplikacija: ta stran sproži PKCE tok in vrne na /app/auth-callback, kjer webapp/js/oauth.js
-     zamenja kodo za sejo, zapise terms_version in pelje v aplikacijo. Isti kljuci (KLJUC_OAUTH, KLJUC_TOKA) kot tam.
+     Prijavo opravi spletna aplikacija: ta stran sproži tok (Google: neposredno, scope openid email, id_token; Apple: PKCE) in vrne na
+     /app/auth-callback, kjer webapp/js/oauth.js dokonca prijavo, zapise terms_version in vrne na /about (loadProfile poslje outly_ref).
+     Isti kljuci (KLJUC_OAUTH, KLJUC_TOKA, KLJUC_GOOGLE) in konstante (OAUTH_PONUDNIKI, GOOGLE_CLIENT_ID) kot tam.
   ---------------------------------------------------------------- */
   const OAUTH_PONUDNIKI = [];                       // npr. ["google", "apple"], ko ju Martin vklopi v Supabase
+  const GOOGLE_CLIENT_ID = "";                      // spletni Google client ID (javen); PRAZEN = gumba Google ni (enako kot webapp/js/oauth.js)
   const OAUTH_ZNANI = ["google", "apple"];
-  const KLJUC_STIKALA = "outly_oauth";              // ekipni preklop ?oauth=1 (enako kot v /app)
+  const KLJUC_STIKALA = "outly_oauth";              // ekipni preklop ?oauth=1 (sessionStorage, ta zavihek; enako kot v /app)
   const KLJUC_OAUTH = "sb-outly-oauth";
   const KLJUC_TOKA = "outly_oauth_tok";
+  const KLJUC_GOOGLE = "outly_oauth_google";
 
   function oauthPonudniki() {
     try {
       const q = new URLSearchParams(location.search).get("oauth");
       if (q !== null) {
-        if (q === "0") localStorage.removeItem(KLJUC_STIKALA);
-        else localStorage.setItem(KLJUC_STIKALA, q === "1" ? OAUTH_ZNANI.join(",") : q.split(",").filter((p) => OAUTH_ZNANI.includes(p)).join(","));
+        if (q === "0") sessionStorage.removeItem(KLJUC_STIKALA);
+        else sessionStorage.setItem(KLJUC_STIKALA, q === "1" ? OAUTH_ZNANI.join(",") : q.split(",").filter((p) => OAUTH_ZNANI.includes(p)).join(","));
       }
     } catch (_) { /* brez */ }
     let ekipa = [];
-    try { ekipa = (localStorage.getItem(KLJUC_STIKALA) || "").split(","); } catch (_) { /* brez */ }
-    return OAUTH_ZNANI.filter((p) => OAUTH_PONUDNIKI.includes(p) || ekipa.includes(p));
+    try { ekipa = (sessionStorage.getItem(KLJUC_STIKALA) || "").split(","); } catch (_) { /* brez */ }
+    return OAUTH_ZNANI.filter((p) => (OAUTH_PONUDNIKI.includes(p) || ekipa.includes(p)) && (p !== "google" || !!GOOGLE_CLIENT_ID));
   }
 
+  const nakljucno = () => Array.from(crypto.getRandomValues(new Uint8Array(32))).map((x) => x.toString(16).padStart(2, "0")).join("");
+  async function sha256hex(niz) {
+    const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(niz));
+    return Array.from(new Uint8Array(d)).map((x) => x.toString(16).padStart(2, "0")).join("");
+  }
+
+  let oauthOdjemalec = null;   // en pomozni PKCE odjemalec (Apple), ne nov ob vsakem kliku
   async function oauthZacni(ponudnik) {
-    try { sessionStorage.setItem(KLJUC_TOKA, JSON.stringify({ next: "/app", soglasje: new Date().toISOString() })); } catch (_) { /* brez */ }
-    // Locen odjemalec s PKCE: glavni odjemalec (implicitni tok) ostane nespremenjen; seja gre prek /app/auth-callback.
-    const c = window.supabase.createClient(cfg.url, cfg.anonKey, {
-      auth: { flowType: "pkce", storageKey: KLJUC_OAUTH, persistSession: true, autoRefreshToken: false, detectSessionInUrl: false }
-    });
-    const { data, error } = await c.auth.signInWithOAuth({
+    // Cilj po prijavi: /about (tam loadProfile ob SIGNED_IN/INITIAL_SESSION poklice sync_my_account z outly_ref: tocka povabitelju).
+    try { sessionStorage.setItem(KLJUC_TOKA, JSON.stringify({ next: "/about", soglasje: new Date().toISOString(), izbris: false })); } catch (_) { /* brez */ }
+    if (ponudnik === "google") {
+      // Neposredno na Google (scope openid email: BREZ profile; Martin 14. 11.), povratek /app/auth-callback#id_token=...
+      const nonce = nakljucno(), state = nakljucno();
+      sessionStorage.setItem(KLJUC_GOOGLE, JSON.stringify({ nonce, state }));
+      const u = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+      u.search = new URLSearchParams({ client_id: GOOGLE_CLIENT_ID, redirect_uri: location.origin + "/app/auth-callback", response_type: "id_token",
+        scope: "openid email", nonce: await sha256hex(nonce), state, prompt: "select_account" }).toString();
+      location.assign(u.href);
+      return;
+    }
+    // Apple: locen odjemalec s PKCE; glavni odjemalec (implicitni tok) ostane nespremenjen; seja gre prek /app/auth-callback.
+    if (!oauthOdjemalec) {
+      oauthOdjemalec = window.supabase.createClient(cfg.url, cfg.anonKey, {
+        auth: { flowType: "pkce", storageKey: KLJUC_OAUTH, persistSession: true, autoRefreshToken: false, detectSessionInUrl: false }
+      });
+    }
+    const { data, error } = await oauthOdjemalec.auth.signInWithOAuth({
       provider: ponudnik,
-      options: { redirectTo: location.origin + "/app/auth-callback", skipBrowserRedirect: true,
-        ...(ponudnik === "google" ? { queryParams: { prompt: "select_account" } } : {}) }
+      options: { redirectTo: location.origin + "/app/auth-callback", skipBrowserRedirect: true }
     });
     if (error) throw error;
     const u = new URL(data.url);   // beli seznam: samo Supabasov /authorize
@@ -320,10 +342,10 @@
       google: '<button class="oauthBtn oauthBtn--google" type="button" data-oauth="google"><img src="assets/google-g.svg" alt="" width="20" height="20"><span>Continue with Google</span></button>',
       apple: '<button class="oauthBtn oauthBtn--apple" type="button" data-oauth="apple"><img src="assets/apple-logo.svg" alt="" width="20" height="20"><span>Sign in with Apple</span></button>'
     };
-    const stavek = '<p class="drawer__fine">By continuing you agree to the <a href="terms.html" target="_blank" rel="noopener">Terms of Use</a> and acknowledge the <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</p>';
+    const stavek = '<p class="drawer__fine">By continuing, you confirm you are 18 or older, agree to the <a href="terms.html" target="_blank" rel="noopener">Terms of Use</a> and acknowledge the <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</p>';
     ["login", "register"].forEach((ime) => {
       const v = drawer.querySelector('.drawer__view[data-view="' + ime + '"]');
-      const sw = v && v.querySelector(".drawer__switch");
+      const sw = v && v.querySelectorAll(".drawer__switch").length ? Array.from(v.querySelectorAll(".drawer__switch")).pop() : null;   // zadnja vrstica: »Forgot your password?« ostane ob polju za geslo
       if (!sw) return;
       // Prijava: stavek o pogojih PRED gumboma; registracija: kljukica v obrazcu (preveri se ob kliku).
       sw.insertAdjacentHTML("beforebegin", '<div class="oauth" data-oauth-for="' + ime + '"><p class="oauth__or" aria-hidden="true"><span>or</span></p>' +

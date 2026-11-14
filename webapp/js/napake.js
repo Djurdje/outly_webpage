@@ -340,6 +340,7 @@ function prevediAuth(e) {
     case "flow_state_expired":
     case "flow_state_not_found":
     case "bad_code_verifier":
+    case "bad_id_token":
     case "provider_disabled": return t("Sign-in could not be completed. Please try again.");
     case "user_banned": return t("You do not have permission to do that.");
   }
