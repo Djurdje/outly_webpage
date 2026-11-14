@@ -22,6 +22,7 @@ const POTI = [
   ["/app/register", "register"],
   ["/app/verify", "verify"],
   ["/app/forgot", "forgot"],
+  ["/app/auth-callback", "oauth"],   // povratek s Googla/Appla (?code=... ali ?error=...), views/prijava.js OAuthPovratek
   ["/app/onboarding", "onboarding"],
   ["/app/language", "language"],
   ["/app/account", "account"],

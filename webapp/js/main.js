@@ -49,6 +49,7 @@ const Prijava = leno("./views/prijava.js", "Prijava");
 const Registracija = leno("./views/prijava.js", "Registracija");
 const Potrditev = leno("./views/prijava.js", "Potrditev");
 const PozabljenoGeslo = leno("./views/prijava.js", "PozabljenoGeslo");
+const OAuthPovratek = leno("./views/prijava.js", "OAuthPovratek");
 const Onboarding = leno("./views/onboarding.js", "Onboarding");
 const Profil = leno("./views/profil.js", "Profil");
 const Jezik = leno("./views/jezik.js", "Jezik");
@@ -161,6 +162,7 @@ function Zaslon({ pot }) {
     case "register": return html`<${Registracija} />`;
     case "verify": return html`<${Potrditev} />`;
     case "forgot": return html`<${PozabljenoGeslo} />`;
+    case "oauth": return html`<${OAuthPovratek} />`;
     case "onboarding": return html`<${Onboarding} />`;
     case "language": return html`<${Jezik} />`;
     case "account": return html`<${MojRacun} />`;
@@ -228,7 +230,7 @@ function App() {
   if (pripravljena) {
     const naprej = encodeURIComponent(location.pathname + location.search);
     if (!prijavljen && SAMO_PRIJAVLJENI.has(pot.ime)) preusmeritev = `/app/login?next=${naprej}`;
-    else if (prijavljen && me && potrebujeOnboarding(me) && pot.ime !== "onboarding" && pot.ime !== "language" && !AVT.has(pot.ime))
+    else if (prijavljen && me && potrebujeOnboarding(me) && pot.ime !== "onboarding" && pot.ime !== "language" && pot.ime !== "oauth" && !AVT.has(pot.ime))
       preusmeritev = `/app/onboarding?next=${naprej}`;
     else if (prijavljen && me && !potrebujeOnboarding(me) && AVT.has(pot.ime) && pot.ime !== "forgot") {
       const n = pot.iskanje.get("next") || "";
@@ -257,7 +259,7 @@ function App() {
   }, [pot.ime, pot.params.id, pot.params.slug, koda]);
 
   if (ZAVIHKI.some(z => z.ime === pot.ime)) zadnjiZavihek = pot.ime;
-  const brezVrstice = AVT.has(pot.ime) || pot.ime === "onboarding";
+  const brezVrstice = AVT.has(pot.ime) || pot.ime === "onboarding" || pot.ime === "oauth";
   if (!pripravljena || preusmeritev) return html`<main class="okvir"><${Nalaganje} /></main>`;
 
   return html`<div class="okvir-aplikacije" key=${koda}>
@@ -273,7 +275,7 @@ function App() {
 
 function naslovPoti(ime) {
   return ({ search: "Search", map: "Map", event: "Event", club: "Club", soon: "Coming soon", notfound: "Page not found", profile: "Profile", events: "Events", interested: "Interested events",
-    tickets: "Tickets", "guest-list": "Guest list", "guest-order": "Your tickets", "guest-ticket": "Your ticket", login: "Sign in", register: "Create an account", verify: "Verify your email",
+    tickets: "Tickets", "guest-list": "Guest list", "guest-order": "Your tickets", "guest-ticket": "Your ticket", login: "Sign in", oauth: "Signing in", register: "Create an account", verify: "Verify your email",
     forgot: "Forgot password?", onboarding: "Complete your account", language: "Language", genre: "Events",
     account: "My Account", personal: "Personal info", security: "Password and security", preferences: "Preferences",
     "my-preferences": "My preferences", blocked: "Blocked users", delete: "Delete account", creator: "Request for creator", payment: "Payment",

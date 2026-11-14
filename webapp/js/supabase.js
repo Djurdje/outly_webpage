@@ -45,13 +45,34 @@ export function odjemalec() {
   return obljuba;
 }
 
+/* Prijava z Googlom/Applom (PKCE): LOCEN odjemalec s svojim storageKey, ki hrani samo preverjevalnik kode (code verifier) med
+   preusmeritvijo. Glavni odjemalec ostane brez sprememb (implicitni tok): flowType je nastavitev celega odjemalca in bi
+   spremenil tudi mail tokove (signUp/resetPasswordForEmail pocnejo code_challenge). Po izmenjavi kode oauth.js sejo preda glavnemu
+   odjemalcu prek setSession in pocisti ta kljuc. */
+export const KLJUC_OAUTH = "sb-outly-oauth";
+/* Znamenje ponovne prijave za izbris racuna (oauth.js); tu, ker ga seja.js brise ob odjavi, oauth.js pa ni del zagonskega grafa. */
+export const KLJUC_IZBRIS = "outly_oauth_izbris";
+let oauthObljuba = null;
+export function oauthOdjemalec() {
+  if (!oauthObljuba) {
+    oauthObljuba = odjemalec().then(() => {
+      const cfg = window.OUTLY_SUPABASE;
+      return window.supabase.createClient(cfg.url, cfg.anonKey, {
+        auth: { flowType: "pkce", storageKey: KLJUC_OAUTH, persistSession: true, autoRefreshToken: false, detectSessionInUrl: false }
+      });
+    });
+    oauthObljuba.catch(() => { oauthObljuba = null; });
+  }
+  return oauthObljuba;
+}
+
 /* Ce se knjiznica ne nalozi (omrezje), klic vrne { data, error } kot supabase-js ob izpadu omrezja - ne izjeme,
    zato zasloni (prijava ...) napako pokazejo namesto da obvisijo. error.name je kot pri supabase-js, da ga
    api.js (zacasna napaka) in napake.js ("No internet connection") prepoznata; seja ostane (I10). */
 const napakaNalaganja = () => ({ data: { session: null, user: null }, error: { name: "AuthRetryableFetchError", status: 0, message: "Failed to load auth library" } });
 /* Klici, ki ustvarijo NOVO sejo: pred njimi pocakamo, da se konca morebitna odjava v teku (seja.js pocakajOdjavo). Sicer bi zaostali
    signOut po prijavi izbrisal novo sejo in jo preklical na strezniku (tekma odjava 3 s : takojsnja prijava). */
-const NOVA_SEJA = new Set(["signInWithPassword", "signUp", "verifyOtp", "signInWithOtp", "setSession"]);
+const NOVA_SEJA = new Set(["signInWithPassword", "signUp", "verifyOtp", "signInWithOtp", "signInWithIdToken", "setSession"]);
 let predNovoSejo = null;
 export function nastaviPredNovoSejo(fn) { predNovoSejo = fn; }
 

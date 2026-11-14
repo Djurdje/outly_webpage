@@ -252,6 +252,7 @@
       <p class="kicker">DELETE ACCOUNT</p>
       <h2>Are you sure?</h2>
       <p class="drawer__lead">This removes your account, your spot on the waitlist and your points. Friends you invited keep theirs. Tickets you already bought stay valid, but are no longer linked to you. There is no undo.</p>
+      <p class="drawer__lead" data-delete-oauth hidden>You sign in with Google or Apple, so there is no password to confirm. To delete this account, confirm it with a fresh sign-in in the Outly web app: <a href="/app/account/delete">Delete account in the Outly app</a>.</p>
       <form data-form="delete" novalidate>
         <label class="field"><span>Password</span><input type="password" name="password" autocomplete="current-password" placeholder="Enter your password to confirm" required></label>
         <p class="formMsg" data-msg aria-live="polite"></p>
@@ -272,12 +273,116 @@
   const avatarBtn = document.getElementById("profileBtn");
 
   /* ---------------------------------------------------------------
+     Prijava z Googlom / Applom
+     Gumbi so v plosci SAMO za ponudnike, ki so vklopljeni (OAUTH_PONUDNIKI, privzeto prazno: ponudnikov v Supabase se ni).
+     Prijavo opravi spletna aplikacija: ta stran sproži tok (Google: neposredno, scope openid email, id_token; Apple: PKCE) in vrne na
+     /app/auth-callback, kjer webapp/js/oauth.js dokonca prijavo, zapise terms_version in vrne na /about (loadProfile poslje outly_ref).
+     Isti kljuci (KLJUC_OAUTH, KLJUC_TOKA, KLJUC_GOOGLE) in konstante (OAUTH_PONUDNIKI, GOOGLE_CLIENT_ID) kot tam.
+  ---------------------------------------------------------------- */
+  const OAUTH_PONUDNIKI = [];                       // npr. ["google", "apple"], ko ju Martin vklopi v Supabase
+  const GOOGLE_CLIENT_ID = "";                      // spletni Google client ID (javen); PRAZEN = gumba Google ni (enako kot webapp/js/oauth.js)
+  const OAUTH_ZNANI = ["google", "apple"];
+  const KLJUC_STIKALA = "outly_oauth";              // ekipni preklop ?oauth=1 (sessionStorage, ta zavihek; enako kot v /app)
+  const KLJUC_OAUTH = "sb-outly-oauth";
+  const KLJUC_TOKA = "outly_oauth_tok";
+  const KLJUC_GOOGLE = "outly_oauth_google";
+
+  function oauthPonudniki() {
+    try {
+      const q = new URLSearchParams(location.search).get("oauth");
+      if (q !== null) {
+        if (q === "0") sessionStorage.removeItem(KLJUC_STIKALA);
+        else sessionStorage.setItem(KLJUC_STIKALA, q === "1" ? OAUTH_ZNANI.join(",") : q.split(",").filter((p) => OAUTH_ZNANI.includes(p)).join(","));
+      }
+    } catch (_) { /* brez */ }
+    let ekipa = [];
+    try { ekipa = (sessionStorage.getItem(KLJUC_STIKALA) || "").split(","); } catch (_) { /* brez */ }
+    return OAUTH_ZNANI.filter((p) => (OAUTH_PONUDNIKI.includes(p) || ekipa.includes(p)) && (p !== "google" || !!GOOGLE_CLIENT_ID));
+  }
+
+  const nakljucno = () => Array.from(crypto.getRandomValues(new Uint8Array(32))).map((x) => x.toString(16).padStart(2, "0")).join("");
+  async function sha256hex(niz) {
+    const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(niz));
+    return Array.from(new Uint8Array(d)).map((x) => x.toString(16).padStart(2, "0")).join("");
+  }
+
+  let oauthOdjemalec = null;   // en pomozni PKCE odjemalec (Apple), ne nov ob vsakem kliku
+  async function oauthZacni(ponudnik) {
+    // Cilj po prijavi: /about (tam loadProfile ob SIGNED_IN/INITIAL_SESSION poklice sync_my_account z outly_ref: tocka povabitelju).
+    try { sessionStorage.setItem(KLJUC_TOKA, JSON.stringify({ next: "/about", soglasje: new Date().toISOString(), izbris: false })); } catch (_) { /* brez */ }
+    if (ponudnik === "google") {
+      // Neposredno na Google (scope openid email: BREZ profile; Martin 14. 11.), povratek /app/auth-callback#id_token=...
+      const nonce = nakljucno(), state = nakljucno();
+      sessionStorage.setItem(KLJUC_GOOGLE, JSON.stringify({ nonce, state }));
+      const u = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+      u.search = new URLSearchParams({ client_id: GOOGLE_CLIENT_ID, redirect_uri: location.origin + "/app/auth-callback", response_type: "id_token",
+        scope: "openid email", nonce: await sha256hex(nonce), state, prompt: "select_account" }).toString();
+      location.assign(u.href);
+      return;
+    }
+    // Apple: locen odjemalec s PKCE; glavni odjemalec (implicitni tok) ostane nespremenjen; seja gre prek /app/auth-callback.
+    if (!oauthOdjemalec) {
+      oauthOdjemalec = window.supabase.createClient(cfg.url, cfg.anonKey, {
+        auth: { flowType: "pkce", storageKey: KLJUC_OAUTH, persistSession: true, autoRefreshToken: false, detectSessionInUrl: false }
+      });
+    }
+    const { data, error } = await oauthOdjemalec.auth.signInWithOAuth({
+      provider: ponudnik,
+      options: { redirectTo: location.origin + "/app/auth-callback", skipBrowserRedirect: true }
+    });
+    if (error) throw error;
+    const u = new URL(data.url);   // beli seznam: samo Supabasov /authorize
+    if (u.origin !== new URL(cfg.url).origin || u.pathname !== "/auth/v1/authorize") throw new Error("unexpected url");
+    location.assign(u.href);
+  }
+
+  (function () {
+    const ponudniki = oauthPonudniki();
+    if (!ponudniki.length) return;
+    const gumbi = {
+      google: '<button class="oauthBtn oauthBtn--google" type="button" data-oauth="google"><img src="assets/google-g.svg" alt="" width="20" height="20"><span>Continue with Google</span></button>',
+      apple: '<button class="oauthBtn oauthBtn--apple" type="button" data-oauth="apple"><img src="assets/apple-logo.svg" alt="" width="20" height="20"><span>Sign in with Apple</span></button>'
+    };
+    const stavek = '<p class="drawer__fine">By continuing, you confirm you are 18 or older, agree to the <a href="terms.html" target="_blank" rel="noopener">Terms of Use</a> and acknowledge the <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</p>';
+    ["login", "register"].forEach((ime) => {
+      const v = drawer.querySelector('.drawer__view[data-view="' + ime + '"]');
+      const sw = v && v.querySelectorAll(".drawer__switch").length ? Array.from(v.querySelectorAll(".drawer__switch")).pop() : null;   // zadnja vrstica: »Forgot your password?« ostane ob polju za geslo
+      if (!sw) return;
+      // Prijava: stavek o pogojih PRED gumboma; registracija: kljukica v obrazcu (preveri se ob kliku).
+      sw.insertAdjacentHTML("beforebegin", '<div class="oauth" data-oauth-for="' + ime + '"><p class="oauth__or" aria-hidden="true"><span>or</span></p>' +
+        (ime === "login" ? stavek : "") + ponudniki.map((p) => gumbi[p]).join("") + "</div>");
+    });
+    drawer.addEventListener("click", async (e) => {
+      const b = e.target.closest("[data-oauth]");
+      if (!b || b.disabled) return;
+      const blok = b.closest("[data-oauth-for]");
+      const form = blok.closest(".drawer__view").querySelector("form");
+      if (blok.dataset.oauthFor === "register" && form.elements.terms && !form.elements.terms.checked) {
+        setMsg(form, "Please confirm you are at least 18 and accept the Terms of Use.", "error"); form.elements.terms.focus(); return;
+      }
+      setMsg(form, "");
+      const vsi = Array.from(drawer.querySelectorAll("[data-oauth]"));
+      vsi.forEach((x) => { x.disabled = true; });
+      try { await oauthZacni(b.dataset.oauth); }
+      catch (_) { vsi.forEach((x) => { x.disabled = false; }); setMsg(form, "Something went wrong. Please try again in a moment.", "error"); }
+    });
+    // Nazaj iz Googla/Appla (bfcache): gumbi spet delujejo.
+    window.addEventListener("pageshow", (e) => { if (e.persisted) drawer.querySelectorAll("[data-oauth]").forEach((x) => { x.disabled = false; }); });
+  })();
+
+  /* ---------------------------------------------------------------
      Pomozno
   ---------------------------------------------------------------- */
   const $ = (sel, root) => (root || drawer).querySelector(sel);
 
   function view(name) {
     if (name !== "delete") { const df = drawer.querySelector('form[data-form="delete"]'); if (df) { df.reset(); setMsg(df, ""); } }
+    if (name === "delete") {   // racun iz Googla/Appla gesla nima: namesto polja za geslo povezava na izbris v /app (ponovna prijava pri ponudniku)
+      const oa = !!(user && user.app_metadata && user.app_metadata.provider && user.app_metadata.provider !== "email");
+      const dv = drawer.querySelector('.drawer__view[data-view="delete"]');
+      dv.querySelector("[data-delete-oauth]").hidden = !oa;
+      dv.querySelector('form[data-form="delete"]').hidden = oa;
+    }
     views.forEach((v) => v.classList.toggle("is-active", v.dataset.view === name));
     const first = $('.drawer__view.is-active input:not([readonly])');
     if (first && !("ontouchstart" in window)) setTimeout(() => first.focus(), 60);
@@ -729,6 +834,8 @@
   let pendingRecovery = /type=recovery/.test(START_HASH);
 
   client.auth.onAuthStateChange(async (event, session) => {
+    // Znamenje ponovne prijave za izbris racuna (webapp/js/oauth.js) ne preživi odjave ali nove prijave.
+    if (event === "SIGNED_OUT" || event === "SIGNED_IN") { try { sessionStorage.removeItem("outly_oauth_izbris" /* enako kot KLJUC_IZBRIS v webapp/js/supabase.js (klasicen skript ne more uvoziti) */); } catch (_) { /* brez */ } }
     const before = user && user.id;
     user = session ? session.user : null;
 
