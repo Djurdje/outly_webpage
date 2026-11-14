@@ -2,7 +2,8 @@
    Isti tok kot iOS: koda iz maila (6-10 stevk), ne povezava - zato spletna aplikacija ne rabi
    dodatnih preusmeritvenih URL-jev v Supabase. Povezava v mailu lahko vodi na /app/verify oz. /app/forgot
    s ?token_hash=...&type=... (predloga v Supabase): potrdi se sele ob kliku na gumb, ne ob odprtju strani.
-   Registracija: kljukica 18+ in pogoji (kot outly.si). */
+   Registracija: kljukica 18+ in pogoji (kot outly.si). Google/Apple: povratek in izmenjava kode v oauth.js; na prijavi stavek o pogojih stoji
+   PRED gumboma (pogodba backend ARCHITECTURE »Prijava z Googlom in Applom«, tocka 5), na registraciji ju zavaruje ista kljukica. */
 import { html, useEffect, useState } from "../lib.js";
 import { t } from "../i18n.js";
 import { supabase } from "../supabase.js";
@@ -12,7 +13,7 @@ import { navigiraj, usePot } from "../usmerjanje.js";
 import { lokalno } from "../store.js";
 import { GlavaNazaj, Ikona } from "../ui.js";
 import { JezikGumb } from "./jezik.js";
-import { TERMS_VERSION, EMAIL_RE } from "../pogoji.js";   // verzija pogojev kot auth.js na outly.si (terms.html)
+import { TERMS_VERSION, EMAIL_RE, PogojiNakupa } from "../pogoji.js";   // verzija pogojev kot auth.js na outly.si (terms.html)
 import { vklopljeniPonudniki, zacniOAuth, dokoncajOAuth } from "../oauth.js";
 import { sporociloOAuthPovratka } from "../napake.js";
 
@@ -97,7 +98,7 @@ function Sporocilo({ besedilo, vrsta = "napaka" }) {
 
 /* Gumba »Continue with Google« / »Sign in with Apple« (oauth.js). Brez vklopljenih ponudnikov se ne izrise nic. `preveri` (neobvezno)
    vrne sporocilo napake, ce prijava se ni dovoljena (registracija: kljukica 18+ in pogoji) - klik takrat napako pokaze in ne gre naprej. */
-function OAuthGumbi({ naprej, preveri, naNapako }) {
+function OAuthGumbi({ naprej, preveri, naNapako, pogoji = false }) {
   const ponudniki = vklopljeniPonudniki();
   const [tece, setTece] = useState("");
   // Nazaj iz Googla/Appla (bfcache): gumba morata spet delovati.
@@ -116,6 +117,7 @@ function OAuthGumbi({ naprej, preveri, naNapako }) {
   }
   return html`<div class="oauth">
     <p class="oauth-ali" aria-hidden="true"><span>${t("or")}</span></p>
+    ${pogoji ? html`<${PogojiNakupa} />` : null}
     ${ponudniki.includes("google") ? html`<button type="button" class="gumb-oauth google" onClick=${() => klik("google")} disabled=${!!tece} aria-busy=${tece === "google"}>
       <img src="/assets/google-g.svg" alt="" width="20" height="20" /><span>${t("Continue with Google")}</span></button>` : null}
     ${ponudniki.includes("apple") ? html`<button type="button" class="gumb-oauth apple" onClick=${() => klik("apple")} disabled=${!!tece} aria-busy=${tece === "apple"}>
@@ -186,9 +188,9 @@ export function Prijava() {
       <a class="povezava-desno" href=${"/app/forgot"}>${t("Forgot password?")}</a>
       <${Sporocilo} besedilo=${napaka} />
       <button class="gumb-glavni" type="submit" disabled=${tece}>${tece ? t("Continue...") : t("Continue")}</button>
-      <${OAuthGumbi} naprej=${naslednja(pot)} naNapako=${setNapaka} />
+      <${OAuthGumbi} naprej=${naslednja(pot)} naNapako=${setNapaka} pogoji=${true} />
       <a class="gumb-bel" href=${zNaslednjo(pot, "/app/register")}>${t("Create an account")}</a>
-      <${Pogoji} />
+      ${vklopljeniPonudniki().length ? null : html`<${Pogoji} />`}
     </form>
   <//>`;
 }

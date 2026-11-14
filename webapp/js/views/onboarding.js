@@ -70,7 +70,8 @@ function Racun({ naprej }) {
   // pri Applovem skritem naslovu je nakljucno) uporabnik potrdi ali spremeni tukaj. Racuni z e-naslovom/geslom ga izbrali ze ob registraciji.
   const ponudnik = useSeja(s => s.ponudnik);
   const izbiraImena = !!ponudnik && ponudnik !== "email";
-  const [ime, setIme] = useState((me && me.username) || "");
+  // Backend pri Applovem skritem naslovu (in prepovedanem imenu) vrne »user« / »user_NNNN«: to ni izbira, zato polje ostane prazno.
+  const [ime, setIme] = useState(me && me.username && !/^user(_\d+)?$/.test(me.username) ? me.username : "");
   const [napaka, setNapaka] = useState("");
   const [tece, setTece] = useState(false);
   const najvec = najvecDatumRojstva();
