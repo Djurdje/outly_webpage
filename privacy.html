@@ -61,7 +61,7 @@
     <div class="container legal">
       <p class="kicker">LEGAL</p>
       <h1>Privacy Policy</h1>
-      <p class="legal__meta">Last updated: 8 November 2026 &middot; version 2.4.7 &middot; applies to the Outly app, the web app at outly.si/app and outly.si</p>
+      <p class="legal__meta">Last updated: 15 November 2026 &middot; version 2.4.8 &middot; applies to the Outly app, the web app at outly.si/app and outly.si</p>
 
       <p class="legal__lead">
         This policy explains what personal data Outly collects &mdash; on this website (waitlist, your
@@ -70,6 +70,11 @@
         version is at <a href="/privacy-app">outly.si/privacy-app</a>; if the two differ, the Slovenian
         version prevails.
       </p>
+      <p>Version 2.4.8 adds signing in with a Google or Apple account (sections 1, 2, 3, 4, 5, 6, 7, 8, 10 and 11). From Google we receive only your
+        email address and the identifier of your Google account, not your name or profile picture. From Apple we receive your email address (or a
+        hidden Apple address) and the identifier of your Apple account; when you sign in with Apple on this website or in the web app, Apple may also
+        send us your name, which we do not use. Signing up with an email address and password stays available. From this version you need an
+        account to use the iPhone app, also to browse events and clubs; nothing changed in the web app or for buying without an account.</p>
       <p>Version 2.4.7 changes which provider sends which emails (section 4): from 8 November 2026 the emails for your account (sign-up and sign-in codes, password reset) are sent through Resend instead of Brevo. Resend is a US company (section 5); Brevo now sends only waitlist emails from this website. What data we process, why and how long we keep it stayed the same.</p>
       <p>Version 2.4.6 raises the minimum age for an Outly account from 15 to 18 (section 7) and adds that we also use your
         date of birth to check this limit (sections 2 and 3). Accounts that people aged 15 to 17 created before 20 October 2026 stay if they already have a date of birth. The age limit for
@@ -108,6 +113,12 @@
         purchase data as a separate controller: we alone are the controller, including for entry at the door.
         Where this policy refers to the organiser or the seller, for an Outly event that means us.
       </p>
+      <p>
+        <strong>Signing in with Google or Apple.</strong> If you sign in with a Google or Apple account, you sign in with that provider yourself,
+        on its page. Google or Apple is a separate controller for the data it processes when you sign in, under its own privacy policy. We receive
+        from it only the data listed in section 2 (Account). We send the provider only what the sign-in needs; when you confirm the deletion of your
+        account by signing in with Google again in the web app, this includes your email address, so that Google can preselect the right account.
+      </p>
 
       <h2>2. What we collect</h2>
       <p><strong>Waitlist (this website)</strong></p>
@@ -120,10 +131,22 @@
       <p><strong>Account (website, app and web app)</strong> &mdash; one account works in all of them.</p>
       <ul>
         <li>your email address and username;</li>
-        <li>your password, stored only as a cryptographic hash (bcrypt) by our authentication provider
+        <li>your password, if you sign up with an email address, stored only as a cryptographic hash (bcrypt) by our authentication provider
             Supabase &mdash; we never see or store the password itself;</li>
+        <li><strong>if you sign in with Google or Apple:</strong> from the provider we receive your email address, the identifier of your account
+            with that provider, whether the address is verified, and technical sign-in data (which provider issued the sign-in and, for Apple, when
+            you signed in). From Google we request only your email address: we do not receive your name or profile picture. With Apple you can
+            choose Hide My Email: we then receive only a random address that Apple creates for Outly (ending in @privaterelay.appleid.com), through
+            which Apple forwards our emails to your real address, and the information that the address is hidden. When you sign in with Apple on
+            this website or in the web app, Apple may also send us your name the first time; our authentication provider Supabase stores it with
+            your account, but we do not display or use it. In the iPhone app we do not request your name from Apple. The name other people see is
+            always your username, which you choose when you complete your account. We do not receive the password of your Google or Apple account,
+            your contacts or any other data from those accounts, and with this kind of sign-in you have no password with us. If you already have an
+            Outly account with the same verified email address, the sign-in is linked to that account; a hidden Apple address is a different
+            address, so it creates a separate account;</li>
         <li>email confirmation and password-reset codes, valid for a limited time;</li>
-        <li>when you sign up on this website or in the web app: which version of the Terms of Use you accepted, and when;</li>
+        <li>which version of the Terms of Use you accepted, and when: when you sign up on this website, in the web app or in the app, and when you
+            first sign in with Google or Apple;</li>
         <li>when you complete your profile in the app: phone number (optional), date of birth (used to check the minimum age for an account and
             for event age limits), country, the music genres you pick, a profile picture if you upload one;</li>
         <li>events you save with the heart (only you see them) and clubs you follow (the club sees only
@@ -223,6 +246,14 @@
             legitimate interest in running the invite programme (Art. 6(1)(f)).</li>
         <li><strong>Email, username, password, confirmation codes</strong> &mdash; running your account and
             signing you in. Basis: performance of the contract (Art. 6(1)(b)).</li>
+        <li><strong>Data from Google or Apple</strong> (email address, identifier with the provider, whether the address is verified or hidden)
+            &mdash; signing you in, running your account, sending emails about your account and purchases. Basis: performance of the contract
+            (Art. 6(1)(b)).</li>
+        <li><strong>Name from Apple</strong> (only if you sign in with Apple on this website or in the web app and Apple sends it) &mdash; we do
+            not use it; it is stored because our authentication provider&rsquo;s standard Apple sign-in on the web keeps it. Basis: legitimate
+            interest (Art. 6(1)(f)) in offering sign-in with Apple on the web. You can ask us to delete it (section 8).</li>
+        <li><strong>Terms version and time of acceptance for your account</strong> &mdash; proof of which terms you accepted and when. Basis:
+            legitimate interest (Art. 6(1)(f)) in proving the contract and its terms.</li>
         <li><strong>Date of birth</strong> &mdash; the minimum age for an account (18) and event age limits. Basis: contract and the organiser&rsquo;s
             legal obligation.</li>
         <li><strong>Phone number</strong> &mdash; purchase notifications and account recovery. Basis: contract;
@@ -270,7 +301,8 @@
         agreements and only on our instructions:</p>
       <ul>
         <li><strong>Supabase</strong> &mdash; the waitlist database and account authentication in the app, the web app
-            and on this website (email, password hash; your IP address when you sign in, to limit attempts). Data is
+            and on this website (email, password hash; for sign-in with Google or Apple, the identifier of your account with that provider and
+            the data it sends, section 2; your IP address when you sign in, to limit attempts). Data is
             stored in the European Union (Frankfurt, Germany).</li>
         <li><strong>Brevo</strong> (Sendinblue SAS, France) &mdash; waitlist emails from this website (confirming your sign-up, welcome email). Brevo records delivery events and whether an email was opened or a
             link clicked; we use this only to check that our emails arrive.</li>
@@ -294,6 +326,9 @@
             address, account, screenshots or request contents. Sentry sees your IP address when a report arrives but
             does not store it, nor a location derived from it. Data is stored in the European Union (Germany).</li>
       </ul>
+      <p>If you use a hidden Apple address, our emails (including tickets and purchase receipts) reach your real address through Apple&rsquo;s
+        email relay service. If you turn forwarding off in your Apple settings, you stop receiving our emails; your tickets stay available in the
+        app and in the web app.</p>
       <p>We may also disclose data to public authorities where the law requires it.</p>
 
       <h2>5. Transfers outside the EU/EEA</h2>
@@ -301,6 +336,8 @@
         transferred outside the European Economic Area. Such transfers rely on the European Commission&rsquo;s
         Standard Contractual Clauses or, where it applies to the provider, an adequacy decision.
         You can request a copy of the safeguards at <a href="mailto:luka@outly.si">luka@outly.si</a>.</p>
+      <p>Signing in with Google or Apple does not add a transfer of your data by us: the sign-in takes place between you and the provider under its
+        own rules, apart from what the sign-in needs (section 1), and we keep the data we receive with Supabase in the EU.</p>
 
       <h2>6. How long we keep it</h2>
       <ul>
@@ -308,9 +345,12 @@
             the launch email, and no longer than 24 months from the day you confirmed.</li>
         <li><strong>Unconfirmed sign-ups:</strong> deleted no later than 90 days after sign-up if you never
             confirm.</li>
-        <li><strong>Account data:</strong> for as long as you have an account. You can delete it yourself in the
-            app (Account settings), in the web app (My Account &rarr; Delete account) or on this website (profile &rarr;
-            Delete account).</li>
+        <li><strong>Account data:</strong> for as long as you have an account, including the data from Google or Apple. You can delete it yourself
+            in the app (Account settings), in the web app (My Account &rarr; Delete account) or on this website (profile &rarr; Delete account).
+            If you sign in with Google or Apple, you confirm the deletion by signing in with that provider again (on this website we send you to
+            the web app for this). When you delete your account, your account with our authentication provider Supabase is deleted too, including
+            the link to Google or Apple. Outly stays listed among the apps connected to your Google or Apple account until you remove it there
+            (section 8).</li>
         <li><strong>Confirmation and reset codes:</strong> valid for a limited time, then invalidated.</li>
         <li><strong>IP address for rate limiting:</strong> only as a hash, deleted about one hour after the first
             counted request at the latest.</li>
@@ -335,7 +375,8 @@
       </ul>
 
       <h2>7. Children</h2>
-      <p>You must be at least 18 to create an Outly account. We also use the date of birth you enter when you
+      <p>You must be at least 18 to create an Outly account. When you first sign in with Google or Apple, you confirm that you are at least 18;
+        Google and Apple do not tell us your age. We also use the date of birth you enter when you
         complete your profile to check this. Accounts that people aged 15 to 17 created before 20 October 2026, when the
         limit was 15, stay if they already have a date of birth. If you have not entered your date of birth yet, you
         must enter it and be at least 18. If we learn that an account was created by someone under 15, or on or after that date by
@@ -352,6 +393,9 @@
         <li>receive your data in a machine-readable format, or have it sent to another controller;</li>
         <li>withdraw your consent at any time. Withdrawing it does not affect what we did before.</li>
       </ul>
+      <p>You can remove Outly&rsquo;s access to your Google or Apple account at any time: for Google in the security settings of your Google
+        account, for Apple in the Sign in with Apple settings of your Apple Account. This does not delete your Outly account; to delete it, use
+        Delete account (section 6). If you cannot sign in afterwards, write to <a href="mailto:luka@outly.si">luka@outly.si</a>.</p>
       <p>To exercise any of these, write to <a href="mailto:luka@outly.si">luka@outly.si</a> from the address
         you signed up with, or tell us which address to look for. If you bought without an account, write from the email address
         you entered when buying, so we can check that the order is yours; you can also see your order and tickets through the
@@ -385,6 +429,10 @@
             key that prevents a double purchase when you come back from the payment page; when buying without an account
             also the email address you entered, the number of tickets and the secret link to your order (not your date of
             birth). The browser deletes it when you close the tab.</li>
+        <li>while you sign in with Google or Apple: temporary sign-in data (random one-time values that check that the return from the provider
+            belongs to your sign-in, the page to return to and when you tapped the button; for Apple also a one-time code verifier; when you
+            confirm deleting your account, also your account identifier and a marker that the confirmation succeeded). It is deleted when the
+            sign-in finishes or fails; if you abandon it, when you close the tab or the next time you open the sign-in screen.</li>
       </ul>
       <p>To open faster and work without a connection, the web app stores <strong>its own code</strong>, typeface and
         icons in the browser (service worker cache). None of your data, tickets or responses from our server are stored
@@ -395,11 +443,14 @@
       <p>The typeface and scripts are served from our own domain, not from Google Fonts or a public CDN. The website
         has no embedded third-party content (videos, maps, social widgets); the Instagram link is a plain link. The web
         app shows club and event images and videos from Cloudinary&rsquo;s servers (section 4) and the map from our own
-        domain. Payment takes place on the page of our payment provider Stripe, to which we redirect you.</p>
+        domain. Payment takes place on the page of our payment provider Stripe, to which we redirect you. The Google and Apple sign-in buttons
+        are plain buttons with our own images: they load no Google or Apple code on outly.si. When you tap one, we send you to the
+        provider&rsquo;s page, which uses its own cookies under its own rules.</p>
 
       <h2>11. Security</h2>
       <p>The website, the app and the web app talk to our servers over HTTPS only. Passwords are stored as bcrypt
-        hashes and cannot be recovered. Confirmation and reset codes are time-limited. Our authentication provider
+        hashes and cannot be recovered. If you sign in with Google or Apple, you have no password with us; the security of that sign-in depends on
+        your account with the provider (we recommend two-step verification). Confirmation and reset codes are time-limited. Our authentication provider
         Supabase limits sign-in and code verification attempts. In the app, your session token is kept in the
         phone&rsquo;s secure system storage; on this website and in the web app it is kept in the browser&rsquo;s local
         storage, where code running on outly.si can read it. That is why outly.si loads only our own code from our own

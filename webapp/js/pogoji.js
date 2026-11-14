@@ -2,7 +2,7 @@ import { html } from "./lib.js";
 import { t, useJezik, kodaJezika } from "./i18n.js";
 
 /* Skupno za prijavo in nakup brez racuna: verzija pogojev (kot auth.js na outly.si / terms.html) in oblika e-naslova. */
-export const TERMS_VERSION = "1.1.4";
+export const TERMS_VERSION = "1.1.5";
 export const EMAIL_RE = /^[^@\s]+@[^@\s.]+\.[^@\s]+$/;
 
 
