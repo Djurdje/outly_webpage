@@ -8,9 +8,14 @@
 <header>
   <div class="znamka">Outly</div>
   <h1>Politika zasebnosti</h1>
-  <div class="datum">Veljavna od 8. 11. 2026 · različica 2.4.7 · velja za aplikacijo Outly, spletno aplikacijo na outly.si/app in spletno stran outly.si</div>
+  <div class="datum">Veljavna od 14. 11. 2026 · različica 2.4.8 · velja za aplikacijo Outly, spletno aplikacijo na outly.si/app in spletno stran outly.si</div>
 </header>
 
+<p>Različica 2.4.8 dodaja prijavo z računom Google ali Apple (razdelki 1, 2, 3, 4, 5, 6, 8, 9, 10 in 11). Od Googla dobimo samo tvoj elektronski
+naslov in identifikator tvojega računa Google, ne pa imena in profilne slike. Od Appla dobimo elektronski naslov (ali skriti naslov Apple) in
+identifikator tvojega računa Apple; če se z Applom prijaviš na spletni strani ali v spletni aplikaciji, nam Apple lahko pošlje tudi tvoje ime,
+ki ga ne uporabljamo. Registracija z elektronskim naslovom in geslom ostane. Od te različice v aplikaciji za iPhone potrebuješ račun za vso
+uporabo, tudi za ogled dogodkov in klubov; v spletni aplikaciji in pri nakupu brez računa se ni nič spremenilo.</p>
 <p>Različica 2.4.7 spreminja, kateri ponudnik pošilja katera sporočila (razdelek 5): od 8. 11. 2026 maile za tvoj uporabniški račun (kode za registracijo in prijavo, ponastavitev gesla) pošiljamo prek ponudnika Resend namesto prek ponudnika Brevo. Resend je družba s sedežem v ZDA (razdelek 6); Brevo zdaj pošilja samo maile čakalne liste na spletni strani. Katere podatke obdelujemo, zakaj in kako dolgo jih hranimo, je ostalo enako.</p>
 <p>Različica 2.4.6 zvišuje najnižjo starost za uporabniški račun s 15 na 18 let (razdelek 10) in dodaja, da datum rojstva uporabimo tudi za preverjanje te meje (razdelka 2 in 3). Računi, ki so jih osebe od 15 do 17 let ustvarile pred 20. 10. 2026, ostanejo, če imajo datum rojstva že vpisan. Za nakup brez računa se starostna meja ni spremenila.</p>
 <p>Različica 2.4.6 dodaja tudi opis dogodkov Outly, ki jih organiziramo in prodajamo sami: pri njih smo za podatke o nakupu in vstopu upravljavec samo mi (razdelki 1, 3 in 5).</p>
@@ -52,15 +57,29 @@ pred plačilom je kot prodajalec naveden NEXT DIMENSIONS, družba za marketing, 
 <a href="/terms#a2">Pogoji uporabe, razdelek 2</a>), smo organizator in prodajalec mi. Podatkov o nakupu
 takrat ne prejme noben klub kot samostojni upravljavec: upravljavec smo samo mi, tudi za vstop na dogodek.
 Kjer ta politika govori o organizatorju ali prodajalcu, to pri dogodku Outly pomeni nas.</p>
+<p><strong>Prijava z Googlom ali Applom.</strong> Če se prijaviš z računom Google ali Apple, se pri ponudniku prijaviš sam, na njegovi strani.
+Google oziroma Apple je za podatke, ki jih obdela pri tvoji prijavi, samostojni upravljavec po svoji politiki zasebnosti. Od njega dobimo samo
+podatke, naštete v razdelku 2 (Ob ustvarjanju računa). Ponudniku pošljemo samo, kar prijava potrebuje; ko izbris računa v spletni aplikaciji
+potrdiš s ponovno prijavo z Googlom, je to tudi tvoj elektronski naslov, da Google vnaprej izbere pravi račun.</p>
 
 <h2 id="b2"><span class="st">2</span>Kaj zbiramo</h2>
 
 <h3>Ob ustvarjanju računa</h3>
 <ul>
   <li>elektronski naslov in uporabniško ime;</li>
-  <li>geslo — shrani ga naš ponudnik avtentikacije Supabase izključno v obliki kriptografskega odtisa (bcrypt); samega gesla ne poznamo in ga ne moremo prebrati; isti račun velja za aplikacijo, spletno aplikacijo in spletno stran outly.si;</li>
+  <li>geslo, če se registriraš z elektronskim naslovom — shrani ga naš ponudnik avtentikacije Supabase izključno v obliki kriptografskega odtisa (bcrypt); samega gesla ne poznamo in ga ne moremo prebrati; isti račun velja za aplikacijo, spletno aplikacijo in spletno stran outly.si;</li>
+  <li><strong>če se prijaviš z Googlom ali Applom:</strong> od ponudnika dobimo elektronski naslov, identifikator tvojega računa pri ponudniku,
+      podatek, ali je naslov potrjen, in tehnične podatke o prijavi (kateri ponudnik je prijavo izdal, pri Applu tudi čas prijave). Od Googla
+      zahtevamo samo elektronski naslov: imena in profilne slike ne dobimo. Pri Applu lahko izbereš »Skrij moj e-naslov« (Hide My Email): takrat
+      dobimo samo naključni naslov, ki ga Apple ustvari za Outly (konča se z @privaterelay.appleid.com) in prek katerega Apple naša sporočila
+      posreduje na tvoj pravi naslov, ter podatek, da je naslov skrit. Če se z Applom prijaviš na spletni strani ali v spletni aplikaciji, nam Apple
+      ob prvi prijavi lahko pošlje tudi tvoje ime; naš ponudnik avtentikacije Supabase ga shrani k tvojemu računu, mi pa ga ne prikazujemo in ne
+      uporabljamo. V aplikaciji za iPhone imena od Appla ne zahtevamo. Ime, ki ga vidijo drugi, je vedno tvoje uporabniško ime, ki ga izbereš ob
+      dokončanju računa. Gesla tvojega računa Google ali Apple, stikov ali drugih podatkov iz teh računov ne dobimo, pri taki prijavi pa pri nas
+      nimaš gesla. Če že imaš račun Outly z istim potrjenim elektronskim naslovom, se prijava poveže s tem računom; skriti naslov Apple je drug
+      naslov, zato z njim nastane ločen račun;</li>
   <li>potrditvene kode za elektronsko pošto, prav tako samo kot odtis.</li>
-  <li>različica Pogojev uporabe, ki si jih sprejel ob registraciji na spletni strani ali v spletni aplikaciji, in čas sprejema.</li>
+  <li>različica Pogojev uporabe, ki si jih sprejel, in čas sprejema: ob registraciji na spletni strani, v spletni aplikaciji ali v aplikaciji in ob prvi prijavi z Googlom ali Applom.</li>
 </ul>
 
 <h3>Ob dokončanju profila</h3>
@@ -181,6 +200,9 @@ brskalniku, je opisano v razdelku 8, lokacija v razdelku 7, kamera za skeniranje
   <thead><tr><th>Podatek</th><th>Namen</th><th>Pravna podlaga</th></tr></thead>
   <tbody>
     <tr><td><b>E-naslov, uporabniško ime, geslo</b></td><td>Vodenje računa in prijava</td><td>Izvajanje pogodbe (člen 6(1)(b) Splošne uredbe)</td></tr>
+    <tr><td><b>Podatki od Googla ali Appla</b> (e-naslov, identifikator pri ponudniku, ali je naslov potrjen oziroma skrit)</td><td>Prijava in vodenje računa, sporočila o računu in nakupih</td><td>Izvajanje pogodbe (člen 6(1)(b))</td></tr>
+    <tr><td><b>Ime od Appla</b> (samo pri prijavi z Applom na spletni strani ali v spletni aplikaciji, če ga Apple pošlje)</td><td>Ne uporabljamo ga; shrani se, ker ga hrani standardni postopek prijave z Applom na spletu pri našem ponudniku avtentikacije</td><td>Zakoniti interes (člen 6(1)(f)) — da lahko ponudimo prijavo z Applom na spletu; izbris lahko zahtevaš (razdelek 9)</td></tr>
+    <tr><td><b>Različica pogojev in čas sprejema za račun</b></td><td>Dokaz, katere pogoje si sprejel in kdaj</td><td>Zakoniti interes (člen 6(1)(f)) — dokazovanje sklenitve pogodbe in njenih pogojev</td></tr>
     <tr><td><b>Potrditvena koda</b></td><td>Preverjanje, da je naslov res tvoj</td><td>Izvajanje pogodbe</td></tr>
     <tr><td><b>Datum rojstva</b></td><td>Najnižja starost za račun (18 let) in starostne omejitve dogodkov</td><td>Izvajanje pogodbe in zakonska obveznost organizatorja</td></tr>
     <tr><td><b>Telefonska številka</b></td><td>Obveščanje o nakupu, obnovitev dostopa</td><td>Izvajanje pogodbe; privolitev, če je vnos neobvezen</td></tr>
@@ -214,7 +236,7 @@ Podatkov ne prodajamo in ne oddajamo.</p>
 
 <h2 id="b4"><span class="st">4</span>Kako dolgo hranimo</h2>
 <ul>
-  <li><strong>Podatki računa</strong> — dokler imaš račun. Ob izbrisu jih odstranimo.</li>
+  <li><strong>Podatki računa</strong> — dokler imaš račun, tudi podatki od Googla ali Appla. Ob izbrisu jih odstranimo; izbriše se tudi tvoj račun pri našem ponudniku avtentikacije Supabase, s povezavo z Googlom oziroma Applom vred. Če se prijavljaš z Googlom ali Applom, izbris potrdiš s ponovno prijavo pri tem ponudniku (na spletni strani outly.si te za to preusmerimo v spletno aplikacijo). Outly ostane na seznamu aplikacij, povezanih s tvojim računom Google ali Apple, dokler ga tam ne odstraniš (razdelek 9).</li>
   <li><strong>Potrditvene kode in kode za ponastavitev gesla</strong> — veljajo omejen čas, nato se razveljavijo.</li>
   <li><strong>Naslov IP za omejevanje poskusov</strong> — samo kot odtis, ki se izbriše najpozneje približno eno uro po prvem štetem zahtevku.</li>
   <li><strong>Podatki v brskalniku</strong> (spletna stran in spletna aplikacija) — kot je opisano pri posameznem podatku v razdelku 8; vse izbrišeš z brisanjem podatkov strani outly.si v nastavitvah brskalnika. Seznam vstopnic na napravi osebja kluba se izbriše ob odjavi, sicer, tako kot poslani skeni, ob prvem odprtju spletne aplikacije po treh dneh.</li>
@@ -240,12 +262,14 @@ storitve, in samo v obsegu, ki je za to nujen.</p>
     <tr><td><b>Cloudinary</b></td><td>Shranjevanje in prikaz slik in videov (spletna aplikacija jih naloži in prikaže neposredno s strežnikov Cloudinary)</td><td>Naložene slike in videi; pri prikazu tehnični podatki, ki jih prejme vsak spletni strežnik (naslov IP, brskalnik)</td></tr>
     <tr><td><b>Stripe</b></td><td>Obdelava plačil</td><td>Znesek, elektronski naslov, podatki o kartici (neposredno, brez nas)</td></tr>
     <tr><td><b>Organizator dogodka</b> (ne velja za dogodke Outly, razdelek 1)</td><td>Izvedba nakupa in vstopa</td><td>Elektronski naslov, vstopnice, podatek o vstopu</td></tr>
-    <tr><td><b>Supabase</b></td><td>Avtentikacija računa (prijava, geslo) v aplikaciji, spletni aplikaciji in na outly.si ter čakalna lista na outly.si (EU, Frankfurt)</td><td>Elektronski naslov, odtis gesla, prijava na čakalno listo; naslov IP ob prijavi za omejevanje poskusov</td></tr>
+    <tr><td><b>Supabase</b></td><td>Avtentikacija računa (prijava, geslo) v aplikaciji, spletni aplikaciji in na outly.si ter čakalna lista na outly.si (EU, Frankfurt)</td><td>Elektronski naslov, odtis gesla, prijava na čakalno listo; pri prijavi z Googlom ali Applom identifikator računa pri ponudniku in podatki, ki jih ponudnik pošlje (razdelek 2); naslov IP ob prijavi za omejevanje poskusov</td></tr>
     <tr><td><b>Brevo</b> (Sendinblue SAS, Francija)</td><td>Pošiljanje mailov čakalne liste na spletni strani (potrditev prijave, pozdravni mail)</td><td>Elektronski naslov, vsebina sporočila, podatki o dostavi in odprtju</td></tr>
     <tr><td><b>Cloudflare</b></td><td>Gostovanje in dostava spletne strani outly.si in spletne aplikacije outly.si/app, vključno z deli zemljevida</td><td>Tehnični podatki, ki jih prejme vsak spletni strežnik (naslov IP, brskalnik, zahtevana stran oziroma del zemljevida)</td></tr>
     <tr><td><b>Sentry</b> (Functional Software, Inc.)</td><td>Poročila o napakah in zrušitvah aplikacije, spletne aplikacije outly.si/app in našega strežnika, da jih lahko odpravimo (EU, Nemčija)</td><td>Opis napake s skladom klicev, čas in različica; v aplikaciji še model naprave, različica iOS in naključna oznaka namestitve, ki ni povezana s tvojim računom; v spletni aplikaciji naslov strani ter vrsta brskalnika in naprave; pri strežniku pot zahtevka brez poizvedbe &mdash; brez imena, elektronskega naslova, računa, posnetkov zaslona in vsebine zahtevkov. Naslov IP Sentry ob prejemu vidi, a ga ne hrani, prav tako ne lokacije, izpeljane iz njega</td></tr>
   </tbody>
 </table></div>
+<p>Če uporabljaš skriti naslov Apple, gredo naša sporočila (tudi vstopnice in potrdila o nakupu) na tvoj pravi naslov prek Applove storitve za
+posredovanje pošte. Če posredovanje v nastavitvah Apple izklopiš, naših sporočil ne dobiš več; vstopnice ostanejo v aplikaciji in v spletni aplikaciji.</p>
 <p>Z vsemi ponudniki imamo pogodbo o obdelavi podatkov; podatke obdelujejo samo po naših navodilih.</p>
 <p>Podatke lahko razkrijemo tudi pristojnim organom, kadar nam to nalaga zakon.</p>
 
@@ -255,6 +279,8 @@ To pomeni, da se osebni podatki lahko prenesejo izven Evropskega gospodarskega p
 <p>Take prenose izvajamo na podlagi standardnih pogodbenih klavzul Evropske komisije
 oziroma na podlagi sklepa o ustreznosti, kadar ta za ponudnika velja.
 Kopijo ustreznih zaščitnih ukrepov lahko zahtevaš na <a href="mailto:luka@outly.si">luka@outly.si</a>.</p>
+<p>Prijava z Googlom ali Applom ne pomeni novega prenosa tvojih podatkov z naše strani: prijava poteka med tabo in ponudnikom po njegovih pravilih,
+razen tega, kar prijava potrebuje (razdelek 1), dobljene podatke pa hranimo pri Supabase v EU.</p>
 
 <h2 id="b7"><span class="st">7</span>Lokacija</h2>
 <p>Aplikacija te ob prvi uporabi zemljevida vpraša za dostop do lokacije naprave. V spletni aplikaciji brskalnik
@@ -290,6 +316,10 @@ orodij, zato pasice za privolitev v piškotke ni.</p>
   <li>za čas odprtega zavihka (sessionStorage): začasne podatke tekočega nakupa, na primer oznako naročila, ki prepreči
       dvojni nakup ob vrnitvi s plačilne strani; pri nakupu brez računa še vpisani elektronski naslov, število vstopnic in
       skrivno povezavo do naročila (datuma rojstva ne). Ko zavihek zapreš, jih brskalnik izbriše.</li>
+  <li>med prijavo z Googlom ali Applom: začasne podatke prijave (naključni enkratni vrednosti, s katerima preverimo, da povratek od ponudnika
+      pripada tvoji prijavi, stran, na katero se vrneš, in čas, ko si tapnil gumb; pri Applu še enkratni preverjevalnik kode; ko potrdiš izbris
+      računa, še identifikator računa in oznako, da je potrditev uspela). Izbrišejo se, ko se prijava konča ali spodleti; če jo prekineš, ko zapreš
+      zavihek ali ob naslednjem odprtju zaslona za prijavo.</li>
 </ul>
 <p>Spletna aplikacija za hitrejše odpiranje in delovanje brez povezave v brskalniku shrani <strong>svojo programsko
 kodo</strong>, pisavo in ikone (predpomnilnik service workerja). Tam niso shranjeni tvoji podatki, vstopnice ali odgovori
@@ -301,7 +331,8 @@ pri posameznem podatku tako označeno.</p>
 CDN). Spletna stran ne vsebuje vdelanih vsebin tretjih oseb (videi, zemljevidi, gumbi družbenih omrežij); povezava na
 Instagram je navadna povezava. Spletna aplikacija prikazuje slike in videe klubov in dogodkov s strežnikov Cloudinary
 (razdelek 5), zemljevid pa z naše domene (razdelek 7). Plačilo poteka na strani ponudnika plačilnih storitev Stripe,
-kamor te preusmerimo.</p>
+kamor te preusmerimo. Gumba za prijavo z Googlom in Applom sta navadna gumba z našima slikama: na outly.si ne nalagata kode Googla ali Appla.
+Ko tapneš gumb, te preusmerimo na stran ponudnika, ki uporablja svoje piškotke po svojih pravilih.</p>
 
 <h2 id="b9"><span class="st">9</span>Tvoje pravice</h2>
 <p>Glede svojih osebnih podatkov imaš pravico do:</p>
@@ -315,6 +346,9 @@ kamor te preusmerimo.</p>
 </ul>
 <p>Zahtevo naslovi na <a href="mailto:luka@outly.si">luka@outly.si</a>. Odgovorimo ti
 najpozneje v enem mesecu.</p>
+<p>Dostop Outlyja do svojega računa Google ali Apple lahko kadar koli odstraniš: pri Googlu v varnostnih nastavitvah računa Google, pri Applu v
+nastavitvah »Prijava z Applom« (Sign in with Apple) svojega računa Apple. S tem se tvoj račun Outly ne izbriše; za izbris uporabi Izbriši račun
+(razdelek 4). Če se po tem ne moreš več prijaviti, nam piši na <a href="mailto:luka@outly.si">luka@outly.si</a>.</p>
 <p>Če si vstopnico kupil brez računa, nam piši z elektronskega naslova, ki si ga vpisal ob nakupu, da lahko preverimo, da gre
 za tvoje naročilo. Naročilo in vstopnice vidiš tudi na povezavi iz sporočila.</p>
 <p>Če meniš, da s tvojimi podatki ravnamo nepravilno, se lahko pritožiš pri
@@ -322,7 +356,8 @@ za tvoje naročilo. Naročilo in vstopnice vidiš tudi na povezavi iz sporočila
 1000 Ljubljana, <a href="mailto:gp.ip@ip-rs.si">gp.ip@ip-rs.si</a>.</p>
 
 <h2 id="b10"><span class="st">10</span>Otroci</h2>
-<p>Račun v Outlyju lahko ustvari le oseba, ki je dopolnila 18 let. Datum rojstva, ki ga vpišeš
+<p>Račun v Outlyju lahko ustvari le oseba, ki je dopolnila 18 let. Ob prvi prijavi z Googlom ali Applom potrdiš, da si dopolnil 18 let;
+Google in Apple nam tvoje starosti ne sporočita. Datum rojstva, ki ga vpišeš
 ob dokončanju profila, uporabimo tudi za preverjanje te meje. Računi, ki so jih osebe od 15 do
 17 let ustvarile pred 20. 10. 2026, ko je bila meja 15 let, ostanejo, če imajo datum rojstva že vpisan.
 Kdor datuma rojstva še nima vpisanega, ga mora vpisati in mora biti star vsaj 18 let. Če ugotovimo, da je
@@ -336,6 +371,7 @@ ob vstopu.</p>
 <ul>
   <li>Vsa komunikacija med aplikacijo, spletno aplikacijo, spletno stranjo in strežnikom je šifrirana (HTTPS).</li>
   <li>Gesla so shranjena kot odtis bcrypt in jih ni mogoče razbrati nazaj.</li>
+  <li>Če se prijavljaš z Googlom ali Applom, pri nas nimaš gesla; varnost take prijave je odvisna od tvojega računa pri ponudniku (priporočamo dvostopenjsko preverjanje).</li>
   <li>Potrditvene kode in kode za ponastavitev gesla so shranjene kot odtis in veljajo omejen čas.</li>
   <li>Število poskusov prijave in preverjanja kod omejuje naš ponudnik prijave Supabase.</li>
   <li>Prijavni žeton je v aplikaciji shranjen v varni shrambi sistema telefona, na spletni strani outly.si in v spletni
