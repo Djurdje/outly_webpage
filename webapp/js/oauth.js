@@ -12,7 +12,7 @@ import { TERMS_VERSION } from "./pogoji.js";
    brez vklopljenega ponudnika Supabase vrne golo JSON napako. Ko sta vklopljena: ["google", "apple"]. */
 export const OAUTH_PONUDNIKI = [];
 /* Spletni Google OAuth client ID (javen; Google Cloud, »Web application«). PRAZEN = gumba Google NI, tudi ob stikalu in ob ?oauth=. */
-export const GOOGLE_CLIENT_ID = "";
+export const GOOGLE_CLIENT_ID = "897518826706-67cffn2n5225a179tctv85jgdu4qpnec.apps.googleusercontent.com";
 
 export const POVRATNA_POT = "/app/auth-callback";
 const ZNANI = ["google", "apple"];
