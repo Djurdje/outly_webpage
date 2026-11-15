@@ -8,9 +8,9 @@
 import { supabase, oauthOdjemalec, KLJUC_OAUTH, KLJUC_IZBRIS } from "./supabase.js";
 import { TERMS_VERSION } from "./pogoji.js";
 
-/* STIKALO: ponudniki, ki so vklopljeni (Supabase Authentication > Providers). PRAZNO, dokler jih Martin ne vklopi:
-   brez vklopljenega ponudnika Supabase vrne golo JSON napako. Ko sta vklopljena: ["google", "apple"]. */
-export const OAUTH_PONUDNIKI = [];
+/* STIKALO: ponudniki, ki so vklopljeni (Supabase Authentication > Providers). Vklopljena Google in Apple za vse: 15. 11. 2026 (Martin).
+   Brez vklopljenega ponudnika Supabase vrne golo JSON napako, zato ga ne dodajaj, dokler ni vklopljen tudi tam. Izklop = odstrani ime. */
+export const OAUTH_PONUDNIKI = ["google", "apple"];
 /* Spletni Google OAuth client ID (javen; Google Cloud, »Web application«). PRAZEN = gumba Google NI, tudi ob stikalu in ob ?oauth=. */
 export const GOOGLE_CLIENT_ID = "897518826706-67cffn2n5225a179tctv85jgdu4qpnec.apps.googleusercontent.com";
 

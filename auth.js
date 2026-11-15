@@ -274,12 +274,12 @@
 
   /* ---------------------------------------------------------------
      Prijava z Googlom / Applom
-     Gumbi so v plosci SAMO za ponudnike, ki so vklopljeni (OAUTH_PONUDNIKI, privzeto prazno: ponudnikov v Supabase se ni).
+     Gumbi so v plosci SAMO za ponudnike, ki so vklopljeni (OAUTH_PONUDNIKI; vklopljena za vse 15. 11. 2026).
      Prijavo opravi spletna aplikacija: ta stran sproži tok (Google: neposredno, scope openid email, id_token; Apple: PKCE) in vrne na
      /app/auth-callback, kjer webapp/js/oauth.js dokonca prijavo, zapise terms_version in vrne na /about (loadProfile poslje outly_ref).
      Isti kljuci (KLJUC_OAUTH, KLJUC_TOKA, KLJUC_GOOGLE) in konstante (OAUTH_PONUDNIKI, GOOGLE_CLIENT_ID) kot tam.
   ---------------------------------------------------------------- */
-  const OAUTH_PONUDNIKI = [];                       // npr. ["google", "apple"], ko ju Martin vklopi v Supabase
+  const OAUTH_PONUDNIKI = ["google", "apple"];     // vklopljena za vse 15. 11. 2026 (Martin); enako kot webapp/js/oauth.js; izklop = odstrani ime
   const GOOGLE_CLIENT_ID = "897518826706-67cffn2n5225a179tctv85jgdu4qpnec.apps.googleusercontent.com";                    // spletni Google client ID (javen); PRAZEN = gumba Google ni (enako kot webapp/js/oauth.js)
   const OAUTH_ZNANI = ["google", "apple"];
   const KLJUC_STIKALA = "outly_oauth";              // ekipni preklop ?oauth=1 (sessionStorage, ta zavihek; enako kot v /app)
