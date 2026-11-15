@@ -280,7 +280,7 @@
      Isti kljuci (KLJUC_OAUTH, KLJUC_TOKA, KLJUC_GOOGLE) in konstante (OAUTH_PONUDNIKI, GOOGLE_CLIENT_ID) kot tam.
   ---------------------------------------------------------------- */
   const OAUTH_PONUDNIKI = [];                       // npr. ["google", "apple"], ko ju Martin vklopi v Supabase
-  const GOOGLE_CLIENT_ID = "";                      // spletni Google client ID (javen); PRAZEN = gumba Google ni (enako kot webapp/js/oauth.js)
+  const GOOGLE_CLIENT_ID = "897518826706-67cffn2n5225a179tctv85jgdu4qpnec.apps.googleusercontent.com";                    // spletni Google client ID (javen); PRAZEN = gumba Google ni (enako kot webapp/js/oauth.js)
   const OAUTH_ZNANI = ["google", "apple"];
   const KLJUC_STIKALA = "outly_oauth";              // ekipni preklop ?oauth=1 (sessionStorage, ta zavihek; enako kot v /app)
   const KLJUC_OAUTH = "sb-outly-oauth";
