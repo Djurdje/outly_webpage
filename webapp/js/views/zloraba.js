@@ -94,9 +94,9 @@ export function OsebaMeni({ oseba, zapri, obBlokiran }) {
   return html`<${List} odprt=${true} zapri=${zapri} naslov=${naslov} brezZapiranja=${tece}>
     ${korak === "meni" ? html`<div class="seznam-kartica">
       <button type="button" class="menijska-vrstica" onClick=${() => setKorak("prijava")}>
-        <${Ikona} ime="flag" /><span>${t("Report")}</span><${Ikona} ime="chevron-right" velikost=${16} razred="utisano" /></button>
+        <${Ikona} ime="flag" /><span>${t("Report")}</span></button>
       <button type="button" class="menijska-vrstica rdeca" onClick=${() => setKorak("blok")}>
-        <${Ikona} ime="ban" /><span>${t("Block")}</span><${Ikona} ime="chevron-right" velikost=${16} razred="utisano" /></button>
+        <${Ikona} ime="ban" /><span>${t("Block")}</span></button>
     </div>` : null}
     ${korak === "prijava" ? html`<${ObrazecPrijave} tip="user" id=${oseba.id} zapri=${zapri} />` : null}
     ${korak === "blok" ? html`<div class="obrazec-prijave">

@@ -3,7 +3,7 @@
 import { html, useEffect, useRef, useState } from "./lib.js";
 import { IKONE } from "./ikone.js";
 import { t } from "./i18n.js";
-import { nazaj } from "./usmerjanje.js";
+import { nazaj, usePot } from "./usmerjanje.js";
 import { napisCene, znacka, jeRazprodan, danInUra, danKratek, zanrIme, slika, plakatKartice } from "./oblika.js";
 
 /** Neobvezno polje »Promo code« na nakupnem listu navadnih vstopnic (samo statistika: cena se ne spremeni, brez gumba »Apply«).
@@ -68,12 +68,16 @@ export function Avatar({ url, velikost = 36, ime = "" }) {
 
 /** Glava potisnjenega zaslona: gumb nazaj (+ neobvezen naslov). */
 export function GlavaNazaj({ naslov, rezerva = "/app", prosojna = false }) {
-  return html`<div class=${"glava-nazaj" + (prosojna ? " prosojna" : "")}>
+  // iOS: gumb nazaj je sam v zgornji vrstici, velik naslov v svoji vrstici pod njim. Poslovni del (/app/business/...) ima prostor
+  // za skener in tabele zelo na tesno, zato tam ostane naslov ob gumbu.
+  const velik = !!naslov && !prosojna && !usePot().ime.startsWith("biz");
+  const glava = html`<div class=${"glava-nazaj" + (prosojna ? " prosojna" : "")}>
     <button class="krog-gumb" type="button" onClick=${() => nazaj(rezerva)} aria-label=${t("Back")}>
       <${Ikona} ime="chevron-left" velikost=${22} />
     </button>
-    ${naslov ? html`<h1 class="glava-naslov">${naslov}</h1>` : null}
+    ${naslov && !velik ? html`<h1 class="glava-naslov">${naslov}</h1>` : null}
   </div>`;
+  return velik ? html`${glava}<h1 class="velik-naslov naslov-zaslona">${naslov}</h1>` : glava;
 }
 
 export function NaslovSekcije({ naslov, desno }) {

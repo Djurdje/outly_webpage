@@ -10,8 +10,7 @@ export function VrsticaNamestitve() {
   if (namescena) return null;
   const klik = async () => { if (!(await namesti())) setNavodila(true); };
   return html`<div class="seznam-kartica">
-    <button type="button" class="menijska-vrstica" onClick=${klik}><${Ikona} ime="smartphone" /><span>${t("Add Outly to Home Screen")}</span>
-      <${Ikona} ime="chevron-right" velikost=${16} razred="utisano" /></button>
+    <button type="button" class="menijska-vrstica" onClick=${klik}><${Ikona} ime="smartphone" /><span>${t("Add Outly to Home Screen")}</span></button>
     <${List} odprt=${navodila} zapri=${() => setNavodila(false)} naslov=${t("Add Outly to Home Screen")}>
       ${jeIOS() ? html`<ol class="koraki">
           <li>${t("Open outly.si/app in Safari.")}</li>
