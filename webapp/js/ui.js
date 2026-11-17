@@ -68,9 +68,10 @@ export function Avatar({ url, velikost = 36, ime = "" }) {
 
 /** Glava potisnjenega zaslona: gumb nazaj (+ neobvezen naslov). */
 export function GlavaNazaj({ naslov, rezerva = "/app", prosojna = false }) {
+  const biz = usePot().ime.startsWith("biz");   // kavelj brezpogojno na vrhu
   // iOS: gumb nazaj je sam v zgornji vrstici, velik naslov v svoji vrstici pod njim. Poslovni del (/app/business/...) ima prostor
   // za skener in tabele zelo na tesno, zato tam ostane naslov ob gumbu.
-  const velik = !!naslov && !prosojna && !usePot().ime.startsWith("biz");
+  const velik = !!naslov && !prosojna && !biz;
   const glava = html`<div class=${"glava-nazaj" + (prosojna ? " prosojna" : "")}>
     <button class="krog-gumb" type="button" onClick=${() => nazaj(rezerva)} aria-label=${t("Back")}>
       <${Ikona} ime="chevron-left" velikost=${22} />

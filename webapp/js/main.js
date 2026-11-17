@@ -263,7 +263,7 @@ function App() {
   }, [pot.ime, pot.params.id, pot.params.slug, koda]);
 
   if (ZAVIHKI.some(z => z.ime === pot.ime)) zadnjiZavihek = pot.ime;
-  else if (zadnjiZavihek === null) zadnjiZavihek = PODZASLONI_PROFILA.has(pot.ime) ? "profile" : "home";   // neposredno odprtje/globoka povezava: podzasloni Profila -> Profile; sicer Home. Nato zavihek ostane, kot prej
+  else if (zadnjiZavihek === null) zadnjiZavihek = PODZASLONI_PROFILA.has(pot.ime) || pot.ime.startsWith("biz") ? "profile" : "home";   // neposredno odprtje/globoka povezava: podzasloni Profila -> Profile; sicer Home. Nato zavihek ostane, kot prej
   const brezVrstice = AVT.has(pot.ime) || pot.ime === "onboarding" || pot.ime === "oauth";
   // Zamegljen Home kot ozadje Search/Profile (tudi potisnjenih zaslonov); nikoli na prijavi, onboardingu, poslovnih zaslonih (skener) in gostovih zaslonih.
   const zavihekZdaj = ZAVIHKI.some(z => z.ime === pot.ime) ? pot.ime : zadnjiZavihek;

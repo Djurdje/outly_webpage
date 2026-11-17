@@ -334,7 +334,7 @@ h1,h2,h3,p{ margin:0; }
 .gumb-plan{ flex:none; height:40px; padding:0 14px; border-radius:999px; border:1.5px solid rgba(255,255,255,.6); font-size:14px; font-weight:700; display:inline-flex; align-items:center; gap:6px; white-space:nowrap; }
 .gumb-plan.zanima{ background:#fff; color:#3B63E6; border-color:#fff; } /* modra na beli: #4C76FF ima 3,9 < 4,5 (AA) */
 .gumb-plan.gre{ background:var(--modra); border-color:var(--modra); color:#fff; }
-.prijatelji-vrsta{ display:flex; align-items:center; justify-content:center; gap:8px; font-size:13px; font-weight:500; color:rgba(255,255,255,.8); }
+.prijatelji-vrsta{ display:flex; align-items:center; gap:8px; font-size:13px; font-weight:500; color:rgba(255,255,255,.8); }
 .avatarji{ display:flex; }
 .avatarji .avatar{ border:1.5px solid #000; margin-left:-10px; }
 .avatarji .avatar:first-child{ margin-left:0; }
@@ -357,7 +357,7 @@ h1,h2,h3,p{ margin:0; }
 .info-vrstica.razmaknjena > :last-child{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .info-oznaka{ font-size:12px; font-weight:600; color:var(--utisano); }
 .info-vrstica a{ color:var(--modra-besedilo); font-weight:600; }
-.zanri-vec{ font-size:12px; font-weight:500; color:var(--b55); padding:2px 0; }
+.zanri-vec{ font-size:12px; font-weight:500; color:var(--utisano); text-decoration:underline; text-underline-offset:2px; padding:2px 0; }   /* prepoznaven ne samo po barvi */
 .zanri-vec:hover{ color:var(--b70); }
 .kontakti{ display:flex; flex-direction:column; border-radius:20px; background:var(--povrsina); overflow:hidden; }
 .kontakt-vrstica{ display:flex; align-items:center; gap:14px; padding:0 16px; min-height:52px; color:var(--b70); }
@@ -386,8 +386,9 @@ h1,h2,h3,p{ margin:0; }
 .lok-glava .ikona{ color:var(--b70); flex:none; }
 .lok-glava strong{ font-weight:600; min-width:0; overflow-wrap:anywhere; }
 .lok-podatki{ grid-column:1; min-width:0; display:flex; flex-direction:column; gap:12px; }
-.kartica-lokacija.z-karto .mini-karta{ grid-column:2; grid-row:2; width:150px; height:150px; align-self:start; border-color:rgba(255,255,255,.12); }
+.kartica-lokacija.z-karto .mini-karta{ grid-column:2; width:150px; height:150px; align-self:start; border-color:rgba(255,255,255,.12); }
 .kartica-lokacija .povezava-zemljevid{ grid-column:1 / -1; }
+.dogodek .prijatelji-vrsta{ justify-content:center; }   /* iOS: vrstica prijateljev na dogodku je sredinska; Friends plans ostane levo */
 .dogodek a.kartica-vrstica{ background:var(--b04); }
 .dogodek button.kartica-vrstica{ background:var(--b08); padding:0 18px; gap:14px; }
 .dogodek button.kartica-vrstica .kv-besedilo strong{ font-weight:500; }
@@ -1151,4 +1152,21 @@ a.profil-ime{ white-space:normal; }
   .skeleton::after{ animation:none; }
   .list-ozadje, .list, .karta-kartica{ animation:none; }
   .slika img, .dia-trak{ transition:none; }
+}
+
+/* Ozki in nizki zasloni (pregled PR #120): ne izgubi ure/imena in gumb Pay ostane viden tam, kjer je bil */
+@media (max-width:400px){
+  .vstopnice-zaslon .vstopnice-seznam > .vstopnica.skupina .vstopnica-glava-gumb .vd-slika{ width:56px; height:56px; }
+  .vrstica-osebe:has(.gumb-majhen.modri){ flex-wrap:wrap; row-gap:6px; }
+  .vrstica-osebe:has(.gumb-majhen.modri) .kv-besedilo{ flex-basis:calc(100% - 100px); }
+}
+@media (max-height:760px){
+  .nakup-dogodek.z-plakatom{ gap:12px; }
+  .nakup-plakat{ width:54px; height:72px; border-radius:12px; }
+  .nakup-dogodek.z-plakatom strong{ font-size:17px; }
+  .list-vsebina:has(> .nakup-kartica){ gap:10px; }
+  .nakup-kartica .nakup-vrsta{ padding:12px 16px; }
+  .nakup-kartica .nakup-skupaj{ padding:14px 16px 12px; }
+  .nakup-kartica .nakup-skupaj strong{ font-size:22px; }
+  .nakup-kartica .stevec output{ font-size:22px; }
 }
