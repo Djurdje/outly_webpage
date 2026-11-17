@@ -99,6 +99,7 @@ const ZAVIHKI = [
 ];
 /* Kateri zavihek je aktiven na potisnjenem zaslonu (dogodek, klub ...): kar je bilo zadnje izbrano. */
 let zadnjiZavihek = "home";
+let zadnjiUporabnik = null;   // kljuc prijavljenega uporabnika (zamegljen posnetek Home ni prenosljiv med uporabniki)
 
 /* Leno nalozena komponenta: modul se nalozi ob prvem prikazu in ostane v pomnilniku. */
 const nalozeni = new Map();
@@ -263,14 +264,17 @@ function App() {
   // Zamegljen Home kot ozadje Search/Profile (tudi potisnjenih zaslonov); nikoli na prijavi, onboardingu, poslovnih zaslonih (skener) in gostovih zaslonih.
   const zavihekZdaj = ZAVIHKI.some(z => z.ime === pot.ime) ? pot.ime : zadnjiZavihek;
   const zamegljeno = (zavihekZdaj === "search" || zavihekZdaj === "profile") && !brezVrstice && !pot.ime.startsWith("biz") && pot.ime !== "guest-order" && pot.ime !== "guest-ticket";
+  // Prijava, odjava ali drug uporabnik: posnetek (avatar, pozdrav, nacrti) prejsnjega uporabnika se zavrze, plast se izprazni (key).
+  const kljucUporabnika = prijavljen ? (me && me.id) || "?" : "gost";
+  if (pripravljena && kljucUporabnika !== zadnjiUporabnik) { if (zadnjiUporabnik !== null) sprostiPosnetek(); zadnjiUporabnik = kljucUporabnika; }
   if (zavihekZdaj === "map") sprostiPosnetek();   // Map: brez posnetka (kot iOS); nov posnetek nastane ob naslednjem odhodu z Home
   if (!pripravljena || preusmeritev) return html`<main class="okvir"><${Nalaganje} /></main>`;
 
   return html`<div class="okvir-aplikacije" key=${koda}>
     <${TrakVgrajen} skrij=${pot.ime === "map"} />
     <${NamigAplikacije} ime=${pot.ime} />
-    ${pot.ime === "home" ? html`<${OzadjeHome} />` : null}
-    ${zamegljeno ? html`<${ZamegljenoOzadje} />` : null}
+    ${pot.ime === "home" ? html`<${OzadjeHome} key=${pot.kljuc} />` : null}
+    ${zamegljeno ? html`<${ZamegljenoOzadje} key=${kljucUporabnika} />` : null}
     <main id="vsebina" class=${"okvir" + (brezVrstice ? "" : " z-vrstico") + (pot.ime === "biz-vip" || pot.ime === "biz-event-vip" ? " siroko" : "")} key=${pot.kljuc} data-smer=${pot.smer}>
       <${Zaslon} pot=${pot} />
     </main>

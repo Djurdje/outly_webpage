@@ -350,6 +350,7 @@ export function OzadjeHome() {
   useLayoutEffect(() => {
     posnetek = null;   // nov obisk Home: stari posnetek ne velja vec
     const vsebina = document.getElementById("vsebina"), ozadje = ref.current;
+    if (ozadje) ozadje.style.setProperty("--t", Math.min(Math.max(window.scrollY / 1400, 0), 1).toFixed(3));   // nova plast (key) brez skoka sijev
     return () => { try { posnetek = zajemiHome(vsebina, ozadje, window.scrollY); } catch { posnetek = null; } };
   }, []);
   useEffect(() => {
@@ -378,7 +379,11 @@ function zamrzni(el) {
   el.removeAttribute("id");
   el.querySelectorAll("[id]").forEach(n => n.removeAttribute("id"));   // brez podvojenih id
   el.querySelectorAll('[role="dialog"],[aria-modal]').forEach(n => n.remove());   // list Filtri ipd. (fixed bi se v premaknjeni kopiji napacno postavil)
+  el.querySelectorAll("video,audio,iframe").forEach(n => n.remove());   // samodejno predvajanje bi plast risalo vsak okvir
   el.querySelectorAll("[autofocus]").forEach(n => n.removeAttribute("autofocus"));
+  el.querySelectorAll("[name]").forEach(n => n.removeAttribute("name"));   // radijske skupine si z zivim zaslonom ne smejo deliti imena
+  // inert ni povsod (starejsi brskalniki): tudi izven tabulatorskega vrstnega reda
+  el.querySelectorAll("a,button,input,select,textarea,[tabindex]").forEach(n => n.setAttribute("tabindex", "-1"));
 }
 
 function zajemiHome(vsebina, ozadje, drsenje) {

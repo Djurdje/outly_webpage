@@ -229,7 +229,7 @@ h1,h2,h3,p{ margin:0; }
 .zamegljeno{ position:fixed; inset:0; z-index:-1; pointer-events:none; overflow:hidden; background:#000; }
 .zamegljeno[hidden]{ display:none; }
 .zamegljeno::after{ content:""; position:absolute; inset:0; background:rgba(0,0,0,.6); }
-.zam-slika{ position:absolute; inset:-48px; filter:blur(22px); }
+.zam-slika{ position:absolute; inset:-48px; overflow:hidden; filter:blur(22px); }   /* overflow: vhod v zameglitev = zaslon + 96 px, ne cel Home (WebKit) */
 .zam-slika .ozadje-home{ position:absolute; inset:0; z-index:auto; }
 .zam-vsebina{ position:absolute; left:48px; right:48px; top:48px; }
 .zamegljeno *{ animation:none !important; transition:none !important; }
