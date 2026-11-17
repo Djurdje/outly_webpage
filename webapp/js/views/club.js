@@ -67,7 +67,7 @@ export function Klub({ id }) {
         <span>${t("Min age: {n}+", { n: k.min_age })}</span>
       </div>
       <div class="klub-sledenje">
-        <span class="sledilci"><${Ikona} ime="users" velikost=${14} /> <strong>${kratko(sledi.st)}</strong> ${t("followers")}</span>
+        <span class="sledilci"><${Ikona} ime="users" velikost=${14} polna=${true} /> <strong>${kratko(sledi.st)}</strong> ${t("followers")}</span>
         <button type="button" class=${"gumb-sledi" + (sledi.da ? " sledim" : "")} onClick=${preklopiSledenje}
           disabled=${sledi.tece} aria-pressed=${sledi.da}>
           <${Ikona} ime=${sledi.da ? "check" : "plus"} velikost=${14} debelina=${2.6} /> ${sledi.da ? t("Following") : t("Follow")}

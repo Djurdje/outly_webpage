@@ -146,19 +146,19 @@ export function Dogodek({ id }) {
 
     <${KarticaKdaj} e=${e} />
 
-    <div class="kartica-info">
-      ${e.venue_club_id == null && lok.ime ? html`<div class="info-vrstica"><span class="info-oznaka">${t("VENUE")}:</span><span>${lok.ime}</span></div>` : null}
-      <div class="info-vrstica"><span class="info-oznaka">${t("ADDRESS")}:</span><span>${lok.naslov}</span></div>
-      <div class="info-vrstica"><span class="info-oznaka">${t("PHONE")}:</span>
-        ${klub && klub.contact_phone ? html`<a href=${"tel:" + klub.contact_phone.replace(/[^\d+]/g, "")}>${klub.contact_phone}</a>` : html`<span>-</span>`}
+    <div class=${"kartica-info kartica-lokacija" + (lok.lat != null ? " z-karto" : "")}>
+      ${e.venue_club_id == null && lok.ime ? html`<div class="lok-glava"><${Ikona} ime="map-pin" velikost=${18} /><strong>${t("at {club}", { club: lok.ime })}</strong></div>` : null}
+      <div class="lok-podatki">
+        <div class="info-vrstica"><span class="info-oznaka">${t("ADDRESS")}:</span><span>${lok.naslov}</span></div>
+        <div class="info-vrstica"><span class="info-oznaka">${t("PHONE")}:</span>
+          ${klub && klub.contact_phone ? html`<a href=${"tel:" + klub.contact_phone.replace(/[^\d+]/g, "")}>${klub.contact_phone}</a>` : html`<span>-</span>`}
+        </div>
       </div>
       ${lok.lat != null ? html`<${MiniKarta} lat=${lok.lat} lng=${lok.lng} ime=${lok.ime || (klub && klub.name)} />` : null}
       ${lok.lat != null ? html`<a class="povezava-zemljevid" target="_blank" rel="noopener noreferrer"
         href=${`https://www.openstreetmap.org/?mlat=${lok.lat}&mlon=${lok.lng}#map=17/${lok.lat}/${lok.lng}`}>
         <${Ikona} ime="map-pin" velikost=${16} /> ${t("Open in maps")}</a>` : null}
     </div>
-
-    ${prodajaVAplikaciji(e) ? html`<p class="opomba prodaja-vrstica">${t("Sold by {name}", { name: e.seller.name })}</p>` : null}
 
     ${pokaziCenik ? html`<button type="button" class="kartica-vrstica" onClick=${() => setList("cenik")}>
       <${Ikona} ime="wine" velikost=${20} />
@@ -171,17 +171,19 @@ export function Dogodek({ id }) {
       <h2 class="nadnapis">${t("ABOUT")}</h2><p class="besedilo-opis">${e.description}</p>
     </section>` : null}
 
+    ${prodajaVAplikaciji(e) ? html`<p class="opomba prodaja-vrstica">${t("Sold by {name}", { name: e.seller.name })}</p>` : null}
+
     ${!seJeKoncal(e) && klub ? html`<section class="blok-besedila">
       <h2 class="nadnapis">${t("VIP & TABLES")}</h2>
       <button type="button" class="kartica-vip" onClick=${() => { setVipIzbor(null); setList("vip"); }}>
         ${naslovnaSlika ? html`<${Slika} src=${naslovnaSlika} sirina=${300} alt="" razred="vip-ozadje" />` : null}
         <span class="vip-senca" aria-hidden="true"></span>
         <span class="vip-vsebina">
-          <${Ikona} ime="crown" velikost=${24} />
+          <${Ikona} ime="crown" velikost=${22} polna=${true} />
           <strong>${t("Reserve a VIP table")}</strong>
-          <span>${t("Bottle service and private tables for your group.")}</span>
           ${e.vip_enabled === true && e.vip_from_cents != null
             ? html`<span class="vip-od">${t("from {price}", { price: denar(e.vip_from_cents, e.currency) })}</span>` : null}
+          <span>${t("Bottle service and private tables for your group.")}</span>
           <span class="vip-vec">${t("See tables")} <${Ikona} ime="chevron-right" velikost=${14} /></span>
         </span>
       </button>
@@ -275,7 +277,7 @@ async function deli(e) {
 function GumbZanimanja({ plan, ob, zaseden }) {
   if (plan === "going") return html`<span class="gumb-plan gre"><${Ikona} ime="check" velikost=${14} debelina=${3} /> ${t("Going")}</span>`;
   if (plan === "interested") return html`<button type="button" class="gumb-plan zanima" onClick=${ob} disabled=${zaseden} aria-pressed="true">
-    <${Ikona} ime="thumbs-up" velikost=${14} /> ${t("Interested")}</button>`;
+    <${Ikona} ime="thumbs-up" velikost=${14} polna=${true} /> ${t("Interested")}</button>`;
   return html`<button type="button" class="gumb-plan" onClick=${ob} disabled=${zaseden} aria-pressed="false">${t("I'm in")}</button>`;
 }
 
@@ -324,7 +326,8 @@ function PasVstopnic({ e, ob, prodajaNe = false }) {
   } else if (varenUrl(e.ticket_url)) { aktiven = true; zgoraj = t("Tickets"); spodaj = t("sold by the club"); }
   else { zgoraj = t("Tickets"); spodaj = t("at the door"); }
 
-  const vsebina = html`<strong>${zgoraj}</strong><span>${spodaj}</span>`;
+  // iOS: cena 36 bold, besedilna stanja (Tickets, FREE, Ended) 28 bold
+  const vsebina = html`<strong class=${zgoraj === c && cena(e) ? "pas-cena" : "pas-napis"}>${zgoraj}</strong><span>${spodaj}</span>`;
   return aktiven
     ? html`<button type="button" class="pas-vstopnic aktiven" onClick=${ob}>${vsebina}</button>`
     : html`<div class="pas-vstopnic">${vsebina}</div>`;

@@ -28,10 +28,10 @@ export function useZaklep() {
   return [konec > 0, sekunde => setKonec(Date.now() + sekunde * 1000)];
 }
 
-export function Ikona({ ime, velikost = 20, debelina = 2, razred = "" }) {
+export function Ikona({ ime, velikost = 20, debelina = 2, razred = "", polna = false }) {
   const vozlisca = IKONE[ime] || [];
   return html`<svg class=${"ikona " + razred} width=${velikost} height=${velikost} viewBox="0 0 24 24"
-    fill="none" stroke="currentColor" stroke-width=${debelina} stroke-linecap="round"
+    fill=${polna ? "currentColor" : "none"} stroke="currentColor" stroke-width=${debelina} stroke-linecap="round"
     stroke-linejoin="round" aria-hidden="true" focusable="false">
     ${vozlisca.map(([el, atr]) => html`<${el} ...${atr} />`)}
   </svg>`;

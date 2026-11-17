@@ -143,6 +143,7 @@ h1,h2,h3,p{ margin:0; }
 .glava-nazaj{ display:flex; align-items:center; gap:12px; min-height:44px; }
 .glava-nazaj:not(.prosojna) .krog-gumb{ width:44px; height:44px; background:var(--b06); }   /* iOS 26: krog ~43 pt, polnilo bela 6 % (svetlejse od ozadja) */
 .glava-nazaj + .naslov-zaslona{ margin-top:-8px; padding-top:0; }
+.glava-nazaj.prosojna .krog-gumb, .krog-gumb.deli{ width:44px; height:44px; }   /* iOS: sistemski okrogli gumb ~44 pt */
 .glava-nazaj.prosojna{ position:absolute; top:calc(10px + env(safe-area-inset-top)); left:var(--odmik); z-index:3; }
 .glava-naslov{ font-size:20px; font-weight:700; letter-spacing:-.02em; }
 .velik-naslov{ font-size:32px; font-weight:700; line-height:1.12; letter-spacing:-.02em; padding-top:6px; overflow-wrap:anywhere; }   /* iOS: 34 SF bold; Inter je ~18 % sirsi (izmerjeno: 'Search' 97,5 pt SF vs 116,8 Inter), zato 32 + tesnejsi razmik */
@@ -317,11 +318,13 @@ h1,h2,h3,p{ margin:0; }
 .hero-senca{ position:absolute; inset:0; pointer-events:none;
   background:linear-gradient(180deg, rgba(0,0,0,.30) 0%, transparent 20%, transparent 62%, rgba(0,0,0,.75) 100%); }
 .hero-senca.spodaj{ background:linear-gradient(180deg, transparent 50%, rgba(0,0,0,.85)); }
-.deli{ position:absolute; top:calc(13px + env(safe-area-inset-top)); right:var(--odmik); z-index:3; }
+.deli{ position:absolute; top:calc(10px + env(safe-area-inset-top)); right:var(--odmik); z-index:3; }
 .pas-vstopnic{ position:absolute; z-index:2; left:50%; bottom:18px; transform:translateX(-50%);
-  display:flex; flex-direction:column; align-items:center; gap:2px; padding:14px 32px; border-radius:14px; min-width:170px;
+  display:flex; flex-direction:column; align-items:center; gap:2px; padding:14px 32px; border-radius:14px; min-width:150px;
   background:rgba(0,0,0,.55); border:1.5px solid rgba(255,255,255,.16); box-shadow:0 6px 14px rgba(0,0,0,.35); color:#fff; }
 .pas-vstopnic strong{ font-size:30px; font-weight:700; line-height:1.1; white-space:nowrap; }
+.pas-vstopnic .pas-cena{ font-size:36px; }   /* iOS: cena 36 bold, besedilna stanja (Tickets, FREE, Ended) 28 bold */
+.pas-vstopnic .pas-napis{ font-size:28px; }
 .pas-vstopnic span{ font-size:13px; }
 .pas-vstopnic.aktiven{ background:rgba(76,118,255,.85); border-color:rgba(255,255,255,.9);
   box-shadow:0 0 12px rgba(76,118,255,.7), 0 0 28px rgba(76,118,255,.45); transition:transform .15s var(--ease); }
@@ -331,7 +334,7 @@ h1,h2,h3,p{ margin:0; }
 .gumb-plan{ flex:none; height:40px; padding:0 14px; border-radius:999px; border:1.5px solid rgba(255,255,255,.6); font-size:14px; font-weight:700; display:inline-flex; align-items:center; gap:6px; white-space:nowrap; }
 .gumb-plan.zanima{ background:#fff; color:#3B63E6; border-color:#fff; } /* modra na beli: #4C76FF ima 3,9 < 4,5 (AA) */
 .gumb-plan.gre{ background:var(--modra); border-color:var(--modra); color:#fff; }
-.prijatelji-vrsta{ display:flex; align-items:center; gap:8px; font-size:13px; font-weight:500; color:rgba(255,255,255,.8); }
+.prijatelji-vrsta{ display:flex; align-items:center; justify-content:center; gap:8px; font-size:13px; font-weight:500; color:rgba(255,255,255,.8); }
 .avatarji{ display:flex; }
 .avatarji .avatar{ border:1.5px solid #000; margin-left:-10px; }
 .avatarji .avatar:first-child{ margin-left:0; }
@@ -340,6 +343,8 @@ h1,h2,h3,p{ margin:0; }
 .okrogla-slika.velika{ width:62px; height:62px; }
 .cip-starost{ font-size:11px; font-weight:700; padding:4px 8px; border-radius:999px; background:rgba(255,255,255,.12); color:rgba(255,255,255,.85); }
 .kartica-kdaj{ display:flex; align-items:center; gap:14px; padding:14px; border-radius:20px; background:#1C1C1C; border:1px solid var(--b10); }
+.kartica-kdaj .kv-besedilo{ gap:3px; }
+.kartica-kdaj .kv-besedilo span{ font-size:14px; color:rgba(255,255,255,.65); }
 .koledar{ width:56px; height:56px; border-radius:14px; background:var(--b08); display:flex; flex-direction:column; align-items:center; justify-content:center; flex:none; }
 .koledar small{ font-size:10px; font-weight:700; letter-spacing:.1em; color:rgba(255,255,255,.6); }
 .koledar strong{ font-size:22px; font-weight:700; line-height:1.1; }
@@ -362,7 +367,7 @@ h1,h2,h3,p{ margin:0; }
 .kontakt-vrstica.brez-povezave .kontakt-vrednost{ font-weight:500; color:var(--besedilo); }
 @media (hover:hover){ a.kontakt-vrstica:hover{ background:var(--b08); } }
 .povezava-zemljevid{ display:inline-flex; gap:6px; align-items:center; font-weight:600; font-size:14px; color:var(--modra-besedilo); }
-.kartica-vip{ position:relative; display:grid; place-items:center; width:100%; min-height:200px; border-radius:18px; overflow:hidden; border:1px solid var(--b10); text-align:center; background:#222; }
+.kartica-vip{ position:relative; display:grid; place-items:center; width:100%; min-height:200px; border-radius:18px; overflow:hidden; border:1px solid rgba(255,255,255,.12); text-align:center; background:#222; }
 .vip-ozadje{ position:absolute; inset:0; transform:scale(1.15); }
 .vip-ozadje img{ filter:blur(14px); }
 .vip-senca{ position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,.75)); }
@@ -372,6 +377,24 @@ h1,h2,h3,p{ margin:0; }
 .vip-vec{ display:inline-flex; gap:4px; align-items:center; font-size:13px !important; font-weight:600 !important; color:rgba(255,255,255,.9) !important; }
 .vip-klic{ text-align:center; font-size:15px; font-weight:700; color:var(--b55); line-height:1.6; }
 .vip-klic a{ color:var(--modra-besedilo); font-size:17px; }
+
+/* Dogodek po iOS (EventDetailView.swift): kartica lokacije z zemljevidom 150x150 desno, polnila vrstic, nadnapisi, besedila vrstic */
+.kartica-lokacija{ display:grid; grid-template-columns:minmax(0,1fr); column-gap:14px; row-gap:12px; }
+.kartica-lokacija.z-karto{ grid-template-columns:minmax(0,1fr) 150px; }
+.lok-glava{ grid-column:1 / -1; display:flex; align-items:center; gap:8px; font-size:16px; }
+.lok-glava .ikona{ color:var(--b70); flex:none; }
+.lok-glava strong{ font-weight:600; min-width:0; overflow-wrap:anywhere; }
+.lok-podatki{ grid-column:1; min-width:0; display:flex; flex-direction:column; gap:12px; }
+.kartica-lokacija.z-karto .mini-karta{ grid-column:2; grid-row:2; width:150px; height:150px; align-self:start; border-color:rgba(255,255,255,.12); }
+.kartica-lokacija .povezava-zemljevid{ grid-column:1 / -1; }
+.dogodek a.kartica-vrstica{ background:var(--b04); }
+.dogodek button.kartica-vrstica{ background:var(--b08); padding:0 18px; gap:14px; }
+.dogodek button.kartica-vrstica .kv-besedilo strong{ font-weight:500; }
+.dogodek button.kartica-vrstica > span.utisano{ font-size:13px; color:rgba(255,255,255,.5); }
+.dogodek .kartica-vrstica .kv-besedilo strong{ font-size:17px; }
+.dogodek a.kartica-vrstica .kv-besedilo span{ font-size:12px; font-weight:500; }
+.dogodek .kartica-vrstica > .ikona.utisano:last-child{ width:14px; height:14px; color:rgba(255,255,255,.4); }
+.dogodek .nadnapis{ font-size:11px; font-weight:700; letter-spacing:.11em; color:rgba(255,255,255,.5); }   /* ABOUT, VIP & TABLES: 11 bold, razmik 1,2 pt, bela .5 (5,3 : 1 na crni) */
 
 /* ---------- klub ---------- */
 .klub-glava{ position:relative; margin:0 calc(-1 * var(--odmik)); height:260px; overflow:hidden; }
@@ -445,7 +468,7 @@ h1,h2,h3,p{ margin:0; }
 .nakup-dogodek strong{ font-size:18px; }
 .prodajalec{ display:flex; flex-direction:column; gap:2px; padding:12px 14px; border-radius:14px; background:var(--povrsina); font-size:13px; color:var(--b70); overflow-wrap:anywhere; }
 .prodajalec strong{ font-size:14px; color:#fff; }
-.prodaja-vrstica{ margin:-4px 0 0; padding:0 4px; }
+.prodaja-vrstica{ margin:0; padding:0 4px; }
 .nakup-vrsta{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .nakup-vrsta strong{ font-size:18px; }
 .stevec{ display:flex; align-items:center; gap:4px; background:var(--b08); border-radius:999px; padding:4px; }
@@ -857,7 +880,7 @@ a.profil-ime{ white-space:normal; }
 .vstopnica.vip{ border-color:rgba(212,175,55,.55); }
 .vip-paket-opis{ display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; }
 .vip-paket-opis > span{ font-size:13px; color:var(--b70); }
-.vip-vsebina > .vip-od{ font-size:16px; font-weight:700; color:var(--zlata); }
+.vip-vsebina > .vip-od{ font-size:15px; font-weight:700; color:var(--zlata); }
 
 /* tloris (SVG; viewBox = mreza celic, prilagodi se sirini) */
 .tloris{ display:block; width:100%; height:auto; border-radius:14px; background:#0b0b0b; border:1px solid var(--b10);
