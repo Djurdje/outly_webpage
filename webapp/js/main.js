@@ -5,7 +5,7 @@ import { t, useJezik, pripraviJezik } from "./i18n.js";
 import { usePot, navigiraj, obnoviDrsenje } from "./usmerjanje.js";
 import { zacniSejo, useSeja, potrebujeOnboarding, pocistiStareSkeneOdZagona } from "./seja.js";
 import { Ikona, Avatar, Nalaganje, GlavaNazaj, Napaka } from "./ui.js";
-import { Home, OzadjeHome } from "./views/home.js";
+import { Home, OzadjeHome, ZamegljenoOzadje, sprostiPosnetek } from "./views/home.js";
 import { Iskanje } from "./views/search.js";
 import { Dogodek } from "./views/event.js";
 import { Klub } from "./views/club.js";
@@ -92,13 +92,15 @@ const SAMO_PRIJAVLJENI = new Set(["tickets", "guest-list", "interested", "onboar
   "delete", "creator", "blocked", "friends", "friends-plans", "my-clubs", "invites", "biz", "biz-settings", "biz-dashboard", "biz-staff",
   "biz-events", "biz-event-new", "biz-event-edit", "biz-event-tickets", "biz-event-vip", "biz-team", "biz-info", "biz-location", "biz-bar-prices", "biz-scan", "biz-service", "biz-vip", "biz-reservations", "biz-reservation-event"]);
 const ZAVIHKI = [
-  { ime: "home", href: "/app", ikona: "house", napis: "Home" },
+  { ime: "home", href: "/app", ikona: "house-fill", napis: "Home" },
   { ime: "search", href: "/app/search", ikona: "search", napis: "Search" },
-  { ime: "map", href: "/app/map", ikona: "map", napis: "Map" },
-  { ime: "profile", href: "/app/profile", ikona: "user", napis: "Profile" }
+  { ime: "map", href: "/app/map", ikona: "map-fill", napis: "Map" },
+  { ime: "profile", href: "/app/profile", ikona: "person-fill", napis: "Profile" }
 ];
 /* Kateri zavihek je aktiven na potisnjenem zaslonu (dogodek, klub ...): kar je bilo zadnje izbrano. */
 let zadnjiZavihek = "home";
+let rodPlasti = 0;   // dvigne se ob zavrzenem posnetku: plast se vgradi znova (prazna)
+let zadnjiUporabnik = null;   // kljuc prijavljenega uporabnika (zamegljen posnetek Home ni prenosljiv med uporabniki)
 
 /* Leno nalozena komponenta: modul se nalozi ob prvem prikazu in ostane v pomnilniku. */
 const nalozeni = new Map();
@@ -214,7 +216,7 @@ function SpodnjaVrstica({ aktiven }) {
         aria-current=${z.ime === aktiven ? "page" : null}>
       ${z.ime === "profile" && me && me.avatar_url
         ? html`<${Avatar} url=${me.avatar_url} ime=${me.username} velikost=${24} />`
-        : html`<${Ikona} ime=${z.ikona} velikost=${22} debelina=${z.ime === aktiven ? 2.4 : 1.9} />`}
+        : html`<${Ikona} ime=${z.ikona} velikost=${22} debelina=${z.ikona === "search" ? (z.ime === aktiven ? 2.6 : 2.2) : 1} />`}
       <span>${t(z.napis)}</span>
     </a>`)}
   </nav>`;
@@ -260,12 +262,28 @@ function App() {
 
   if (ZAVIHKI.some(z => z.ime === pot.ime)) zadnjiZavihek = pot.ime;
   const brezVrstice = AVT.has(pot.ime) || pot.ime === "onboarding" || pot.ime === "oauth";
+  // Zamegljen Home kot ozadje Search/Profile (tudi potisnjenih zaslonov); nikoli na prijavi, onboardingu, poslovnih zaslonih (skener) in gostovih zaslonih.
+  const zavihekZdaj = ZAVIHKI.some(z => z.ime === pot.ime) ? pot.ime : zadnjiZavihek;
+  const zamegljeno = (zavihekZdaj === "search" || zavihekZdaj === "profile") && !brezVrstice && !pot.ime.startsWith("biz") && pot.ime !== "guest-order" && pot.ime !== "guest-ticket";
+  // Prijava, odjava ali drug uporabnik: posnetek (avatar, pozdrav, nacrti) prejsnjega uporabnika se zavrze, plast se izprazni (key).
+  // "?" = prijavljen, a /me se ni naloga: to ni menjava uporabnika (posnetek ostane, plast se ne vgradi znova); zavrze se ob prijavi/odjavi in menjavi znanega id.
+  const kljucUporabnika = prijavljen ? (me && me.id) || "?" : "gost";
+  if (pripravljena && kljucUporabnika !== zadnjiUporabnik) {
+    if (kljucUporabnika === "?" && zadnjiUporabnik !== null && zadnjiUporabnik !== "gost") { /* /me se nalaga: ostane znani uporabnik */ }
+    else {
+      if (zadnjiUporabnik !== null && !(zadnjiUporabnik === "?" && kljucUporabnika !== "gost")) { sprostiPosnetek(); rodPlasti++; }
+      zadnjiUporabnik = kljucUporabnika;
+    }
+  }
+  // Map: brez posnetka (kot iOS). Sprostitev po commitu: cistilo OzadjeHome (zajem) tece sele ob commitu, ne med izrisom.
+  useLayoutEffect(() => { if (zavihekZdaj === "map") sprostiPosnetek(); }, [zavihekZdaj]);
   if (!pripravljena || preusmeritev) return html`<main class="okvir"><${Nalaganje} /></main>`;
 
   return html`<div class="okvir-aplikacije" key=${koda}>
     <${TrakVgrajen} skrij=${pot.ime === "map"} />
     <${NamigAplikacije} ime=${pot.ime} />
-    ${pot.ime === "home" ? html`<${OzadjeHome} />` : null}
+    ${pot.ime === "home" ? html`<${OzadjeHome} key=${pot.kljuc} />` : null}
+    ${zamegljeno ? html`<${ZamegljenoOzadje} key=${rodPlasti} />` : null}
     <main id="vsebina" class=${"okvir" + (brezVrstice ? "" : " z-vrstico") + (pot.ime === "biz-vip" || pot.ime === "biz-event-vip" ? " siroko" : "")} key=${pot.kljuc} data-smer=${pot.smer}>
       <${Zaslon} pot=${pot} />
     </main>
