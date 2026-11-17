@@ -38,7 +38,7 @@
   --zlata:#D4AF37;          /* VIP: poudarek (znacka, obroba), nikoli ploskev */
   --stolpec:480px;
   --odmik:16px;
-  --vrstica:56px;           /* visina plavajoce spodnje vrstice (iOS ~54) */
+  --vrstica:58px;           /* visina plavajoce spodnje vrstice (iOS ~59 pt na posnetku s telefona) */
   --ease:cubic-bezier(.2,.9,.2,1);
   color-scheme:dark;
 }
@@ -54,11 +54,6 @@ body{
   overflow-x:hidden;
   -webkit-tap-highlight-color:transparent;
 }
-/* Miren, STATICEN ambient (zamenjava za zamegljen posnetek Home na iOS): dva zelo nezna mornarsko modra sija na crnem.
-   Fiksna plast zunaj .okvir, brez filtrov in animacije; Home jo prekrije s svojim .ozadje-home (kasnejsi v DOM-u). */
-body::before{ content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
-  background:radial-gradient(70% 38% at 85% 6%, rgba(46,71,153,.26), transparent 72%),
-             radial-gradient(75% 34% at 8% 58%, rgba(25,53,142,.16), transparent 72%); }
 body.brez-drsenja{ overflow:hidden; }
 body.brez-drsenja .spodnja-vrstica{ visibility:hidden; }
 a{ color:inherit; text-decoration:none; }
@@ -109,7 +104,7 @@ h1,h2,h3,p{ margin:0; }
 .spodnja-vrstica{
   position:fixed; z-index:30; left:50%; transform:translateX(-50%);
   bottom:max(14px, calc(env(safe-area-inset-bottom) - 14px));
-  width:min(calc(100% - 38px), 440px); height:var(--vrstica);
+  width:min(calc(100% - 42px), 440px); height:var(--vrstica);
   display:grid; grid-template-columns:repeat(4,1fr); padding:4px;
   background:#151517; border:1px solid var(--b14); border-radius:999px;   /* neprosojno, brez backdrop-filter */
   box-shadow:0 8px 24px rgba(0,0,0,.55);
