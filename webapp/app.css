@@ -1157,8 +1157,8 @@ a.profil-ime{ white-space:normal; }
 /* Ozki in nizki zasloni (pregled PR #120): ne izgubi ure/imena in gumb Pay ostane viden tam, kjer je bil */
 @media (max-width:400px){
   .vstopnice-zaslon .vstopnice-seznam > .vstopnica.skupina .vstopnica-glava-gumb .vd-slika{ width:56px; height:56px; }
-  .vrstica-osebe:has(.gumb-majhen.modri){ flex-wrap:wrap; row-gap:6px; }
-  .vrstica-osebe:has(.gumb-majhen.modri) .kv-besedilo{ flex-basis:calc(100% - 100px); }
+  .vrstica-osebe.prosnja{ flex-wrap:wrap; row-gap:6px; }
+  .vrstica-osebe.prosnja .kv-besedilo{ flex-basis:calc(100% - 100px); }
 }
 @media (max-height:760px){
   .nakup-dogodek.z-plakatom{ gap:12px; }
