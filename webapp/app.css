@@ -488,6 +488,7 @@ h1,h2,h3,p{ margin:0; }
 .avtentikacija{ align-items:center; gap:12px; padding-bottom:24px; }
 .avt-vrh{ width:100%; display:flex; justify-content:space-between; align-items:center; }
 .avt-logo{ width:220px; height:220px; object-fit:cover; margin:-70px 0 -64px; pointer-events:none; }
+.zaslon > .avt-logo{ align-self:center; }   /* About: logotip na sredini (kot besedilo pod njim) */
 .avt-naslov{ font-size:20px; font-weight:700; text-align:center; }
 .avt-naslov.levo{ text-align:left; }
 .avt-podnaslov{ font-size:14px; font-weight:600; color:var(--b70); text-align:center; }
@@ -771,7 +772,7 @@ a.profil-ime{ white-space:normal; }
 .koraki{ margin:0; padding-left:22px; display:flex; flex-direction:column; gap:10px; font-size:15px; }
 
 /* ---------- QR skener vstopnic (posel-skener.js) ---------- */
-.skener{ position:relative; width:100%; aspect-ratio:3/4; max-height:62vh; max-height:max(240px, min(62vh, calc(100svh - 340px))); border-radius:18px; overflow:hidden; background:#000; margin-top:8px; }
+.skener{ position:relative; width:100%; aspect-ratio:3/4; max-height:62vh; max-height:max(240px, min(62vh, calc(100svh - 340px))); border-radius:18px; overflow:hidden; background:var(--prekrita); border:1px solid rgba(255,255,255,.28); margin-top:8px; }   /* viden tudi brez kamere (crno na crnem se ni loceno od strani) */
 .skener-video{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
 .skener-video.skrito-video{ opacity:0; }
 .skener-plast{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:16px; }

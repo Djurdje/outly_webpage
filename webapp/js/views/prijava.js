@@ -74,9 +74,8 @@ function Okvir({ naslov, podnaslov, children }) {
 }
 
 function Pogoji() {
-  return html`<p class="avt-pravno">${t("By clicking continue, you agree to our")}
-    <a href="/terms" target="_blank" rel="noopener">${t("Terms of Service")}</a> ${t("and")}
-    <a href="/privacy-app" target="_blank" rel="noopener">${t("Privacy Policy")}</a></p>`;
+  // Presledki izrecno (${" "}): htm odstrani prelom vrstice pred <a>, sicer bi pisalo »ourTerms« in »andPrivacy«.
+  return html`<p class="avt-pravno">${t("By clicking continue, you agree to our")}${" "}<a href="/terms" target="_blank" rel="noopener">${t("Terms of Service")}</a>${" "}${t("and")}${" "}<a href="/privacy-app" target="_blank" rel="noopener">${t("Privacy Policy")}</a></p>`;
 }
 
 function Polje({ tip = "text", ime, oznaka, vrednost, ob, samodejno, vec = {} }) {

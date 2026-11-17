@@ -98,6 +98,8 @@ const ZAVIHKI = [
   { ime: "profile", href: "/app/profile", ikona: "person-fill", napis: "Profile" }
 ];
 /* Kateri zavihek je aktiven na potisnjenem zaslonu (dogodek, klub ...): kar je bilo zadnje izbrano. */
+const PODZASLONI_PROFILA = new Set(["account", "personal", "security", "preferences", "my-preferences", "blocked", "delete", "creator", "payment", "help", "article",
+  "about", "language", "friends", "friends-plans", "my-clubs", "invites", "tickets", "interested"]);
 let zadnjiZavihek = "home";
 let rodPlasti = 0;   // dvigne se ob zavrzenem posnetku: plast se vgradi znova (prazna)
 let zadnjiUporabnik = null;   // kljuc prijavljenega uporabnika (zamegljen posnetek Home ni prenosljiv med uporabniki)
@@ -261,6 +263,7 @@ function App() {
   }, [pot.ime, pot.params.id, pot.params.slug, koda]);
 
   if (ZAVIHKI.some(z => z.ime === pot.ime)) zadnjiZavihek = pot.ime;
+  else if (PODZASLONI_PROFILA.has(pot.ime)) zadnjiZavihek = "profile";   // podzasloni Profila (tudi ob neposrednem odprtju): aktiven je Profile, kot iOS
   const brezVrstice = AVT.has(pot.ime) || pot.ime === "onboarding" || pot.ime === "oauth";
   // Zamegljen Home kot ozadje Search/Profile (tudi potisnjenih zaslonov); nikoli na prijavi, onboardingu, poslovnih zaslonih (skener) in gostovih zaslonih.
   const zavihekZdaj = ZAVIHKI.some(z => z.ime === pot.ime) ? pot.ime : zadnjiZavihek;
