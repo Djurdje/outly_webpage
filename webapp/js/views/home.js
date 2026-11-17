@@ -2,7 +2,7 @@
    Interested events, Last week's biggest hits, In your area, Big events coming up,
    This weekend/Trending, Discover your genre, See all events.
    Seznami se filtrirajo na odjemalcu (starost in zanri iz profila, filtri, razdalja) - kot iOS. */
-import { html, useEffect, useMemo, useState, useRef } from "../lib.js";
+import { html, useEffect, useLayoutEffect, useMemo, useState, useRef } from "../lib.js";
 import { t } from "../i18n.js";
 import { send } from "../api.js";
 import { useSeja } from "../seja.js";
@@ -346,6 +346,12 @@ function barvaZanra(z) {
    position:fixed med animacijo vezan na okvir in bi ob koncu poskocil (premik postavitve, CLS 0,84 - faza 5). */
 export function OzadjeHome() {
   const ref = useRef(null);
+  // Zamrznjena kopija Home ob odhodu (zamegljeno ozadje Search/Profile). Cistilo tece, ko je DOM ze v dokumentu in scrollY velja.
+  useLayoutEffect(() => {
+    posnetek = null;   // nov obisk Home: stari posnetek ne velja vec
+    const vsebina = document.getElementById("vsebina"), ozadje = ref.current;
+    return () => { try { posnetek = zajemiHome(vsebina, ozadje, window.scrollY); } catch { posnetek = null; } };
+  }, []);
   useEffect(() => {
     let cakajoce = false;
     const posodobi = () => {
@@ -359,4 +365,46 @@ export function OzadjeHome() {
     return () => window.removeEventListener("scroll", obDrsenju);
   }, []);
   return html`<div class="ozadje-home" ref=${ref} aria-hidden="true"><span class="sij sij-a"></span><span class="sij sij-b"></span></div>`;
+}
+
+/* ---------- zamegljen Home kot ozadje zavihkov Search in Profile (iOS: MainTabView zajame zaslon, Ozadje.swift ga zamegli + 60 % crno) ----------
+   Posnetek = zamrznjena kopija DOM (cloneNode, brez nizov -> brez XSS), nastane ob odhodu z Home, zivi do vrnitve na Home/Map.
+   Zameglitev je STATICNA na kopiji (ne backdrop-filter, ne animirana), kot na iOS. Napaka kjerkoli = crno ozadje. */
+let posnetek = null;   // { premik, ozadje } ali null
+
+export function sprostiPosnetek() { posnetek = null; }
+
+function zamrzni(el) {
+  el.removeAttribute("id");
+  el.querySelectorAll("[id]").forEach(n => n.removeAttribute("id"));   // brez podvojenih id
+  el.querySelectorAll('[role="dialog"],[aria-modal]').forEach(n => n.remove());   // list Filtri ipd. (fixed bi se v premaknjeni kopiji napacno postavil)
+  el.querySelectorAll("[autofocus]").forEach(n => n.removeAttribute("autofocus"));
+}
+
+function zajemiHome(vsebina, ozadje, drsenje) {
+  if (!vsebina || !ozadje) return null;
+  if (navigator.deviceMemory && navigator.deviceMemory <= 2) return null;   // sibka naprava: crno
+  const v = vsebina.cloneNode(true), o = ozadje.cloneNode(true);
+  zamrzni(v); zamrzni(o);
+  o.style.setProperty("--t", ozadje.style.getPropertyValue("--t") || "0");
+  const premik = document.createElement("div");
+  premik.className = "zam-vsebina";
+  premik.style.transform = `translateY(${-Math.round(drsenje || 0)}px)`;   // Home tam, kjer je bil pomaknjen
+  premik.appendChild(v);
+  return { premik, ozadje: o };
+}
+
+/* Fiksna plast ZUNAJ animiranega .okvir; App jo izrise samo na Search/Profile (in njunih potisnjenih zaslonih). */
+export function ZamegljenoOzadje() {
+  const ref = useRef(null), slika = useRef(null);
+  useLayoutEffect(() => {
+    const el = ref.current, sl = slika.current;
+    if (!el || !sl || !posnetek) return;
+    try {
+      sl.replaceChildren(posnetek.ozadje, posnetek.premik);
+      el.hidden = false;
+    } catch { el.hidden = true; }
+    return () => { try { sl.replaceChildren(); } catch { /* brez */ } };
+  }, []);
+  return html`<div class="zamegljeno" ref=${ref} hidden aria-hidden="true" inert><div class="zam-slika" ref=${slika}></div></div>`;
 }

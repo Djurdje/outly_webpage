@@ -5,7 +5,7 @@ import { t, useJezik, pripraviJezik } from "./i18n.js";
 import { usePot, navigiraj, obnoviDrsenje } from "./usmerjanje.js";
 import { zacniSejo, useSeja, potrebujeOnboarding, pocistiStareSkeneOdZagona } from "./seja.js";
 import { Ikona, Avatar, Nalaganje, GlavaNazaj, Napaka } from "./ui.js";
-import { Home, OzadjeHome } from "./views/home.js";
+import { Home, OzadjeHome, ZamegljenoOzadje, sprostiPosnetek } from "./views/home.js";
 import { Iskanje } from "./views/search.js";
 import { Dogodek } from "./views/event.js";
 import { Klub } from "./views/club.js";
@@ -260,12 +260,17 @@ function App() {
 
   if (ZAVIHKI.some(z => z.ime === pot.ime)) zadnjiZavihek = pot.ime;
   const brezVrstice = AVT.has(pot.ime) || pot.ime === "onboarding" || pot.ime === "oauth";
+  // Zamegljen Home kot ozadje Search/Profile (tudi potisnjenih zaslonov); nikoli na prijavi, onboardingu, poslovnih zaslonih (skener) in gostovih zaslonih.
+  const zavihekZdaj = ZAVIHKI.some(z => z.ime === pot.ime) ? pot.ime : zadnjiZavihek;
+  const zamegljeno = (zavihekZdaj === "search" || zavihekZdaj === "profile") && !brezVrstice && !pot.ime.startsWith("biz") && pot.ime !== "guest-order" && pot.ime !== "guest-ticket";
+  if (zavihekZdaj === "map") sprostiPosnetek();   // Map: brez posnetka (kot iOS); nov posnetek nastane ob naslednjem odhodu z Home
   if (!pripravljena || preusmeritev) return html`<main class="okvir"><${Nalaganje} /></main>`;
 
   return html`<div class="okvir-aplikacije" key=${koda}>
     <${TrakVgrajen} skrij=${pot.ime === "map"} />
     <${NamigAplikacije} ime=${pot.ime} />
     ${pot.ime === "home" ? html`<${OzadjeHome} />` : null}
+    ${zamegljeno ? html`<${ZamegljenoOzadje} />` : null}
     <main id="vsebina" class=${"okvir" + (brezVrstice ? "" : " z-vrstico") + (pot.ime === "biz-vip" || pot.ime === "biz-event-vip" ? " siroko" : "")} key=${pot.kljuc} data-smer=${pot.smer}>
       <${Zaslon} pot=${pot} />
     </main>

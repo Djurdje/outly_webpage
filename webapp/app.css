@@ -224,6 +224,15 @@ h1,h2,h3,p{ margin:0; }
 .sij-b{ width:640px; height:640px; margin:-320px 0 0 -320px;
   background:radial-gradient(circle, rgba(76,118,255,.30) 0, rgba(76,118,255,.16) 35%, rgba(76,118,255,.04) 75%, transparent 100%);
   transform:translate(calc(140px - 90px * var(--t)), calc(260px - 240px * var(--t))); opacity:calc(.35 + .6 * var(--t)); }
+/* Zamegljen Home kot ozadje Search/Profile (home.js ZamegljenoOzadje): STATICNA zameglitev kopije, brez backdrop-filter, brez animacij.
+   .zam-slika je 48 px vecja na vsaki strani, da rob zameglitve ne bledi; .zam-vsebina je poravnana nazaj na viewport. */
+.zamegljeno{ position:fixed; inset:0; z-index:-1; pointer-events:none; overflow:hidden; background:#000; }
+.zamegljeno[hidden]{ display:none; }
+.zamegljeno::after{ content:""; position:absolute; inset:0; background:rgba(0,0,0,.6); }
+.zam-slika{ position:absolute; inset:-48px; filter:blur(22px); }
+.zam-slika .ozadje-home{ position:absolute; inset:0; z-index:auto; }
+.zam-vsebina{ position:absolute; left:48px; right:48px; top:48px; }
+.zamegljeno *{ animation:none !important; transition:none !important; }
 .home-glava{ display:flex; flex-direction:column; align-items:center; gap:2px; padding-top:4px; }
 .home-glava-vrsta{ width:100%; display:flex; align-items:center; justify-content:space-between; height:44px; }
 .home-logo{ width:104px; height:104px; object-fit:cover; margin:-30px 0; pointer-events:none; }
