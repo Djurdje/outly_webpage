@@ -80,7 +80,7 @@ export function Klub({ id }) {
 
     ${k.video_url
       ? html`<video class="klub-video" src=${k.video_url} autoplay muted loop playsinline preload="metadata" aria-label=${t("Club video")}></video>`
-      : html`<div class="klub-video prazen"><${Ikona} ime="play" velikost=${30} /><span>${org ? t("Organizer video coming soon") : t("Club video coming soon")}</span></div>`}
+      : null}
 
     <${SeznamDogodkov} naslov=${t("Coming Soon")} dogodki=${kmalu} ime=${k.name} nalaga=${nalaga} />
 
@@ -102,7 +102,7 @@ export function Klub({ id }) {
     <${Kontakti} klub=${k} />
 
     ${(k.description || "").trim() ? html`<section class="blok-besedila">
-      <h2 class="podnaslov">${org ? t("About the organizer") : t("About the club")}</h2><p class="besedilo-opis">${k.description}</p>
+      <h2 class="podnaslov mali">${org ? t("About the organizer") : t("About the club")}</h2><p class="besedilo-opis">${k.description}</p>
     </section>` : null}
 
     <${PrijaviGumb} tip="club" id=${k.id} klubId=${k.id} />
@@ -152,7 +152,7 @@ function Kontakti({ klub: k }) {
   ].filter(v => v.vrednost);
   if (!vrstice.length) return null;
   return html`<section class="blok-besedila">
-    <h2 class="podnaslov">${t("Contact")}</h2>
+    <h2 class="podnaslov mali">${t("Contact")}</h2>
     <div class="kontakti">
       ${vrstice.map(v => {
         const zunaj = !!v.href && v.href.startsWith("http");
