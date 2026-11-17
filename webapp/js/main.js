@@ -92,10 +92,10 @@ const SAMO_PRIJAVLJENI = new Set(["tickets", "guest-list", "interested", "onboar
   "delete", "creator", "blocked", "friends", "friends-plans", "my-clubs", "invites", "biz", "biz-settings", "biz-dashboard", "biz-staff",
   "biz-events", "biz-event-new", "biz-event-edit", "biz-event-tickets", "biz-event-vip", "biz-team", "biz-info", "biz-location", "biz-bar-prices", "biz-scan", "biz-service", "biz-vip", "biz-reservations", "biz-reservation-event"]);
 const ZAVIHKI = [
-  { ime: "home", href: "/app", ikona: "house", napis: "Home" },
+  { ime: "home", href: "/app", ikona: "house-fill", napis: "Home" },
   { ime: "search", href: "/app/search", ikona: "search", napis: "Search" },
-  { ime: "map", href: "/app/map", ikona: "map", napis: "Map" },
-  { ime: "profile", href: "/app/profile", ikona: "user", napis: "Profile" }
+  { ime: "map", href: "/app/map", ikona: "map-fill", napis: "Map" },
+  { ime: "profile", href: "/app/profile", ikona: "person-fill", napis: "Profile" }
 ];
 /* Kateri zavihek je aktiven na potisnjenem zaslonu (dogodek, klub ...): kar je bilo zadnje izbrano. */
 let zadnjiZavihek = "home";
@@ -214,7 +214,7 @@ function SpodnjaVrstica({ aktiven }) {
         aria-current=${z.ime === aktiven ? "page" : null}>
       ${z.ime === "profile" && me && me.avatar_url
         ? html`<${Avatar} url=${me.avatar_url} ime=${me.username} velikost=${24} />`
-        : html`<${Ikona} ime=${z.ikona} velikost=${22} debelina=${z.ime === aktiven ? 2.4 : 1.9} />`}
+        : html`<${Ikona} ime=${z.ikona} velikost=${22} debelina=${z.ikona === "search" ? (z.ime === aktiven ? 2.6 : 2.2) : 1} />`}
       <span>${t(z.napis)}</span>
     </a>`)}
   </nav>`;
