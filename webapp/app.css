@@ -481,6 +481,31 @@ h1,h2,h3,p{ margin:0; }
 .stevec output{ min-width:28px; text-align:center; font-weight:700; font-size:17px; }
 .nakup-skupaj{ display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding-top:12px; border-top:1px solid var(--b10); }
 .nakup-skupaj strong{ font-size:22px; }
+/* Checkout po iOS (BuyTicketsView.swift): povzetek s plakatom, kartica "vstopnica" (stevec + cena, perforacija z zarezi, Total), sij na gumbu Pay */
+.nakup-dogodek.z-plakatom{ flex-direction:row; align-items:center; gap:14px; padding:0; background:none; }
+.nakup-plakat{ width:72px; height:96px; border-radius:14px; overflow:hidden; flex:none; background:var(--b08); }
+.nakup-besedilo{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+.nakup-dogodek.z-plakatom .nadnapis{ font-size:11px; letter-spacing:.11em; color:rgba(255,255,255,.55); }
+.nakup-dogodek.z-plakatom strong{ font-size:20px; line-height:1.2; overflow-wrap:anywhere; }
+.nakup-kartica{ position:relative; border-radius:22px; background:#212123; border:1px solid var(--b10); box-shadow:0 8px 22px rgba(76,118,255,.18); overflow:hidden; }
+.nakup-kartica .nakup-vrsta{ padding:18px; }
+.nakup-kartica .stevec{ background:none; padding:0; gap:14px; }
+.nakup-kartica .stevec button{ position:relative; width:40px; height:40px; background:rgba(255,255,255,.12); font-size:20px; }
+.nakup-kartica .stevec button::after{ content:""; position:absolute; inset:-2px; }   /* tarca dotika 44 px */
+.nakup-kartica .stevec button:disabled{ opacity:1; background:rgba(255,255,255,.05); color:rgba(255,255,255,.3); }
+.nakup-kartica .stevec output{ min-width:34px; font-size:26px; }
+.nakup-cena{ text-align:right; display:flex; flex-direction:column; align-items:flex-end; }
+.nakup-cena strong{ font-size:20px; font-weight:600; }
+.nakup-cena span{ font-size:11px; color:rgba(255,255,255,.5); }
+.nakup-kartica .nakup-skupaj{ position:relative; border-top:0; padding:20px 18px 18px; align-items:center;
+  background:repeating-linear-gradient(90deg, rgba(255,255,255,.25) 0 6px, transparent 6px 11px) 18px 0 / calc(100% - 36px) 1px no-repeat; }
+.nakup-kartica .nakup-skupaj::before, .nakup-kartica .nakup-skupaj::after{ content:""; position:absolute; top:-11px; width:22px; height:22px; border-radius:50%; background:var(--prekrita); }
+.nakup-kartica .nakup-skupaj::before{ left:-11px; } .nakup-kartica .nakup-skupaj::after{ right:-11px; }
+.nakup-kartica .nakup-skupaj > span{ font-size:16px; font-weight:600; }
+.nakup-kartica .nakup-skupaj small{ font-size:11px; font-weight:400; color:rgba(255,255,255,.55); }
+.nakup-kartica .nakup-skupaj strong{ font-size:26px; font-weight:700; }
+.nakup-promo input{ border-radius:16px; background:rgba(255,255,255,.05); border-color:var(--b14); }
+.sij-gumb:not(:disabled){ box-shadow:0 0 12px rgba(76,118,255,.7), 0 0 28px rgba(76,118,255,.45); }   /* iOS .outlySij: en sij na zaslon, nikoli na neaktivnem gumbu (statican, brez animacije) */
 .gost-opomba{ margin-top:-6px; }
 .gost-opomba a{ color:#fff; font-weight:600; text-decoration:underline; text-underline-offset:2px; }
 .gost-racun{ display:flex; flex-direction:column; align-items:stretch; gap:10px; padding:16px; border-radius:16px; background:var(--povrsina); text-align:center; }

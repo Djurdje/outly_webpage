@@ -9,8 +9,8 @@ import {
   jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo,
   jeNakupVObdelavi, NAKUP_V_OBDELAVI_S, sporocilo, ApiError, jeCenaVstopniceSpremenjena, jePromoKodaNeveljavna, izidNakupa, nakupNapakaSporocilo, nakupBrezOdgovoraSporocilo, potekloPlacilo, placiloVObdelavi, placiloNepripravljeno
 } from "../napake.js";
-import { denar, jeRazprodan, preostanek, danInUra, nacinPlacila, ddvBesedilo } from "../oblika.js";
-import { List, Ikona, useZaklep, PromoPolje, promoKoda } from "../ui.js";
+import { denar, plakatKartice, jeRazprodan, preostanek, danInUra, nacinPlacila, ddvBesedilo } from "../oblika.js";
+import { List, Ikona, Plakat, useZaklep, PromoPolje, promoKoda } from "../ui.js";
 import { KodaQR } from "../qr.js";
 import { odpriStripe, izidStripeNakupa, jeStripeUrl } from "../stripe.js";
 import { PogojiNakupa, BlokProdajalca, OpombaVracila, TERMS_VERSION } from "../pogoji.js";
@@ -143,28 +143,32 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba, osvezi }) {
   }
 
   return html`<${List} odprt=${true} zapri=${zapriVarno} brezZapiranja=${posiljam} naslov=${t("Checkout")}>
-    <div class="nakup-dogodek">
-      <span class="nadnapis">${(imeKluba || "").toUpperCase()}</span>
-      <strong>${e.title}</strong>
-      <span class="utisano">${danInUra(e._zacetek)}</span>
-      ${e.min_age > 0 ? html`<span class="utisano">${t("{n}+ · ID at the door", { n: e.min_age })}</span>` : null}
+    <div class="nakup-dogodek z-plakatom">
+      <span class="nakup-plakat"><${Plakat} src=${plakatKartice(e)} rezerva=${e.poster_url} sirina=${150} alt="" /></span>
+      <div class="nakup-besedilo">
+        <span class="nadnapis">${(imeKluba || "").toUpperCase()}</span>
+        <strong>${e.title}</strong>
+        <span class="utisano">${danInUra(e._zacetek)}</span>
+        ${e.min_age > 0 ? html`<span class="utisano">${t("{n}+ · ID at the door", { n: e.min_age })}</span>` : null}
+      </div>
     </div>
 
-    <div class="nakup-vrsta">
-      <div><strong>${brezplacno ? t("Free") : denar(cenaEna, e.currency)}</strong><span class="utisano"> ${t("per ticket")}</span></div>
-      <div class="stevec" role="group" aria-label=${t("Number of tickets")}>
-        <button type="button" onClick=${() => { if (!tece.current && !cakaPlacilo) setKolicina(k => Math.max(1, k - 1)); }} disabled=${kolicina <= 1 || posiljam || cakaPlacilo} aria-label=${t("Fewer")}>−</button>
-        <output aria-live="polite">${kolicina}</output>
-        <button type="button" onClick=${() => { if (!tece.current && !cakaPlacilo) setKolicina(k => Math.min(najvec, k + 1)); }} disabled=${kolicina >= najvec || posiljam || cakaPlacilo} aria-label=${t("More")}>+</button>
+    <div class="nakup-kartica">
+      <div class="nakup-vrsta">
+        <div class="stevec" role="group" aria-label=${t("Number of tickets")}>
+          <button type="button" onClick=${() => { if (!tece.current && !cakaPlacilo) setKolicina(k => Math.max(1, k - 1)); }} disabled=${kolicina <= 1 || posiljam || cakaPlacilo} aria-label=${t("Fewer")}>−</button>
+          <output aria-live="polite">${kolicina}</output>
+          <button type="button" onClick=${() => { if (!tece.current && !cakaPlacilo) setKolicina(k => Math.min(najvec, k + 1)); }} disabled=${kolicina >= najvec || posiljam || cakaPlacilo} aria-label=${t("More")}>+</button>
+        </div>
+        <div class="nakup-cena"><strong>${brezplacno ? t("Free") : denar(cenaEna, e.currency)}</strong><span> ${t("per ticket")}</span></div>
+      </div>
+      <div class="nakup-skupaj">
+        <span>${t("Total")}<small class="utisano"> · ${ddvBesedilo(e.seller)}</small></span>
+        <strong>${brezplacno ? t("Free") : denar(skupaj, e.currency)}</strong>
       </div>
     </div>
 
     ${neprodaja ? null : html`<${PromoPolje} vrednost=${promo} spremeni=${v => { setPromoNapaka(""); setPromo(v); }} napaka=${promoNapaka} onemogoceno=${posiljam || cakaPlacilo} />`}
-
-    <div class="nakup-skupaj">
-      <span>${t("Total")}<small class="utisano"> · ${ddvBesedilo(e.seller)}</small></span>
-      <strong>${brezplacno ? t("Free") : denar(skupaj, e.currency)}</strong>
-    </div>
 
     <${BlokProdajalca} prodajalec=${e.seller} />
 
@@ -172,7 +176,7 @@ export function NakupList({ odprt, zapri, dogodek: e, imeKluba, osvezi }) {
     ${cakaPlacilo ? html`<p class="opomba" role="status">${t("You have an unfinished payment for this order. Continue to payment to finish it.")}</p>` : null}
     ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}
 
-    <button type="button" class="gumb-glavni" onClick=${kupi} disabled=${posiljam || razprodano || zaklenjeno || neprodaja}>
+    <button type="button" class="gumb-glavni sij-gumb" onClick=${kupi} disabled=${posiljam || razprodano || zaklenjeno || neprodaja}>
       ${razprodano ? t("Sold out") : posiljam ? t("Processing...")
         : cakaPlacilo ? t("Continue to payment")
         : brezplacno ? (kolicina === 1 ? t("Get ticket") : t("Get tickets"))
