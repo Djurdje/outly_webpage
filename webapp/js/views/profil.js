@@ -74,6 +74,6 @@ function PravneVrstice() {
 
 function MeniJezik() {
   return html`<div class="seznam-kartica">
-    <a class="menijska-vrstica" href="/app/language"><${Ikona} ime="globe" /><span>${t("Language")}</span><${Ikona} ime="chevron-right" velikost=${16} razred="utisano" /></a>
+    <a class="menijska-vrstica" href="/app/language"><${Ikona} ime="globe" /><span>${t("Language")}</span></a>
   </div>`;
 }

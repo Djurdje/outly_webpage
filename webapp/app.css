@@ -141,6 +141,9 @@ h1,h2,h3,p{ margin:0; }
 
 /* ---------- glave ---------- */
 .glava-nazaj{ display:flex; align-items:center; gap:12px; min-height:44px; }
+.glava-nazaj:not(.prosojna) .krog-gumb{ width:44px; height:44px; background:var(--b06); }   /* iOS 26: krog ~43 pt, polnilo bela 6 % (svetlejse od ozadja) */
+.glava-nazaj + .naslov-zaslona{ margin-top:-8px; padding-top:0; }
+.glava-nazaj.prosojna .krog-gumb, .krog-gumb.deli{ width:44px; height:44px; }   /* iOS: sistemski okrogli gumb ~44 pt */
 .glava-nazaj.prosojna{ position:absolute; top:calc(10px + env(safe-area-inset-top)); left:var(--odmik); z-index:3; }
 .glava-naslov{ font-size:20px; font-weight:700; letter-spacing:-.02em; }
 .velik-naslov{ font-size:32px; font-weight:700; line-height:1.12; letter-spacing:-.02em; padding-top:6px; overflow-wrap:anywhere; }   /* iOS: 34 SF bold; Inter je ~18 % sirsi (izmerjeno: 'Search' 97,5 pt SF vs 116,8 Inter), zato 32 + tesnejsi razmik */
@@ -290,7 +293,7 @@ h1,h2,h3,p{ margin:0; }
 .vrstica-besedilo span{ font-size:12px; color:var(--utisano); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .vrstica-dogodka{ display:flex; align-items:center; gap:12px; padding:12px; border-radius:16px; background:var(--povrsina); }
 .vd-slika{ width:56px; height:56px; border-radius:14px; overflow:hidden; flex:none; background:var(--b08); }
-.vd-cena{ font-size:17px; font-weight:700; color:var(--modra-besedilo); white-space:nowrap; flex:none; }
+.vd-cena{ font-size:17px; font-weight:700; color:var(--modra-besedilo); white-space:nowrap; flex:none; text-shadow:0 0 4px rgba(76,118,255,.55), 0 0 10px rgba(76,118,255,.30); }   /* iOS: rahel sij cene */
 .kv-besedilo{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
 .kv-besedilo strong{ font-size:16px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .kv-besedilo span{ font-size:13px; color:var(--b55); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -315,11 +318,13 @@ h1,h2,h3,p{ margin:0; }
 .hero-senca{ position:absolute; inset:0; pointer-events:none;
   background:linear-gradient(180deg, rgba(0,0,0,.30) 0%, transparent 20%, transparent 62%, rgba(0,0,0,.75) 100%); }
 .hero-senca.spodaj{ background:linear-gradient(180deg, transparent 50%, rgba(0,0,0,.85)); }
-.deli{ position:absolute; top:calc(13px + env(safe-area-inset-top)); right:var(--odmik); z-index:3; }
+.deli{ position:absolute; top:calc(10px + env(safe-area-inset-top)); right:var(--odmik); z-index:3; }
 .pas-vstopnic{ position:absolute; z-index:2; left:50%; bottom:18px; transform:translateX(-50%);
-  display:flex; flex-direction:column; align-items:center; gap:2px; padding:14px 32px; border-radius:14px; min-width:170px;
+  display:flex; flex-direction:column; align-items:center; gap:2px; padding:14px 32px; border-radius:14px; min-width:150px;
   background:rgba(0,0,0,.55); border:1.5px solid rgba(255,255,255,.16); box-shadow:0 6px 14px rgba(0,0,0,.35); color:#fff; }
 .pas-vstopnic strong{ font-size:30px; font-weight:700; line-height:1.1; white-space:nowrap; }
+.pas-vstopnic .pas-cena{ font-size:36px; }   /* iOS: cena 36 bold, besedilna stanja (Tickets, FREE, Ended) 28 bold */
+.pas-vstopnic .pas-napis{ font-size:28px; }
 .pas-vstopnic span{ font-size:13px; }
 .pas-vstopnic.aktiven{ background:rgba(76,118,255,.85); border-color:rgba(255,255,255,.9);
   box-shadow:0 0 12px rgba(76,118,255,.7), 0 0 28px rgba(76,118,255,.45); transition:transform .15s var(--ease); }
@@ -338,6 +343,8 @@ h1,h2,h3,p{ margin:0; }
 .okrogla-slika.velika{ width:62px; height:62px; }
 .cip-starost{ font-size:11px; font-weight:700; padding:4px 8px; border-radius:999px; background:rgba(255,255,255,.12); color:rgba(255,255,255,.85); }
 .kartica-kdaj{ display:flex; align-items:center; gap:14px; padding:14px; border-radius:20px; background:#1C1C1C; border:1px solid var(--b10); }
+.kartica-kdaj .kv-besedilo{ gap:3px; }
+.kartica-kdaj .kv-besedilo span{ font-size:14px; color:rgba(255,255,255,.65); }
 .koledar{ width:56px; height:56px; border-radius:14px; background:var(--b08); display:flex; flex-direction:column; align-items:center; justify-content:center; flex:none; }
 .koledar small{ font-size:10px; font-weight:700; letter-spacing:.1em; color:rgba(255,255,255,.6); }
 .koledar strong{ font-size:22px; font-weight:700; line-height:1.1; }
@@ -350,17 +357,18 @@ h1,h2,h3,p{ margin:0; }
 .info-vrstica.razmaknjena > :last-child{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .info-oznaka{ font-size:12px; font-weight:600; color:var(--utisano); }
 .info-vrstica a{ color:var(--modra-besedilo); font-weight:600; }
-.zanri-vec{ font-size:12px; font-weight:500; color:var(--b55); text-decoration:underline; text-underline-offset:2px; padding:2px 0; }
+.zanri-vec{ font-size:12px; font-weight:500; color:var(--utisano); text-decoration:underline; text-underline-offset:2px; padding:2px 0; }   /* prepoznaven ne samo po barvi */
 .zanri-vec:hover{ color:var(--b70); }
-.kontakti{ display:flex; flex-direction:column; border-radius:18px; background:var(--povrsina); overflow:hidden; }
-.kontakt-vrstica{ display:flex; align-items:center; gap:12px; padding:12px 14px; min-height:56px; color:var(--b70); }
-.kontakt-vrstica + .kontakt-vrstica{ border-top:1px solid var(--b08); }
+.kontakti{ display:flex; flex-direction:column; border-radius:20px; background:var(--povrsina); overflow:hidden; }
+.kontakt-vrstica{ display:flex; align-items:center; gap:14px; padding:0 16px; min-height:52px; color:var(--b70); }
+.kontakt-vrstica + .kontakt-vrstica{ background:linear-gradient(var(--b08), var(--b08)) 52px 0 / 100% 1px no-repeat; }   /* locnica z zamikom 52 kot iOS */
+.kontakt-besedilo .info-oznaka{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }   /* oznaka ostane za bralnik zaslona, vidna je samo vrednost (iOS) */
 .kontakt-besedilo{ flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
-.kontakt-vrednost{ font-size:15px; font-weight:600; color:#fff; overflow-wrap:anywhere; }
+.kontakt-vrednost{ font-size:16px; font-weight:400; color:#fff; overflow-wrap:anywhere; }
 .kontakt-vrstica.brez-povezave .kontakt-vrednost{ font-weight:500; color:var(--besedilo); }
 @media (hover:hover){ a.kontakt-vrstica:hover{ background:var(--b08); } }
 .povezava-zemljevid{ display:inline-flex; gap:6px; align-items:center; font-weight:600; font-size:14px; color:var(--modra-besedilo); }
-.kartica-vip{ position:relative; display:grid; place-items:center; width:100%; min-height:200px; border-radius:18px; overflow:hidden; border:1px solid var(--b10); text-align:center; background:#222; }
+.kartica-vip{ position:relative; display:grid; place-items:center; width:100%; min-height:200px; border-radius:18px; overflow:hidden; border:1px solid rgba(255,255,255,.12); text-align:center; background:#222; }
 .vip-ozadje{ position:absolute; inset:0; transform:scale(1.15); }
 .vip-ozadje img{ filter:blur(14px); }
 .vip-senca{ position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,.75)); }
@@ -371,8 +379,32 @@ h1,h2,h3,p{ margin:0; }
 .vip-klic{ text-align:center; font-size:15px; font-weight:700; color:var(--b55); line-height:1.6; }
 .vip-klic a{ color:var(--modra-besedilo); font-size:17px; }
 
+/* Dogodek po iOS (EventDetailView.swift): kartica lokacije z zemljevidom 150x150 desno, polnila vrstic, nadnapisi, besedila vrstic */
+.kartica-lokacija{ display:grid; grid-template-columns:minmax(0,1fr); column-gap:14px; row-gap:12px; }
+.kartica-lokacija.z-karto{ grid-template-columns:minmax(0,1fr) 150px; }
+.lok-glava{ grid-column:1 / -1; display:flex; align-items:center; gap:8px; font-size:16px; }
+.lok-glava .ikona{ color:var(--b70); flex:none; }
+.lok-glava strong{ font-weight:600; min-width:0; overflow-wrap:anywhere; }
+.lok-podatki{ grid-column:1; min-width:0; display:flex; flex-direction:column; gap:12px; }
+.kartica-lokacija.z-karto .mini-karta{ grid-column:2; width:150px; height:150px; align-self:start; border-color:rgba(255,255,255,.12); }
+.kartica-lokacija .povezava-zemljevid{ grid-column:1 / -1; }
+.dogodek .prijatelji-vrsta{ justify-content:center; }   /* iOS: vrstica prijateljev na dogodku je sredinska; Friends plans ostane levo */
+.dogodek a.kartica-vrstica{ background:var(--b04); }
+.dogodek button.kartica-vrstica{ background:var(--b08); padding:0 18px; gap:14px; }
+.dogodek button.kartica-vrstica .kv-besedilo strong{ font-weight:500; }
+.dogodek button.kartica-vrstica > span.utisano{ font-size:13px; color:rgba(255,255,255,.5); }
+.dogodek .kartica-vrstica .kv-besedilo strong{ font-size:17px; }
+.dogodek a.kartica-vrstica .kv-besedilo span{ font-size:12px; font-weight:500; }
+.dogodek .kartica-vrstica > .ikona.utisano:last-child{ width:14px; height:14px; color:rgba(255,255,255,.4); }
+.dogodek .nadnapis{ font-size:11px; font-weight:700; letter-spacing:.11em; color:rgba(255,255,255,.5); }   /* ABOUT, VIP & TABLES: 11 bold, razmik 1,2 pt, bela .5 (5,3 : 1 na crni) */
+
 /* ---------- klub ---------- */
-.klub-glava{ position:relative; margin:0 calc(-1 * var(--odmik)); height:260px; overflow:hidden; }
+.klub-glava{ position:relative; margin:0 calc(-1 * var(--odmik)); height:314px; overflow:hidden; }   /* iOS: 260 slike pod vrstico gumba nazaj (+54) */
+.klub-glava .hero-senca.spodaj{ background:linear-gradient(180deg, rgba(0,0,0,.30) 0%, transparent 20%), linear-gradient(180deg, transparent 50%, rgba(0,0,0,.85)); }
+.klub > .blok-besedila{ margin-top:12px; }
+.klub .blok-besedila{ gap:12px; }
+.klub .podnaslov.mali{ font-size:17px; font-weight:600; }
+.klub .mini-karta{ height:200px; border-color:transparent; }
 .klub-ime{ position:absolute; z-index:2; left:var(--odmik); right:var(--odmik); bottom:14px; font-size:40px; font-weight:700; line-height:1.05;
   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; }
 .diaprojekcija{ position:absolute; inset:0; overflow:hidden; background:var(--b08); }
@@ -392,7 +424,6 @@ h1,h2,h3,p{ margin:0; }
 .gumb-sledi{ height:36px; padding:0 16px; border-radius:999px; background:var(--modra); display:inline-flex; gap:6px; align-items:center; font-size:14px; font-weight:600; white-space:nowrap; }
 .gumb-sledi.sledim{ background:var(--b08); border:1px solid rgba(255,255,255,.35); color:rgba(255,255,255,.9); }
 .klub-video{ width:100%; height:230px; border-radius:18px; object-fit:cover; background:#000; border:1px solid var(--b10); }
-.klub-video.prazen{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; background:var(--b04); color:var(--utisano); font-size:13px; font-weight:500; }
 .cenik-skupina{ display:flex; flex-direction:column; gap:6px; margin-top:12px; }
 .cenik-vrsta{ display:flex; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid var(--b08); }
 
@@ -416,6 +447,7 @@ h1,h2,h3,p{ margin:0; }
 /* ---------- filtri ---------- */
 .nastavitev{ display:flex; flex-direction:column; gap:10px; }
 .nastavitev-naslov{ font-size:13px; font-weight:700; color:var(--b70); text-transform:uppercase; letter-spacing:.06em; }
+.nastavitev-naslov.razdelek{ font-size:20px; font-weight:700; color:#fff; text-transform:none; letter-spacing:0; }   /* iOS SettingsCards: naslov razdelka 20 bold, navadne crke */
 .izbira{ position:relative; display:flex; align-items:center; gap:14px; height:56px; padding:0 16px; border-radius:16px; background:var(--b08); }
 .izbira select{ flex:1; min-width:0; appearance:none; -webkit-appearance:none; background:none; border:0; color:#fff; font:inherit; font-size:16px; font-weight:500; outline:none; cursor:pointer; }
 .izbira:has(select:focus-visible){ outline:2px solid var(--modra); outline-offset:2px; }   /* nadomestek za outline:none na select */
@@ -442,7 +474,7 @@ h1,h2,h3,p{ margin:0; }
 .nakup-dogodek strong{ font-size:18px; }
 .prodajalec{ display:flex; flex-direction:column; gap:2px; padding:12px 14px; border-radius:14px; background:var(--povrsina); font-size:13px; color:var(--b70); overflow-wrap:anywhere; }
 .prodajalec strong{ font-size:14px; color:#fff; }
-.prodaja-vrstica{ margin:-4px 0 0; padding:0 4px; }
+.prodaja-vrstica{ margin:0; padding:0 4px; }
 .nakup-vrsta{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .nakup-vrsta strong{ font-size:18px; }
 .stevec{ display:flex; align-items:center; gap:4px; background:var(--b08); border-radius:999px; padding:4px; }
@@ -450,6 +482,31 @@ h1,h2,h3,p{ margin:0; }
 .stevec output{ min-width:28px; text-align:center; font-weight:700; font-size:17px; }
 .nakup-skupaj{ display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding-top:12px; border-top:1px solid var(--b10); }
 .nakup-skupaj strong{ font-size:22px; }
+/* Checkout po iOS (BuyTicketsView.swift): povzetek s plakatom, kartica "vstopnica" (stevec + cena, perforacija z zarezi, Total), sij na gumbu Pay */
+.nakup-dogodek.z-plakatom{ flex-direction:row; align-items:center; gap:14px; padding:0; background:none; }
+.nakup-plakat{ width:72px; height:96px; border-radius:14px; overflow:hidden; flex:none; background:var(--b08); }
+.nakup-besedilo{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+.nakup-dogodek.z-plakatom .nadnapis{ font-size:11px; letter-spacing:.11em; color:rgba(255,255,255,.55); }
+.nakup-dogodek.z-plakatom strong{ font-size:20px; line-height:1.2; overflow-wrap:anywhere; }
+.nakup-kartica{ position:relative; border-radius:22px; background:#212123; border:1px solid var(--b10); box-shadow:0 8px 22px rgba(76,118,255,.18); overflow:hidden; }
+.nakup-kartica .nakup-vrsta{ padding:18px; }
+.nakup-kartica .stevec{ background:none; padding:0; gap:14px; }
+.nakup-kartica .stevec button{ position:relative; width:40px; height:40px; background:rgba(255,255,255,.12); font-size:20px; }
+.nakup-kartica .stevec button::after{ content:""; position:absolute; inset:-2px; }   /* tarca dotika 44 px */
+.nakup-kartica .stevec button:disabled{ opacity:1; background:rgba(255,255,255,.05); color:rgba(255,255,255,.3); }
+.nakup-kartica .stevec output{ min-width:34px; font-size:26px; }
+.nakup-cena{ text-align:right; display:flex; flex-direction:column; align-items:flex-end; }
+.nakup-cena strong{ font-size:20px; font-weight:600; }
+.nakup-cena span{ font-size:11px; color:rgba(255,255,255,.5); }
+.nakup-kartica .nakup-skupaj{ position:relative; border-top:0; padding:20px 18px 18px; align-items:center;
+  background:repeating-linear-gradient(90deg, rgba(255,255,255,.25) 0 6px, transparent 6px 11px) 18px 0 / calc(100% - 36px) 1px no-repeat; }
+.nakup-kartica .nakup-skupaj::before, .nakup-kartica .nakup-skupaj::after{ content:""; position:absolute; top:-11px; width:22px; height:22px; border-radius:50%; background:var(--prekrita); }
+.nakup-kartica .nakup-skupaj::before{ left:-11px; } .nakup-kartica .nakup-skupaj::after{ right:-11px; }
+.nakup-kartica .nakup-skupaj > span{ font-size:16px; font-weight:600; }
+.nakup-kartica .nakup-skupaj small{ font-size:11px; font-weight:400; color:rgba(255,255,255,.55); }
+.nakup-kartica .nakup-skupaj strong{ font-size:26px; font-weight:700; }
+.nakup-promo input{ border-radius:16px; background:rgba(255,255,255,.05); border-color:var(--b14); }
+.sij-gumb:not(:disabled){ box-shadow:0 0 12px rgba(76,118,255,.7), 0 0 28px rgba(76,118,255,.45); }   /* iOS .outlySij: en sij na zaslon, nikoli na neaktivnem gumbu (statican, brez animacije) */
 .gost-opomba{ margin-top:-6px; }
 .gost-opomba a{ color:#fff; font-weight:600; text-decoration:underline; text-underline-offset:2px; }
 .gost-racun{ display:flex; flex-direction:column; align-items:stretch; gap:10px; padding:16px; border-radius:16px; background:var(--povrsina); text-align:center; }
@@ -464,6 +521,12 @@ h1,h2,h3,p{ margin:0; }
 .vstopnica > .utisano{ text-align:center; font-size:12px; letter-spacing:.08em; }
 .vstopnica.stara{ opacity:.65; }
 .vstopnica-glava{ display:flex; justify-content:space-between; }
+/* Tickets: vrstica vstopnice v zlozenem stanju kot iOS (TicketsView.swift): radij 16, brez obrobe, plakat 70 / radij 12, stanje + koda naroila, puscica */
+.vstopnice-zaslon .vstopnice-seznam > .vstopnica:not(.rez-kartica){ border-radius:16px; }
+.vstopnice-zaslon .vstopnice-seznam > .vstopnica:not(.vip):not(.spor):not(.rez-kartica){ border-color:transparent; }
+.vstopnice-zaslon .vstopnica-glava-gumb .vd-slika{ width:70px; height:70px; border-radius:12px; }
+.vd-stanje{ font-size:12px !important; color:var(--utisano) !important; }
+.vd-stanje b{ color:var(--modra-besedilo); font-weight:700; }
 .vstopnica-glava-gumb{ display:flex; align-items:center; gap:12px; text-align:left; width:100%; }
 .vstopnica-glava-gumb:disabled{ opacity:1; }
 .vstopnica-qr{ display:flex; flex-direction:column; align-items:center; gap:12px; padding-top:6px; }
@@ -488,6 +551,7 @@ h1,h2,h3,p{ margin:0; }
 .avtentikacija{ align-items:center; gap:12px; padding-bottom:24px; }
 .avt-vrh{ width:100%; display:flex; justify-content:space-between; align-items:center; }
 .avt-logo{ width:220px; height:220px; object-fit:cover; margin:-70px 0 -64px; pointer-events:none; }
+.zaslon > .avt-logo{ align-self:center; }   /* About: logotip na sredini (kot besedilo pod njim) */
 .avt-naslov{ font-size:20px; font-weight:700; text-align:center; }
 .avt-naslov.levo{ text-align:left; }
 .avt-podnaslov{ font-size:14px; font-weight:600; color:var(--b70); text-align:center; }
@@ -514,9 +578,9 @@ h1,h2,h3,p{ margin:0; }
 /* ---------- profil ---------- */
 .profil-glava{ display:flex; flex-direction:column; align-items:center; gap:6px; padding:16px 0 4px; text-align:center; }
 .profil-glava h1{ font-size:24px; font-weight:700; overflow-wrap:anywhere; }
-.seznam-kartica{ display:flex; flex-direction:column; border-radius:14px; background:var(--povrsina); border:1px solid transparent; overflow:hidden; }
-.menijska-vrstica{ display:flex; align-items:center; gap:14px; min-height:56px; padding:0 16px; width:100%; text-align:left; font-size:16px; font-weight:500; }
-.menijska-vrstica + .menijska-vrstica{ border-top:1px solid var(--b08); }
+/* iOS (Buttons.swift OutlyMenuRowButton): vsaka vrstica je svoja kartica - visina 60, radij 18, bela 8 %, brez obrobe, ločil in puscice; razmik 12 */
+.seznam-kartica{ display:flex; flex-direction:column; gap:12px; }
+.menijska-vrstica{ display:flex; align-items:center; gap:14px; min-height:60px; padding:0 18px; width:100%; text-align:left; font-size:16px; font-weight:500; border-radius:18px; background:var(--povrsina); }
 .menijska-vrstica > span:not(.znacka-stevilo){ flex:1; }
 .menijska-vrstica.rdeca{ color:var(--rdeca); }
 
@@ -531,10 +595,11 @@ h1,h2,h3,p{ margin:0; }
 }
 
 /* ---------- faza 2: profil, racun, prijatelji, obvestila ---------- */
-.profil-vrsta{ display:flex; align-items:center; gap:20px; padding:16px 0 6px; }
-.profil-ime{ font-size:22px !important; font-weight:700 !important; }
+.profil-vrsta{ display:flex; align-items:center; gap:25px; padding:16px 0 32px; margin-bottom:14px; border-bottom:1px solid #5d5d5d; }   /* iOS: razmik 25, sivo locilo, 32 do menija */
+.profil-ime{ font-size:22px !important; font-weight:400 !important; }   /* iOS .title2 navadna teza */
 .povezava-modra{ color:var(--modra-besedilo); font-weight:600; font-size:14px; }
-.povezava-gumb.rdeca{ color:var(--rdeca); }
+.profil-vrsta .povezava-modra{ font-size:17px; font-weight:400; }
+.povezava-gumb.rdeca{ color:var(--rdeca); font-size:17px; font-weight:400; }
 .znacka-stevilo{ min-width:20px; height:20px; padding:0 6px; border-radius:999px; background:var(--modra); color:#fff; font-size:11px; font-weight:700; display:inline-grid; place-items:center; flex:none; }
 .gumb-rdec{ display:flex; align-items:center; justify-content:center; width:100%; height:48px; border-radius:14px; background:rgba(255,90,90,.14); border:1px solid rgba(255,90,90,.5); color:var(--rdeca); font-weight:600; font-size:16px; }
 .gumb-majhen{ height:34px; padding:0 12px; border-radius:999px; background:var(--b08); border:1px solid var(--b14); font-size:13px; font-weight:600; white-space:nowrap; display:inline-flex; align-items:center; gap:5px; flex:none; }
@@ -546,6 +611,10 @@ h1,h2,h3,p{ margin:0; }
 .kp-vrh{ display:flex; align-items:center; gap:10px; }
 .kp-vrh strong{ flex:1; font-size:15px; }
 .kp-vrednost{ font-size:16px; font-weight:500; overflow-wrap:anywhere; }
+.kp-ios{ gap:10px; padding:18px; border-radius:20px; background:var(--b06); }
+.kp-ios .kp-naslov{ font-size:22px; font-weight:700; }
+.kp-ios .kp-vrednost{ flex:1; min-width:0; font-size:18px; font-weight:400; }
+.kp-ios .povezava-modra{ font-size:16px; font-weight:400; }
 .kartica-avatar{ display:flex; flex-direction:column; align-items:center; gap:12px; padding:20px; border-radius:18px; background:var(--b04); border:1px solid rgba(255,255,255,.6); }
 .avatar-gumb{ position:relative; border-radius:50%; }
 .avatar-plus{ position:absolute; right:-4px; top:2px; width:26px; height:26px; border-radius:7px; background:var(--modra); display:grid; place-items:center; color:#fff; }
@@ -561,7 +630,8 @@ h1,h2,h3,p{ margin:0; }
 .kartica-clanka{ display:flex; flex-direction:column; gap:4px; padding:14px 16px; border-radius:16px; background:var(--povrsina); border:1px solid transparent; }
 .kartica-clanka strong{ font-size:16px; }
 .kartica-vrstica.kontakt{ background:rgba(76,118,255,.12); }
-.vrstica-osebe{ display:flex; align-items:center; gap:12px; padding:8px 0; }
+.vrstica-osebe{ display:flex; align-items:center; gap:10px; padding:10px 12px; min-height:60px; border-radius:16px; background:var(--povrsina); }   /* iOS: vsaka oseba je kartica (bela 8 %, radij 16) */
+.vrstica-osebe .krog-gumb.majhen{ width:36px; height:36px; background:none; border:0; color:var(--b55); }
 .vrstica-obvestila{ display:flex; align-items:center; gap:12px; width:100%; text-align:left; padding:10px; border-radius:14px; background:var(--povrsina); }
 .vrstica-obvestila .kv-besedilo strong{ white-space:normal; font-size:14px; }
 .zvonec{ position:relative; width:36px; height:36px; background:var(--b08); border:0; }
@@ -771,7 +841,7 @@ a.profil-ime{ white-space:normal; }
 .koraki{ margin:0; padding-left:22px; display:flex; flex-direction:column; gap:10px; font-size:15px; }
 
 /* ---------- QR skener vstopnic (posel-skener.js) ---------- */
-.skener{ position:relative; width:100%; aspect-ratio:3/4; max-height:62vh; max-height:max(240px, min(62vh, calc(100svh - 340px))); border-radius:18px; overflow:hidden; background:#000; margin-top:8px; }
+.skener{ position:relative; width:100%; aspect-ratio:3/4; max-height:62vh; max-height:max(240px, min(62vh, calc(100svh - 340px))); border-radius:18px; overflow:hidden; background:var(--prekrita); border:1px solid rgba(255,255,255,.28); margin-top:8px; }   /* viden tudi brez kamere (crno na crnem se ni loceno od strani) */
 .skener-video{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
 .skener-video.skrito-video{ opacity:0; }
 .skener-plast{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:16px; }
@@ -841,7 +911,7 @@ a.profil-ime{ white-space:normal; }
 .vstopnica.vip{ border-color:rgba(212,175,55,.55); }
 .vip-paket-opis{ display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; }
 .vip-paket-opis > span{ font-size:13px; color:var(--b70); }
-.vip-vsebina > .vip-od{ font-size:16px; font-weight:700; color:var(--zlata); }
+.vip-vsebina > .vip-od{ font-size:15px; font-weight:700; color:var(--zlata); }
 
 /* tloris (SVG; viewBox = mreza celic, prilagodi se sirini) */
 .tloris{ display:block; width:100%; height:auto; border-radius:14px; background:#0b0b0b; border:1px solid var(--b10);
@@ -1082,4 +1152,21 @@ a.profil-ime{ white-space:normal; }
   .skeleton::after{ animation:none; }
   .list-ozadje, .list, .karta-kartica{ animation:none; }
   .slika img, .dia-trak{ transition:none; }
+}
+
+/* Ozki in nizki zasloni (pregled PR #120): ne izgubi ure/imena in gumb Pay ostane viden tam, kjer je bil */
+@media (max-width:400px){
+  .vstopnice-zaslon .vstopnice-seznam > .vstopnica.skupina .vstopnica-glava-gumb .vd-slika{ width:56px; height:56px; }
+  .vrstica-osebe.prosnja{ flex-wrap:wrap; row-gap:6px; }
+  .vrstica-osebe.prosnja .kv-besedilo{ flex-basis:calc(100% - 100px); }
+}
+@media (max-height:760px){
+  .nakup-dogodek.z-plakatom{ gap:12px; }
+  .nakup-plakat{ width:54px; height:72px; border-radius:12px; }
+  .nakup-dogodek.z-plakatom strong{ font-size:17px; }
+  .list-vsebina:has(> .nakup-kartica){ gap:10px; }
+  .nakup-kartica .nakup-vrsta{ padding:12px 16px; }
+  .nakup-kartica .nakup-skupaj{ padding:14px 16px 12px; }
+  .nakup-kartica .nakup-skupaj strong{ font-size:22px; }
+  .nakup-kartica .stevec output{ font-size:22px; }
 }

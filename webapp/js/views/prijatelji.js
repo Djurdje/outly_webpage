@@ -44,7 +44,7 @@ export function MojiPrijatelji() {
 
     ${s.requests_in.length ? html`<section class="blok-besedila">
       <h2 class="podnaslov">${t("Friend requests")}</h2>
-      ${s.requests_in.map(r => html`<div class="vrstica-osebe" key=${"in" + r.id}>
+      ${s.requests_in.map(r => html`<div class="vrstica-osebe prosnja" key=${"in" + r.id}>
         <${Avatar} url=${r.user.avatar_url} ime=${r.user.username} velikost=${44} />
         <span class="kv-besedilo"><strong>${r.user.username}</strong><span>${t("wants to be your friend")}</span></span>
         <button type="button" class="gumb-majhen modri" disabled=${zaseden("in" + r.id)}

@@ -84,9 +84,9 @@ export function Vstopnice() {
         odprta=${odprta} preklopiVstopnico=${id => setOdprta(odprta === id ? null : id)} poslji=${v => setPrenos(v)} razdeli=${setRazdeli} />`
     : stara
       ? html`<${Karta} key=${p.v.id} v=${p.v} odprta=${false} stara=${true} />`
-      : html`<${Karta} key=${p.v.id} v=${p.v} odprta=${odprta === p.v.id || postavkePrih.length === 1} preklopi=${() => setOdprta(odprta === p.v.id ? null : p.v.id)} poslji=${() => setPrenos(p.v)} />`);
+      : html`<${Karta} key=${p.v.id} v=${p.v} odprta=${odprta === p.v.id || postavkePrih.length === 1} vsiljena=${postavkePrih.length === 1} preklopi=${() => setOdprta(odprta === p.v.id ? null : p.v.id)} poslji=${() => setPrenos(p.v)} />`);
 
-  return html`<div class="zaslon">
+  return html`<div class="zaslon vstopnice-zaslon">
     <${GlavaNazaj} naslov=${t("Tickets")} rezerva="/app/profile" />
     ${placano ? html`<p class="opomba-okvir" role="status"><${Ikona} ime="check" velikost=${18} />${t("Payment received. Your tickets will appear here in a few seconds.")}</p>` : null}
     <${GuestListSekcija} />
@@ -114,7 +114,7 @@ export function Vstopnice() {
   </div>`;
 }
 
-function Karta({ v, odprta, preklopi, stara, poslji }) {
+function Karta({ v, odprta, preklopi, stara, poslji, vsiljena }) {
   const jaz = useSeja(x => (x.me && x.me.username) || "");
   const uporabljena = v.status === "used";
   const spor = vSporu(v) && !stara;   // pretekla vstopnica ostane "ENDED"
@@ -126,8 +126,10 @@ function Karta({ v, odprta, preklopi, stara, poslji }) {
       <span class="kv-besedilo"><span class="nadnapis">${(v.club_name || "").toUpperCase()}</span><strong>${v.event_title}</strong>
         <span>${danInUra(v._zacetek)}</span>
         ${vip ? html`<${VipVrstica} v=${v} />` : null}
-        <${OznakaGuestList} v=${v} jaz=${jaz} /></span>
+        <${OznakaGuestList} v=${v} jaz=${jaz} />
+        ${v.status === "valid" && !stara && !spor ? html`<span class="vd-stanje"><b>${t("VALID")}</b>${" · " + v.public_ref}</span>` : null}</span>
       ${stanje ? html`<span class=${"cip-plan" + (spor ? " spor" : "")}>${stanje}</span>` : null}
+      ${stara || vsiljena ? null : html`<${Ikona} ime="chevron-down" velikost=${18} razred=${"utisano skupina-puscica" + (odprta ? " odprta" : "")} />`}
     </button>
     ${odprta && !stara ? html`<${QrTelo} v=${v} poslji=${poslji} />` : null}
   </div>`;

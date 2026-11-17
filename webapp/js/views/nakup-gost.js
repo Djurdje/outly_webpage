@@ -11,8 +11,8 @@ import {
   jeNakup503, jeNakupZaseden, nakupPocakajS, nakupZasedenoSporocilo, jeNakupVObdelavi, NAKUP_V_OBDELAVI_S,
   ApiError, izidNakupa, jePromoKodaNeveljavna, nakupBrezOdgovoraSporocilo, gostSporocilo, jeCenaVstopniceSpremenjena, potekloPlacilo, placiloVObdelavi, placiloNepripravljeno
 } from "../napake.js";
-import { denar, jeRazprodan, preostanek, danInUra, nacinPlacila, ddvBesedilo } from "../oblika.js";
-import { List, useZaklep, PromoPolje, promoKoda } from "../ui.js";
+import { denar, plakatKartice, jeRazprodan, preostanek, danInUra, nacinPlacila, ddvBesedilo } from "../oblika.js";
+import { List, Plakat, useZaklep, PromoPolje, promoKoda } from "../ui.js";
 import { navigiraj } from "../usmerjanje.js";
 import { odpriStripe, izidStripeNakupa } from "../stripe.js";
 import { TERMS_VERSION, EMAIL_RE, BlokProdajalca, OpombaVracila } from "../pogoji.js";
@@ -163,14 +163,17 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
     <//>`;
   }
   return html`<${List} odprt=${true} zapri=${zapriVarno} brezZapiranja=${posiljam} naslov=${t("Checkout")}>
-    <div class="nakup-dogodek">
-      <span class="nadnapis">${(imeKluba || "").toUpperCase()}</span>
-      <strong>${e.title}</strong>
-      <span class="utisano">${danInUra(e._zacetek)}</span>
-      ${kraj && kraj !== "-" ? html`<span class="utisano">${kraj}</span>` : null}
-      ${e.min_age > 0 ? html`<span class="utisano">${t("{n}+ · ID at the door", { n: e.min_age })}</span>` : null}
-      ${imeKluba && !e.seller ? html`<span class="utisano">${t("Seller: {club}", { club: imeKluba })}</span>` : null}
-    </div>
+    <div class="nakup-dogodek z-plakatom">
+        <span class="nakup-plakat"><${Plakat} src=${plakatKartice(e)} rezerva=${e.poster_url} sirina=${150} alt="" /></span>
+        <div class="nakup-besedilo">
+        <span class="nadnapis">${(imeKluba || "").toUpperCase()}</span>
+        <strong>${e.title}</strong>
+        <span class="utisano">${danInUra(e._zacetek)}</span>
+        ${kraj && kraj !== "-" ? html`<span class="utisano">${kraj}</span>` : null}
+        ${e.min_age > 0 ? html`<span class="utisano">${t("{n}+ · ID at the door", { n: e.min_age })}</span>` : null}
+        ${imeKluba && !e.seller ? html`<span class="utisano">${t("Seller: {club}", { club: imeKluba })}</span>` : null}
+        </div>
+      </div>
 
     <form class="obrazec" onSubmit=${kupi} novalidate>
       <label class="polje-oznaceno"><span>${t("Email")}</span>
@@ -185,21 +188,22 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
       </label>
       <p class="opomba gost-opomba">${t("This event is {n}+. We need your date of birth to check your age.", { n: e.min_age })}</p>` : null}
 
-      <div class="nakup-vrsta">
-        <div><strong>${brezplacno ? t("Free") : denar(cenaEna, e.currency)}</strong><span class="utisano"> ${t("per ticket")}</span></div>
-        <div class="stevec" role="group" aria-label=${t("Number of tickets")}>
-          <button type="button" onClick=${() => { if (!tece.current) { setNapaka(""); setKolicina(k => Math.max(1, k - 1)); } }} disabled=${kolicina <= 1 || posiljam} aria-label=${t("Fewer")}>−</button>
-          <output aria-live="polite">${kolicina}</output>
-          <button type="button" onClick=${() => { if (!tece.current) { setNapaka(""); setKolicina(k => Math.min(najvec, k + 1)); } }} disabled=${kolicina >= najvec || posiljam} aria-label=${t("More")}>+</button>
+      <div class="nakup-kartica">
+        <div class="nakup-vrsta">
+          <div class="stevec" role="group" aria-label=${t("Number of tickets")}>
+            <button type="button" onClick=${() => { if (!tece.current) { setNapaka(""); setKolicina(k => Math.max(1, k - 1)); } }} disabled=${kolicina <= 1 || posiljam} aria-label=${t("Fewer")}>−</button>
+            <output aria-live="polite">${kolicina}</output>
+            <button type="button" onClick=${() => { if (!tece.current) { setNapaka(""); setKolicina(k => Math.min(najvec, k + 1)); } }} disabled=${kolicina >= najvec || posiljam} aria-label=${t("More")}>+</button>
+          </div>
+          <div class="nakup-cena"><strong>${brezplacno ? t("Free") : denar(cenaEna, e.currency)}</strong><span> ${t("per ticket")}</span></div>
+        </div>
+        <div class="nakup-skupaj">
+          <span>${t("Total")}<small class="utisano"> · ${ddvBesedilo(e.seller)}</small></span>
+          <strong>${brezplacno ? t("Free") : denar(skupaj, e.currency)}</strong>
         </div>
       </div>
 
       ${neprodaja ? null : html`<${PromoPolje} vrednost=${promo} spremeni=${v => { setPromoNapaka(""); polje(setPromo)(v); }} napaka=${promoNapaka} onemogoceno=${posiljam} />`}
-
-      <div class="nakup-skupaj">
-        <span>${t("Total")}<small class="utisano"> · ${ddvBesedilo(e.seller)}</small></span>
-        <strong>${brezplacno ? t("Free") : denar(skupaj, e.currency)}</strong>
-      </div>
 
       <${BlokProdajalca} prodajalec=${e.seller} />
 
@@ -217,7 +221,7 @@ export function GostNakupList({ odprt, zapri, dogodek: e, imeKluba, kraj, prijav
       ${napaka ? html`<p class="napaka-besedilo" role="alert">${napaka}</p>` : null}
       ${brezGosta ? html`<button type="button" class="gumb-siv" onClick=${prijava}>${t("Sign in to buy")}</button>` : null}
 
-      <button type="submit" class="gumb-glavni" disabled=${posiljam || razprodano || zaklenjeno || neprodaja}>
+      <button type="submit" class="gumb-glavni sij-gumb" disabled=${posiljam || razprodano || zaklenjeno || neprodaja}>
         ${razprodano ? t("Sold out") : posiljam ? t("Processing...")
           : brezplacno ? (kolicina === 1 ? t("Get ticket") : t("Get tickets"))
           : t("Pay {amount}", { amount: denar(skupaj, e.currency) })}

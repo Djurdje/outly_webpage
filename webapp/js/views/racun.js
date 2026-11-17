@@ -20,8 +20,7 @@ import { oznakaPogojev } from "../pogoji.js";
 
 const Vrstica = ({ href, ikona, naslov, znacka, onClick, rdeca }) => {
   const vsebina = html`<${Ikona} ime=${ikona} /><span>${naslov}</span>
-    ${znacka ? html`<span class="znacka-stevilo">${znacka}</span>` : null}
-    ${onClick ? null : html`<${Ikona} ime="chevron-right" velikost=${16} razred="utisano" />`}`;
+    ${znacka ? html`<span class="znacka-stevilo">${znacka}</span>` : null}`;   // iOS: vrstica menija je kartica brez puscice
   return href
     ? html`<a class=${"menijska-vrstica" + (rdeca ? " rdeca" : "")} href=${href}>${vsebina}</a>`
     : html`<button type="button" class=${"menijska-vrstica" + (rdeca ? " rdeca" : "")} onClick=${onClick}>${vsebina}</button>`;
@@ -58,10 +57,11 @@ export function MojRacun() {
 
 /* ---------------- Personal info ---------------- */
 function KarticaPodatka({ ikona, naslov, vrednost, opis, uredi }) {
-  return html`<div class="kartica-podatka">
-    <div class="kp-vrh"><${Ikona} ime=${ikona} velikost=${18} /><strong>${naslov}</strong>
+  // iOS (Buttons.swift OutlyInfoCard): naslov zgoraj, pod njim vrstica ikona + vrednost + Edit, spodaj opis
+  return html`<div class="kartica-podatka kp-ios">
+    <strong class="kp-naslov">${naslov}</strong>
+    <div class="kp-vrh"><${Ikona} ime=${ikona} velikost=${18} /><span class="kp-vrednost">${vrednost}</span>
       ${uredi ? html`<button type="button" class="povezava-modra" onClick=${uredi} aria-label=${t("Edit") + " " + naslov}>${t("Edit")}</button>` : null}</div>
-    <span class="kp-vrednost">${vrednost}</span>
     ${opis ? html`<span class="opomba">${opis}</span>` : null}
   </div>`;
 }
@@ -245,7 +245,7 @@ export function Nastavitve() {
   }
   return html`<div class="zaslon">
     <${GlavaNazaj} naslov=${t("Preferences")} rezerva="/app/account" />
-    <h2 class="nastavitev-naslov">${t("Friends")}</h2>
+    <h2 class="nastavitev-naslov razdelek">${t("Friends")}</h2>
     <label class="stikalo-vrstica">
       <span class="kv-besedilo"><strong>${t("Share my plans with friends")}</strong>
         <span class="vec-vrstic">${t("When on, your friends see which events you have a ticket for under “Your friends' plans”. Only friends, never anyone else.")}</span></span>
@@ -269,16 +269,16 @@ export function MojeNastavitve() {
   return html`<div class="zaslon">
     <${GlavaNazaj} naslov=${t("My preferences")} rezerva="/app/account/preferences" />
     <p class="opomba">${t("Saved on this device. Turn on “Use my preferences” in Filters to apply them.")}</p>
-    <div class="nastavitev"><span class="nastavitev-naslov">${t("Music genres")}</span>
+    <div class="nastavitev"><span class="nastavitev-naslov razdelek">${t("Music genres")}</span>
       <div class="mreza-cipov">${zanri.map(g => html`<button type="button" class=${"cip" + (n.genres.includes(g) ? " izbran" : "")}
         aria-pressed=${n.genres.includes(g)} onClick=${() => preklopi(g)}>${zanrIme(g)}</button>`)}</div></div>
-    <div class="nastavitev"><span class="nastavitev-naslov">${t("Distance")}</span>
+    <div class="nastavitev"><span class="nastavitev-naslov razdelek">${t("Distance")}</span>
       <${Razpon} od=${0} do=${100} korak=${1} spodaj=${0} zgoraj=${n.maxKm} samoZgoraj=${true}
         napis=${v => `${v} km`} ob=${(a, b) => shraniNastavitve({ maxKm: b })} ime=${t("Distance")} /></div>
-    <div class="nastavitev"><span class="nastavitev-naslov">${t("Age range")}</span>
+    <div class="nastavitev"><span class="nastavitev-naslov razdelek">${t("Age range")}</span>
       <${Razpon} od=${16} do=${60} korak=${1} spodaj=${n.ageMin} zgoraj=${n.ageMax}
         napis=${v => `${v}`} ob=${(a, b) => shraniNastavitve({ ageMin: a, ageMax: b })} ime=${t("Age range")} /></div>
-    <div class="nastavitev"><span class="nastavitev-naslov">${t("Entry price")}</span>
+    <div class="nastavitev"><span class="nastavitev-naslov razdelek">${t("Entry price")}</span>
       <${Razpon} od=${0} do=${100} korak=${1} spodaj=${n.priceMin / 100} zgoraj=${n.priceMax / 100}
         napis=${v => denar(v * 100)} ob=${(a, b) => shraniNastavitve({ priceMin: a * 100, priceMax: b * 100 })} ime=${t("Entry price")} /></div>
   </div>`;
