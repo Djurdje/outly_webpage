@@ -18,7 +18,7 @@
   --ozadje:#000000;         /* iOS: zasloni risejo na crnem (Ozadje.swift Color.black); Home ima svoj preliv (.ozadje-home) */
   --kartica:#242323;        /* iOS outlyCard: vnosna polja, obrazci */
   --povrsina:rgba(255,255,255,.08);   /* kartica/vrstica V TOKU strani (iOS Color.white.opacity(0.08)). NIKOLI za prekrivne plasti */
-  --prekrita:#1C1C1E;       /* NEPROSOJNA povrsina za vse, kar lezi NAD drugo vsebino: list, toast, plavajoce kartice, lepljiva vrstica */
+  --prekrita:#18181A;       /* (iOS list ~#1C1C1E; temnejse, da modro besedilo na vrstici v listu ostane >= 4,5:1) NEPROSOJNA povrsina za vse, kar lezi NAD drugo vsebino: list, toast, plavajoce kartice, lepljiva vrstica */
   --prekrita-rob:rgba(255,255,255,.14);
   --modra:#4C76FF;
   --modra-besedilo:#6A8CFF; /* modro BESEDILO na temnem ozadju: #4C76FF ima na karticah kontrast < 4,5 (WCAG AA) */
