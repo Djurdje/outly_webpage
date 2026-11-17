@@ -389,7 +389,11 @@ function zamrzni(el) {
 function zajemiHome(vsebina, ozadje, drsenje) {
   if (!vsebina || !ozadje) return null;
   if (navigator.deviceMemory && navigator.deviceMemory <= 2) return null;   // sibka naprava: crno
-  const v = vsebina.cloneNode(true), o = ozadje.cloneNode(true);
+  const klon = vsebina.cloneNode(true), o = ozadje.cloneNode(true);
+  // Koren kopije je <div>, ne <main>: v dokumentu mora ostati en sam <main> (pomocne tehnologije, querySelector("main")).
+  const v = document.createElement("div");
+  v.className = klon.className;
+  v.append(...klon.childNodes);
   zamrzni(v); zamrzni(o);
   o.style.setProperty("--t", ozadje.style.getPropertyValue("--t") || "0");
   const premik = document.createElement("div");
@@ -406,6 +410,11 @@ export function ZamegljenoOzadje() {
     const el = ref.current, sl = slika.current;
     if (!el || !sl || !posnetek) return;
     try {
+      // Plast se pokaze SAMO, ce je nov CSS res uporabljen (brskalnik lahko po objavi vzame star app.css iz HTTP predpomnilnika,
+      // module pa nove): brez pravil .zamegljeno bi bila kopija Home navaden blok v toku strani nad pravo vsebino. Racunski slog
+      // velja tudi za skrit element. Sicer ostane plast skrita (crno ozadje).
+      const a = getComputedStyle(el), b = getComputedStyle(sl);
+      if (a.position !== "fixed" || a.pointerEvents !== "none" || a.zIndex !== "-1" || !b.filter.includes("blur")) return;
       sl.replaceChildren(posnetek.ozadje, posnetek.premik);
       el.hidden = false;
     } catch { el.hidden = true; }

@@ -228,11 +228,11 @@ h1,h2,h3,p{ margin:0; }
    .zam-slika je 48 px vecja na vsaki strani, da rob zameglitve ne bledi; .zam-vsebina je poravnana nazaj na viewport. */
 .zamegljeno{ position:fixed; inset:0; z-index:-1; pointer-events:none; overflow:hidden; background:#000; }
 .zamegljeno[hidden]{ display:none; }
-.zamegljeno::after{ content:""; position:absolute; inset:0; background:rgba(0,0,0,.6); }
+.zamegljeno::after{ content:""; position:absolute; inset:0; background:rgba(0,0,0,.8); }
 .zam-slika{ position:absolute; inset:-48px; overflow:hidden; filter:blur(22px); }   /* overflow: vhod v zameglitev = zaslon + 96 px, ne cel Home (WebKit) */
 .zam-slika .ozadje-home{ position:absolute; inset:0; z-index:auto; }
 .zam-vsebina{ position:absolute; left:48px; right:48px; top:48px; }
-.zamegljeno *{ animation:none !important; transition:none !important; }
+.zamegljeno *, .zamegljeno *::before, .zamegljeno *::after{ animation:none !important; transition:none !important; }
 .home-glava{ display:flex; flex-direction:column; align-items:center; gap:2px; padding-top:4px; }
 .home-glava-vrsta{ width:100%; display:flex; align-items:center; justify-content:space-between; height:44px; }
 .home-logo{ width:104px; height:104px; object-fit:cover; margin:-30px 0; pointer-events:none; }

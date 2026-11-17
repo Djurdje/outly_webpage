@@ -99,6 +99,7 @@ const ZAVIHKI = [
 ];
 /* Kateri zavihek je aktiven na potisnjenem zaslonu (dogodek, klub ...): kar je bilo zadnje izbrano. */
 let zadnjiZavihek = "home";
+let rodPlasti = 0;   // dvigne se ob zavrzenem posnetku: plast se vgradi znova (prazna)
 let zadnjiUporabnik = null;   // kljuc prijavljenega uporabnika (zamegljen posnetek Home ni prenosljiv med uporabniki)
 
 /* Leno nalozena komponenta: modul se nalozi ob prvem prikazu in ostane v pomnilniku. */
@@ -265,16 +266,24 @@ function App() {
   const zavihekZdaj = ZAVIHKI.some(z => z.ime === pot.ime) ? pot.ime : zadnjiZavihek;
   const zamegljeno = (zavihekZdaj === "search" || zavihekZdaj === "profile") && !brezVrstice && !pot.ime.startsWith("biz") && pot.ime !== "guest-order" && pot.ime !== "guest-ticket";
   // Prijava, odjava ali drug uporabnik: posnetek (avatar, pozdrav, nacrti) prejsnjega uporabnika se zavrze, plast se izprazni (key).
+  // "?" = prijavljen, a /me se ni naloga: to ni menjava uporabnika (posnetek ostane, plast se ne vgradi znova); zavrze se ob prijavi/odjavi in menjavi znanega id.
   const kljucUporabnika = prijavljen ? (me && me.id) || "?" : "gost";
-  if (pripravljena && kljucUporabnika !== zadnjiUporabnik) { if (zadnjiUporabnik !== null) sprostiPosnetek(); zadnjiUporabnik = kljucUporabnika; }
-  if (zavihekZdaj === "map") sprostiPosnetek();   // Map: brez posnetka (kot iOS); nov posnetek nastane ob naslednjem odhodu z Home
+  if (pripravljena && kljucUporabnika !== zadnjiUporabnik) {
+    if (kljucUporabnika === "?" && zadnjiUporabnik !== null && zadnjiUporabnik !== "gost") { /* /me se nalaga: ostane znani uporabnik */ }
+    else {
+      if (zadnjiUporabnik !== null && !(zadnjiUporabnik === "?" && kljucUporabnika !== "gost")) { sprostiPosnetek(); rodPlasti++; }
+      zadnjiUporabnik = kljucUporabnika;
+    }
+  }
+  // Map: brez posnetka (kot iOS). Sprostitev po commitu: cistilo OzadjeHome (zajem) tece sele ob commitu, ne med izrisom.
+  useLayoutEffect(() => { if (zavihekZdaj === "map") sprostiPosnetek(); }, [zavihekZdaj]);
   if (!pripravljena || preusmeritev) return html`<main class="okvir"><${Nalaganje} /></main>`;
 
   return html`<div class="okvir-aplikacije" key=${koda}>
     <${TrakVgrajen} skrij=${pot.ime === "map"} />
     <${NamigAplikacije} ime=${pot.ime} />
     ${pot.ime === "home" ? html`<${OzadjeHome} key=${pot.kljuc} />` : null}
-    ${zamegljeno ? html`<${ZamegljenoOzadje} key=${kljucUporabnika} />` : null}
+    ${zamegljeno ? html`<${ZamegljenoOzadje} key=${rodPlasti} />` : null}
     <main id="vsebina" class=${"okvir" + (brezVrstice ? "" : " z-vrstico") + (pot.ime === "biz-vip" || pot.ime === "biz-event-vip" ? " siroko" : "")} key=${pot.kljuc} data-smer=${pot.smer}>
       <${Zaslon} pot=${pot} />
     </main>
