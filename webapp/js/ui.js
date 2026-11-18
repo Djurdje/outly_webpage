@@ -207,7 +207,8 @@ export function List({ odprt, zapri, naslov, children, brezZapiranja = false, st
     ref.current && ref.current.focus();
     return () => {
       document.removeEventListener("keydown", tipka);
-      document.body.classList.remove("brez-drsenja", "steklo-odprto");
+      document.body.classList.remove("brez-drsenja");
+      if (steklo) document.body.classList.remove("steklo-odprto");
       obnoviOzadje();   // pred vrnitvijo fokusa: sprozilni element je bil v inertnem ozadju
       prej && prej.focus && prej.focus();
     };
