@@ -11,10 +11,10 @@ import { pwa, jeIOS } from "./pwa.js";
 
 export const URL_APP_STORE = "https://apps.apple.com/si/app/outly-nightlife/id6812742331";
 
-/* Zasloni, kjer okno ne sme biti: prijava/registracija/potrditev/pozabljeno geslo, onboarding, gostje brez racuna (vstopnica na vratih),
+/* Zasloni, kjer okno ne sme biti: prijava/registracija/potrditev/pozabljeno geslo, povratek z Googla/Appla (oauth), onboarding, gostje brez racuna (vstopnica na vratih),
    ves poslovni del (skener vratarja - skeniranje na vratih ne sme pasti), moje vstopnice (/app/tickets: povezava iz maila o nakupu)
    in guest lista (QR na vratih). */
-const BREZ_OKNA = new Set(["login", "register", "verify", "forgot", "onboarding", "guest-order", "guest-ticket", "tickets", "guest-list"]);
+const BREZ_OKNA = new Set(["login", "register", "verify", "forgot", "onboarding", "guest-order", "guest-ticket", "tickets", "guest-list", "oauth"]);
 /* Povratek s placila (Stripe) je ponovno nalaganje sredi uporabe: URL ima ?placilo=... ali ?stripe=... */
 const jePovratekSPlacila = () => { const q = new URLSearchParams(location.search); return q.has("placilo") || q.has("stripe"); };
 export const smeNamig = ime => !BREZ_OKNA.has(ime) && !String(ime).startsWith("biz") && !jePovratekSPlacila();
@@ -28,7 +28,7 @@ export function NamigAplikacije({ ime }) {
     return null;
   }
   const zapri = () => stanje.set({ odprt: false });
-  return html`<${List} odprt=${s.odprt && smeNamig(ime)} zapri=${zapri} naslov=${t("Outly is better in the app")}>
+  return html`<${List} odprt=${s.odprt && smeNamig(ime)} zapri=${zapri} steklo=${true} naslov=${t("Outly is better in the app")}>
     <p class="namig-besedilo">${t("Get the Outly app for the best experience, or continue in your browser.")}</p>
     <a class="gumb-glavni" href=${URL_APP_STORE}>${t("Download the app")}</a>
     <button type="button" class="gumb-siv" onClick=${zapri}>${t("Continue in browser")}</button>

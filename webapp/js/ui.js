@@ -189,7 +189,8 @@ function zapriOzadje(predal) {
 
 /** Spodnji list (sheet). Zapre ga Escape, klik na ozadje ali gumb. Fokus gre v list, ozadje je inert, ob zaprtju se fokus vrne. */
 /** brezZapiranja: med letecim nakupom lista ni mogoce zapreti (gumb, ozadje, Escape) - uporabnik bi izgubil odgovor. */
-export function List({ odprt, zapri, naslov, children, brezZapiranja = false }) {
+/** steklo: videz "stekla" (okno lebdi, stran za njim je zamegljena in zatemnjena; app.css .steklo). Samo okno ob zagonu na iPhonu. */
+export function List({ odprt, zapri, naslov, children, brezZapiranja = false, steklo = false }) {
   const ref = useRef(null);
   const zapriRef = useRef(zapri);
   const brezRef = useRef(brezZapiranja);
@@ -201,17 +202,19 @@ export function List({ odprt, zapri, naslov, children, brezZapiranja = false }) 
     const tipka = e => { if (e.key === "Escape") zapriRef.current(); };
     document.addEventListener("keydown", tipka);
     document.body.classList.add("brez-drsenja");
+    if (steklo) document.body.classList.add("steklo-odprto");   // zameglitev strani za oknom (app.css), brez backdrop-filter
     const obnoviOzadje = ref.current ? zapriOzadje(ref.current) : () => {};
     ref.current && ref.current.focus();
     return () => {
       document.removeEventListener("keydown", tipka);
       document.body.classList.remove("brez-drsenja");
+      if (steklo) document.body.classList.remove("steklo-odprto");
       obnoviOzadje();   // pred vrnitvijo fokusa: sprozilni element je bil v inertnem ozadju
       prej && prej.focus && prej.focus();
     };
   }, [odprt]);
   if (!odprt) return null;
-  return html`<div class="list-ozadje" onClick=${e => { if (e.target === e.currentTarget && !brezZapiranja) zapri(); }}>
+  return html`<div class=${"list-ozadje" + (steklo ? " steklo" : "")} onClick=${e => { if (e.target === e.currentTarget && !brezZapiranja) zapri(); }}>
     <div class="list" role="dialog" aria-modal="true" aria-label=${naslov} tabindex="-1" ref=${ref}>
       <div class="list-rocaj" aria-hidden="true"></div>
       <div class="list-glava">
