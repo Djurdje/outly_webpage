@@ -28,7 +28,7 @@ export function NamigAplikacije({ ime }) {
     return null;
   }
   const zapri = () => stanje.set({ odprt: false });
-  return html`<${List} odprt=${s.odprt && smeNamig(ime)} zapri=${zapri} naslov=${t("Outly is better in the app")}>
+  return html`<${List} odprt=${s.odprt && smeNamig(ime)} zapri=${zapri} steklo=${true} naslov=${t("Outly is better in the app")}>
     <p class="namig-besedilo">${t("Get the Outly app for the best experience, or continue in your browser.")}</p>
     <a class="gumb-glavni" href=${URL_APP_STORE}>${t("Download the app")}</a>
     <button type="button" class="gumb-siv" onClick=${zapri}>${t("Continue in browser")}</button>

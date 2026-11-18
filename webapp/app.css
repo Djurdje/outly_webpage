@@ -443,6 +443,22 @@ h1,h2,h3,p{ margin:0; }
   .list-ozadje{ align-items:center; }
   .list{ border-radius:22px; border-bottom:1px solid var(--b10); max-height:86vh; }
 }
+/* Steklo (List steklo=true, okno "Outly is better in the app"): okno lebdi 10 px od robov, stran za njim je zamegljena in zatemnjena.
+   BREZ backdrop-filter (87bc106): zameglitev je filter:blur na vsebini strani, dokler je body.steklo-odprto. Okvir se za ta cas
+   skrci na visino zaslona (okno se pokaze ob zagonu, scroll je 0, body je brez-drsenja), da WebKit ne zamegljuje celotne dolge strani. */
+.list-ozadje.steklo{ background:rgba(0,0,0,.45); }
+.list-ozadje.steklo .list{ width:calc(100% - 20px); margin-bottom:calc(10px + env(safe-area-inset-bottom)); border-radius:32px;
+  background:rgba(28,28,30,.55); border:1px solid rgba(255,255,255,.12); padding:24px 20px 20px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.15), 0 20px 50px rgba(0,0,0,.5); }
+.list-ozadje.steklo .list-rocaj{ display:none; }
+.list-ozadje.steklo .gumb-glavni, .list-ozadje.steklo .gumb-siv{ height:52px; }
+.list-ozadje.steklo .list-vsebina{ gap:12px; }
+.list-ozadje.steklo .list-vsebina .namig-besedilo{ margin-bottom:6px; }
+body.steklo-odprto .okvir-aplikacije > :not(.list-ozadje):not(.spodnja-vrstica):not(.zamegljeno){ filter:blur(10px); }
+body.steklo-odprto .okvir-aplikacije > .okvir{ max-height:100vh; max-height:100dvh; overflow:hidden; }
+@media (prefers-reduced-motion: reduce){
+  .list-ozadje.steklo, .list-ozadje.steklo .list{ animation:none; }
+}
 
 /* ---------- filtri ---------- */
 .nastavitev{ display:flex; flex-direction:column; gap:10px; }
