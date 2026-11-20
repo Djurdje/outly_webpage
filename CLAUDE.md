@@ -98,6 +98,14 @@ webapp/orodja/predhodno-nalaganje.mjs       generira <link rel="modulepreload"> 
   loci od rocne (`outlyObnovi(true, true)` = samodejno) - casovna okna 30/60 s zanke NE ustavijo (pregled #104 jo je
   nasel dvakrat). **Ob vsaki spremembi `zagon.js`, `sw.js` ali `leno()` v `main.js` pozeni
   `node webapp/orodja/razlicice/test.mjs`** (~4 min; na `--ref` stare kode mora pasti tisto, kar popravljas).
+  **CSS (17. 11. 2026, pregled PR #118, Issue #119):** `app.css` ob osvezitvi pride iz HTTP predpomnilnika MIMO SW
+  (`workerStart:0`), moduli pa novi - do 4 h nov JS s starim CSS, brez napake (`zagon.js` ne ukrepa). Nova komponenta, ki
+  brez svojih slogov pokvari postavitev (fiksna plast, prekrivanje), mora prikaz pogojiti z racunskim slogom
+  (vzorec `ZamegljenoOzadje` v `views/home.js`: pokaze se samo, ce `getComputedStyle` potrdi nov CSS).
+- **Zamegljen Home (17. 11. 2026, DECISIONS):** zavihka Search in Profile (in zasloni, odprti iz njiju) imata za ozadje
+  zamrznjeno kopijo Home (`ZamegljenoOzadje`/`OzadjeHome` v `views/home.js`, staticen `filter:blur`, 80 % crnine, brez
+  `backdrop-filter`, `inert`). Ni je na prijavi, onboardingu, `biz*` (skener) in gostovih zaslonih - ne dodajaj je tja.
+  Prosojne kartice (`--povrsina`) nad njo izgubijo kontrast nad svetlimi deli Home: nov barvni par preveri tudi nad plastjo.
 - Service worker (`webapp/sw.js`): navigacija pod /app/ vedno dobi lupino /app/, koda /webapp/* omrezje najprej,
   vendor/pisave iz predpomnilnika. **API odgovorov, vstopnic in ploscic NE predpomni.** Ob spremembi seznama JEDRO
   ali strategije dvigni `RAZLICICA`.
