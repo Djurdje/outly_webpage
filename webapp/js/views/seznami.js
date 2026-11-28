@@ -4,7 +4,7 @@ import { t } from "../i18n.js";
 import { send } from "../api.js";
 import { sporocilo } from "../napake.js";
 import * as P from "../podatki.js";
-import { zanrIme, normalizirajDogodek } from "../oblika.js";
+import { zanrIme, normalizirajDogodek, seJeKoncal } from "../oblika.js";
 import { GlavaNazaj, Nalaganje, Napaka, KarticaDogodka, VrsticaDogodka, Ikona } from "../ui.js";
 
 function useJavni() {
@@ -65,9 +65,8 @@ export function Zanimivi() {
     } catch (e) { setS(x => ({ ...x, nalaga: false, napaka: sporocilo(e) })); }
   };
   useEffect(() => { nalozi(); }, []);
-  const zdaj = Date.now() - 6 * 3600e3;
-  const prihajajoci = s.dogodki.filter(e => e._zacetek && e._zacetek.getTime() >= zdaj).sort(poCasu);
-  const mimo = s.dogodki.filter(e => !(e._zacetek && e._zacetek.getTime() >= zdaj)).sort((a, b) => poCasu(b, a));
+  const prihajajoci = s.dogodki.filter(e => !seJeKoncal(e)).sort(poCasu);
+  const mimo = s.dogodki.filter(e => seJeKoncal(e)).sort((a, b) => poCasu(b, a));
   const znacka = html`<span class="cip-plan">${t("Interested")}</span>`;
   return html`<div class="zaslon">
     <${GlavaNazaj} naslov=${t("Interested events")} />

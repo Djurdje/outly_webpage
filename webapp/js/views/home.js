@@ -10,7 +10,7 @@ import { sporocilo } from "../napake.js";
 import * as P from "../podatki.js";
 import {
   jeDanes, jeTaVikend, jeRazprodan, razdaljaKm, napisRazdalje, pozdrav, danInUra,
-  cena, znacka, zanrIme, steviloDogodkov, normalizirajDogodek, napisPrizorisca, prizorisce, plakatKartice
+  cena, znacka, zanrIme, steviloDogodkov, normalizirajDogodek, napisPrizorisca, prizorisce, plakatKartice, seJeKoncal
 } from "../oblika.js";
 import {
   Ikona, Slika, Plakat, Avatar, NaslovSekcije, Skeleton, Napaka, VrstaDogodkov, KarticaPredloga,
@@ -241,7 +241,7 @@ function izpelji(s, me, lok, f, moji, maxKm) {
     return { zanr: z, plakat: evs[0] ? plakatKartice(evs[0]) : "", rezerva: evs[0] ? evs[0].poster_url : "", stevilo: evs.length };
   });
 
-  const zanimivi = moji.filter(e => e.my_plan === "interested" && casZ(e) >= zdaj - 6 * 3600e3).sort((a, b) => casZ(a) - casZ(b));
+  const zanimivi = moji.filter(e => e.my_plan === "interested" && !seJeKoncal(e)).sort((a, b) => casZ(a) - casZ(b));
   // Mesta: klubi + prizorisca dogodkov organizatorjev (venue_city); mesto gostiteljskega kluba je ze med klubi.
   const mesta = [...new Set([...s.klubi.map(k => k.city), ...s.prihajajoci.map(e => e.venue_city)].map(m => (m || "").trim()).filter(Boolean))].sort();
 
