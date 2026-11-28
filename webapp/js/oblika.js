@@ -34,6 +34,7 @@ export function normalizirajDogodek(e) {
     genres: Array.isArray(e.genres) ? e.genres : [],
     min_age: e.min_age ?? 18,
     sold_count: e.sold_count ?? 0,
+    interested_count: e.interested_count ?? 0,
     lifecycle: e.lifecycle || "upcoming",
     recap_video_url: e.recap_video_url || "",
     // Organizatorji brez prizorisca (backend 037): star backend polj nima -> kot doslej (klubov naslov).
