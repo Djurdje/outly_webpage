@@ -10,7 +10,7 @@ import { sporocilo } from "../napake.js";
 import { navigiraj } from "../usmerjanje.js";
 import * as P from "../podatki.js";
 import {
-  denar, cena, jeMimo, jeRazprodan, jeMaloVstopnic, preostanek, seJeKoncal, danDolg, ura, mesecKratko, relativno, varenUrl,
+  denar, cena, jeRazprodan, jeMaloVstopnic, preostanek, seJeKoncal, danDolg, ura, mesecKratko, relativno, varenUrl,
   prizorisce, koordinata, prodajaZaprta, prodajaUstavljena, odprtjeProdaje, danInUra
 } from "../oblika.js";
 import { Ikona, Slika, Plakat, Avatar, GlavaNazaj, Nalaganje, Napaka, List } from "../ui.js";
@@ -88,7 +88,7 @@ export function Dogodek({ id }) {
     setPosiljam(false);
   }
 
-  const prodajaNe = e.ticket_price_cents != null && !jeMimo(e) && prodajaZaprta(e);   // pavza / okno prodaje (backend #327): namesto gumba besedilo
+  const prodajaNe = e.ticket_price_cents != null && !seJeKoncal(e) && prodajaZaprta(e);   // pavza / okno prodaje (backend #327): namesto gumba besedilo
   function obVstopnicah() {
     if (prodajaNe) return;
     if (e.ticket_price_cents != null) {
@@ -232,7 +232,7 @@ function VipLoader(props) {
 const prodajaVAplikaciji = e => !!(e.seller && e.seller.name) && e.availability !== "external" && (e.ticket_price_cents != null || e.vip_enabled === true);
 
 /* Nakup na Outlyju: cena mora obstajati (null = ne prodaja se pri nas), dogodek ni mimo ali razprodan. */
-const moznoKupiti = e => e.ticket_price_cents != null && !jeMimo(e) && !jeRazprodan(e) && !prodajaZaprta(e);
+const moznoKupiti = e => e.ticket_price_cents != null && !seJeKoncal(e) && !jeRazprodan(e) && !prodajaZaprta(e);
 
 /* Zakaj vstopnic ni mogoce kupiti (backend #327): pavza, okno prodaje se ni odprto (datum samo, ce ga backend poslje) ali zaprto. */
 function ProdajaBesedilo({ e }) {
@@ -311,7 +311,7 @@ function PasVstopnic({ e, ob, prodajaNe = false }) {
   const c = cena(e) || t("Tickets");
   let zgoraj, spodaj, aktiven = false;
   const n = preostanek(e);
-  if (jeMimo(e)) { zgoraj = t("Ended"); spodaj = t("event is over"); }
+  if (seJeKoncal(e)) { zgoraj = t("Ended"); spodaj = t("event is over"); }
   else if (jeRazprodan(e)) { zgoraj = c; spodaj = t("sold out"); }
   else if (prodajaNe) {   // pavza ali okno prodaje (backend #327): pas ni gumb
     const od = odprtjeProdaje(e);
