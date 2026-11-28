@@ -180,6 +180,7 @@ const PRAVILA = [
   ["not on sale", "This event is not on sale."],
   ["no tickets on outly", "Tickets for this event are not sold on Outly."],
   ["already started", "This event has already started."],
+  ["already ended", "This event has already ended."],
   ["have not opened", "Ticket sales have not opened yet."],
   ["sales are closed", "Ticket sales are closed."],
   ["tickets left", "Not enough tickets left."],

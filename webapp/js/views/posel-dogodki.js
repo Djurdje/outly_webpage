@@ -32,10 +32,10 @@ function stanje(e) {
   return seJeKoncal(e) ? { napis: t("Ended"), razred: "utisano" } : { napis: t("Upcoming"), razred: "zelena" };
 }
 
-/* Zakaj kupci ne morejo kupiti (backend 055 #327): pavza ali okno prodaje, ki ga nastavi Outly (admin). Samo objavljen prihajajoc
+/* Zakaj kupci ne morejo kupiti (backend 055 #327): pavza ali okno prodaje, ki ga nastavi Outly (admin). Samo objavljen se nekoncan
    dogodek z vstopnicami na Outlyju; star backend (brez polj) = nic. Datuma okna /business/events danes ne vraca. */
 function prodajaLastniku(e) {
-  if (e.status !== "published" || e.ticket_price_cents == null || seJeKoncal(e) || (e._zacetek && e._zacetek <= new Date())) return "";
+  if (e.status !== "published" || e.ticket_price_cents == null || seJeKoncal(e)) return "";
   if (prodajaUstavljena(e)) return t("Sales paused");
   return prodajaZaprta(e) ? t("Sales closed") : "";
 }

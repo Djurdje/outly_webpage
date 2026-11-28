@@ -147,7 +147,7 @@ export const jeMaloVstopnic = e => e.availability === "few_left";
 export const preostanek = e => (e.capacity == null ? null : Math.max(0, e.capacity - e.sold_count));
 
 /* Prodaja vstopnic (backend 055 #327, I53): sales_paused = klub/admin je prodajo ustavil; on_sale = nakup je ta trenutek odprt
-   (objavljen, ni pavze, se ni zacel, okno prodaje odprto; zaloge in cene NE uposteva). Manjkajoce polje (star backend) = prodaja odprta.
+   (objavljen, ni pavze, dogodek se ni koncal - prodaja traja do konca, tudi med dogodkom -, okno prodaje odprto; zaloge in cene NE uposteva). Manjkajoce polje (star backend) = prodaja odprta.
    Javni odgovor okna (sales_open_at) danes NIMA; ce ga backend kdaj doda, pokazemo datum odprtja. */
 export const prodajaUstavljena = e => !!e && e.sales_paused === true;
 export const prodajaZaprta = e => !!e && (e.sales_paused === true || e.on_sale === false);
@@ -156,7 +156,7 @@ export function odprtjeProdaje(e) {
   return d && d > new Date() ? d : null;
 }
 
-/** "Popular" = ze zacet (time_status backenda); sicer primerjava z zdaj. */
+/** "Popular" = ze zacet (time_status backenda); sicer primerjava z zdaj. Za nakup in oznako "ENDED" NE uporabljaj (dogodek lahko tece) - tam seJeKoncal. */
 export function jeMimo(e) {
   if (e.time_status) return e.time_status === "popular";
   return !!e._zacetek && e._zacetek <= new Date();
@@ -184,7 +184,7 @@ export function napisCene(e) {
 }
 
 export function znacka(e) {
-  if (jeMimo(e)) return null;
+  if (seJeKoncal(e)) return null;
   if (jeRazprodan(e)) return t("SOLD OUT");
   const n = preostanek(e);
   if (jeMaloVstopnic(e) && n != null) return n === 1 ? t("LAST ONE") : t("{n} LEFT", { n });
@@ -198,6 +198,7 @@ const istiDan = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() ==
 export function jeDanes(e) {
   const d = e._zacetek; if (!d) return false;
   const zdaj = new Date();
+  if (d <= zdaj) return !seJeKoncal(e);   // dogodek, ki tece, je se "Tonight"
   return istiDan(d, zdaj) || (d > zdaj && d - zdaj < 6 * 3600e3);
 }
 
@@ -223,8 +224,9 @@ export const danKratek = d => (d ? fmt({ weekday: "short", day: "numeric", month
 /** Relativna oznaka na zaslonu dogodka: ENDED / TONIGHT / TOMORROW / IN n DAYS. */
 export function relativno(e) {
   const d = e._zacetek; if (!d) return null;
-  if (jeMimo(e)) return { napis: t("ENDED"), nocoj: false };
+  if (seJeKoncal(e)) return { napis: t("ENDED"), nocoj: false };
   const zdaj = new Date();
+  if (d <= zdaj) return { napis: t("TONIGHT"), nocoj: true };   // dogodek tece (se ni koncan)
   const zjutraj = x => new Date(x.getFullYear(), x.getMonth(), x.getDate());
   const dni = Math.round((zjutraj(d) - zjutraj(zdaj)) / 86400e3);
   if (dni === 0) return { napis: t("TONIGHT"), nocoj: true };
