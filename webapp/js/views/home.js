@@ -293,7 +293,7 @@ function KarticaHit({ dogodek: e, klub, napis }) {
         <strong>${e.title}</strong>
         <span class="kh-meta">${[klub && klub.name, danInUra(e._zacetek)].filter(Boolean).join(" · ")}</span>
         ${e.genres.length ? html`<span class="kh-zanri">${e.genres.map(g => g.toUpperCase()).join("  ")}</span>` : null}
-        ${e.interested_count > 0 ? html`<span class="kh-gre">${t("{n} going", { n: e.interested_count })}</span>` : null}
+        ${e.interested_count > 0 ? html`<span class="kh-gre">${t("{n} interested", { n: e.interested_count })}</span>` : null}
       </div>
     </div>
     <div class="kh-plakat"><${Plakat} src=${plakatKartice(e)} rezerva=${e.poster_url} sirina=${300} alt="" /></div>
