@@ -198,6 +198,7 @@ const istiDan = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() ==
 export function jeDanes(e) {
   const d = e._zacetek; if (!d) return false;
   const zdaj = new Date();
+  if (d <= zdaj) return !seJeKoncal(e);   // dogodek, ki tece, je se "Tonight"
   return istiDan(d, zdaj) || (d > zdaj && d - zdaj < 6 * 3600e3);
 }
 
